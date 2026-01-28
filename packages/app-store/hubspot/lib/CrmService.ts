@@ -1,4 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
+import getLabelValueMapFromResponses from "@calcom/lib/bookings/getLabelValueMapFromResponses";
+import { getLocation } from "@calcom/lib/CalEventParser";
+import { WEBAPP_URL } from "@calcom/lib/constants";
+import { HttpError } from "@calcom/lib/http-error";
+import logger from "@calcom/lib/logger";
+import { PrismaTrackingRepository } from "@calcom/lib/server/repository/PrismaTrackingRepository";
+import prisma from "@calcom/prisma";
+import type { CalEventResponses, CalendarEvent } from "@calcom/types/Calendar";
+import type { CredentialPayload } from "@calcom/types/Credential";
+import type { Contact, ContactCreateInput, CRM, CrmEvent } from "@calcom/types/CrmService";
 import * as hubspot from "@hubspot/api-client";
 import type { BatchInputPublicAssociation } from "@hubspot/api-client/lib/codegen/crm/associations";
 import type { PublicObjectSearchRequest } from "@hubspot/api-client/lib/codegen/crm/contacts";
@@ -7,22 +19,9 @@ import type {
   SimplePublicObjectInput,
 } from "@hubspot/api-client/lib/codegen/crm/objects/meetings";
 import type { z } from "zod";
-
-import { getLocation } from "@calcom/lib/CalEventParser";
-import getLabelValueMapFromResponses from "@calcom/lib/bookings/getLabelValueMapFromResponses";
-import { WEBAPP_URL } from "@calcom/lib/constants";
-import { HttpError } from "@calcom/lib/http-error";
-import logger from "@calcom/lib/logger";
-import prisma from "@calcom/prisma";
-import type { CalendarEvent, CalEventResponses } from "@calcom/types/Calendar";
-import type { CredentialPayload } from "@calcom/types/Credential";
-import type { CRM, ContactCreateInput, Contact, CrmEvent } from "@calcom/types/CrmService";
-
 import { CrmFieldType, DateFieldType } from "../../_lib/crm-enums";
 import getAppKeysFromSlug from "../../_utils/getAppKeysFromSlug";
 import refreshOAuthTokens from "../../_utils/oauth/refreshOAuthTokens";
-import { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
-import { PrismaTrackingRepository } from "@calcom/lib/server/repository/PrismaTrackingRepository";
 import type { HubspotToken } from "../api/callback";
 import type { appDataSchema } from "../zod";
 
@@ -86,13 +85,13 @@ class HubspotCalendarService implements CRM {
   `;
   };
 
-  private async ensureFieldsExistOnMeeting(fieldsToTest: string[]) {
-    const log = logger.getSubLogger({ prefix: [`[ensureFieldsExistOnMeeting]`] });
+  private async ensureFieldsExistOnObject(fieldsToTest: string[], objectType: "meetings" | "contacts") {
+    const log = logger.getSubLogger({ prefix: [`[ensureFieldsExistOn${objectType}]`] });
     const fieldSet = new Set(fieldsToTest);
     const foundFields: Array<{ name: string; type: string; [key: string]: any }> = [];
 
     try {
-      const properties = await this.hubspotClient.crm.properties.coreApi.getAll("meetings");
+      const properties = await this.hubspotClient.crm.properties.coreApi.getAll(objectType);
 
       for (const property of properties.results) {
         if (foundFields.length === fieldSet.size) break;
@@ -107,14 +106,13 @@ class HubspotCalendarService implements CRM {
 
       if (missingFields.length > 0) {
         log.warn(
-          `The following fields do not exist in HubSpot and will be skipped: ${missingFields.join(", ")}. Meeting creation will continue without these fields.`
+          `The following fields do not exist in HubSpot ${objectType} and will be skipped: ${missingFields.join(", ")}.`
         );
       }
 
       return foundFields;
     } catch (e: any) {
-      log.error(`Error ensuring fields ${fieldsToTest} exist on Meeting object with error ${e}`);
-      // Return empty array to gracefully degrade - meeting creation will proceed without custom field validation
+      log.error(`Error ensuring fields ${fieldsToTest} exist on ${objectType} object with error ${e}`);
       return [];
     }
   }
@@ -256,7 +254,10 @@ class HubspotCalendarService implements CRM {
     if (!appOptions?.onBookingWriteToEventObjectFields) return {};
 
     const customFieldInputs = customFieldInputsEnabled
-      ? await this.ensureFieldsExistOnMeeting(Object.keys(appOptions.onBookingWriteToEventObjectFields))
+      ? await this.ensureFieldsExistOnObject(
+          Object.keys(appOptions.onBookingWriteToEventObjectFields),
+          "meetings"
+        )
       : [];
 
     const confirmedCustomFieldInputs: Record<string, any> = {};
@@ -281,6 +282,55 @@ class HubspotCalendarService implements CRM {
     this.log.info(`Writing to meeting fields: ${Object.keys(confirmedCustomFieldInputs)}`);
 
     return confirmedCustomFieldInputs;
+  }
+
+  private async writeToContactRecord(contactId: string, event: CalendarEvent) {
+    const appOptions = this.getAppOptions();
+
+    const customFieldInputsEnabled =
+      appOptions?.onBookingWriteToContactRecord && appOptions?.onBookingWriteToContactRecordFields;
+
+    if (!customFieldInputsEnabled) return;
+
+    if (!appOptions?.onBookingWriteToContactRecordFields) return;
+
+    const customFieldInputs = await this.ensureFieldsExistOnObject(
+      Object.keys(appOptions.onBookingWriteToContactRecordFields),
+      "contacts"
+    );
+
+    if (customFieldInputs.length === 0) return;
+
+    const confirmedCustomFieldInputs: Record<string, string | boolean> = {};
+
+    for (const field of customFieldInputs) {
+      const fieldConfig = appOptions.onBookingWriteToContactRecordFields[field.name];
+
+      const fieldValue = await this.getFieldValue({
+        fieldValue: fieldConfig.value,
+        fieldType: fieldConfig.fieldType,
+        calEventResponses: event.responses,
+        bookingUid: event?.uid,
+        startTime: event.startTime,
+        fieldName: field.name,
+      });
+
+      if (fieldValue !== null) {
+        confirmedCustomFieldInputs[field.name] = fieldValue;
+      }
+    }
+
+    if (Object.keys(confirmedCustomFieldInputs).length === 0) return;
+
+    this.log.info(`Writing to contact ${contactId} fields: ${Object.keys(confirmedCustomFieldInputs)}`);
+
+    try {
+      await this.hubspotClient.crm.contacts.basicApi.update(contactId, {
+        properties: confirmedCustomFieldInputs as Record<string, string>,
+      });
+    } catch (error) {
+      this.log.error(`Error writing to contact record ${contactId}:`, error);
+    }
   }
 
   private hubspotCreateMeeting = async (event: CalendarEvent, hubspotOwnerId?: string) => {
@@ -336,11 +386,11 @@ class HubspotCalendarService implements CRM {
         hs_meeting_title: event.title,
         hs_meeting_body: this.getHubspotMeetingBody(event),
         hs_meeting_location: getLocation({
-        videoCallData: event.videoCallData,
-        additionalInformation: event.additionalInformation,
-        location: event.location,
-        uid: event.uid,
-      }),
+          videoCallData: event.videoCallData,
+          additionalInformation: event.additionalInformation,
+          location: event.location,
+          uid: event.uid,
+        }),
         hs_meeting_start_time: new Date(event.startTime).toISOString(),
         hs_meeting_end_time: new Date(event.endTime).toISOString(),
         hs_meeting_outcome: "RESCHEDULED",
@@ -364,7 +414,6 @@ class HubspotCalendarService implements CRM {
     return this.hubspotClient.crm.objects.meetings.basicApi.archive(uid);
   };
 
-
   private hubspotAuth = async (credential: CredentialPayload) => {
     const appKeys = await getAppKeysFromSlug("hubspot");
     if (typeof appKeys.client_id === "string") this.client_id = appKeys.client_id;
@@ -375,11 +424,7 @@ class HubspotCalendarService implements CRM {
     let currentToken = credential.key as unknown as HubspotToken;
 
     const isTokenValid = (token: HubspotToken) =>
-      token &&
-      token.tokenType &&
-      token.accessToken &&
-      token.expiryDate &&
-      token.expiryDate > Date.now();
+      token && token.tokenType && token.accessToken && token.expiryDate && token.expiryDate > Date.now();
 
     const refreshAccessToken = async (refreshToken: string) => {
       try {
@@ -447,6 +492,10 @@ class HubspotCalendarService implements CRM {
             hubspotOwnerId,
             appOptions?.overwriteContactOwner ?? false
           );
+        }
+
+        if (firstContact?.id && appOptions?.onBookingWriteToContactRecord) {
+          await this.writeToContactRecord(firstContact.id, event);
         }
 
         return Promise.resolve({
@@ -598,9 +647,7 @@ class HubspotCalendarService implements CRM {
   }
 
   private async getContactOwnerId(contactId: string): Promise<string | null> {
-    const contact = await this.hubspotClient.crm.contacts.basicApi.getById(contactId, [
-      "hubspot_owner_id",
-    ]);
+    const contact = await this.hubspotClient.crm.contacts.basicApi.getById(contactId, ["hubspot_owner_id"]);
     return contact.properties.hubspot_owner_id ?? null;
   }
 

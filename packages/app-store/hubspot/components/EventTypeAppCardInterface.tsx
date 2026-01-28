@@ -1,18 +1,16 @@
-import { usePathname } from "next/navigation";
-
-import { useAppContextWithSchema } from "@calcom/app-store/EventTypeAppContext";
 import AppCard from "@calcom/app-store/_components/AppCard";
-import { CrmFieldType } from "@calcom/app-store/_lib/crm-enums";
 import WriteToObjectSettings, {
   BookingActionEnum,
 } from "@calcom/app-store/_components/crm/WriteToObjectSettings";
+import { CrmFieldType } from "@calcom/app-store/_lib/crm-enums";
 import useIsAppEnabled from "@calcom/app-store/_utils/useIsAppEnabled";
+import { useAppContextWithSchema } from "@calcom/app-store/EventTypeAppContext";
 import type { EventTypeAppCardComponent } from "@calcom/app-store/types";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Switch } from "@calcom/ui/components/form";
 import { Section } from "@calcom/ui/components/section";
-
+import { usePathname } from "next/navigation";
 import type { appDataSchema } from "../zod";
 import { WhenToWrite } from "../zod";
 
@@ -32,6 +30,8 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({
   const overwriteContactOwner = getAppData("overwriteContactOwner") ?? false;
   const onBookingWriteToEventObject = getAppData("onBookingWriteToEventObject") ?? false;
   const onBookingWriteToEventObjectFields = getAppData("onBookingWriteToEventObjectFields") ?? {};
+  const onBookingWriteToContactRecord = getAppData("onBookingWriteToContactRecord") ?? false;
+  const onBookingWriteToContactRecordFields = getAppData("onBookingWriteToContactRecordFields") ?? {};
 
   return (
     <AppCard
@@ -121,6 +121,27 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({
               setAppData("onBookingWriteToEventObject", checked);
             }}
             updateWriteToObjectData={(data): void => setAppData("onBookingWriteToEventObjectFields", data)}
+            supportedFieldTypes={[
+              CrmFieldType.TEXT,
+              CrmFieldType.DATE,
+              CrmFieldType.PHONE,
+              CrmFieldType.CHECKBOX,
+              CrmFieldType.CUSTOM,
+            ]}
+            supportedWriteTriggers={[WhenToWrite.EVERY_BOOKING]}
+          />
+        </Section.SubSection>
+
+        <Section.SubSection>
+          <WriteToObjectSettings
+            bookingAction={BookingActionEnum.ON_BOOKING}
+            optionLabel={t("on_booking_write_to_contact_record")}
+            optionEnabled={onBookingWriteToContactRecord}
+            writeToObjectData={onBookingWriteToContactRecordFields}
+            optionSwitchOnChange={(checked: boolean): void => {
+              setAppData("onBookingWriteToContactRecord", checked);
+            }}
+            updateWriteToObjectData={(data): void => setAppData("onBookingWriteToContactRecordFields", data)}
             supportedFieldTypes={[
               CrmFieldType.TEXT,
               CrmFieldType.DATE,
