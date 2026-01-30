@@ -1,7 +1,14 @@
 import { formatMonthKey } from "@calcom/features/ee/billing/lib/month-key";
+import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
 import { SeatChangeLogRepository } from "@calcom/features/ee/billing/repository/seatChangeLogs/SeatChangeLogRepository";
+import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
+import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+import logger from "@calcom/lib/logger";
+import { prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { SeatChangeType } from "@calcom/prisma/enums";
+
+const log = logger.getSubLogger({ prefix: ["SeatChangeTrackingService"] });
 
 export interface SeatChangeLogParams {
   teamId: number;
@@ -23,9 +30,17 @@ export interface MonthlyChanges {
 
 export class SeatChangeTrackingService {
   private repository: SeatChangeLogRepository;
+  private highWaterMarkRepo: HighWaterMarkRepository;
+  private teamRepo: MonthlyProrationTeamRepository;
 
-  constructor(repository?: SeatChangeLogRepository) {
+  constructor(
+    repository?: SeatChangeLogRepository,
+    highWaterMarkRepo?: HighWaterMarkRepository,
+    teamRepo?: MonthlyProrationTeamRepository
+  ) {
     this.repository = repository || new SeatChangeLogRepository();
+    this.highWaterMarkRepo = highWaterMarkRepo || new HighWaterMarkRepository();
+    this.teamRepo = teamRepo || new MonthlyProrationTeamRepository();
   }
 
   async logSeatAddition(params: SeatChangeLogParams): Promise<void> {
@@ -54,6 +69,59 @@ export class SeatChangeTrackingService {
       teamBillingId,
       organizationBillingId,
     });
+
+    // Update high water mark for monthly billing
+    await this.updateHighWaterMarkIfNeeded(teamId);
+  }
+
+  private async updateHighWaterMarkIfNeeded(teamId: number): Promise<void> {
+    try {
+      // Check if the feature is enabled
+      const featuresRepository = new FeaturesRepository(prisma);
+      const isFeatureEnabled = await featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+
+      if (!isFeatureEnabled) {
+        return;
+      }
+
+      // Get billing info
+      const billing = await this.highWaterMarkRepo.getByTeamId(teamId);
+      if (!billing) {
+        return;
+      }
+
+      // Only update for monthly billing
+      if (billing.billingPeriod !== "MONTHLY") {
+        return;
+      }
+
+      // Get current member count
+      const memberCount = await this.teamRepo.getTeamMemberCount(teamId);
+      if (memberCount === null) {
+        log.warn(`Could not get member count for team ${teamId}`);
+        return;
+      }
+
+      // Use the billing period start as the HWM period start
+      const periodStart = billing.highWaterMarkPeriodStart || new Date();
+
+      const result = await this.highWaterMarkRepo.updateIfHigher({
+        teamId,
+        isOrganization: billing.isOrganization,
+        newSeatCount: memberCount,
+        periodStart,
+      });
+
+      if (result.updated) {
+        log.info(`High water mark updated for team ${teamId}`, {
+          previousHighWaterMark: result.previousHighWaterMark,
+          newHighWaterMark: memberCount,
+        });
+      }
+    } catch (error) {
+      // Log but don't fail the main operation
+      log.error(`Failed to update high water mark for team ${teamId}`, { error });
+    }
   }
 
   async logSeatRemoval(params: SeatChangeLogParams): Promise<void> {

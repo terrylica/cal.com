@@ -56,6 +56,29 @@ export class BillingPeriodService {
     }
   }
 
+  async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
+    try {
+      const featuresRepository = new FeaturesRepository(prisma);
+      const isFeatureEnabled = await featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+
+      if (!isFeatureEnabled) {
+        return false;
+      }
+
+      const info = await this.getOrCreateBillingPeriodInfo(teamId);
+
+      return info.billingPeriod === "MONTHLY" && !info.isInTrial && info.subscriptionStart !== null;
+    } catch (error) {
+      log.error(`Failed to check if high water mark should apply for team ${teamId}`, { error });
+      return false;
+    }
+  }
+
+  async isMonthlyBilling(teamId: number): Promise<boolean> {
+    const info = await this.getOrCreateBillingPeriodInfo(teamId);
+    return info.billingPeriod === "MONTHLY";
+  }
+
   async getOrCreateBillingPeriodInfo(teamId: number): Promise<BillingPeriodInfo> {
     const team = await prisma.team.findUnique({
       where: { id: teamId },

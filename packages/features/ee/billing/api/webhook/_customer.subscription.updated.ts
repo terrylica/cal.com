@@ -3,6 +3,7 @@ import { PrismaPhoneNumberRepository } from "@calcom/features/calAIPhone/reposit
 import { PrismaOrganizationBillingRepository } from "@calcom/features/ee/billing/repository/billing/PrismaOrganizationBillingRepository";
 import { PrismaTeamBillingRepository } from "@calcom/features/ee/billing/repository/billing/PrismaTeamBillingRepository";
 import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
+import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 
@@ -113,6 +114,12 @@ async function handleTeamBillingRenewal(
 
   if (teamBilling) {
     await teamBillingRepo.updateById(teamBilling.id, billingUpdateData);
+
+    // Reset high water mark for monthly billing on new period
+    if (billingPeriod === "MONTHLY" && subscriptionStart) {
+      await resetHighWaterMark(teamBilling.teamId, false, subscriptionStart);
+    }
+
     return { success: true, type: "team", teamId: teamBilling.teamId };
   }
 
@@ -120,6 +127,12 @@ async function handleTeamBillingRenewal(
 
   if (orgBilling) {
     await orgBillingRepo.updateById(orgBilling.id, billingUpdateData);
+
+    // Reset high water mark for monthly billing on new period
+    if (billingPeriod === "MONTHLY" && subscriptionStart) {
+      await resetHighWaterMark(orgBilling.teamId, true, subscriptionStart);
+    }
+
     return { success: true, type: "organization", teamId: orgBilling.teamId };
   }
 
@@ -132,6 +145,33 @@ async function handleTeamBillingRenewal(
   });
 
   return { skipped: true, reason: "no billing record found" };
+}
+
+async function resetHighWaterMark(
+  teamId: number,
+  isOrganization: boolean,
+  newPeriodStart: Date
+): Promise<void> {
+  try {
+    const highWaterMarkService = new HighWaterMarkService(log);
+    await highWaterMarkService.resetHighWaterMark({
+      teamId,
+      isOrganization,
+      newPeriodStart,
+    });
+    log.info("High water mark reset on billing period renewal", {
+      teamId,
+      isOrganization,
+      newPeriodStart,
+    });
+  } catch (error) {
+    // Log but don't fail the webhook
+    log.error("Failed to reset high water mark on renewal", {
+      teamId,
+      isOrganization,
+      error,
+    });
+  }
 }
 
 export default handler;
