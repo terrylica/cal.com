@@ -6,6 +6,7 @@ import authedProcedure, {
   authedAdminProcedure,
   authedOrgAdminProcedure,
 } from "../../../procedures/authedProcedure";
+import { createOrgPbacProcedure } from "../../../procedures/pbacProcedures";
 import { router } from "../../../trpc";
 import { eventOwnerProcedure } from "../eventTypes/util";
 import { ZAddMembersToEventTypes } from "./addMembersToEventTypes.schema";
@@ -37,6 +38,7 @@ import { ZListMembersInputSchema } from "./listMembers.schema";
 import { ZListOtherTeamMembersSchema } from "./listOtherTeamMembers.handler";
 import { ZListWatchlistEntriesInputSchema } from "./listWatchlistEntries.schema";
 import { ZRemoveHostsFromEventTypes } from "./removeHostsFromEventTypes.schema";
+import { ZOrgPasswordResetSchema } from "./sendPasswordReset.schema";
 import { ZSetPasswordSchema } from "./setPassword.schema";
 import { ZTestSmtpConnectionInputSchema } from "./testSmtpConnection.schema";
 import { ZToggleSmtpConfigurationInputSchema } from "./toggleSmtpConfiguration.schema";
@@ -92,6 +94,12 @@ export const viewerOrganizationsRouter = router({
     const { default: handler } = await import("./setPassword.handler");
     return handler(opts);
   }),
+  sendPasswordReset: createOrgPbacProcedure("organization.passwordReset")
+    .input(ZOrgPasswordResetSchema)
+    .mutation(async (opts) => {
+      const { default: handler } = await import("./sendPasswordReset.handler");
+      return handler(opts);
+    }),
   getMembers: authedProcedure.input(ZGetMembersInput).query(async (opts) => {
     const { default: handler } = await import("./getMembers.handler");
     return handler(opts);
