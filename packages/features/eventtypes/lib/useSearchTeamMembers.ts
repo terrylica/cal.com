@@ -26,12 +26,6 @@ export type SearchTeamMember = {
   role: MembershipRole;
 };
 
-type SearchTeamMembersResponse = {
-  members: SearchTeamMember[];
-  nextCursor: number | undefined;
-  hasMore: boolean;
-};
-
 export function useSearchTeamMembers({
   teamId,
   search,
@@ -41,26 +35,18 @@ export function useSearchTeamMembers({
   search: string;
   enabled?: boolean;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trpcAny = trpc as any;
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    trpcAny.viewer.eventTypes.searchTeamMembers.useInfiniteQuery(
+    trpc.viewer.eventTypes.searchTeamMembers.useInfiniteQuery(
       { teamId, limit: 20, search: search || undefined },
       {
         enabled: enabled && teamId > 0,
-        getNextPageParam: (lastPage: SearchTeamMembersResponse) => lastPage.nextCursor,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
       }
-    ) as {
-      data: { pages: SearchTeamMembersResponse[] } | undefined;
-      fetchNextPage: () => void;
-      hasNextPage: boolean | undefined;
-      isFetchingNextPage: boolean;
-      isLoading: boolean;
-    };
+    );
 
   const options = useMemo((): CheckedSelectOption[] => {
     return (
-      data?.pages.flatMap((page: SearchTeamMembersResponse) =>
+      data?.pages.flatMap((page) =>
         page.members.map((m) => ({
           value: String(m.userId),
           label: m.name || m.email || "",
@@ -75,7 +61,7 @@ export function useSearchTeamMembers({
   }, [data]);
 
   const members = useMemo((): SearchTeamMember[] => {
-    return data?.pages.flatMap((page: SearchTeamMembersResponse) => page.members) ?? [];
+    return data?.pages.flatMap((page) => page.members) ?? [];
   }, [data]);
 
   return { options, members, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading };

@@ -2,7 +2,6 @@ import { useMemo } from "react";
 
 import type { ChildrenEventType } from "@calcom/features/eventtypes/lib/childrenEventType";
 import { MembershipRole } from "@calcom/prisma/enums";
-import type { GetChildrenForAssignmentResponse } from "@calcom/trpc/server/routers/viewer/eventTypes/getChildrenForAssignment.handler";
 import { trpc } from "@calcom/trpc/react";
 
 import type { PendingChildrenChanges } from "./types";
@@ -38,26 +37,18 @@ export function usePaginatedAssignmentChildren({
   search: string;
   enabled?: boolean;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trpcAny = trpc as any;
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    trpcAny.viewer.eventTypes.getChildrenForAssignment.useInfiniteQuery(
+    trpc.viewer.eventTypes.getChildrenForAssignment.useInfiniteQuery(
       { eventTypeId, limit: 20, search: search || undefined },
       {
         enabled: enabled && eventTypeId > 0,
-        getNextPageParam: (lastPage: GetChildrenForAssignmentResponse) => lastPage.nextCursor,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
       }
-    ) as {
-      data: { pages: GetChildrenForAssignmentResponse[] } | undefined;
-      fetchNextPage: () => void;
-      hasNextPage: boolean | undefined;
-      isFetchingNextPage: boolean;
-      isLoading: boolean;
-    };
+    );
 
   const serverChildren = useMemo((): AssignmentChild[] => {
     return (
-      data?.pages.flatMap((page: GetChildrenForAssignmentResponse) =>
+      data?.pages.flatMap((page) =>
         page.children.map((c) => ({
           childEventTypeId: c.childEventTypeId,
           slug: c.slug,

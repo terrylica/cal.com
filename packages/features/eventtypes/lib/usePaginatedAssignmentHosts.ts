@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 
-import type { GetHostsForAssignmentResponse } from "@calcom/trpc/server/routers/viewer/eventTypes/getHostsForAssignment.handler";
 import { trpc } from "@calcom/trpc/react";
 
 import type { Host, PendingHostChanges } from "./types";
@@ -27,28 +26,20 @@ export function usePaginatedAssignmentHosts({
   search: string;
   enabled?: boolean;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const trpcAny = trpc as any;
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    trpcAny.viewer.eventTypes.getHostsForAssignment.useInfiniteQuery(
+    trpc.viewer.eventTypes.getHostsForAssignment.useInfiniteQuery(
       { eventTypeId, limit: 20, search: search || undefined },
       {
         enabled: enabled && eventTypeId > 0,
-        getNextPageParam: (lastPage: GetHostsForAssignmentResponse) => lastPage.nextCursor,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
       }
-    ) as {
-      data: { pages: GetHostsForAssignmentResponse[] } | undefined;
-      fetchNextPage: () => void;
-      hasNextPage: boolean | undefined;
-      isFetchingNextPage: boolean;
-      isLoading: boolean;
-    };
+    );
 
   // hasFixedHosts is only returned on the first page
   const serverHasFixedHosts = data?.pages[0]?.hasFixedHosts ?? false;
 
   const serverHosts = useMemo((): AssignmentHostWithMeta[] => {
-    return data?.pages.flatMap((page: GetHostsForAssignmentResponse) =>
+    return data?.pages.flatMap((page) =>
       page.hosts.map((h) => ({
         userId: h.userId,
         isFixed: h.isFixed,
