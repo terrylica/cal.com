@@ -429,7 +429,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       await hrmsManager.updateOOO(existingReference.externalId, {
         endDate: endTimeUtc.format("YYYY-MM-DD"),
         startDate: startTimeUtc.format("YYYY-MM-DD"),
-        notes: input?.notes ? input.notes : `Synced From Cal.com`,
+        notes: input?.notes ? input.notes : `Synced from Cal.com`,
         externalReasonId: hrmsReasonId,
         userEmail: oooUserEmail,
       });

@@ -225,7 +225,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
 
         // Avoid adding placeholder reason back to Cal.com
-        const reason = payload.resource.reason?.startsWith("Synced From Cal.com") ? undefined: payload.resource.reason || undefined;
+        const reason = payload.resource.reason?.startsWith("Synced from Cal.com") ? undefined: payload.resource.reason || undefined;
 
         await oooRepo.updateOOOEntry({
           uuid: reference.oooEntry.uuid,

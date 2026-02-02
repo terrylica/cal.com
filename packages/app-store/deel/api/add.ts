@@ -18,8 +18,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const authUrl = new URL(`${deelAuthUrl}/oauth2/authorize`);
   authUrl.searchParams.set("client_id", client_id);
   authUrl.searchParams.set("redirect_uri", redirect_uris);
-  // testing,
-  // authUrl.searchParams.set("redirect_uri", "https://a309c11eafec.ngrok-free.app/api/integrations/deel/callback");
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("scope", scopes.join(" "));
   if (state) {

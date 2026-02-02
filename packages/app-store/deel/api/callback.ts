@@ -52,8 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       grant_type: "authorization_code",
       code: code as string,
       redirect_uri: redirect_uris,
-      //for testing, remove later
-      // redirect_uri: `https://a309c11eafec.ngrok-free.app/api/integrations/deel/callback`,
     }),
   });
 
