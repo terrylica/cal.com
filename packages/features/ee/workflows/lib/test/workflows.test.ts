@@ -1521,6 +1521,7 @@ describe("Custom SMTP Email Routing for Workflows", () => {
       sendTo: ["attendee2@example.com"],
       action: WorkflowActions.EMAIL_ATTENDEE,
       verifiedAt: new Date(),
+      organizationId: org.id,
     });
 
     expectEmailSentViaDefaultSmtp({

@@ -1,18 +1,18 @@
-import type { TFunction } from "i18next";
-
-import { symmetricDecrypt, symmetricEncrypt } from "@calcom/lib/crypto";
+import type { SecretEnvelopeV1 } from "@calcom/lib/crypto/keyring";
+import { decryptSecret, encryptSecret } from "@calcom/lib/crypto/keyring";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
+import type { TFunction } from "i18next";
 
 import type {
   CreateSmtpConfigurationInput,
   SmtpConfigurationPublic,
+  SmtpConfigurationRepository,
   SmtpConfigurationWithCredentials,
 } from "../../repositories/SmtpConfigurationRepository";
-import type { SmtpConfigurationRepository } from "../../repositories/SmtpConfigurationRepository";
 import type { SmtpService } from "./SmtpService";
 
-const REQUIRED_KEY_LENGTH = 32;
+const SMTP_KEYRING = "SMTP" as const;
 
 export interface CreateSmtpConfigurationParams {
   organizationId: number;
@@ -51,40 +51,27 @@ export class SmtpConfigurationService {
     return this.deps.smtpService;
   }
 
-  private encryptCredentials(user: string, password: string): { user: string; password: string } {
-    const encryptionKey = process.env.CALENDSO_ENCRYPTION_KEY || "";
-    if (!encryptionKey) {
-      throw new ErrorWithCode(ErrorCode.InternalServerError, "CALENDSO_ENCRYPTION_KEY not configured");
-    }
-    if (encryptionKey.length !== REQUIRED_KEY_LENGTH) {
-      throw new ErrorWithCode(
-        ErrorCode.InternalServerError,
-        `CALENDSO_ENCRYPTION_KEY must be exactly ${REQUIRED_KEY_LENGTH} characters`
-      );
-    }
+  private encryptCredentials(
+    user: string,
+    password: string,
+    organizationId: number
+  ): { user: string; password: string } {
+    const aad = { organizationId };
     return {
-      user: symmetricEncrypt(user, encryptionKey),
-      password: symmetricEncrypt(password, encryptionKey),
+      user: JSON.stringify(encryptSecret({ ring: SMTP_KEYRING, plaintext: user, aad })),
+      password: JSON.stringify(encryptSecret({ ring: SMTP_KEYRING, plaintext: password, aad })),
     };
   }
 
   private decryptCredentials(
     encryptedUser: string,
-    encryptedPassword: string
+    encryptedPassword: string,
+    organizationId: number
   ): { user: string; password: string } {
-    const encryptionKey = process.env.CALENDSO_ENCRYPTION_KEY || "";
-    if (!encryptionKey) {
-      throw new ErrorWithCode(ErrorCode.InternalServerError, "CALENDSO_ENCRYPTION_KEY not configured");
-    }
-    if (encryptionKey.length !== REQUIRED_KEY_LENGTH) {
-      throw new ErrorWithCode(
-        ErrorCode.InternalServerError,
-        `CALENDSO_ENCRYPTION_KEY must be exactly ${REQUIRED_KEY_LENGTH} characters`
-      );
-    }
+    const aad = { organizationId };
     return {
-      user: symmetricDecrypt(encryptedUser, encryptionKey),
-      password: symmetricDecrypt(encryptedPassword, encryptionKey),
+      user: decryptSecret({ envelope: JSON.parse(encryptedUser) as SecretEnvelopeV1, aad }),
+      password: decryptSecret({ envelope: JSON.parse(encryptedPassword) as SecretEnvelopeV1, aad }),
     };
   }
 
@@ -94,7 +81,7 @@ export class SmtpConfigurationService {
       throw new ErrorWithCode(ErrorCode.BadRequest, "SMTP configuration already exists for this email");
     }
 
-    const encrypted = this.encryptCredentials(params.smtpUser, params.smtpPassword);
+    const encrypted = this.encryptCredentials(params.smtpUser, params.smtpPassword, params.organizationId);
 
     const input: CreateSmtpConfigurationInput = {
       organizationId: params.organizationId,
@@ -108,7 +95,6 @@ export class SmtpConfigurationService {
     };
 
     const config = await this.repository.create(input);
-
     return this.toPublic(config);
   }
 
@@ -143,7 +129,13 @@ export class SmtpConfigurationService {
 
   async listByOrganization(organizationId: number): Promise<SmtpConfigurationPublic[]> {
     const configs = await this.repository.findByOrgId(organizationId);
-    return configs.map((config) => this.toPublicWithDecryptedUser(config));
+    return configs.map((config) => ({
+      ...config,
+      smtpUser: decryptSecret({
+        envelope: JSON.parse(config.smtpUser) as SecretEnvelopeV1,
+        aad: { organizationId: config.organizationId },
+      }),
+    }));
   }
 
   async getById(id: number, organizationId: number): Promise<SmtpConfigurationPublic | null> {
@@ -151,7 +143,13 @@ export class SmtpConfigurationService {
     if (!config || config.organizationId !== organizationId) {
       return null;
     }
-    return this.toPublicWithDecryptedUser(config);
+    return {
+      ...config,
+      smtpUser: decryptSecret({
+        envelope: JSON.parse(config.smtpUser) as SecretEnvelopeV1,
+        aad: { organizationId: config.organizationId },
+      }),
+    };
   }
 
   async getActiveConfigForOrg(organizationId: number): Promise<SmtpEmailConfig | null> {
@@ -160,7 +158,11 @@ export class SmtpConfigurationService {
       return null;
     }
 
-    const { user, password } = this.decryptCredentials(config.smtpUser, config.smtpPassword);
+    const { user, password } = this.decryptCredentials(
+      config.smtpUser,
+      config.smtpPassword,
+      config.organizationId
+    );
 
     return {
       fromEmail: config.fromEmail,
@@ -187,7 +189,11 @@ export class SmtpConfigurationService {
       throw new ErrorWithCode(ErrorCode.Forbidden, "Not authorized to test this SMTP configuration");
     }
 
-    const { user, password } = this.decryptCredentials(config.smtpUser, config.smtpPassword);
+    const { user, password } = this.decryptCredentials(
+      config.smtpUser,
+      config.smtpPassword,
+      config.organizationId
+    );
 
     return this.smtpService.sendTestEmail({
       config: {
@@ -207,21 +213,5 @@ export class SmtpConfigurationService {
   private toPublic(config: SmtpConfigurationWithCredentials): SmtpConfigurationPublic {
     const { smtpPassword: _p, ...publicFields } = config;
     return publicFields;
-  }
-
-  private toPublicWithDecryptedUser(config: SmtpConfigurationPublic): SmtpConfigurationPublic {
-    const encryptionKey = process.env.CALENDSO_ENCRYPTION_KEY || "";
-    if (!encryptionKey || encryptionKey.length !== REQUIRED_KEY_LENGTH) {
-      return config;
-    }
-    try {
-      const decryptedUser = symmetricDecrypt(config.smtpUser, encryptionKey);
-      return {
-        ...config,
-        smtpUser: decryptedUser,
-      };
-    } catch {
-      return config;
-    }
   }
 }
