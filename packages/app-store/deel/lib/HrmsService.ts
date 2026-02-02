@@ -29,7 +29,7 @@ export interface DeelTimeOffRequest {
   start_date: string;
   end_date: string;
   time_off_type_id: string;
-  description?: string;
+  description: string;
   status: DeelTimeOffStatus;
 }
 
@@ -164,7 +164,7 @@ class DeelHrmsService implements HrmsService {
         start_date: params.startDate,
         end_date: params.endDate,
         time_off_type_id: params.externalReasonId,
-        description: params.notes,
+        description: params.notes || "Synced from Cal.com",
         status: DeelTimeOffStatus.APPROVED,
       };
 

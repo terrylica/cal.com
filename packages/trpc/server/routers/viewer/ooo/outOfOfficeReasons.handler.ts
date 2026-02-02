@@ -1,8 +1,9 @@
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
+import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
+import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import HrmsManager from "@calcom/lib/hrmsManager/hrmsManager";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
-import { AppCategories } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
 
 const log: ReturnType<typeof logger.getSubLogger> = logger.getSubLogger({
@@ -62,21 +63,27 @@ export async function outOfOfficeReasonList(
     });
 
     return {
-      reasons: outOfOfficeReasons.map((reason): InternalOOOReason => ({
-        source: "internal",
-        id: reason.id,
-        emoji: reason.emoji,
-        reason: reason.reason,
-        userId: reason.userId,
-        enabled: reason.enabled,
-      })),
+      reasons: outOfOfficeReasons.map(
+        (reason): InternalOOOReason => ({
+          source: "internal",
+          id: reason.id,
+          emoji: reason.emoji,
+          reason: reason.reason,
+          userId: reason.userId,
+          enabled: reason.enabled,
+        })
+      ),
     };
   }
 
   // Get the highest priority HRMS credential (org > team > user)
-  const hrmsCredential = await CredentialRepository.findFirstHrmsCredentialByPriority({
+  const orgId = await ProfileRepository.findFirstOrganizationIdForUser({ userId: user.id });
+  const teamIds = await MembershipRepository.findUserTeamIds({ userId: user.id });
+  const hrmsCredential = await CredentialRepository.findFirstByAppSlug({
     userId: user.id,
-    category: [AppCategories.hrms],
+    appSlug: "deel",
+    orgId,
+    teamIds,
   });
 
   if (hrmsCredential && user.email) {

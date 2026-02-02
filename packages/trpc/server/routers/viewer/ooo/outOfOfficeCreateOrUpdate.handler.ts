@@ -2,6 +2,8 @@ import { selectOOOEntries } from "@calcom/app-store/zapier/api/subscriptions/lis
 import dayjs from "@calcom/dayjs";
 import { sendBookingRedirectNotification } from "@calcom/emails/workflow-email-service";
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
+import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
+import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import type { OOOEntryPayloadType } from "@calcom/features/webhooks/lib/sendPayload";
@@ -10,7 +12,7 @@ import HrmsManager from "@calcom/lib/hrmsManager/hrmsManager";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import prisma from "@calcom/prisma";
-import { AppCategories, WebhookTriggerEvents } from "@calcom/prisma/enums";
+import { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
 import { TRPCError } from "@trpc/server";
 import { v4 as uuidv4 } from "uuid";
@@ -401,9 +403,13 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
   const hrmsReasonName = selectedReason.name;
 
   try {
-    const hrmsCredential = await CredentialRepository.findFirstHrmsCredentialByPriority({
+    const orgId = await ProfileRepository.findFirstOrganizationIdForUser({ userId: oooUserId });
+    const teamIds = await MembershipRepository.findUserTeamIds({ userId: oooUserId });
+    const hrmsCredential = await CredentialRepository.findFirstByAppSlug({
       userId: oooUserId,
-      category: [AppCategories.hrms],
+      appSlug: "deel",
+      orgId,
+      teamIds,
     });
 
     if (!hrmsCredential) {
@@ -423,7 +429,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       await hrmsManager.updateOOO(existingReference.externalId, {
         endDate: endTimeUtc.format("YYYY-MM-DD"),
         startDate: startTimeUtc.format("YYYY-MM-DD"),
-        notes: input?.notes ? input.notes : `Out of office: ${hrmsReasonName}`,
+        notes: input?.notes ? input.notes : `Synced From Cal.com`,
         externalReasonId: hrmsReasonId,
         userEmail: oooUserEmail,
       });

@@ -1,6 +1,8 @@
 import { createHmac } from "node:crypto";
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
+import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
 import { PrismaOOORepository } from "@calcom/features/ooo/repositories/PrismaOOORepository";
+import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { IS_PRODUCTION } from "@calcom/lib/constants";
 import { getErrorFromUnknown } from "@calcom/lib/errors";
@@ -8,7 +10,6 @@ import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
-import { AppCategories } from "@calcom/prisma/enums";
 import type { NextApiRequest, NextApiResponse } from "next";
 import getRawBody from "raw-body";
 import { z } from "zod";
@@ -163,16 +164,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json({ message: "OOO entry already exists, skipping creation" });
       }
 
-      const allCredentials = await CredentialRepository.findCredentialsByUserIdAndCategory({
-        category: [AppCategories.hrms],
+      const orgId = await ProfileRepository.findFirstOrganizationIdForUser({ userId: user.id });
+      const teamIds = await MembershipRepository.findUserTeamIds({ userId: user.id });
+      const deelCredential = await CredentialRepository.findFirstByAppSlug({
         userId: user.id,
+        appSlug: "deel",
+        orgId,
+        teamIds,
       });
-      if (!allCredentials || allCredentials.length === 0) {
-        log.warn("No Deel HRMS credentials found for processing webhook");
-        return res.status(200).json({ message: "No Deel HRMS credentials found, skipping processing" });
-      }
-
-      const deelCredential = allCredentials.find((cred) => cred.appId === "deel");
       if (!deelCredential) {
         log.warn("No Deel HRMS credential found for processing webhook");
         return res.status(200).json({ message: "No Deel HRMS credential found, skipping processing" });
@@ -225,11 +224,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           (policy) => policy.name.toLowerCase() === payload.resource.type.toLowerCase()
         );
 
+        // Avoid adding placeholder reason back to Cal.com
+        const reason = payload.resource.reason?.startsWith("Synced From Cal.com") ? undefined: payload.resource.reason || undefined;
+
         await oooRepo.updateOOOEntry({
           uuid: reference.oooEntry.uuid,
           start: new Date(payload.resource.start_date),
           end: new Date(payload.resource.end_date),
-          notes: payload.resource.reason || undefined,
+          notes: reason,
           reasonId: 1,
           userId: reference.oooEntry.userId,
         });
