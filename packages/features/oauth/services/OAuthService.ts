@@ -218,10 +218,14 @@ export class OAuthService {
     ];
 
     if (error instanceof ErrorWithCode) {
+      const reason = error.data?.reason as OAuthErrorReason | undefined;
+      const errorDescription =
+        (reason && OAUTH_ERROR_REASONS[reason]) || ((error.data?.reason as string | undefined) ?? error.message);
+
       if (validOAuthErrors.includes(error.message)) {
         return {
           error: error.message,
-          errorDescription: (error.data?.reason as string | undefined) ?? error.message,
+          errorDescription,
         };
       }
 
@@ -229,17 +233,17 @@ export class OAuthService {
         case ErrorCode.BadRequest:
           return {
             error: "invalid_request",
-            errorDescription: (error.data?.reason as string | undefined) ?? error.message,
+            errorDescription,
           };
         case ErrorCode.Unauthorized:
           return {
             error: "unauthorized_client",
-            errorDescription: (error.data?.reason as string | undefined) ?? error.message,
+            errorDescription,
           };
         default:
           return {
             error: "server_error",
-            errorDescription: (error.data?.reason as string | undefined) ?? error.message,
+            errorDescription,
           };
       }
     }
@@ -485,5 +489,5 @@ export const OAUTH_ERROR_REASONS: Record<OAuthErrorReason, string> = {
   pkce_verification_failed: "invalid_grant",
   invalid_refresh_token: "invalid_grant",
   client_id_mismatch: "invalid_grant",
-  encryption_key_missing: "CALENDSO_ENCRYPTION_KEY is not set",
+  encryption_key_missing: "Internal server configuration error",
 };
