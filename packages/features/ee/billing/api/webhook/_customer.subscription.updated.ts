@@ -116,8 +116,15 @@ async function handleTeamBillingRenewal(
     await teamBillingRepo.updateById(teamBilling.id, billingUpdateData);
 
     // Reset high water mark for monthly billing on new period
-    if (billingPeriod === "MONTHLY" && subscriptionStart) {
-      await resetHighWaterMark(teamBilling.teamId, false, subscriptionStart);
+    if (billingPeriod === "MONTHLY") {
+      if (subscriptionStart) {
+        await resetHighWaterMark(teamBilling.teamId, false, subscriptionStart);
+      } else {
+        log.warn("Cannot reset high water mark: subscriptionStart is null for monthly team billing", {
+          teamId: teamBilling.teamId,
+          subscriptionId: subscription.id,
+        });
+      }
     }
 
     return { success: true, type: "team", teamId: teamBilling.teamId };
@@ -129,8 +136,15 @@ async function handleTeamBillingRenewal(
     await orgBillingRepo.updateById(orgBilling.id, billingUpdateData);
 
     // Reset high water mark for monthly billing on new period
-    if (billingPeriod === "MONTHLY" && subscriptionStart) {
-      await resetHighWaterMark(orgBilling.teamId, true, subscriptionStart);
+    if (billingPeriod === "MONTHLY") {
+      if (subscriptionStart) {
+        await resetHighWaterMark(orgBilling.teamId, true, subscriptionStart);
+      } else {
+        log.warn("Cannot reset high water mark: subscriptionStart is null for monthly org billing", {
+          teamId: orgBilling.teamId,
+          subscriptionId: subscription.id,
+        });
+      }
     }
 
     return { success: true, type: "organization", teamId: orgBilling.teamId };

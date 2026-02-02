@@ -2,7 +2,7 @@ import type { IFeaturesRepository } from "@calcom/features/flags/features.reposi
 import prisma from "@calcom/prisma";
 import type { Team, User } from "@calcom/prisma/client";
 import { MembershipRole } from "@calcom/prisma/enums";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HighWaterMarkRepository } from "../../../repository/highWaterMark/HighWaterMarkRepository";
 import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
@@ -84,6 +84,53 @@ describe("HighWaterMarkService Integration Tests", () => {
   let subscriptionId: string;
   let subscriptionItemId: string;
   let customerId: string;
+
+  afterEach(async () => {
+    // Clean up test data by pattern matching on test-specific prefixes
+    // This catches all entities created during tests without needing explicit tracking
+
+    // Find all test teams by slug pattern
+    const testTeams = await prisma.team.findMany({
+      where: {
+        OR: [
+          { slug: { startsWith: "test-hwm-" } },
+          { slug: { startsWith: "test-no-billing-" } },
+        ],
+      },
+      select: { id: true },
+    });
+    const testTeamIds = testTeams.map((t) => t.id);
+
+    if (testTeamIds.length > 0) {
+      // Delete in dependency order
+      await prisma.seatChangeLog.deleteMany({
+        where: { teamId: { in: testTeamIds } },
+      });
+      await prisma.teamBilling.deleteMany({
+        where: { teamId: { in: testTeamIds } },
+      });
+      await prisma.organizationBilling.deleteMany({
+        where: { teamId: { in: testTeamIds } },
+      });
+      await prisma.membership.deleteMany({
+        where: { teamId: { in: testTeamIds } },
+      });
+      await prisma.team.deleteMany({
+        where: { id: { in: testTeamIds } },
+      });
+    }
+
+    // Delete test users by email pattern
+    await prisma.user.deleteMany({
+      where: {
+        OR: [
+          { email: { startsWith: "test-hwm-" } },
+          { email: { startsWith: "test-e2e-" } },
+          { email: { startsWith: "test-lazy-init-" } },
+        ],
+      },
+    });
+  });
 
   beforeEach(async () => {
     const timestamp = Date.now();

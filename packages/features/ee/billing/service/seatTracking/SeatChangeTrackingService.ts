@@ -2,6 +2,7 @@ import { formatMonthKey } from "@calcom/features/ee/billing/lib/month-key";
 import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
 import { SeatChangeLogRepository } from "@calcom/features/ee/billing/repository/seatChangeLogs/SeatChangeLogRepository";
 import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
+import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
@@ -28,19 +29,38 @@ export interface MonthlyChanges {
   netChange: number;
 }
 
+export interface SeatChangeTrackingServiceDeps {
+  repository?: SeatChangeLogRepository;
+  highWaterMarkRepo?: HighWaterMarkRepository;
+  teamRepo?: MonthlyProrationTeamRepository;
+  featuresRepository?: IFeaturesRepository;
+}
+
 export class SeatChangeTrackingService {
   private repository: SeatChangeLogRepository;
   private highWaterMarkRepo: HighWaterMarkRepository;
   private teamRepo: MonthlyProrationTeamRepository;
+  private featuresRepository: IFeaturesRepository;
 
   constructor(
-    repository?: SeatChangeLogRepository,
+    repositoryOrDeps?: SeatChangeLogRepository | SeatChangeTrackingServiceDeps,
     highWaterMarkRepo?: HighWaterMarkRepository,
     teamRepo?: MonthlyProrationTeamRepository
   ) {
-    this.repository = repository || new SeatChangeLogRepository();
-    this.highWaterMarkRepo = highWaterMarkRepo || new HighWaterMarkRepository();
-    this.teamRepo = teamRepo || new MonthlyProrationTeamRepository();
+    // Support both old positional args and new deps object for backwards compatibility
+    if (repositoryOrDeps && typeof repositoryOrDeps === "object" && "featuresRepository" in repositoryOrDeps) {
+      const deps = repositoryOrDeps as SeatChangeTrackingServiceDeps;
+      this.repository = deps.repository || new SeatChangeLogRepository();
+      this.highWaterMarkRepo = deps.highWaterMarkRepo || new HighWaterMarkRepository();
+      this.teamRepo = deps.teamRepo || new MonthlyProrationTeamRepository();
+      this.featuresRepository = deps.featuresRepository || new FeaturesRepository(prisma);
+    } else {
+      // Legacy constructor signature
+      this.repository = (repositoryOrDeps as SeatChangeLogRepository) || new SeatChangeLogRepository();
+      this.highWaterMarkRepo = highWaterMarkRepo || new HighWaterMarkRepository();
+      this.teamRepo = teamRepo || new MonthlyProrationTeamRepository();
+      this.featuresRepository = new FeaturesRepository(prisma);
+    }
   }
 
   async logSeatAddition(params: SeatChangeLogParams): Promise<void> {
@@ -77,8 +97,7 @@ export class SeatChangeTrackingService {
   private async updateHighWaterMarkIfNeeded(teamId: number): Promise<void> {
     try {
       // Check if the feature is enabled
-      const featuresRepository = new FeaturesRepository(prisma);
-      const isFeatureEnabled = await featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
 
       if (!isFeatureEnabled) {
         return;
@@ -103,7 +122,12 @@ export class SeatChangeTrackingService {
       }
 
       // Use the billing period start as the HWM period start
-      const periodStart = billing.highWaterMarkPeriodStart || new Date();
+      // Prefer subscription start date over arbitrary new Date()
+      const periodStart = billing.highWaterMarkPeriodStart || billing.subscriptionStart;
+      if (!periodStart) {
+        log.warn(`Could not determine period start for team ${teamId} - no subscriptionStart available`);
+        return;
+      }
 
       const result = await this.highWaterMarkRepo.updateIfHigher({
         teamId,

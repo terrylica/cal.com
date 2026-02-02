@@ -1,5 +1,6 @@
 import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
 import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
+import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
@@ -15,33 +16,48 @@ export interface HighWaterMarkUpdateResult {
   newHighWaterMark: number;
 }
 
+export interface HighWaterMarkServiceDeps {
+  logger?: Logger<unknown>;
+  repository?: HighWaterMarkRepository;
+  teamRepository?: MonthlyProrationTeamRepository;
+  billingService?: IBillingProviderService;
+  featuresRepository?: IFeaturesRepository;
+}
+
 export class HighWaterMarkService {
   private logger: Logger<unknown>;
   private repository: HighWaterMarkRepository;
   private teamRepository: MonthlyProrationTeamRepository;
   private billingService?: IBillingProviderService;
+  private featuresRepository: IFeaturesRepository;
 
   constructor(
-    customLogger?: Logger<unknown>,
+    loggerOrDeps?: Logger<unknown> | HighWaterMarkServiceDeps,
     repository?: HighWaterMarkRepository,
     teamRepository?: MonthlyProrationTeamRepository,
     billingService?: IBillingProviderService
   ) {
-    this.logger = customLogger || log;
-    this.repository = repository || new HighWaterMarkRepository();
-    this.teamRepository = teamRepository || new MonthlyProrationTeamRepository();
-    this.billingService = billingService;
-  }
-
-  async isMonthlyBilling(teamId: number): Promise<boolean> {
-    const billing = await this.repository.getByTeamId(teamId);
-    return billing?.billingPeriod === "MONTHLY";
+    // Support both old positional args and new deps object for backwards compatibility
+    if (loggerOrDeps && typeof loggerOrDeps === "object" && "logger" in loggerOrDeps) {
+      const deps = loggerOrDeps as HighWaterMarkServiceDeps;
+      this.logger = deps.logger || log;
+      this.repository = deps.repository || new HighWaterMarkRepository();
+      this.teamRepository = deps.teamRepository || new MonthlyProrationTeamRepository();
+      this.billingService = deps.billingService;
+      this.featuresRepository = deps.featuresRepository || new FeaturesRepository(prisma);
+    } else {
+      // Legacy constructor signature
+      this.logger = (loggerOrDeps as Logger<unknown>) || log;
+      this.repository = repository || new HighWaterMarkRepository();
+      this.teamRepository = teamRepository || new MonthlyProrationTeamRepository();
+      this.billingService = billingService;
+      this.featuresRepository = new FeaturesRepository(prisma);
+    }
   }
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const featuresRepository = new FeaturesRepository(prisma);
-      const isFeatureEnabled = await featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
 
       if (!isFeatureEnabled) {
         return false;
@@ -162,7 +178,13 @@ export class HighWaterMarkService {
       }
 
       // Initialize HWM to current member count
-      const periodStart = billing.highWaterMarkPeriodStart || new Date();
+      // Prefer subscription start date over arbitrary new Date()
+      const periodStart = billing.highWaterMarkPeriodStart || billing.subscriptionStart;
+      if (!periodStart) {
+        this.logger.warn(`Could not determine period start for team ${teamId} during lazy init - no subscriptionStart available`);
+        return false;
+      }
+
       await this.repository.reset({
         teamId,
         isOrganization,

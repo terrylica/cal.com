@@ -13,6 +13,7 @@ export interface HighWaterMarkData {
   subscriptionId: string;
   subscriptionItemId: string;
   customerId: string;
+  subscriptionStart: Date | null;
 }
 
 export interface HighWaterMarkBySubscriptionData {
@@ -25,6 +26,7 @@ export interface HighWaterMarkBySubscriptionData {
   billingPeriod: BillingPeriod | null;
   subscriptionId: string;
   subscriptionItemId: string;
+  subscriptionStart: Date | null;
 }
 
 export class HighWaterMarkRepository {
@@ -50,6 +52,7 @@ export class HighWaterMarkRepository {
             subscriptionId: true,
             subscriptionItemId: true,
             customerId: true,
+            subscriptionStart: true,
           },
         },
         organizationBilling: {
@@ -63,6 +66,7 @@ export class HighWaterMarkRepository {
             subscriptionId: true,
             subscriptionItemId: true,
             customerId: true,
+            subscriptionStart: true,
           },
         },
       },
@@ -92,6 +96,7 @@ export class HighWaterMarkRepository {
         billingPeriod: true,
         subscriptionId: true,
         subscriptionItemId: true,
+        subscriptionStart: true,
       },
     });
 
@@ -114,6 +119,7 @@ export class HighWaterMarkRepository {
         billingPeriod: true,
         subscriptionId: true,
         subscriptionItemId: true,
+        subscriptionStart: true,
       },
     });
 
