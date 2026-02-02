@@ -340,6 +340,20 @@ export class MembershipRepository {
     });
   }
 
+  async findRoleByUserIdAndTeamId({ userId, teamId }: { userId: number; teamId: number }) {
+    return await this.prismaClient.membership.findUnique({
+      where: {
+        userId_teamId: {
+          userId,
+          teamId,
+        },
+      },
+      select: {
+        role: true,
+      },
+    });
+  }
+
   async findAllMembershipsByUserIdForBilling({ userId }: { userId: number }) {
     return this.prismaClient.membership.findMany({
       where: { userId },

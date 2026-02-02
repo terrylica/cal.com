@@ -8,6 +8,7 @@ import { getOrganizationRepository } from "@calcom/features/ee/organizations/di/
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
 import { OrganizationRepository } from "@calcom/features/ee/organizations/repositories/OrganizationRepository";
 import { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
+import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { WEBSITE_URL } from "@calcom/lib/constants";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
@@ -177,30 +178,13 @@ export const getEventTypeById = async ({
 
   const isOrgEventType = !!eventTypeObject.team?.parentId;
 
-  // Find the current users membership so we can check role to enable/disable deletion.
-  // Sets to null if no membership is found - this must mean we are in a none team event type.
-  // Since team.members is fetched with take: 0 for performance, we query separately.
-  // The select shape must match the original team.members select for type compatibility.
+  // Find the current user's membership role to enable/disable deletion in the UI.
+  // Null when not a team event type.
+  const membershipRepo = new MembershipRepository(prisma);
   const currentUserMembership = rawEventType.team
-    ? await prisma.membership.findFirst({
-        where: {
-          teamId: rawEventType.team.id,
-          userId: userId,
-        },
-        select: {
-          role: true,
-          accepted: true,
-          user: {
-            select: {
-              ...userSelect,
-              eventTypes: {
-                select: {
-                  slug: true,
-                },
-              },
-            },
-          },
-        },
+    ? await membershipRepo.findRoleByUserIdAndTeamId({
+        userId,
+        teamId: rawEventType.team.id,
       })
     : null;
 
