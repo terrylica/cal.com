@@ -16,6 +16,12 @@ export const getBrand = async (orgId: number | null) => {
       slug: true,
       metadata: true,
       isPlatform: true,
+      customDomain: {
+        select: {
+          slug: true,
+          verified: true,
+        },
+      },
     },
   });
   if (!org) {
@@ -29,7 +35,11 @@ export const getBrand = async (orgId: number | null) => {
 
   const metadata = teamMetadataSchema.parse(org.metadata);
   const slug = (org.slug || metadata?.requestedSlug) as string;
-  const fullDomain = getOrgFullOrigin(slug);
+
+  const verifiedCustomDomainSlug = org.customDomain?.verified ? org.customDomain.slug : null;
+  const fullDomain = verifiedCustomDomainSlug
+    ? `https://${verifiedCustomDomainSlug}`
+    : getOrgFullOrigin(slug);
   const domainSuffix = subdomainSuffix();
 
   return {
@@ -38,5 +48,6 @@ export const getBrand = async (orgId: number | null) => {
     slug,
     fullDomain,
     domainSuffix,
+    customDomain: org.customDomain?.verified ? org.customDomain.slug : null,
   };
 };

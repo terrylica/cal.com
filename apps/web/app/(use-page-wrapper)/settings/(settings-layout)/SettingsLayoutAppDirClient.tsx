@@ -205,6 +205,11 @@ const getTabs = (orgBranding: OrganizationBranding | null) => {
           trackingMetadata: { section: "organization", page: "directory_sync" },
         },
         {
+          name: "custom_domain",
+          href: "/settings/organizations/domain",
+          trackingMetadata: { section: "organization", page: "custom_domain" },
+        },
+        {
           name: "admin_api",
           href: "https://cal.com/docs/enterprise-features/api/api-reference/bookings#admin-access",
           isExternalLink: true,

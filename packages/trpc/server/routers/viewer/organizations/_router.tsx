@@ -38,6 +38,10 @@ import { ZOrgPasswordResetSchema } from "./sendPasswordReset.schema";
 import { ZSetPasswordSchema } from "./setPassword.schema";
 import { ZUpdateInputSchema } from "./update.schema";
 import { ZUpdateUserInputSchema } from "./updateUser.schema";
+import { ZGetInputSchema as ZCustomDomainGetInputSchema } from "./customDomain.get.schema";
+import { ZAddInputSchema as ZCustomDomainAddInputSchema } from "./customDomain.add.schema";
+import { ZRemoveInputSchema as ZCustomDomainRemoveInputSchema } from "./customDomain.remove.schema";
+import { ZVerifyInputSchema as ZCustomDomainVerifyInputSchema } from "./customDomain.verify.schema";
 
 export const viewerOrganizationsRouter = router({
   getOrganizationOnboarding: authedProcedure.query(async (opts) => {
@@ -218,6 +222,26 @@ export const viewerOrganizationsRouter = router({
     }),
   pendingReportsCount: authedOrgAdminProcedure.query(async (opts) => {
     const { default: handler } = await import("./pendingReportsCount.handler");
+    return handler(opts);
+  }),
+
+  getCustomDomain: authedProcedure.input(ZCustomDomainGetInputSchema).query(async (opts) => {
+    const { default: handler } = await import("./customDomain.get.handler");
+    return handler(opts);
+  }),
+
+  addCustomDomain: authedProcedure.input(ZCustomDomainAddInputSchema).mutation(async (opts) => {
+    const { default: handler } = await import("./customDomain.add.handler");
+    return handler(opts);
+  }),
+
+  removeCustomDomain: authedProcedure.input(ZCustomDomainRemoveInputSchema).mutation(async (opts) => {
+    const { default: handler } = await import("./customDomain.remove.handler");
+    return handler(opts);
+  }),
+
+  verifyCustomDomain: authedProcedure.input(ZCustomDomainVerifyInputSchema).query(async (opts) => {
+    const { default: handler } = await import("./customDomain.verify.handler");
     return handler(opts);
   }),
 });
