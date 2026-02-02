@@ -713,6 +713,91 @@ describe("handleMarkNoShow", () => {
       expectAttendeeNoShowState(bookingUid, "attendee2@example.com", false);
     });
 
+    it("should gracefully handle non-existent attendee emails", async () => {
+      const bookingUid = "test-booking-non-existent-attendee";
+      createMockBooking({ uid: bookingUid });
+      createMockAttendee({ bookingUid, email: "attendee1@example.com", noShow: false });
+
+      const result = await handleMarkNoShow({
+        bookingUid,
+        attendees: [
+          { email: "attendee1@example.com", noShow: true },
+          { email: "non-existent@example.com", noShow: true },
+        ],
+        userId: 123,
+        actor: makeUserActor("user-uuid-123"),
+        actionSource: "WEBAPP",
+      });
+
+      expect(result.attendees).toHaveLength(1);
+      expect(result.attendees[0].email).toBe("attendee1@example.com");
+      expect(result.attendees[0].noShow).toBe(true);
+      expectAttendeeNoShowState(bookingUid, "attendee1@example.com", true);
+    });
+
+    it("should only audit successfully updated attendees, not failed ones", async () => {
+      const bookingUid = "test-booking-audit-only-successful";
+      createMockBooking({ uid: bookingUid });
+      const attendee1 = createMockAttendee({ bookingUid, email: "attendee1@example.com", noShow: false });
+      const attendee2 = createMockAttendee({ bookingUid, email: "attendee2@example.com", noShow: false });
+      const attendee3 = createMockAttendee({ bookingUid, email: "attendee3@example.com", noShow: false });
+
+      // Mock updateNoShow to fail for attendee2
+      mockUpdateNoShow.mockImplementation(
+        ({
+          where: { attendeeId },
+          data: { noShow },
+        }: {
+          where: { attendeeId: number };
+          data: { noShow: boolean };
+        }) => {
+          // Simulate database error for attendee2
+          if (attendeeId === attendee2.id) {
+            return Promise.reject(new Error("Database error"));
+          }
+
+          for (const bookingUid of Object.keys(DB.attendees)) {
+            const attendee = DB.attendees[bookingUid].find((a) => a.id === attendeeId);
+            if (attendee) {
+              attendee.noShow = noShow;
+              return Promise.resolve({ noShow, email: attendee.email });
+            }
+          }
+          return Promise.resolve(null);
+        }
+      );
+
+      await handleMarkNoShow({
+        bookingUid,
+        attendees: [
+          { email: "attendee1@example.com", noShow: true },
+          { email: "attendee2@example.com", noShow: true }, // This will fail
+          { email: "attendee3@example.com", noShow: true },
+        ],
+        userId: 123,
+        actor: makeUserActor("user-uuid-123"),
+        actionSource: "WEBAPP",
+      });
+
+      // Audit should only contain attendee1 and attendee3, not attendee2
+      expectNoShowBookingAudit({
+        bookingUid,
+        source: "WEBAPP",
+        actor: { identifiedBy: "user", userUuid: "user-uuid-123" },
+        organizationId: null,
+        attendeesNoShow: [
+          { attendeeEmail: "attendee1@example.com", noShow: { old: false, new: true } },
+          { attendeeEmail: "attendee3@example.com", noShow: { old: false, new: true } },
+        ],
+      });
+
+      const call = mockOnNoShowUpdated.mock.calls[0][0];
+      expect(call.auditData.attendeesNoShow).toHaveLength(2);
+      expect(call.auditData.attendeesNoShow.map((a: { attendeeEmail: string }) => a.attendeeEmail)).not.toContain(
+        "attendee2@example.com"
+      );
+    });
+
     it("should not fire audit event when nothing changed", async () => {
       const bookingUid = "test-booking-no-change";
       createMockBooking({ uid: bookingUid });

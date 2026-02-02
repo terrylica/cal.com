@@ -255,6 +255,8 @@ const handleMarkNoShow = async ({
       getBookingAttendeesFromEmails(bookingUid, attendeeEmails),
     ]);
 
+    let successfullyUpdatedAttendees: NoShowAttendees | undefined;
+
     if (attendees && attendeeEmails.length > 0) {
       await assertCanAccessBooking(bookingUid, userId);
 
@@ -263,6 +265,7 @@ const handleMarkNoShow = async ({
         t,
         emailToAttendeeMap,
       });
+      successfullyUpdatedAttendees = payload.attendees;
       const { webhooks, bookingId } = await getWebhooksService({
         platformClientId: platformClientParams?.platformClientId,
         orgId,
@@ -392,7 +395,7 @@ const handleMarkNoShow = async ({
       booking,
       updatedNoShowHost: noShowHost,
       hostUserUuid: booking.user?.uuid,
-      updatedAttendees: attendees,
+      updatedAttendees: successfullyUpdatedAttendees,
       emailToAttendeeMap,
       actor,
       orgId: orgId ?? null,
