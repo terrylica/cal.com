@@ -59,6 +59,41 @@ describe("OAuth2 Controller Endpoints", () => {
         .expect(401);
     });
 
+    it("POST /v2/auth/oauth2/clients/:clientId/exchange should return 401 without auth", () => {
+      return request(appWithoutAuth.getHttpServer())
+        .post("/api/v2/auth/oauth2/clients/test-client-id/exchange")
+        .send({
+          code: "test-code",
+          clientSecret: "test-secret",
+          redirectUri: "https://example.com/callback",
+        })
+        .expect(401);
+    });
+
+    it("POST /v2/auth/oauth2/clients/:clientId/refresh should return 401 without auth", () => {
+      return request(appWithoutAuth.getHttpServer())
+        .post("/api/v2/auth/oauth2/clients/test-client-id/refresh")
+        .send({
+          refreshToken: "test-refresh-token",
+          clientSecret: "test-secret",
+        })
+        .expect(401);
+    });
+
+    it("POST /v2/auth/oauth2/token should return 401 without auth", () => {
+      return request(appWithoutAuth.getHttpServer())
+        .post("/api/v2/auth/oauth2/token")
+        .type("form")
+        .send({
+          client_id: "test-client-id",
+          grant_type: "authorization_code",
+          code: "test-code",
+          client_secret: "test-secret",
+          redirect_uri: "https://example.com/callback",
+        })
+        .expect(401);
+    });
+
     afterAll(async () => {
       await appWithoutAuth.close();
     });
@@ -174,13 +209,16 @@ describe("OAuth2 Controller Endpoints", () => {
       });
 
       it("should return 404 for invalid client ID (not redirect)", async () => {
-        await request(app.getHttpServer())
+        const response = await request(app.getHttpServer())
           .post("/api/v2/auth/oauth2/clients/invalid-client-id/authorize")
           .send({
             redirect_uri: testRedirectUri,
             scopes: [AccessScope.READ_BOOKING],
           })
           .expect(404);
+
+        expect(response.body.error).toBe("unauthorized_client");
+        expect(response.body.error_description).toBe("client_not_found");
       });
 
       it("should redirect with error for invalid team slug", async () => {
@@ -197,11 +235,12 @@ describe("OAuth2 Controller Endpoints", () => {
         expect(response.headers.location).toBeDefined();
         const redirectUrl = new URL(response.headers.location);
         expect(redirectUrl.searchParams.get("error")).toBe("access_denied");
+        expect(redirectUrl.searchParams.get("error_description")).toBe("team_not_found_or_no_access");
         expect(redirectUrl.searchParams.get("state")).toBe("test-state-456");
       });
 
       it("should return 400 for mismatched redirect URI (not redirect)", async () => {
-        await request(app.getHttpServer())
+        const response = await request(app.getHttpServer())
           .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
           .send({
             redirect_uri: "https://wrong-domain.com/callback",
@@ -209,6 +248,9 @@ describe("OAuth2 Controller Endpoints", () => {
             state: "test-state-789",
           })
           .expect(400);
+
+        expect(response.body.error).toBe("invalid_request");
+        expect(response.body.error_description).toBe("redirect_uri_mismatch");
       });
 
       it("should return 401 for unapproved client (not redirect)", async () => {
@@ -224,7 +266,7 @@ describe("OAuth2 Controller Endpoints", () => {
         });
 
         try {
-          await request(app.getHttpServer())
+          const response = await request(app.getHttpServer())
             .post(`/api/v2/auth/oauth2/clients/${pendingClientId}/authorize`)
             .send({
               redirect_uri: testRedirectUri,
@@ -232,6 +274,9 @@ describe("OAuth2 Controller Endpoints", () => {
               state: "test-state-pending",
             })
             .expect(401);
+
+          expect(response.body.error).toBe("unauthorized_client");
+          expect(response.body.error_description).toBe("client_not_approved");
         } finally {
           await oAuthClientFixture.delete(pendingClientId);
         }
@@ -338,7 +383,7 @@ describe("OAuth2 Controller Endpoints", () => {
       });
 
       it("should return 400 for invalid grant type", async () => {
-        await request(app.getHttpServer())
+        const response = await request(app.getHttpServer())
           .post("/api/v2/auth/oauth2/token")
           .type("form")
           .send({
@@ -348,6 +393,9 @@ describe("OAuth2 Controller Endpoints", () => {
             redirect_uri: testRedirectUri,
           })
           .expect(400);
+
+        expect(response.body.error).toBe("invalid_request");
+        expect(response.body.error_description).toBe("grant_type must be 'authorization_code' or 'refresh_token'");
       });
 
       it("should return 400 with RFC 6749 error when client_id is missing", async () => {

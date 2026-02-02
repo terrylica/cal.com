@@ -41,7 +41,7 @@ import type { OAuth2TokenInput } from "@/modules/auth/oauth2/inputs/token.input.
 import { OAuth2TokenInputPipe } from "@/modules/auth/oauth2/inputs/token.input.pipe";
 import { OAuth2ClientDto, OAuth2ClientResponseDto } from "@/modules/auth/oauth2/outputs/oauth2-client.output";
 import { OAuth2TokensDto } from "@/modules/auth/oauth2/outputs/oauth2-tokens.output";
-import { OAuth2ErrorHandler } from "@/modules/auth/oauth2/services/oauth2-error.handler";
+import { OAuth2ErrorService } from "@/modules/auth/oauth2/services/oauth2-error.service";
 
 @Controller({
   path: "/v2/auth/oauth2",
@@ -52,7 +52,7 @@ import { OAuth2ErrorHandler } from "@/modules/auth/oauth2/services/oauth2-error.
 export class OAuth2Controller {
   constructor(
     private readonly oAuthService: OAuthService,
-    private readonly errorHandler: OAuth2ErrorHandler
+    private readonly errorHandler: OAuth2ErrorService
   ) {}
 
   @Get("/clients/:clientId")
