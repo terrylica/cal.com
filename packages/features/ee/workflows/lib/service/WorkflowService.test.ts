@@ -791,7 +791,7 @@ describe("WorkflowService.generateCommonScheduleFunctionParams", () => {
     expect(result.organizationId).toBe(200);
   });
 
-  test("should return null organizationId when evtOrganizationId is not provided", () => {
+  test("should return null organizationId when evtOrganizationId is not provided and workflow has no team", () => {
     const verifiedAt = new Date("2024-01-01T00:00:00Z");
     const mockWorkflow = {
       id: 1,
@@ -808,6 +808,175 @@ describe("WorkflowService.generateCommonScheduleFunctionParams", () => {
       action: WorkflowActions.EMAIL_ATTENDEE,
       sendTo: null,
       template: WorkflowTemplates.REMINDER,
+      reminderBody: null,
+      emailSubject: null,
+      sender: null,
+      includeCalendarEvent: false,
+      verifiedAt,
+      numberVerificationPending: false,
+      numberRequired: false,
+    };
+
+    const mockCreditCheckFn = vi.fn();
+
+    const result = WorkflowService.generateCommonScheduleFunctionParams({
+      workflow: mockWorkflow,
+      workflowStep: mockWorkflowStep,
+      seatReferenceUid: undefined,
+      creditCheckFn: mockCreditCheckFn,
+    });
+
+    expect(result.organizationId).toBeNull();
+  });
+
+  test("should extract organizationId from workflow team when team is an organization", () => {
+    const verifiedAt = new Date("2024-01-01T00:00:00Z");
+    const mockWorkflow = {
+      id: 1,
+      name: "Org Workflow",
+      trigger: WorkflowTriggerEvents.FORM_SUBMITTED,
+      time: null,
+      timeUnit: null,
+      userId: null,
+      teamId: 100,
+      team: {
+        isOrganization: true,
+        parentId: null,
+      },
+    };
+
+    const mockWorkflowStep = {
+      id: 1,
+      action: WorkflowActions.EMAIL_ATTENDEE,
+      sendTo: null,
+      template: WorkflowTemplates.CUSTOM,
+      reminderBody: null,
+      emailSubject: null,
+      sender: null,
+      includeCalendarEvent: false,
+      verifiedAt,
+      numberVerificationPending: false,
+      numberRequired: false,
+    };
+
+    const mockCreditCheckFn = vi.fn();
+
+    const result = WorkflowService.generateCommonScheduleFunctionParams({
+      workflow: mockWorkflow,
+      workflowStep: mockWorkflowStep,
+      seatReferenceUid: undefined,
+      creditCheckFn: mockCreditCheckFn,
+    });
+
+    expect(result.organizationId).toBe(100);
+  });
+
+  test("should extract organizationId from workflow team parentId when team is a child of org", () => {
+    const verifiedAt = new Date("2024-01-01T00:00:00Z");
+    const mockWorkflow = {
+      id: 1,
+      name: "Team Workflow",
+      trigger: WorkflowTriggerEvents.FORM_SUBMITTED,
+      time: null,
+      timeUnit: null,
+      userId: null,
+      teamId: 200,
+      team: {
+        isOrganization: false,
+        parentId: 100,
+      },
+    };
+
+    const mockWorkflowStep = {
+      id: 1,
+      action: WorkflowActions.EMAIL_ATTENDEE,
+      sendTo: null,
+      template: WorkflowTemplates.CUSTOM,
+      reminderBody: null,
+      emailSubject: null,
+      sender: null,
+      includeCalendarEvent: false,
+      verifiedAt,
+      numberVerificationPending: false,
+      numberRequired: false,
+    };
+
+    const mockCreditCheckFn = vi.fn();
+
+    const result = WorkflowService.generateCommonScheduleFunctionParams({
+      workflow: mockWorkflow,
+      workflowStep: mockWorkflowStep,
+      seatReferenceUid: undefined,
+      creditCheckFn: mockCreditCheckFn,
+    });
+
+    expect(result.organizationId).toBe(100);
+  });
+
+  test("should prefer evtOrganizationId over workflow team organizationId", () => {
+    const verifiedAt = new Date("2024-01-01T00:00:00Z");
+    const mockWorkflow = {
+      id: 1,
+      name: "Org Workflow",
+      trigger: WorkflowTriggerEvents.NEW_EVENT,
+      time: null,
+      timeUnit: null,
+      userId: null,
+      teamId: 100,
+      team: {
+        isOrganization: true,
+        parentId: null,
+      },
+    };
+
+    const mockWorkflowStep = {
+      id: 1,
+      action: WorkflowActions.EMAIL_ATTENDEE,
+      sendTo: null,
+      template: WorkflowTemplates.REMINDER,
+      reminderBody: null,
+      emailSubject: null,
+      sender: null,
+      includeCalendarEvent: false,
+      verifiedAt,
+      numberVerificationPending: false,
+      numberRequired: false,
+    };
+
+    const mockCreditCheckFn = vi.fn();
+
+    const result = WorkflowService.generateCommonScheduleFunctionParams({
+      workflow: mockWorkflow,
+      workflowStep: mockWorkflowStep,
+      seatReferenceUid: undefined,
+      creditCheckFn: mockCreditCheckFn,
+      evtOrganizationId: 999,
+    });
+
+    expect(result.organizationId).toBe(999);
+  });
+
+  test("should return null organizationId when team exists but is not an org and has no parentId", () => {
+    const verifiedAt = new Date("2024-01-01T00:00:00Z");
+    const mockWorkflow = {
+      id: 1,
+      name: "Standalone Team Workflow",
+      trigger: WorkflowTriggerEvents.FORM_SUBMITTED,
+      time: null,
+      timeUnit: null,
+      userId: null,
+      teamId: 50,
+      team: {
+        isOrganization: false,
+        parentId: null,
+      },
+    };
+
+    const mockWorkflowStep = {
+      id: 1,
+      action: WorkflowActions.EMAIL_ATTENDEE,
+      sendTo: null,
+      template: WorkflowTemplates.CUSTOM,
       reminderBody: null,
       emailSubject: null,
       sender: null,
