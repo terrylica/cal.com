@@ -63,6 +63,7 @@ export const outOfOfficeEntryDelete = async ({ ctx, input }: TBookingRedirectDel
               id: true,
               type: true,
               key: true,
+              encryptedKey: true,
               appId: true,
               userId: true,
               teamId: true,
