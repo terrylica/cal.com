@@ -39,7 +39,7 @@ import type {
   EditFormRoute,
   AttributeRoutingConfig,
 } from "@calcom/app-store/routing-forms/types/types";
-import { RouteActionType, NoUsersFoundFallbackActionType } from "@calcom/app-store/routing-forms/zod";
+import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import type { EventTypesByViewer } from "@calcom/features/eventtypes/lib/getEventTypesByViewer";
 import { areTheySiblingEntities } from "@calcom/lib/entityPermissionUtils.shared";
@@ -342,136 +342,6 @@ const WeightedAttributesSelector = ({
   ) : null;
 };
 
-const NoUsersFoundFallbackOptions: {
-  label: string;
-  value: NoUsersFoundFallbackActionType;
-}[] = [
-  {
-    label: "Custom page",
-    value: NoUsersFoundFallbackActionType.CustomPageMessage,
-  },
-  {
-    label: "External redirect",
-    value: NoUsersFoundFallbackActionType.ExternalRedirectUrl,
-  },
-];
-
-const NoUsersFoundFallback = ({
-  route,
-  setRoute,
-  disabled,
-}: {
-  route: EditFormRoute;
-  setRoute: SetRoute;
-  disabled?: boolean;
-}) => {
-  const { t } = useLocale();
-
-  if (isRouter(route)) {
-    return null;
-  }
-
-  const noUsersFoundFallbackAction = route.noUsersFoundFallbackAction;
-  const isEnabled = !!noUsersFoundFallbackAction;
-
-  const handleToggle = (checked: boolean) => {
-    if (checked) {
-      setRoute(route.id, {
-        noUsersFoundFallbackAction: {
-          type: NoUsersFoundFallbackActionType.CustomPageMessage,
-          value: t("no_users_available_message"),
-        },
-      });
-    } else {
-      setRoute(route.id, {
-        noUsersFoundFallbackAction: undefined,
-      });
-    }
-  };
-
-  return (
-    <div className="bg-default border-subtle mt-4 rounded-2xl border px-4 py-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-0.5">
-          <div className="border-subtle rounded-lg border p-1">
-            <Icon name="user-x" className="text-subtle h-4 w-4" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-emphasis ml-2 text-sm font-medium">{t("no_users_found_fallback")}</span>
-            <span className="text-subtle ml-2 text-sm">{t("no_users_found_fallback_description")}</span>
-          </div>
-        </div>
-        <Switch size="sm" checked={isEnabled} onCheckedChange={handleToggle} disabled={disabled} />
-      </div>
-      {isEnabled && noUsersFoundFallbackAction && (
-        <div className="bg-cal-muted mt-2 rounded-xl p-2">
-          <div className="flex w-full flex-col gap-2 text-sm lg:flex-row">
-            <div className="flex grow items-center gap-2">
-              <Select
-                size="sm"
-                isDisabled={disabled}
-                className="block w-full grow"
-                required
-                value={NoUsersFoundFallbackOptions.find(
-                  (option) => option.value === noUsersFoundFallbackAction.type
-                )}
-                onChange={(item) => {
-                  if (!item) {
-                    return;
-                  }
-                  const newAction = {
-                    type: item.value,
-                    value:
-                      item.value === NoUsersFoundFallbackActionType.CustomPageMessage
-                        ? t("no_users_available_message")
-                        : "",
-                  };
-                  setRoute(route.id, { noUsersFoundFallbackAction: newAction });
-                }}
-                options={NoUsersFoundFallbackOptions}
-              />
-            </div>
-            {noUsersFoundFallbackAction.type === NoUsersFoundFallbackActionType.CustomPageMessage ? (
-              <TextArea
-                required
-                disabled={disabled}
-                name="noUsersFoundCustomPageMessage"
-                className="border-default flex grow lg:w-fit"
-                style={{
-                  minHeight: "38px",
-                }}
-                value={noUsersFoundFallbackAction.value}
-                onChange={(e) => {
-                  setRoute(route.id, {
-                    noUsersFoundFallbackAction: { ...noUsersFoundFallbackAction, value: e.target.value },
-                  });
-                }}
-              />
-            ) : (
-              <TextField
-                disabled={disabled}
-                name="noUsersFoundExternalRedirectUrl"
-                className="border-default flex grow text-sm"
-                containerClassName="grow"
-                type="url"
-                required
-                labelSrOnly
-                value={noUsersFoundFallbackAction.value}
-                onChange={(e) => {
-                  setRoute(route.id, {
-                    noUsersFoundFallbackAction: { ...noUsersFoundFallbackAction, value: e.target.value },
-                  });
-                }}
-                placeholder="https://example.com"
-              />
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 const Route = ({
   form,
   route,
@@ -730,6 +600,11 @@ const Route = ({
       </div>
     ) : null;
 
+  const fallbackActionOptions = eventTypeRedirectUrlOptions;
+  const fallbackActionSelectedOption = route.fallbackAction?.eventTypeId
+    ? eventTypeRedirectUrlOptions.find((option) => option.eventTypeId === route.fallbackAction?.eventTypeId)
+    : eventTypeRedirectUrlOptions.find((option) => option.value === route.fallbackAction?.value);
+
   const fallbackAttributesQueryBuilder =
     route.action?.type === RouteActionType.EventTypeRedirectUrl && isTeamForm ? (
       <div className="bg-default border-subtle cal-query-builder-container mt-2 rounded-2xl border p-2">
@@ -754,6 +629,101 @@ const Route = ({
               renderBuilder={renderBuilder}
             />
           )}
+        <div className="bg-cal-muted mt-2 rounded-xl p-2">
+          <div className="mb-2 ml-2 flex items-center gap-0.5">
+            <div className="border-subtle rounded-lg border p-1">
+              <Icon name="arrow-right" className="text-subtle h-4 w-4" />
+            </div>
+            <span className="text-emphasis ml-2 text-sm font-medium">{t("fallback_action")}</span>
+          </div>
+          <div className="flex w-full flex-col gap-2 text-sm lg:flex-row">
+            <div className="flex grow items-center gap-2">
+              <Select
+                size="sm"
+                isDisabled={disabled}
+                className="block w-full grow"
+                required
+                value={RoutingPages.find((page) => page.value === route.fallbackAction?.type)}
+                onChange={(item) => {
+                  if (!item) {
+                    return;
+                  }
+                  const fallbackAction: LocalRoute["action"] = {
+                    type: item.value,
+                    value: "",
+                  };
+
+                  if (fallbackAction.type === "customPageMessage") {
+                    fallbackAction.value = "We are not ready for you yet :(";
+                  } else {
+                    fallbackAction.value = "";
+                  }
+
+                  setRoute(route.id, { fallbackAction });
+                }}
+                options={RoutingPages}
+              />
+            </div>
+            {route.fallbackAction?.type ? (
+              route.fallbackAction?.type === "customPageMessage" ? (
+                <TextArea
+                  required
+                  disabled={disabled}
+                  name="fallbackCustomPageMessage"
+                  className="border-default flex grow lg:w-fit"
+                  style={{
+                    minHeight: "38px",
+                  }}
+                  value={route.fallbackAction.value}
+                  onChange={(e) => {
+                    setRoute(route.id, {
+                      fallbackAction: { ...route.fallbackAction, value: e.target.value },
+                    });
+                  }}
+                />
+              ) : route.fallbackAction?.type === "externalRedirectUrl" ? (
+                <TextField
+                  disabled={disabled}
+                  name="fallbackExternalRedirectUrl"
+                  className="border-default flex grow text-sm"
+                  containerClassName="grow"
+                  type="url"
+                  required
+                  labelSrOnly
+                  value={route.fallbackAction.value}
+                  onChange={(e) => {
+                    setRoute(route.id, {
+                      fallbackAction: { ...route.fallbackAction, value: e.target.value },
+                    });
+                  }}
+                  placeholder="https://example.com"
+                />
+              ) : (
+                <div className="grow">
+                  <Select
+                    size="sm"
+                    required
+                    isDisabled={disabled}
+                    options={fallbackActionOptions}
+                    onChange={(option) => {
+                      if (!option) {
+                        return;
+                      }
+                      setRoute(route.id, {
+                        fallbackAction: {
+                          ...route.fallbackAction,
+                          value: option.value,
+                          eventTypeId: option.eventTypeId,
+                        },
+                      });
+                    }}
+                    value={fallbackActionSelectedOption}
+                  />
+                </div>
+              )
+            ) : null}
+          </div>
+        </div>
       </div>
     ) : null;
 
@@ -1066,9 +1036,6 @@ const Route = ({
               setRoute={setRoute}
             />
             {fallbackAttributesQueryBuilder ? <>{fallbackAttributesQueryBuilder}</> : null}
-            {route.action?.type === RouteActionType.EventTypeRedirectUrl && isTeamForm && (
-              <NoUsersFoundFallback route={route} setRoute={setRoute} disabled={disabled} />
-            )}
           </div>
         </div>
       </div>

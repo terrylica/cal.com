@@ -222,11 +222,9 @@ const _handleResponse = async ({
         };
       }
     }
-    const getNoUsersFoundFallbackAction = () => {
-      const noUsersFound =
-        teamMemberIdsMatchingAttributeLogic !== null && teamMemberIdsMatchingAttributeLogic.length === 0;
-      if (noUsersFound && chosenRoute && "noUsersFoundFallbackAction" in chosenRoute) {
-        return chosenRoute.noUsersFoundFallbackAction;
+    const getFallbackAction = () => {
+      if (chosenRoute && "fallbackAction" in chosenRoute) {
+        return chosenRoute.fallbackAction;
       }
       return null;
     };
@@ -247,7 +245,7 @@ const _handleResponse = async ({
         : null,
       checkedFallback,
       timeTaken,
-      noUsersFoundFallbackAction: getNoUsersFoundFallbackAction(),
+      fallbackAction: getFallbackAction(),
     };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
