@@ -614,27 +614,12 @@ const Route = ({
           </div>
           <span className="text-emphasis ml-2 text-sm font-medium">Fallback</span>
         </div>
-        {route.fallbackAttributesQueryBuilderState &&
-          attributesQueryBuilderConfigWithRaqbSettingsAndWidgets && (
-            <Query
-              {...attributesQueryBuilderConfigWithRaqbSettingsAndWidgets}
-              value={route.fallbackAttributesQueryBuilderState.tree}
-              onChange={(immutableTree, attributesQueryBuilderConfig) => {
-                onChangeFallbackTeamMembersQuery(
-                  route,
-                  immutableTree,
-                  attributesQueryBuilderConfig as unknown as AttributesQueryBuilderConfigWithRaqbFields
-                );
-              }}
-              renderBuilder={renderBuilder}
-            />
-          )}
         <div className="bg-cal-muted mt-2 rounded-xl p-2">
           <div className="mb-2 ml-2 flex items-center gap-0.5">
             <div className="border-subtle rounded-lg border p-1">
               <Icon name="arrow-right" className="text-subtle h-4 w-4" />
             </div>
-            <span className="text-emphasis ml-2 text-sm font-medium">{t("fallback_action")}</span>
+            <span className="text-emphasis ml-2 text-sm font-medium">{t("send_booker_to")}</span>
           </div>
           <div className="flex w-full flex-col gap-2 text-sm lg:flex-row">
             <div className="flex grow items-center gap-2">
@@ -732,6 +717,32 @@ const Route = ({
             ) : null}
           </div>
         </div>
+        {route.fallbackAction?.type === RouteActionType.EventTypeRedirectUrl &&
+          route.fallbackAttributesQueryBuilderState &&
+          attributesQueryBuilderConfigWithRaqbSettingsAndWidgets && (
+            <div className="mt-2">
+              <div className="ml-2 flex items-center gap-0.5">
+                <div className="border-subtle rounded-lg border p-1">
+                  <Icon name="user-check" className="text-subtle h-4 w-4" />
+                </div>
+                <span className="text-emphasis ml-2 text-sm font-medium">
+                  And connect with specific team members
+                </span>
+              </div>
+              <Query
+                {...attributesQueryBuilderConfigWithRaqbSettingsAndWidgets}
+                value={route.fallbackAttributesQueryBuilderState.tree}
+                onChange={(immutableTree, attributesQueryBuilderConfig) => {
+                  onChangeFallbackTeamMembersQuery(
+                    route,
+                    immutableTree,
+                    attributesQueryBuilderConfig as unknown as AttributesQueryBuilderConfigWithRaqbFields
+                  );
+                }}
+                renderBuilder={renderBuilder}
+              />
+            </div>
+          )}
       </div>
     ) : null;
 
