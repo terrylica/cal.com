@@ -1146,6 +1146,16 @@ function useRoutes({
         if (!r.fallbackAttributesQueryValue) {
           r.fallbackAttributesQueryValue = getEmptyQueryValue() as LocalRoute["fallbackAttributesQueryValue"];
         }
+
+        // Initialize fallbackAction with the main action for backwards compatibility
+        // This ensures existing routes show the correct default (same event type as main route)
+        if (!r.fallbackAction && r.action?.type === RouteActionType.EventTypeRedirectUrl) {
+          r.fallbackAction = {
+            type: r.action.type,
+            value: r.action.value,
+            eventTypeId: r.action.eventTypeId,
+          };
+        }
       });
       return _routes;
     };
