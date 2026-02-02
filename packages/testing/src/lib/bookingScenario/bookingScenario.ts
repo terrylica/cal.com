@@ -10,6 +10,7 @@ import "vitest-fetch-mock";
 import type { z } from "zod";
 
 import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
+import { encryptSecret } from "@calcom/lib/crypto/keyring";
 import { weekdayToWeekIndex, type WeekDays } from "@calcom/lib/dayjs";
 import type { IntervalLimit } from "@calcom/lib/intervalLimits/intervalLimitSchema";
 import logger from "@calcom/lib/logger";
@@ -1141,6 +1142,10 @@ export interface SmtpConfigurationTestData {
 }
 
 export async function createSmtpConfiguration(data: SmtpConfigurationTestData) {
+  const aad = { organizationId: data.organizationId };
+  const smtpUser = data.smtpUser ?? "testuser";
+  const smtpPassword = data.smtpPassword ?? "testpassword";
+
   return prismock.smtpConfiguration.create({
     data: {
       organizationId: data.organizationId,
@@ -1148,8 +1153,8 @@ export async function createSmtpConfiguration(data: SmtpConfigurationTestData) {
       fromName: data.fromName,
       smtpHost: data.smtpHost ?? "test-smtp.example.com",
       smtpPort: data.smtpPort ?? 587,
-      smtpUser: data.smtpUser ?? "testuser",
-      smtpPassword: data.smtpPassword ?? "test-encrypted-password",
+      smtpUser: JSON.stringify(encryptSecret({ ring: "SMTP", plaintext: smtpUser, aad })),
+      smtpPassword: JSON.stringify(encryptSecret({ ring: "SMTP", plaintext: smtpPassword, aad })),
       smtpSecure: data.smtpSecure ?? true,
       isEnabled: data.isEnabled ?? false,
     },
