@@ -1,7 +1,43 @@
-import type { PrismaClient } from "@calcom/prisma";
+import type { PrismaClient } from "@calcom/prisma/client";
 
 export class PrismaOOORepository {
   constructor(private prismaClient: PrismaClient) {}
+
+  async findOOOReferenceByEntryId({ oooEntryId }: { oooEntryId: number }) {
+    return this.prismaClient.outOfOfficeReference.findUnique({
+      where: { oooEntryId },
+      select: {
+        id: true,
+        externalId: true,
+        externalReasonId: true,
+        externalReasonName: true,
+      },
+    });
+  }
+
+  async updateOOOReference({
+    id,
+    externalReasonId,
+    externalReasonName,
+    credentialId,
+    syncedAt,
+  }: {
+    id: number;
+    externalReasonId?: string | null;
+    externalReasonName?: string | null;
+    credentialId?: number | null;
+    syncedAt?: Date;
+  }) {
+    return this.prismaClient.outOfOfficeReference.update({
+      where: { id },
+      data: {
+        ...(externalReasonId !== undefined && { externalReasonId }),
+        ...(externalReasonName !== undefined && { externalReasonName }),
+        ...(credentialId !== undefined && { credentialId }),
+        ...(syncedAt !== undefined && { syncedAt }),
+      },
+    });
+  }
 
   async findManyOOO({
     startTimeDate,
@@ -221,13 +257,17 @@ export class PrismaOOORepository {
   }
 
   async findOOOEntryByExternalReference({ externalId }: { externalId: string }) {
-    const reference = await this.prismaClient.outOfOfficeReference.findUnique({
+    return this.prismaClient.outOfOfficeReference.findUnique({
       where: {
         externalId,
       },
-      include: {
+      select: {
+        id: true,
         oooEntry: {
-          include: {
+          select: {
+            id: true,
+            uuid: true,
+            userId: true,
             user: {
               select: {
                 id: true,
@@ -254,7 +294,6 @@ export class PrismaOOORepository {
         },
       },
     });
-    return reference;
   }
 
   async deleteOOOEntryByExternalReference({ externalId }: { externalId: string }) {

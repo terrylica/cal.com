@@ -1,8 +1,11 @@
+import { v4 as uuidv4 } from "uuid";
+
 import { selectOOOEntries } from "@calcom/app-store/zapier/api/subscriptions/listOOOEntries";
 import dayjs from "@calcom/dayjs";
 import { sendBookingRedirectNotification } from "@calcom/emails/workflow-email-service";
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
 import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
+import { PrismaOOORepository } from "@calcom/features/ooo/repositories/PrismaOOORepository";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
@@ -14,8 +17,9 @@ import { getTranslation } from "@calcom/lib/server/i18n";
 import prisma from "@calcom/prisma";
 import { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
+
 import { TRPCError } from "@trpc/server";
-import { v4 as uuidv4 } from "uuid";
+
 import { isAdminForUser } from "./outOfOffice.utils";
 import type { TOutOfOfficeInputSchema } from "./outOfOfficeCreateOrUpdate.schema";
 
@@ -37,7 +41,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
   const startTimeUtc = dayjs.utc(startDate).add(input.startDateOffset, "minute").startOf("day");
   const endTimeUtc = dayjs.utc(endDate).add(input.endDateOffset, "minute").endOf("day");
 
-  // If start date is after end date throw error
   if (startTimeUtc.isAfter(endTimeUtc)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "start_date_must_be_before_end_date" });
   }
@@ -79,7 +82,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     const user = await prisma.user.findUnique({
       where: {
         id: input.toTeamUserId,
-        /** You can only redirect OOO for members of teams you belong to */
         teams: {
           some: {
             team: {
@@ -109,7 +111,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
   const selectedReason = input.selectedReason;
   const reasonId: number | null = selectedReason.source === "hrms" ? null : selectedReason.id;
 
-  // Prevent infinite redirects but consider time ranges
   const existingOutOfOfficeEntry = await prisma.outOfOfficeEntry.findFirst({
     select: {
       userId: true,
@@ -118,13 +119,10 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     where: {
       ...(toUserId && { userId: toUserId }),
       toUserId: oooUserId,
-      // Check for time overlap or collision
       OR: [
-        // Outside of range
         {
           AND: [{ start: { lte: endTimeUtc.toISOString() } }, { end: { gte: startTimeUtc.toISOString() } }],
         },
-        // Inside of range
         {
           AND: [{ start: { gte: startTimeUtc.toISOString() } }, { end: { lte: endTimeUtc.toISOString() } }],
         },
@@ -132,7 +130,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     },
   });
 
-  // don't allow infinite redirects
   if (existingOutOfOfficeEntry) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -154,7 +151,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     throw new TRPCError({ code: "CONFLICT", message: "out_of_office_entry_already_exists" });
   }
 
-  // Get the existing redirected user from existing out of office entry to send that user appropriate email.
   const previousOutOfOfficeEntry = await prisma.outOfOfficeEntry.findUnique({
     where: {
       uuid: input.uuid ?? "",
@@ -183,7 +179,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       notes: input.notes,
       showNotePublicly: input.showNotePublicly ?? false,
       userId: oooUserId,
-      reasonId,
+      reasonId: reasonId,
       toUserId: toUserId,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -194,12 +190,11 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       notes: input.notes,
       ...(input.showNotePublicly !== undefined && { showNotePublicly: input.showNotePublicly }),
       userId: oooUserId,
-      reasonId,
+      reasonId: reasonId,
       toUserId: toUserId ? toUserId : null,
     },
   });
 
-  // Explicit type to avoid Prisma.OutOfOfficeEntryGetPayload conditional types leaking into .d.ts files
   type OOOEntryResult = {
     id: number;
     start: Date;
@@ -208,7 +203,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     updatedAt: Date;
     notes: string | null;
     showNotePublicly: boolean;
-    reason: { reason: string; emoji: string | null } | null;
+    reason: { reason: string; emoji: string } | null;
     reasonId: number | null;
     user: { id: number; name: string | null; email: string; timeZone: string };
     toUser: { id: number; name: string | null; email: string; timeZone: string } | null;
@@ -244,8 +239,10 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       })
     : null;
   const reason = reasonId
-    ? await prisma.outOfOfficeReason.findFirst({
-        where: { id: reasonId },
+    ? await prisma.outOfOfficeReason.findUnique({
+        where: {
+          id: reasonId,
+        },
         select: {
           reason: true,
           emoji: true,
@@ -253,7 +250,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       })
     : null;
   if (toUserId) {
-    // await send email to notify user
     const userToNotify = await prisma.user.findUnique({
       where: {
         id: toUserId,
@@ -278,7 +274,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       ? previousOutOfOfficeEntry.toUser
       : undefined;
 
-    // Send cancel email to the old redirect user if it is not same as the current redirect user.
     if (existingRedirectedUser && existingRedirectedUser?.email !== userToNotify?.email) {
       await sendBookingRedirectNotification({
         language: t,
@@ -292,7 +287,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     }
 
     if (userToNotify?.email) {
-      // If new redirect user exists and it is same as the old redirect user, then send update email.
       if (
         existingRedirectedUser &&
         existingRedirectedUser.email === userToNotify.email &&
@@ -308,7 +302,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
           dates: `${formattedStartDate} - ${formattedEndDate}`,
           action: "update",
         });
-        // If new redirect user exists and the previous redirect user didn't existed or the previous redirect user is not same as the new user, then send add email.
       } else if (
         !existingRedirectedUser ||
         (existingRedirectedUser && existingRedirectedUser.email !== userToNotify.email)
@@ -335,7 +328,6 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
 
   const teamIds = memberships.map((membership) => membership.teamId);
 
-  // Send webhook to notify other services
   const subscriberOptions: GetSubscriberOptions = {
     userId: oooUserId,
     teamId: teamIds,
@@ -356,7 +348,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       updatedAt: createdOrUpdatedOutOfOffice.updatedAt.toISOString(),
       notes: createdOrUpdatedOutOfOffice.notes,
       reason: {
-        emoji: reason?.emoji ?? undefined,
+        emoji: reason?.emoji,
         reason: selectedReason.source === "hrms" ? selectedReason.name : reason?.reason,
       },
       reasonId,
@@ -402,14 +394,16 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
   const hrmsReasonId = selectedReason.id;
   const hrmsReasonName = selectedReason.name;
 
+  const oooRepo = new PrismaOOORepository(prisma);
+
   try {
     const orgId = await ProfileRepository.findFirstOrganizationIdForUser({ userId: oooUserId });
-    const teamIds = await MembershipRepository.findUserTeamIds({ userId: oooUserId });
+    const hrmsTeamIds = await MembershipRepository.findUserTeamIds({ userId: oooUserId });
     const hrmsCredential = await CredentialRepository.findFirstByAppSlug({
       userId: oooUserId,
       appSlug: "deel",
       orgId,
-      teamIds,
+      teamIds: hrmsTeamIds,
     });
 
     if (!hrmsCredential) {
@@ -419,10 +413,8 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
 
     const hrmsManager = new HrmsManager(hrmsCredential);
 
-    const existingReference = await prisma.outOfOfficeReference.findUnique({
-      where: {
-        oooEntryId: createdOrUpdatedOutOfOffice.id,
-      },
+    const existingReference = await oooRepo.findOOOReferenceByEntryId({
+      oooEntryId: createdOrUpdatedOutOfOffice.id,
     });
 
     if (existingReference) {
@@ -434,14 +426,12 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
         userEmail: oooUserEmail,
       });
 
-      await prisma.outOfOfficeReference.update({
-        where: { id: existingReference.id },
-        data: {
-          externalReasonId: hrmsReasonId,
-          externalReasonName: hrmsReasonName,
-          credentialId: hrmsCredential.id,
-          syncedAt: new Date(),
-        },
+      await oooRepo.updateOOOReference({
+        id: existingReference.id,
+        externalReasonId: hrmsReasonId,
+        externalReasonName: hrmsReasonName,
+        credentialId: hrmsCredential.id,
+        syncedAt: new Date(),
       });
 
       log.info("Updated HRMS time-off request", {
@@ -458,14 +448,12 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       });
 
       if (hrmsTimeOff?.id) {
-        await prisma.outOfOfficeReference.create({
-          data: {
-            oooEntryId: createdOrUpdatedOutOfOffice.id,
-            externalId: hrmsTimeOff.id,
-            externalReasonId: hrmsReasonId,
-            externalReasonName: hrmsReasonName,
-            credentialId: hrmsCredential.id,
-          },
+        await oooRepo.createOOOReference({
+          oooEntryId: createdOrUpdatedOutOfOffice.id,
+          externalId: hrmsTimeOff.id,
+          externalReasonId: hrmsReasonId,
+          externalReasonName: hrmsReasonName,
+          credentialId: hrmsCredential.id,
         });
 
         log.info("Created HRMS time-off request", {

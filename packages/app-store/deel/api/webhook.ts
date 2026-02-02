@@ -113,7 +113,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const parseResult = deelWebhookPayloadSchema.safeParse(JSON.parse(bodyAsString));
     if (!parseResult.success) {
-      console.log(parseResult.error.errors);
       log.error("Invalid webhook payload", safeStringify(parseResult.error));
       return res.status(400).json({ statusCode: 400, message: "Invalid webhook payload" });
     }
@@ -236,13 +235,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userId: reference.oooEntry.userId,
         });
 
-        await prisma.outOfOfficeReference.update({
-          where: { id: reference.id },
-          data: {
-            externalReasonId: matchingPolicy?.externalId || null,
-            externalReasonName: payload.resource.type,
-            syncedAt: new Date(),
-          },
+        await oooRepo.updateOOOReference({
+          id: reference.id,
+          externalReasonId: matchingPolicy?.externalId || null,
+          externalReasonName: payload.resource.type,
+          syncedAt: new Date(),
         });
       }
     } else {

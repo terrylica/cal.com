@@ -12,7 +12,7 @@ const log: ReturnType<typeof logger.getSubLogger> = logger.getSubLogger({
 
 interface OutOfOfficeReasonsHandlerOptions {
   ctx: {
-    user: TrpcSessionUser;
+    user: NonNullable<TrpcSessionUser>;
   };
 }
 
@@ -30,7 +30,6 @@ export interface InternalOOOReason extends BaseOOOReason {
 
 export interface HrmsOOOReason extends BaseOOOReason {
   source: "hrms";
-  hrmsSource: string;
   hrmsReasonId: string;
 }
 
@@ -47,36 +46,11 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
-/**
- * Returns the list of OOO reasons.
- * If HRMS integration is installed, returns HRMS reasons.
- * Otherwise, returns Cal.com static reasons from the database.
- */
 export async function outOfOfficeReasonList(
   options: OutOfOfficeReasonsHandlerOptions
 ): Promise<OutOfOfficeReasonListResult> {
   const { user } = options.ctx;
 
-  if (!user) {
-    const outOfOfficeReasons = await prisma.outOfOfficeReason.findMany({
-      where: { enabled: true },
-    });
-
-    return {
-      reasons: outOfOfficeReasons.map(
-        (reason): InternalOOOReason => ({
-          source: "internal",
-          id: reason.id,
-          emoji: reason.emoji,
-          reason: reason.reason,
-          userId: reason.userId,
-          enabled: reason.enabled,
-        })
-      ),
-    };
-  }
-
-  // Get the highest priority HRMS credential (org > team > user)
   const orgId = await ProfileRepository.findFirstOrganizationIdForUser({ userId: user.id });
   const teamIds = await MembershipRepository.findUserTeamIds({ userId: user.id });
   const hrmsCredential = await CredentialRepository.findFirstByAppSlug({
@@ -96,7 +70,6 @@ export async function outOfOfficeReasonList(
         emoji: null,
         reason: reason.name,
         enabled: true,
-        hrmsSource: hrmsCredential.appId || "unknown",
         hrmsReasonId: reason.externalId,
       }));
 

@@ -1,10 +1,8 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
-
+import type { NextApiRequest, NextApiResponse } from "next";
 import getInstalledAppPath from "../../_utils/getInstalledAppPath";
 import getParsedAppKeysFromSlug from "../../_utils/getParsedAppKeysFromSlug";
 import createOAuthAppCredential from "../../_utils/oauth/createOAuthAppCredential";
@@ -65,7 +63,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   deelToken.expiryDate = Math.round(Date.now() + deelToken.expires_in * 1000);
 
-  // Register webhook for bi-directional sync (before saving credential to store webhookId)
   if (webhook_signing_key) {
     try {
       const webhookUrl = `${WEBAPP_URL}/api/integrations/deel/webhook`;
@@ -92,7 +89,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } else {
         const webhookData = await webhookResponse.json();
         deelToken.webhookId = webhookData.data?.id;
-        log.info("Successfully registered Deel webhook for time-off sync", { webhookId: deelToken.webhookId });
       }
     } catch (error) {
       log.error("Error registering Deel webhook", safeStringify(error));
