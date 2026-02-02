@@ -1,7 +1,7 @@
 import { noop } from "@tanstack/react-table";
 import { formatInTimeZone } from "date-fns-tz";
 
-import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
+import { useIsPlatform } from "@calcom/lib/hooks/useIsPlatform";
 import dayjs from "@calcom/dayjs";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { TimeRange, WorkingHours } from "@calcom/types/schedule";
