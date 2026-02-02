@@ -32,21 +32,15 @@ import { OAuth2AuthorizeInput } from "@/modules/auth/oauth2/inputs/authorize.inp
 import {
   OAuth2ExchangeConfidentialInput,
   OAuth2ExchangePublicInput,
-  OAuth2LegacyExchangeInput,
 } from "@/modules/auth/oauth2/inputs/exchange.input";
 import {
-  OAuth2LegacyRefreshInput,
   OAuth2RefreshConfidentialInput,
   OAuth2RefreshPublicInput,
 } from "@/modules/auth/oauth2/inputs/refresh.input";
 import type { OAuth2TokenInput } from "@/modules/auth/oauth2/inputs/token.input.pipe";
 import { OAuth2TokenInputPipe } from "@/modules/auth/oauth2/inputs/token.input.pipe";
 import { OAuth2ClientDto, OAuth2ClientResponseDto } from "@/modules/auth/oauth2/outputs/oauth2-client.output";
-import {
-  OAuth2LegacyTokensDto,
-  OAuth2TokensDto,
-  OAuth2TokensResponseDto,
-} from "@/modules/auth/oauth2/outputs/oauth2-tokens.output";
+import { OAuth2TokensDto } from "@/modules/auth/oauth2/outputs/oauth2-tokens.output";
 import { OAuth2ErrorService } from "@/modules/auth/oauth2/services/oauth2-error.service";
 
 @Controller({
@@ -152,64 +146,6 @@ export class OAuth2Controller {
       return plainToInstance(OAuth2TokensDto, tokens, { strategy: "excludeAll" });
     } catch (err) {
       this.errorHandler.handleTokenError(err);
-    }
-  }
-
-  @Post("/clients/:clientId/exchange")
-  @HttpCode(HttpStatus.OK)
-  @Header("Cache-Control", "no-store")
-  @Header("Pragma", "no-cache")
-  @ApiOperation({
-    summary: "Exchange authorization code for tokens (legacy)",
-    description:
-      "Exchanges an authorization code for access and refresh tokens. This is a legacy endpoint - prefer using POST /token instead.",
-  })
-  async exchange(
-    @Param("clientId") clientId: string,
-    @Body() body: OAuth2LegacyExchangeInput
-  ): Promise<OAuth2TokensResponseDto> {
-    try {
-      const tokens = await this.oAuthService.exchangeCodeForTokens(
-        clientId,
-        body.code,
-        body.clientSecret,
-        body.redirectUri,
-        body.codeVerifier
-      );
-      return {
-        status: SUCCESS_STATUS,
-        data: plainToInstance(OAuth2LegacyTokensDto, tokens, { strategy: "excludeAll" }),
-      };
-    } catch (err) {
-      this.errorHandler.handleClientError(err, "Could not exchange code for tokens");
-    }
-  }
-
-  @Post("/clients/:clientId/refresh")
-  @HttpCode(HttpStatus.OK)
-  @Header("Cache-Control", "no-store")
-  @Header("Pragma", "no-cache")
-  @ApiOperation({
-    summary: "Refresh access token (legacy)",
-    description:
-      "Refreshes an access token using a refresh token. This is a legacy endpoint - prefer using POST /token instead.",
-  })
-  async refresh(
-    @Param("clientId") clientId: string,
-    @Body() body: OAuth2LegacyRefreshInput
-  ): Promise<OAuth2TokensResponseDto> {
-    try {
-      const tokens = await this.oAuthService.refreshAccessToken(
-        clientId,
-        body.refreshToken,
-        body.clientSecret
-      );
-      return {
-        status: SUCCESS_STATUS,
-        data: plainToInstance(OAuth2LegacyTokensDto, tokens, { strategy: "excludeAll" }),
-      };
-    } catch (err) {
-      this.errorHandler.handleClientError(err, "Could not refresh tokens");
     }
   }
 }
