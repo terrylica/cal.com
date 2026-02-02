@@ -15,7 +15,10 @@ import type { AppCategories } from "@calcom/prisma/enums";
 import { type RouterOutputs } from "@calcom/trpc/react";
 import type { App } from "@calcom/types/App";
 import { Alert } from "@calcom/ui/components/alert";
-import { AppListCard } from "@calcom/ui/components/app-list-card";
+import {
+  AppListCard as DefaultAppListCard,
+  type AppListCardProps,
+} from "@calcom/ui/components/app-list-card";
 import { Button } from "@calcom/ui/components/button";
 import {
   Dropdown,
@@ -33,6 +36,8 @@ import {
 
 export type HandleDisconnect = (credentialId: number, app: App["slug"], teamId?: number) => void;
 
+export type AppListCardComponent = React.ComponentType<AppListCardProps>;
+
 interface AppListProps {
   variant?: AppCategories;
   data: RouterOutputs["viewer"]["apps"]["integrations"];
@@ -48,6 +53,7 @@ interface AppListProps {
   isEventTypesFetching?: boolean;
   handleConnectDisconnectIntegrationMenuToggle: () => void;
   handleBulkEditDialogToggle: () => void;
+  AppListCardComponent?: AppListCardComponent;
 }
 
 export const AppList = ({
@@ -65,6 +71,7 @@ export const AppList = ({
   isEventTypesFetching,
   handleConnectDisconnectIntegrationMenuToggle,
   handleBulkEditDialogToggle,
+  AppListCardComponent = DefaultAppListCard,
 }: AppListProps) => {
   const { t } = useLocale();
   const [bulkUpdateModal, setBulkUpdateModal] = useState(false);
@@ -81,7 +88,7 @@ export const AppList = ({
       appSlug === defaultConferencingApp?.appSlug ||
       (appSlug === "daily-video" && !defaultConferencingApp?.appSlug);
     return (
-      <AppListCard
+      <AppListCardComponent
         key={item.name}
         description={item.description}
         title={item.name}
@@ -143,7 +150,7 @@ export const AppList = ({
           ) : null
         }>
         <AppSettings slug={item.slug} />
-      </AppListCard>
+      </AppListCardComponent>
     );
   };
 
