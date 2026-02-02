@@ -76,63 +76,54 @@ export default function WebhookListItem(props: {
         "flex w-full justify-between p-4",
         props.lastItem ? "" : "border-subtle border-b"
       )}>
-      <div className="w-full truncate">
-        <div className="flex">
-          <Tooltip content={webhook.subscriberUrl}>
-            <p className="text-emphasis max-w-[600px] truncate text-sm font-medium">
-              {webhook.subscriberUrl}
-            </p>
-          </Tooltip>
+      <div className="min-w-0 flex-1">
+        <Tooltip content={webhook.subscriberUrl}>
+          <p className="text-emphasis truncate text-sm font-medium">{webhook.subscriberUrl}</p>
+        </Tooltip>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           {!props.permissions.canEditWebhook && (
-            <Badge variant="gray" className="ml-2 ">
-              {t("readonly")}
-            </Badge>
+            <Badge variant="gray">{t("readonly")}</Badge>
           )}
           <Tooltip content={t("webhook_version")}>
-            <div className="flex items-center">
-              <Badge variant="blue" className="ml-2">
-                {getWebhookVersionLabel(webhook.version)}
-              </Badge>
+            <div className="flex items-center gap-1">
+              <Badge variant="blue">{getWebhookVersionLabel(webhook.version)}</Badge>
+              <Tooltip
+                content={t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}>
+                <Link
+                  href={getWebhookVersionDocsUrl(webhook.version)}
+                  target="_blank"
+                  className="text-subtle hover:text-emphasis flex items-center">
+                  <Icon name="external-link" className="h-4 w-4" />
+                </Link>
+              </Tooltip>
             </div>
           </Tooltip>
-          <Tooltip content={t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}>
-            <Link
-              href={getWebhookVersionDocsUrl(webhook.version)}
-              target="_blank"
-              className="text-subtle hover:text-emphasis ml-1 flex items-center">
-              <Icon name="external-link" className="h-4 w-4" />
-            </Link>
+          <Tooltip content={t("triggers_when")}>
+            <div className="flex flex-wrap gap-2">
+              {webhook.eventTriggers.slice(0, MAX_BADGES_TWO_ROWS).map((trigger) => (
+                <Badge key={trigger} variant="gray" startIcon="zap">
+                  {t(`${trigger.toLowerCase()}`)}
+                </Badge>
+              ))}
+              {webhook.eventTriggers.length > MAX_BADGES_TWO_ROWS && (
+                <Tooltip
+                  content={
+                    <div className="flex flex-col gap-1 p-1">
+                      {webhook.eventTriggers.slice(MAX_BADGES_TWO_ROWS).map((trigger) => (
+                        <span key={trigger} className="text-xs">
+                          {t(`${trigger.toLowerCase()}`)}
+                        </span>
+                      ))}
+                    </div>
+                  }>
+                  <Badge className="cursor-help" variant="gray">
+                    +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
+                  </Badge>
+                </Tooltip>
+              )}
+            </div>
           </Tooltip>
         </div>
-        <Tooltip content={t("triggers_when")}>
-          <div className="flex w-4/5 flex-wrap">
-            {webhook.eventTriggers.slice(0, MAX_BADGES_TWO_ROWS).map((trigger) => (
-              <Badge
-                key={trigger}
-                className="mt-2.5 basis-1/5 ltr:mr-2 rtl:ml-2"
-                variant="gray"
-                startIcon="zap">
-                {t(`${trigger.toLowerCase()}`)}
-              </Badge>
-            ))}
-            {webhook.eventTriggers.length > MAX_BADGES_TWO_ROWS && (
-              <Tooltip
-                content={
-                  <div className="flex flex-col gap-1 p-1">
-                    {webhook.eventTriggers.slice(MAX_BADGES_TWO_ROWS).map((trigger) => (
-                      <span key={trigger} className="text-xs">
-                        {t(`${trigger.toLowerCase()}`)}
-                      </span>
-                    ))}
-                  </div>
-                }>
-                <Badge className="mt-2.5 cursor-help ltr:mr-2 rtl:ml-2" variant="gray">
-                  +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
-                </Badge>
-              </Tooltip>
-            )}
-          </div>
-        </Tooltip>
       </div>
       {(props.permissions.canEditWebhook || props.permissions.canDeleteWebhook) && (
         <div className="ml-2 flex items-center space-x-4">
