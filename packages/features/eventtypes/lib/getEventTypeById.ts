@@ -243,41 +243,12 @@ export const getEventTypeByIdWithTeamMembers = async (props: getEventTypeByIdPro
 
   const { prisma } = props;
   const userRepo = new UserRepository(prisma);
-
-  const userSelect = {
-    name: true,
-    avatarUrl: true,
-    username: true,
-    id: true,
-    email: true,
-    locale: true,
-    defaultScheduleId: true,
-    isPlatformManaged: true,
-    timeZone: true,
-  } satisfies Prisma.UserSelect;
+  const membershipRepo = new MembershipRepository(prisma);
 
   const isOrgEventType = !!result.team?.parentId;
 
   const memberships = result.team
-    ? await prisma.membership.findMany({
-        where: {
-          teamId: result.team.id,
-        },
-        select: {
-          role: true,
-          accepted: true,
-          user: {
-            select: {
-              ...userSelect,
-              eventTypes: {
-                select: {
-                  slug: true,
-                },
-              },
-            },
-          },
-        },
-      })
+    ? await membershipRepo.findMembershipsWithUserByTeamId({ teamId: result.team.id })
     : [];
 
   const enrichedMembers = [];

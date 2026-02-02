@@ -354,6 +354,34 @@ export class MembershipRepository {
     });
   }
 
+  async findMembershipsWithUserByTeamId({ teamId }: { teamId: number }) {
+    return this.prismaClient.membership.findMany({
+      where: { teamId },
+      select: {
+        role: true,
+        accepted: true,
+        user: {
+          select: {
+            name: true,
+            avatarUrl: true,
+            username: true,
+            id: true,
+            email: true,
+            locale: true,
+            defaultScheduleId: true,
+            isPlatformManaged: true,
+            timeZone: true,
+            eventTypes: {
+              select: {
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async findAllMembershipsByUserIdForBilling({ userId }: { userId: number }) {
     return this.prismaClient.membership.findMany({
       where: { userId },
