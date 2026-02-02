@@ -6,6 +6,8 @@ import { NextResponse } from "next/server";
 import { HttpError } from "@calcom/lib/http-error";
 import { getServerErrorFromUnknown } from "@calcom/lib/server/getServerErrorFromUnknown";
 import { performance } from "@calcom/lib/server/perfObserver";
+import { resolveTenantById } from "@calcom/lib/server/tenant";
+import { runWithTenant } from "@calcom/prisma/tenant-context";
 
 import { TRPCError } from "@trpc/server";
 import { getHTTPStatusCodeFromError } from "@trpc/server/http";
@@ -20,16 +22,23 @@ export const defaultResponderForAppDir = <T extends NextResponse | Response = Ne
   endpointRoute?: string
 ) => {
   return async (req: NextRequest, { params }: { params: Promise<Params> }) => {
+    const tenantId = req.headers.get("x-tenant-id");
+    const tenantInfo = tenantId ? resolveTenantById(tenantId) : null;
+
+    const executeHandler = async (): Promise<T | undefined> => {
+      if (process.env.NODE_ENV === "development" || !endpointRoute) {
+        return handler(req, { params });
+      }
+      const { wrapApiHandlerWithSentry } = await import("@sentry/nextjs");
+      return wrapApiHandlerWithSentry(async () => await handler(req, { params }), endpointRoute)();
+    };
+
     let ok = false;
     try {
       performance.mark("Start");
-      let result: T | undefined;
-      if (process.env.NODE_ENV === "development" || !endpointRoute) {
-        result = await handler(req, { params });
-      } else {
-        const { wrapApiHandlerWithSentry } = await import("@sentry/nextjs");
-        result = await wrapApiHandlerWithSentry(async () => await handler(req, { params }), endpointRoute)();
-      }
+      const result = tenantInfo
+        ? await runWithTenant(tenantInfo, executeHandler)
+        : await executeHandler();
 
       ok = true;
       if (result) {

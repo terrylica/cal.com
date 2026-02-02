@@ -1,3 +1,4 @@
+import { tenantTriggerOptions } from "@calcom/lib/server/triggerTenantUtils";
 import type { ITaskerDependencies } from "@calcom/lib/tasker/types";
 import type { TriggerOptions } from "@trigger.dev/sdk";
 import type { ICalendarsTasker } from "./types";
@@ -10,7 +11,7 @@ export class CalendarsTriggerTasker implements ICalendarsTasker {
     options?: TriggerOptions
   ): Promise<{ runId: string }> {
     const { ensureDefaultCalendars } = await import("./trigger/ensure-default-calendars");
-    const handle = await ensureDefaultCalendars.trigger(payload, options);
+    const handle = await ensureDefaultCalendars.trigger(payload, { ...options, ...tenantTriggerOptions() });
     return { runId: handle.id };
   }
 }

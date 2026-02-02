@@ -1,5 +1,5 @@
+import { withTenantRun } from "@calcom/lib/server/triggerTenantUtils";
 import { schemaTask } from "@trigger.dev/sdk";
-
 import { bookingNotificationsTaskConfig } from "./config";
 import { bookingNotificationTaskSchema } from "./schema";
 
@@ -7,7 +7,7 @@ export const rrReschedule = schemaTask({
   id: "booking.send.rr.reschedule.notifications",
   ...bookingNotificationsTaskConfig,
   schema: bookingNotificationTaskSchema,
-  run: async (payload) => {
+  run: withTenantRun(async (payload) => {
     const { TriggerDevLogger } = await import("@calcom/lib/triggerDevLogger");
     const { BookingEmailSmsHandler } = await import("@calcom/features/bookings/lib/BookingEmailSmsHandler");
     const { BookingRepository } = await import("@calcom/features/bookings/repositories/BookingRepository");
@@ -23,5 +23,5 @@ export const rrReschedule = schemaTask({
       emailsAndSmsHandler: emailsAndSmsHandler,
     });
     await bookingTaskService.rrReschedule(payload);
-  },
+  }),
 });

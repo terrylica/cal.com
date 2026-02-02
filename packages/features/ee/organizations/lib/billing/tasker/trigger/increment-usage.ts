@@ -1,4 +1,5 @@
 import { ErrorWithCode } from "@calcom/lib/errors";
+import { withTenantRun } from "@calcom/lib/server/triggerTenantUtils";
 import { logger, schemaTask, type TaskWithSchema } from "@trigger.dev/sdk";
 import type { z } from "zod";
 import { INCREMENT_USAGE_JOB_ID } from "../constants";
@@ -10,7 +11,7 @@ export const incrementUsage: TaskWithSchema<typeof INCREMENT_USAGE_JOB_ID, typeo
     id: INCREMENT_USAGE_JOB_ID,
     ...platformBillingTaskConfig,
     schema: platformBillingTaskSchema,
-    run: async (payload: z.infer<typeof platformBillingTaskSchema>) => {
+    run: withTenantRun(async (payload: z.infer<typeof platformBillingTaskSchema>) => {
       const { getPlatformOrganizationBillingTaskService } = await import(
         "@calcom/features/ee/organizations/di/tasker/PlatformOrganizationBillingTaskService.container"
       );
@@ -23,5 +24,5 @@ export const incrementUsage: TaskWithSchema<typeof INCREMENT_USAGE_JOB_ID, typeo
         else logger.error("Unknown error in incrementUsage", { error });
         throw error;
       }
-    },
+    }),
   });

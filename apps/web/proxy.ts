@@ -1,13 +1,12 @@
-import { get } from "@vercel/edge-config";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-
+import process from "node:process";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import getIP from "@calcom/lib/getIP";
 import { HttpError } from "@calcom/lib/http-error";
 import { piiHasher } from "@calcom/lib/server/PiiHasher";
-
 import { getCspHeader, getCspNonce } from "@lib/csp";
+import { get } from "@vercel/edge-config";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
@@ -155,11 +154,13 @@ const proxy = async (req: NextRequest): Promise<NextResponse<unknown>> => {
 
   const url = req.nextUrl;
   const reqWithEnrichedHeaders = enrichRequestWithHeaders({ req });
-  const requestHeaders = new Headers(reqWithEnrichedHeaders.headers);
+  // Multi-tenancy: resolve tenant from hostname and set x-tenant-id header
+  const tenantResolvedReq = enrichRequestWithTenantHeader({ req: reqWithEnrichedHeaders });
+  const requestHeaders = new Headers(tenantResolvedReq.headers);
 
   const routingFormRewriteResponse = routingForms.handleRewrite(url);
   if (routingFormRewriteResponse) {
-    return responseWithHeaders({ url, res: routingFormRewriteResponse, req: reqWithEnrichedHeaders });
+    return responseWithHeaders({ url, res: routingFormRewriteResponse, req: tenantResolvedReq });
   }
 
   if (url.pathname.startsWith("/api/auth/signup")) {
@@ -172,10 +173,10 @@ const proxy = async (req: NextRequest): Promise<NextResponse<unknown>> => {
   }
 
   if (url.pathname.startsWith("/apps/installed")) {
-    const returnTo = reqWithEnrichedHeaders.cookies.get("return-to");
+    const returnTo = tenantResolvedReq.cookies.get("return-to");
 
     if (returnTo?.value) {
-      const response = NextResponse.redirect(new URL(returnTo.value, reqWithEnrichedHeaders.url), {
+      const response = NextResponse.redirect(new URL(returnTo.value, tenantResolvedReq.url), {
         headers: requestHeaders,
       });
       response.cookies.delete("return-to");
@@ -193,7 +194,7 @@ const proxy = async (req: NextRequest): Promise<NextResponse<unknown>> => {
     res.cookies.delete("next-auth.session-token");
   }
 
-  return responseWithHeaders({ url, res, req: reqWithEnrichedHeaders });
+  return responseWithHeaders({ url, res, req: tenantResolvedReq });
 };
 
 const routingForms = {
@@ -262,6 +263,28 @@ function responseWithHeaders({ url, res, req }: { url: URL; res: NextResponse; r
 function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
   const reqWithCSP = contentSecurityPolicy.addRequestHeaders({ req });
   return reqWithCSP;
+}
+
+function enrichRequestWithTenantHeader({ req }: { req: NextRequest }): NextRequest {
+  const tenantDomainsRaw = process.env.TENANT_DOMAINS;
+  if (!tenantDomainsRaw) return req;
+
+  let domainMap: Record<string, string>;
+  try {
+    domainMap = JSON.parse(tenantDomainsRaw);
+  } catch {
+    return req;
+  }
+
+  const hostname = req.headers.get("host");
+  if (!hostname) return req;
+
+  const host = hostname.split(":")[0];
+  const tenantId = domainMap[host];
+  if (!tenantId) return req;
+
+  req.headers.set("x-tenant-id", tenantId);
+  return req;
 }
 
 export const config = {

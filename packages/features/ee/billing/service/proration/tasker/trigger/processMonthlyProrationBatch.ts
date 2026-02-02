@@ -1,3 +1,4 @@
+import { withTenantRun } from "@calcom/lib/server/triggerTenantUtils";
 import { schemaTask } from "@trigger.dev/sdk";
 
 import { monthlyProrationTaskConfig } from "./config";
@@ -7,7 +8,7 @@ export const processMonthlyProrationBatch = schemaTask({
   id: "billing.monthly-proration.batch",
   ...monthlyProrationTaskConfig,
   schema: monthlyProrationBatchSchema,
-  run: async (payload) => {
+  run: withTenantRun(async (payload) => {
     const { getMonthlyProrationService } = await import(
       "@calcom/features/ee/billing/di/containers/MonthlyProrationService"
     );
@@ -18,5 +19,5 @@ export const processMonthlyProrationBatch = schemaTask({
       monthKey: payload.monthKey,
       teamIds: payload.teamIds,
     });
-  },
+  }),
 });

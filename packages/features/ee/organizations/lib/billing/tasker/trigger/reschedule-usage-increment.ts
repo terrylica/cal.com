@@ -1,3 +1,4 @@
+import { withTenantRun } from "@calcom/lib/server/triggerTenantUtils";
 import { logger, runs, schemaTask, type TaskWithSchema } from "@trigger.dev/sdk";
 import type z from "zod";
 import { getIncrementUsageJobTag, RESCHEDULE_USAGE_INCREMENT_JOB_ID } from "../constants";
@@ -11,7 +12,7 @@ export const rescheduleUsageIncrement: TaskWithSchema<
   id: RESCHEDULE_USAGE_INCREMENT_JOB_ID,
   ...platformBillingTaskConfig,
   schema: platformBillingRescheduleUsageIncrementTaskSchema,
-  run: async (payload: z.infer<typeof platformBillingRescheduleUsageIncrementTaskSchema>) => {
+  run: withTenantRun(async (payload: z.infer<typeof platformBillingRescheduleUsageIncrementTaskSchema>) => {
     const runId: string = (
       await runs.list({
         tag: getIncrementUsageJobTag(payload.bookingUid),
@@ -25,5 +26,5 @@ export const rescheduleUsageIncrement: TaskWithSchema<
     }
 
     await runs.cancel(runId);
-  },
+  }),
 });

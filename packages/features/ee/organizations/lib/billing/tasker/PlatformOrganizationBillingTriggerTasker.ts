@@ -1,3 +1,4 @@
+import { tenantTriggerOptions } from "@calcom/lib/server/triggerTenantUtils";
 import type { ITaskerDependencies } from "@calcom/lib/tasker/types";
 import type { TriggerOptions } from "@trigger.dev/sdk";
 import type { IPlatformOrganizationBillingTasker } from "./types";
@@ -10,7 +11,7 @@ export class PlatformOrganizationBillingTriggerTasker implements IPlatformOrgani
     options?: TriggerOptions
   ): Promise<{ runId: string }> {
     const { incrementUsage } = await import("./trigger/increment-usage");
-    const handle = await incrementUsage.trigger(payload, options);
+    const handle = await incrementUsage.trigger(payload, { ...options, ...tenantTriggerOptions() });
     return { runId: handle.id };
   }
 
@@ -19,7 +20,7 @@ export class PlatformOrganizationBillingTriggerTasker implements IPlatformOrgani
     options?: TriggerOptions
   ): Promise<{ runId: string }> {
     const { cancelUsageIncrement } = await import("./trigger/cancel-usage-increment");
-    const handle = await cancelUsageIncrement.trigger(payload, options);
+    const handle = await cancelUsageIncrement.trigger(payload, { ...options, ...tenantTriggerOptions() });
     return { runId: handle.id };
   }
 
@@ -28,7 +29,7 @@ export class PlatformOrganizationBillingTriggerTasker implements IPlatformOrgani
     options?: TriggerOptions
   ): Promise<{ runId: string }> {
     const { rescheduleUsageIncrement } = await import("./trigger/reschedule-usage-increment");
-    const handle = await rescheduleUsageIncrement.trigger(payload, options);
+    const handle = await rescheduleUsageIncrement.trigger(payload, { ...options, ...tenantTriggerOptions() });
     return { runId: handle.id };
   }
 }

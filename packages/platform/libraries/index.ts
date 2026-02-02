@@ -19,6 +19,7 @@ import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/crede
 import { paymentDataSelect } from "@calcom/prisma/selects/payment";
 import { createNewUsersConnectToOrgIfExists } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/utils";
 
+export { isTenantModeEnabled, resolveTenantFromHostname } from "@calcom/lib/server/tenant";
 export { slugify } from "@calcom/lib/slugify";
 export { slugifyLenient } from "@calcom/lib/slugify-lenient";
 export { getBookingForReschedule };

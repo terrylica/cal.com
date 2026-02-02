@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from "next";
-import type { Session } from "next-auth";
-import type { serverSideTranslations } from "next-i18next/serverSideTranslations";
 
 import { getLocale } from "@calcom/features/auth/lib/getLocale";
 import getIP from "@calcom/lib/getIP";
+import { resolveTenantById, resolveTenantFromHostname } from "@calcom/lib/server/tenant";
 import type { TraceContext } from "@calcom/lib/tracing";
 import { distributedTracing } from "@calcom/lib/tracing/factory";
-import { prisma, readonlyPrisma } from "@calcom/prisma";
-import type { SelectedCalendar, User as PrismaUser } from "@calcom/prisma/client";
-
+import { prisma, readonlyPrisma, runWithTenant } from "@calcom/prisma";
+import type { User as PrismaUser, SelectedCalendar } from "@calcom/prisma/client";
 import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
+import type { GetServerSidePropsContext, NextApiRequest, NextApiResponse } from "next";
+import type { Session } from "next-auth";
+import type { serverSideTranslations } from "next-i18next/serverSideTranslations";
 
 type CreateContextOptions =
   | (Omit<CreateNextContextOptions, "info"> & {
@@ -22,23 +22,22 @@ export type CreateInnerContextOptions = {
   sourceIp?: string;
   session?: Session | null;
   locale: string;
-  user?:
-    | Omit<
-        PrismaUser,
-        | "locale"
-        | "twoFactorSecret"
-        | "emailVerified"
-        | "password"
-        | "identityProviderId"
-        | "invitedTo"
-        | "allowDynamicBooking"
-        | "verified"
-      > & {
-        locale: Exclude<PrismaUser["locale"], null>;
-        credentials?: Credential[];
-        selectedCalendars?: Partial<SelectedCalendar>[];
-        rawAvatar?: string;
-      };
+  user?: Omit<
+    PrismaUser,
+    | "locale"
+    | "twoFactorSecret"
+    | "emailVerified"
+    | "password"
+    | "identityProviderId"
+    | "invitedTo"
+    | "allowDynamicBooking"
+    | "verified"
+  > & {
+    locale: Exclude<PrismaUser["locale"], null>;
+    credentials?: Credential[];
+    selectedCalendars?: Partial<SelectedCalendar>[];
+    rawAvatar?: string;
+  };
   i18n?: Awaited<ReturnType<typeof serverSideTranslations>>;
 } & Partial<CreateContextOptions>;
 
@@ -98,12 +97,23 @@ export const createContext = async (
   // TODO: @sean - figure out a way to make getIP be happy with trpc req. params
   const sourceIp = getIP(req as NextApiRequest);
   const session = sessionGetter ? await sessionGetter({ req, res }) : null;
-  const contextInner = await createContextInner({ locale, session, sourceIp });
-  return {
-    ...contextInner,
-    req,
-    res,
+
+  // Resolve tenant from x-tenant-id header (set by proxy) or hostname
+  const headerTenantId = req.headers["x-tenant-id"] as string | undefined;
+  const tenantInfo = headerTenantId
+    ? resolveTenantById(headerTenantId)
+    : resolveTenantFromHostname(req.headers.host as string | undefined);
+
+  const buildContext = async (): Promise<Context> => {
+    const contextInner = await createContextInner({ locale, session, sourceIp });
+    return { ...contextInner, req, res };
   };
+
+  if (tenantInfo) {
+    return runWithTenant(tenantInfo, () => buildContext());
+  }
+
+  return buildContext();
 };
 
 export type TRPCContext = Awaited<ReturnType<typeof createContext>>;

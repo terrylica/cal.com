@@ -1,11 +1,14 @@
+import process from "node:process";
+import { isTenantModeEnabled } from "@calcom/lib/server/tenant";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-
 import { bookingIdempotencyKeyExtension } from "./extensions/booking-idempotency-key";
 import { disallowUndefinedDeleteUpdateManyExtension } from "./extensions/disallow-undefined-delete-update-many";
 import { excludeLockedUsersExtension } from "./extensions/exclude-locked-users";
 import { excludePendingPaymentsExtension } from "./extensions/exclude-pending-payment-teams";
-import { PrismaClient, type Prisma } from "./generated/prisma/client";
+import { type Prisma, PrismaClient } from "./generated/prisma/client";
+import { getTenantPrismaClient } from "./tenant-client";
+import { getCurrentTenant } from "./tenant-context";
 
 const connectionString = process.env.DATABASE_URL || "";
 const pool =
@@ -47,12 +50,14 @@ if (!isNaN(loggerLevel)) {
 }
 const baseClient = globalForPrisma.baseClient || new PrismaClient(prismaOptions);
 
-export const customPrisma = (options?: Prisma.PrismaClientOptions) => {
+export const customPrisma = (options?: Prisma.PrismaClientOptions, existingPool?: Pool) => {
   let finalOptions = { ...prismaOptions };
 
   if (options?.datasources?.db?.url) {
     const customConnectionString = options.datasources.db.url;
-    const customAdapter = new PrismaPg({ connectionString: customConnectionString });
+    const customAdapter = existingPool
+      ? new PrismaPg(existingPool)
+      : new PrismaPg({ connectionString: customConnectionString });
 
     const { datasources: _datasources, ...restOptions } = options;
     finalOptions = {
@@ -76,11 +81,26 @@ export const customPrisma = (options?: Prisma.PrismaClientOptions) => {
 
 // Explanation why we cast as PrismaClient. When we leave Prisma to its devices it tries to infer logic based on the extensions, but this is not a simple extends.
 // this makes the PrismaClient export type-hint impossible and it also is a massive hit on Prisma type hinting performance.
-export const prisma: PrismaClient = baseClient
+const defaultPrisma: PrismaClient = baseClient
   .$extends(excludeLockedUsersExtension())
   .$extends(excludePendingPaymentsExtension())
   .$extends(bookingIdempotencyKeyExtension())
   .$extends(disallowUndefinedDeleteUpdateManyExtension()) as unknown as PrismaClient;
+
+/**
+ * When multi-tenancy is enabled, this Proxy intercepts property access and
+ * routes to the correct PrismaClient based on the AsyncLocalStorage context.
+ * When disabled, this is just `defaultPrisma` — zero overhead.
+ */
+const prismaProxy = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const tenant = getCurrentTenant();
+    const client = tenant ? getTenantPrismaClient(tenant.tenantId, tenant.databaseUrl) : defaultPrisma;
+    return Reflect.get(client, prop, receiver);
+  },
+});
+
+export const prisma: PrismaClient = isTenantModeEnabled() ? prismaProxy : defaultPrisma;
 
 // This prisma instance is meant to be used only for READ operations.
 // If self hosting, feel free to leave INSIGHTS_DATABASE_URL as empty and `readonlyPrisma` will default to `prisma`.
@@ -111,3 +131,5 @@ export type {
  */
 export default prisma;
 export * from "./selects";
+export type { TenantContext } from "./tenant-context";
+export { getCurrentTenant, runWithTenant } from "./tenant-context";

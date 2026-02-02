@@ -1,3 +1,4 @@
+import { withTenantRun } from "@calcom/lib/server/triggerTenantUtils";
 import { schedules } from "@trigger.dev/sdk";
 
 import { monthlyProrationTaskConfig } from "./config";
@@ -10,7 +11,7 @@ export const scheduleMonthlyProration = schedules.task({
     pattern: "0 0 1 * *",
     timezone: "UTC",
   },
-  run: async (payload) => {
+  run: withTenantRun(async (payload) => {
     const { subMonths } = await import("date-fns");
     const { TriggerDevLogger } = await import("@calcom/lib/triggerDevLogger");
     const { formatMonthKey, isValidMonthKey } = await import(
@@ -102,5 +103,5 @@ export const scheduleMonthlyProration = schedules.task({
       succeeded: succeeded.length,
       failed: failed.length,
     };
-  },
+  }),
 });

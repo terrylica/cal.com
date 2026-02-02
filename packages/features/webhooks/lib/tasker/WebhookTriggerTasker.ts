@@ -1,3 +1,4 @@
+import { tenantTriggerOptions } from "@calcom/lib/server/triggerTenantUtils";
 import type { ITaskerDependencies } from "@calcom/lib/tasker/types";
 
 import type { WebhookTaskPayload } from "../types/webhookTask";
@@ -18,7 +19,7 @@ export class WebhookTriggerTasker implements IWebhookTasker {
 
   async deliverWebhook(payload: WebhookTaskPayload): Promise<WebhookDeliveryResult> {
     const { deliverWebhook } = await import("./trigger/deliver-webhook");
-    const handle = await deliverWebhook.trigger(payload);
+    const handle = await deliverWebhook.trigger(payload, tenantTriggerOptions());
     return { taskId: handle.id };
   }
 }

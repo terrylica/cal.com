@@ -1,4 +1,5 @@
 import { PrismaClient } from "@calcom/prisma/client";
+import { getCurrentTenant } from "@calcom/prisma/tenant-context";
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -17,8 +18,27 @@ export interface PrismaServiceOptions {
 @Injectable()
 export class PrismaWriteService implements OnModuleInit, OnModuleDestroy {
   private logger = new Logger("PrismaWriteService");
-  public prisma!: PrismaClient;
+  private _defaultPrisma!: PrismaClient;
+  private _tenantClients = new Map<string, PrismaClient>();
   private pool!: Pool;
+
+  get prisma(): PrismaClient {
+    const tenant = getCurrentTenant();
+    if (!tenant) return this._defaultPrisma;
+
+    const existing = this._tenantClients.get(tenant.tenantId);
+    if (existing) return existing;
+
+    const tenantPool = new Pool({
+      connectionString: tenant.databaseUrl,
+      max: 3,
+      idleTimeoutMillis: 300000,
+    });
+    const adapter = new PrismaPg(tenantPool);
+    const client = new PrismaClient({ adapter });
+    this._tenantClients.set(tenant.tenantId, client);
+    return client;
+  }
 
   constructor(configService?: ConfigService) {
     if (configService) {
@@ -58,20 +78,20 @@ export class PrismaWriteService implements OnModuleInit, OnModuleDestroy {
       });
 
       const adapter = new PrismaPg(this.pool);
-      this.prisma = new PrismaClient({ adapter });
+      this._defaultPrisma = new PrismaClient({ adapter });
     } else {
       const adapter = new PrismaPg({ connectionString: dbUrl });
-      this.prisma = new PrismaClient({
+      this._defaultPrisma = new PrismaClient({
         adapter,
       });
     }
   }
 
   async onModuleInit(): Promise<void> {
-    if (!this.prisma) return;
+    if (!this._defaultPrisma) return;
 
     try {
-      await this.prisma.$connect();
+      await this._defaultPrisma.$connect();
       this.logger.log("Connected to write database");
     } catch (error) {
       this.logger.error("Database connection failed", error);
@@ -80,7 +100,7 @@ export class PrismaWriteService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     try {
-      if (this.prisma) await this.prisma.$disconnect();
+      if (this._defaultPrisma) await this._defaultPrisma.$disconnect();
       if (this.pool) await this.pool.end();
     } catch (error) {
       this.logger.error("Error disconnecting from write database", error);

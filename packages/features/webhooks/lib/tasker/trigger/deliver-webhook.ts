@@ -1,4 +1,5 @@
 import { ErrorWithCode } from "@calcom/lib/errors";
+import { withTenantRun } from "@calcom/lib/server/triggerTenantUtils";
 import { logger, schemaTask, type TaskWithSchema } from "@trigger.dev/sdk";
 
 import type { WebhookTaskPayload } from "../../types/webhookTask";
@@ -25,7 +26,7 @@ export const deliverWebhook: TaskWithSchema<typeof WEBHOOK_DELIVERY_JOB_ID, type
     id: WEBHOOK_DELIVERY_JOB_ID,
     ...webhookDeliveryTaskConfig,
     schema: webhookDeliveryTaskSchema,
-    run: async (payload: WebhookTaskPayload, { ctx }) => {
+    run: withTenantRun(async (payload: WebhookTaskPayload, { ctx }) => {
       const { getWebhookTaskConsumer } = await import(
         "@calcom/features/di/webhooks/containers/webhook"
       );
@@ -44,5 +45,5 @@ export const deliverWebhook: TaskWithSchema<typeof WEBHOOK_DELIVERY_JOB_ID, type
         }
         throw error;
       }
-    },
+    }),
   });

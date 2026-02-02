@@ -19,6 +19,7 @@ import { AuthModule } from "@/modules/auth/auth.module";
 import { EndpointsModule } from "@/modules/endpoints.module";
 import { JwtModule } from "@/modules/jwt/jwt.module";
 import { PrismaModule } from "@/modules/prisma/prisma.module";
+import { TenantMiddleware } from "@/modules/prisma/tenant.middleware";
 import { RedisModule } from "@/modules/redis/redis.module";
 import { RedisService } from "@/modules/redis/redis.service";
 import { VercelWebhookController } from "@/vercel-webhook.controller";
@@ -105,6 +106,8 @@ export class AppModule implements NestModule {
       .apply(RequestIdMiddleware)
       .forRoutes("*")
       .apply(AppLoggerMiddleware)
+      .forRoutes("*")
+      .apply(TenantMiddleware)
       .forRoutes("*")
       .apply(RedirectsMiddleware)
       .forRoutes("/")
