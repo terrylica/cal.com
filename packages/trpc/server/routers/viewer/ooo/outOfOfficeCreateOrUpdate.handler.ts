@@ -423,6 +423,10 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       where: {
         oooEntryId: createdOrUpdatedOutOfOffice.id,
       },
+      select: {
+        id: true,
+        externalId: true,
+      },
     });
 
     if (existingReference) {
