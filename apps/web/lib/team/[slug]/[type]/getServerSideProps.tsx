@@ -4,7 +4,10 @@ import { z } from "zod";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getBookingForReschedule } from "@calcom/features/bookings/lib/get-booking";
 import logger from "@calcom/lib/logger";
-import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
+import {
+  getSlugOrRequestedSlug,
+  orgDomainConfig,
+} from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getOrganizationSEOSettings } from "@calcom/features/ee/organizations/lib/orgSettings";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { getBrandingForEventType } from "@calcom/features/profile/lib/getBranding";
@@ -13,7 +16,11 @@ import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import slugify from "@calcom/lib/slugify";
 import { prisma } from "@calcom/prisma";
 import type { User } from "@calcom/prisma/client";
-import { BookingStatus, RedirectType, SchedulingType } from "@calcom/prisma/enums";
+import {
+  BookingStatus,
+  RedirectType,
+  SchedulingType,
+} from "@calcom/prisma/enums";
 import { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 
 import { handleOrgRedirect } from "@lib/handleOrgRedirect";
@@ -27,13 +34,19 @@ function hasApiV2RouteInEnv() {
   return Boolean(process.env.NEXT_PUBLIC_API_V2_URL);
 }
 
-export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+export const getServerSideProps = async (
+  context: GetServerSidePropsContext
+) => {
   const { req, params, query } = context;
   const session = await getServerSession({ req });
   const { slug: teamSlug, type: meetingSlug } = paramsSchema.parse(params);
   const { rescheduleUid, isInstantMeeting: queryIsInstantMeeting } = query;
-  const allowRescheduleForCancelledBooking = query.allowRescheduleForCancelledBooking === "true";
-  const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(req, params?.orgSlug);
+  const allowRescheduleForCancelledBooking =
+    query.allowRescheduleForCancelledBooking === "true";
+  const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(
+    req,
+    params?.orgSlug
+  );
 
   const redirect = await handleOrgRedirect({
     slugs: [teamSlug],
@@ -47,7 +60,12 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return redirect;
   }
 
-  const team = await getTeamWithEventsData(teamSlug, meetingSlug, isValidOrgDomain, currentOrgDomain);
+  const team = await getTeamWithEventsData(
+    teamSlug,
+    meetingSlug,
+    isValidOrgDomain,
+    currentOrgDomain
+  );
 
   if (!team || !team.eventTypes?.[0]) {
     return { notFound: true } as const;
@@ -60,7 +78,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   }
 
   if (rescheduleUid && eventData.disableRescheduling) {
-    return { redirect: { destination: `/booking/${rescheduleUid}`, permanent: false } };
+    return {
+      redirect: { destination: `/booking/${rescheduleUid}`, permanent: false },
+    };
   }
 
   const eventTypeId = eventData.id;
@@ -80,40 +100,59 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const crmOwnerRecordTypeStr = Array.isArray(crmContactOwnerRecordType)
     ? crmContactOwnerRecordType[0]
     : crmContactOwnerRecordType;
-  const crmAppSlugStr = Array.isArray(crmAppSlugParam) ? crmAppSlugParam[0] : crmAppSlugParam;
-  const crmRecordIdStr = Array.isArray(crmRecordIdParam) ? crmRecordIdParam[0] : crmRecordIdParam;
+  const crmAppSlugStr = Array.isArray(crmAppSlugParam)
+    ? crmAppSlugParam[0]
+    : crmAppSlugParam;
+  const crmRecordIdStr = Array.isArray(crmRecordIdParam)
+    ? crmRecordIdParam[0]
+    : crmRecordIdParam;
 
-  const needsCrmLookup = !crmContactOwnerEmailStr || !crmOwnerRecordTypeStr || !crmAppSlugStr;
+  const needsCrmLookup =
+    !crmContactOwnerEmailStr || !crmOwnerRecordTypeStr || !crmAppSlugStr;
 
   // Run independent queries in parallel — these all depend on team/eventData but not on each other
-  const log = logger.getSubLogger({ prefix: ["team-event-ssr", `${teamSlug}/${meetingSlug}`] });
+  const log = logger.getSubLogger({
+    prefix: ["team-event-ssr", `${teamSlug}/${meetingSlug}`],
+  });
   const featureRepo = new FeaturesRepository(prisma);
-  const [eventHostsUserData, crmResult, teamHasApiV2Route, booking] = await Promise.all([
-    getUsersData(team.isPrivate, eventTypeId, eventData.hosts.map((h) => h.user)).catch((err) => {
-      log.error("Failed to get users data", err);
-      throw err;
-    }),
-    needsCrmLookup
-      ? import("@calcom/features/ee/teams/lib/getTeamMemberEmailFromCrm")
-          .then(({ getTeamMemberEmailForResponseOrContactUsingUrlQuery }) =>
-            getTeamMemberEmailForResponseOrContactUsingUrlQuery({ query, eventData })
-          )
-          .catch((err) => {
-            log.error("Failed CRM lookup", err);
-            throw err;
-          })
-      : Promise.resolve(null),
-    featureRepo.checkIfTeamHasFeature(team.id, "use-api-v2-for-team-slots").catch((err) => {
-      log.error("Failed to check API V2 feature flag", err);
-      throw err;
-    }),
-    rescheduleUid
-      ? getBookingForReschedule(`${rescheduleUid}`, session?.user?.id).catch((err) => {
-          log.error("Failed to get booking for reschedule", err);
+  const [eventHostsUserData, crmResult, teamHasApiV2Route, booking] =
+    await Promise.all([
+      getUsersData(
+        team.isPrivate,
+        eventTypeId,
+        eventData.hosts.map((h) => h.user)
+      ).catch((err) => {
+        log.error("Failed to get users data", err);
+        throw err;
+      }),
+      needsCrmLookup
+        ? import("@calcom/features/ee/teams/lib/getTeamMemberEmailFromCrm")
+            .then(({ getTeamMemberEmailForResponseOrContactUsingUrlQuery }) =>
+              getTeamMemberEmailForResponseOrContactUsingUrlQuery({
+                query,
+                eventData,
+              })
+            )
+            .catch((err) => {
+              log.error("Failed CRM lookup", err);
+              throw err;
+            })
+        : Promise.resolve(null),
+      featureRepo
+        .checkIfTeamHasFeature(team.id, "use-api-v2-for-team-slots")
+        .catch((err) => {
+          log.error("Failed to check API V2 feature flag", err);
           throw err;
-        })
-      : Promise.resolve(null),
-  ]);
+        }),
+      rescheduleUid
+        ? getBookingForReschedule(`${rescheduleUid}`, session?.user?.id).catch(
+            (err) => {
+              log.error("Failed to get booking for reschedule", err);
+              throw err;
+            }
+          )
+        : Promise.resolve(null),
+    ]);
 
   if (
     booking?.status === BookingStatus.CANCELLED &&
@@ -202,7 +241,10 @@ const getTeamWithEventsData = async (
   return await prisma.team.findFirst({
     where: {
       ...getSlugOrRequestedSlug(teamSlug),
-      parent: isValidOrgDomain && currentOrgDomain ? getSlugOrRequestedSlug(currentOrgDomain) : null,
+      parent:
+        isValidOrgDomain && currentOrgDomain
+          ? getSlugOrRequestedSlug(currentOrgDomain)
+          : null,
     },
     orderBy: {
       slug: { sort: "asc", nulls: "last" },
