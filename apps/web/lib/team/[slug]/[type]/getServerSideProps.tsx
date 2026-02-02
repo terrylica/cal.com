@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getBookingForReschedule } from "@calcom/features/bookings/lib/get-booking";
+import logger from "@calcom/lib/logger";
 import { getSlugOrRequestedSlug, orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getOrganizationSEOSettings } from "@calcom/features/ee/organizations/lib/orgSettings";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
@@ -85,18 +86,32 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const needsCrmLookup = !crmContactOwnerEmailStr || !crmOwnerRecordTypeStr || !crmAppSlugStr;
 
   // Run independent queries in parallel — these all depend on team/eventData but not on each other
+  const log = logger.getSubLogger({ prefix: ["team-event-ssr", `${teamSlug}/${meetingSlug}`] });
   const featureRepo = new FeaturesRepository(prisma);
   const [eventHostsUserData, crmResult, teamHasApiV2Route, booking] = await Promise.all([
-    getUsersData(team.isPrivate, eventTypeId, eventData.hosts.map((h) => h.user)),
+    getUsersData(team.isPrivate, eventTypeId, eventData.hosts.map((h) => h.user)).catch((err) => {
+      log.error("Failed to get users data", err);
+      throw err;
+    }),
     needsCrmLookup
-      ? import("@calcom/features/ee/teams/lib/getTeamMemberEmailFromCrm").then(
-          ({ getTeamMemberEmailForResponseOrContactUsingUrlQuery }) =>
+      ? import("@calcom/features/ee/teams/lib/getTeamMemberEmailFromCrm")
+          .then(({ getTeamMemberEmailForResponseOrContactUsingUrlQuery }) =>
             getTeamMemberEmailForResponseOrContactUsingUrlQuery({ query, eventData })
-        )
+          )
+          .catch((err) => {
+            log.error("Failed CRM lookup", err);
+            throw err;
+          })
       : Promise.resolve(null),
-    featureRepo.checkIfTeamHasFeature(team.id, "use-api-v2-for-team-slots"),
+    featureRepo.checkIfTeamHasFeature(team.id, "use-api-v2-for-team-slots").catch((err) => {
+      log.error("Failed to check API V2 feature flag", err);
+      throw err;
+    }),
     rescheduleUid
-      ? getBookingForReschedule(`${rescheduleUid}`, session?.user?.id)
+      ? getBookingForReschedule(`${rescheduleUid}`, session?.user?.id).catch((err) => {
+          log.error("Failed to get booking for reschedule", err);
+          throw err;
+        })
       : Promise.resolve(null),
   ]);
 
