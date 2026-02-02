@@ -151,8 +151,9 @@ const BookerWebWrapperComponent = (props: BookerWebWrapperAtomProps): JSX.Elemen
     bookerLayout,
     ...(props.entity.orgSlug ? { orgSlug: props.entity.orgSlug } : {}),
     // Pass timezone control flags to prevent unnecessary refetches
-    useBookerTimezone: event.data?.useBookerTimezone,
-    restrictionScheduleId: event.data?.restrictionScheduleId,
+    // Cast to BookerEvent since these fields are defined there but may not be in the tRPC inferred type
+    useBookerTimezone: (event.data as BookerEvent | undefined)?.useBookerTimezone,
+    restrictionScheduleId: (event.data as BookerEvent | undefined)?.restrictionScheduleId,
   });
   const bookings = useBookings({
     event,
