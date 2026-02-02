@@ -4,9 +4,6 @@ import { InstallAppButton } from "@calcom/app-store/InstallAppButton";
 import { AppSettings } from "@calcom/app-store/_components/AppSettings";
 import { getLocationFromApp, type EventLocationType } from "@calcom/app-store/locations";
 import type { AppCardApp } from "@calcom/app-store/types";
-import AppListCard from "@calcom/web/modules/apps/components/AppListCard";
-import type { UpdateUsersDefaultConferencingAppParams } from "@calcom/features/apps/components/AppSetDefaultLinkDialog";
-import { AppSetDefaultLinkDialog } from "@calcom/features/apps/components/AppSetDefaultLinkDialog";
 import type {
   BulkUpdatParams,
   EventTypes,
@@ -18,6 +15,7 @@ import type { AppCategories } from "@calcom/prisma/enums";
 import { type RouterOutputs } from "@calcom/trpc/react";
 import type { App } from "@calcom/types/App";
 import { Alert } from "@calcom/ui/components/alert";
+import { AppListCard } from "@calcom/ui/components/app-list-card";
 import { Button } from "@calcom/ui/components/button";
 import {
   Dropdown,
@@ -28,6 +26,11 @@ import {
 } from "@calcom/ui/components/dropdown";
 import { List } from "@calcom/ui/components/list";
 import { showToast } from "@calcom/ui/components/toast";
+
+import {
+  AppSetDefaultLinkDialog,
+  type UpdateUsersDefaultConferencingAppParams,
+} from "./AppSetDefaultLinkDialog";
 
 export type HandleDisconnect = (credentialId: number, app: App["slug"], teamId?: number) => void;
 
@@ -64,6 +67,7 @@ export const AppList = ({
   handleConnectDisconnectIntegrationMenuToggle,
   handleBulkEditDialogToggle,
 }: AppListProps) => {
+  const { t } = useLocale();
   const [bulkUpdateModal, setBulkUpdateModal] = useState(false);
   const [locationType, setLocationType] = useState<(EventLocationType & { slug: string }) | undefined>(
     undefined
@@ -173,7 +177,6 @@ export const AppList = ({
     return appCards;
   });
 
-  const { t } = useLocale();
   return (
     <>
       <List className={listClassName}>
