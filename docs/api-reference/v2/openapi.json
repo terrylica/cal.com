@@ -13037,39 +13037,6 @@
         "tags": ["OAuth2"]
       }
     },
-    "/v2/auth/oauth2/clients/{clientId}/authorize": {
-      "post": {
-        "operationId": "OAuth2Controller_authorize",
-        "summary": "Generate authorization code",
-        "description": "Generates an authorization code for the OAuth2 flow and redirects to the redirect URI with the code. Requires user authentication.",
-        "parameters": [
-          {
-            "name": "clientId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OAuth2AuthorizeInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": ["OAuth2"]
-      }
-    },
     "/v2/auth/oauth2/token": {
       "post": {
         "operationId": "OAuth2Controller_token",
@@ -16812,39 +16779,6 @@
           }
         },
         "required": ["status", "data"]
-      },
-      "OAuth2AuthorizeInput": {
-        "type": "object",
-        "properties": {
-          "redirect_uri": {
-            "type": "string",
-            "description": "The redirect URI to redirect to after authorization. Must exactly match the registered redirect URI.",
-            "example": "https://example.com/callback"
-          },
-          "state": {
-            "type": "string",
-            "description": "OAuth state parameter for CSRF protection. Will be included in the redirect."
-          },
-          "scopes": {
-            "type": "array",
-            "default": [],
-            "description": "The scopes to request",
-            "example": ["READ_BOOKING", "READ_PROFILE"],
-            "items": {
-              "type": "string",
-              "enum": ["READ_BOOKING", "READ_PROFILE"]
-            }
-          },
-          "team_slug": {
-            "type": "string",
-            "description": "The team slug to authorize for (optional)"
-          },
-          "code_challenge": {
-            "type": "string",
-            "description": "PKCE code challenge (required for public clients)"
-          }
-        },
-        "required": ["redirect_uri", "scopes"]
       },
       "OAuth2ExchangeConfidentialInput": {
         "type": "object",

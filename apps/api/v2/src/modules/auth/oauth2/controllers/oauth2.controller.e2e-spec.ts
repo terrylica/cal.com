@@ -1,6 +1,6 @@
 import { generateSecret } from "@calcom/platform-libraries";
 import type { Membership, Team, User } from "@calcom/prisma/client";
-import { AccessScope, OAuthClientStatus, OAuthClientType } from "@calcom/prisma/enums";
+import { AccessScope, OAuthClientType } from "@calcom/prisma/enums";
 import { INestApplication } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { Test, TestingModule } from "@nestjs/testing";
@@ -16,6 +16,7 @@ import { bootstrap } from "@/bootstrap";
 import { HttpExceptionFilter } from "@/filters/http-exception.filter";
 import { PrismaExceptionFilter } from "@/filters/prisma-exception.filter";
 import { ZodExceptionFilter } from "@/filters/zod-exception.filter";
+import { OAuthService } from "@/lib/services/oauth.service";
 import { AuthModule } from "@/modules/auth/auth.module";
 import { PrismaModule } from "@/modules/prisma/prisma.module";
 import { UsersModule } from "@/modules/users/users.module";
@@ -49,16 +50,6 @@ describe("OAuth2 Controller Endpoints", () => {
         .expect(401);
     });
 
-    it("POST /v2/auth/oauth2/clients/:clientId/authorize should return 401 without auth", () => {
-      return request(appWithoutAuth.getHttpServer())
-        .post("/api/v2/auth/oauth2/clients/test-client-id/authorize")
-        .send({
-          redirect_uri: "https://example.com/callback",
-          scopes: ["READ_BOOKING"],
-        })
-        .expect(401);
-    });
-
     it("POST /v2/auth/oauth2/token should return 401 without auth", () => {
       return request(appWithoutAuth.getHttpServer())
         .post("/api/v2/auth/oauth2/token")
@@ -86,17 +77,34 @@ describe("OAuth2 Controller Endpoints", () => {
     let teamRepositoryFixture: TeamRepositoryFixture;
     let membershipRepositoryFixture: MembershipRepositoryFixture;
     let oAuthClientFixture: OAuth2ClientRepositoryFixture;
+    let oAuthService: OAuthService;
 
     let user: User;
     let team: Team;
     let membership: Membership;
     let oAuthClient: { clientId: string };
-    let authorizationCode: string;
     let refreshToken: string;
 
     const testClientId = `test-oauth-client-${randomString()}`;
     const testClientSecret = "test-secret-123";
     const testRedirectUri = "https://example.com/callback";
+
+    /** Generate an authorization code directly via the service (bypasses HTTP layer). */
+    async function generateAuthCode(
+      scopes: AccessScope[] = [AccessScope.READ_BOOKING],
+      teamSlug?: string
+    ): Promise<string> {
+      const result = await oAuthService.generateAuthorizationCode(
+        testClientId,
+        user.id,
+        testRedirectUri,
+        scopes,
+        undefined,
+        teamSlug ?? team.slug
+      );
+      const redirectUrl = new URL(result.redirectUrl);
+      return redirectUrl.searchParams.get("code") as string;
+    }
 
     beforeAll(async () => {
       const userEmail = `oauth2-e2e-user-${randomString()}@api.com`;
@@ -118,6 +126,7 @@ describe("OAuth2 Controller Endpoints", () => {
       teamRepositoryFixture = new TeamRepositoryFixture(moduleRef);
       membershipRepositoryFixture = new MembershipRepositoryFixture(moduleRef);
       oAuthClientFixture = new OAuth2ClientRepositoryFixture(moduleRef);
+      oAuthService = moduleRef.get(OAuthService);
 
       user = await userRepositoryFixture.create({
         email: userEmail,
@@ -170,109 +179,14 @@ describe("OAuth2 Controller Endpoints", () => {
       });
     });
 
-    describe("POST /api/v2/auth/oauth2/clients/:clientId/authorize", () => {
-      describe("Positive tests", () => {
-        it("should redirect with authorization code for valid request", async () => {
-          const response = await request(app.getHttpServer())
-            .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
-            .send({
-              redirect_uri: testRedirectUri,
-              scopes: [AccessScope.READ_BOOKING, AccessScope.READ_PROFILE],
-              team_slug: team.slug,
-              state: "test-state-123",
-            })
-            .expect(303);
-
-          expect(response.headers.location).toBeDefined();
-          const redirectUrl = new URL(response.headers.location);
-          expect(redirectUrl.origin + redirectUrl.pathname).toBe(testRedirectUri);
-          expect(redirectUrl.searchParams.get("code")).toBeDefined();
-          expect(redirectUrl.searchParams.get("state")).toBe("test-state-123");
-
-          authorizationCode = redirectUrl.searchParams.get("code") as string;
-        });
-      });
-
-      describe("Negative tests", () => {
-        it("should return 404 for invalid client ID (not redirect)", async () => {
-          const response = await request(app.getHttpServer())
-            .post("/api/v2/auth/oauth2/clients/invalid-client-id/authorize")
-            .send({
-              redirect_uri: testRedirectUri,
-              scopes: [AccessScope.READ_BOOKING],
-            })
-            .expect(404);
-
-          expect(response.body.error).toBe("unauthorized_client");
-          expect(response.body.error_description).toBe("client_not_found");
-        });
-
-        it("should redirect with error for invalid team slug", async () => {
-          const response = await request(app.getHttpServer())
-            .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
-            .send({
-              redirect_uri: testRedirectUri,
-              scopes: [AccessScope.READ_BOOKING],
-              team_slug: "non-existent-team-slug",
-              state: "test-state-456",
-            })
-            .expect(303);
-
-          expect(response.headers.location).toBeDefined();
-          const redirectUrl = new URL(response.headers.location);
-          expect(redirectUrl.searchParams.get("error")).toBe("access_denied");
-          expect(redirectUrl.searchParams.get("error_description")).toBe("team_not_found_or_no_access");
-          expect(redirectUrl.searchParams.get("state")).toBe("test-state-456");
-        });
-
-        it("should return 400 for mismatched redirect URI (not redirect)", async () => {
-          const response = await request(app.getHttpServer())
-            .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
-            .send({
-              redirect_uri: "https://wrong-domain.com/callback",
-              scopes: [AccessScope.READ_BOOKING],
-              state: "test-state-789",
-            })
-            .expect(400);
-
-          expect(response.body.error).toBe("invalid_request");
-          expect(response.body.error_description).toBe("redirect_uri_mismatch");
-        });
-
-        it("should return 401 for unapproved client (not redirect)", async () => {
-          const pendingClientId = `test-pending-client-${randomString()}`;
-          const [hashedSecret] = generateSecret("pending-secret");
-          await oAuthClientFixture.create({
-            clientId: pendingClientId,
-            name: "Pending OAuth Client",
-            redirectUri: testRedirectUri,
-            clientSecret: hashedSecret,
-            clientType: OAuthClientType.CONFIDENTIAL,
-            status: OAuthClientStatus.PENDING,
-          });
-
-          try {
-            const response = await request(app.getHttpServer())
-              .post(`/api/v2/auth/oauth2/clients/${pendingClientId}/authorize`)
-              .send({
-                redirect_uri: testRedirectUri,
-                scopes: [AccessScope.READ_BOOKING],
-                state: "test-state-pending",
-              })
-              .expect(401);
-
-            expect(response.body.error).toBe("unauthorized_client");
-            expect(response.body.error_description).toBe("client_not_approved");
-          } finally {
-            await oAuthClientFixture.delete(pendingClientId);
-          }
-        });
-      });
-    });
-
     describe("POST /api/v2/auth/oauth2/token (authorization_code grant)", () => {
       describe("Positive tests", () => {
         it("should exchange authorization code for tokens", async () => {
+          const authorizationCode = await generateAuthCode([
+            AccessScope.READ_BOOKING,
+            AccessScope.READ_PROFILE,
+          ]);
+
           const response = await request(app.getHttpServer())
             .post("/api/v2/auth/oauth2/token")
             .type("form")
@@ -296,17 +210,7 @@ describe("OAuth2 Controller Endpoints", () => {
         });
 
         it("should exchange authorization code for tokens with JSON body", async () => {
-          const authResponse = await request(app.getHttpServer())
-            .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
-            .send({
-              redirect_uri: testRedirectUri,
-              scopes: [AccessScope.READ_BOOKING],
-              team_slug: team.slug,
-            })
-            .expect(303);
-
-          const redirectUrl = new URL(authResponse.headers.location);
-          const code = redirectUrl.searchParams.get("code") as string;
+          const code = await generateAuthCode();
 
           const response = await request(app.getHttpServer())
             .post("/api/v2/auth/oauth2/token")
@@ -325,17 +229,7 @@ describe("OAuth2 Controller Endpoints", () => {
         });
 
         it("should exchange authorization code for tokens with application/x-www-form-urlencoded body", async () => {
-          const authResponse = await request(app.getHttpServer())
-            .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
-            .send({
-              redirect_uri: testRedirectUri,
-              scopes: [AccessScope.READ_BOOKING],
-              team_slug: team.slug,
-            })
-            .expect(303);
-
-          const redirectUrl = new URL(authResponse.headers.location);
-          const code = redirectUrl.searchParams.get("code") as string;
+          const code = await generateAuthCode();
 
           const response = await request(app.getHttpServer())
             .post("/api/v2/auth/oauth2/token")
@@ -358,13 +252,29 @@ describe("OAuth2 Controller Endpoints", () => {
 
       describe("Negative tests", () => {
         it("should return 400 with RFC 6749 error for invalid/used authorization code", async () => {
+          const code = await generateAuthCode();
+
+          // Use the code once
+          await request(app.getHttpServer())
+            .post("/api/v2/auth/oauth2/token")
+            .type("form")
+            .send({
+              client_id: testClientId,
+              grant_type: "authorization_code",
+              code,
+              client_secret: testClientSecret,
+              redirect_uri: testRedirectUri,
+            })
+            .expect(200);
+
+          // Try to use the same code again
           const response = await request(app.getHttpServer())
             .post("/api/v2/auth/oauth2/token")
             .type("form")
             .send({
               client_id: testClientId,
               grant_type: "authorization_code",
-              code: authorizationCode,
+              code,
               client_secret: testClientSecret,
               redirect_uri: testRedirectUri,
             })
@@ -375,17 +285,7 @@ describe("OAuth2 Controller Endpoints", () => {
         });
 
         it("should return 401 for invalid client secret", async () => {
-          const newAuthResponse = await request(app.getHttpServer())
-            .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
-            .send({
-              redirect_uri: testRedirectUri,
-              scopes: [AccessScope.READ_BOOKING],
-              team_slug: team.slug,
-            })
-            .expect(303);
-
-          const newRedirectUrl = new URL(newAuthResponse.headers.location);
-          const newAuthCode = newRedirectUrl.searchParams.get("code") as string;
+          const code = await generateAuthCode();
 
           const response = await request(app.getHttpServer())
             .post("/api/v2/auth/oauth2/token")
@@ -393,7 +293,7 @@ describe("OAuth2 Controller Endpoints", () => {
             .send({
               client_id: testClientId,
               grant_type: "authorization_code",
-              code: newAuthCode,
+              code,
               client_secret: "wrong-secret",
               redirect_uri: testRedirectUri,
             })
@@ -422,17 +322,7 @@ describe("OAuth2 Controller Endpoints", () => {
         });
 
         it("should return 401 with RFC 6749 error for non-existent client_id", async () => {
-          const newAuthResponse = await request(app.getHttpServer())
-            .post(`/api/v2/auth/oauth2/clients/${testClientId}/authorize`)
-            .send({
-              redirect_uri: testRedirectUri,
-              scopes: [AccessScope.READ_BOOKING],
-              team_slug: team.slug,
-            })
-            .expect(303);
-
-          const newRedirectUrl = new URL(newAuthResponse.headers.location);
-          const newAuthCode = newRedirectUrl.searchParams.get("code") as string;
+          const code = await generateAuthCode();
 
           const response = await request(app.getHttpServer())
             .post("/api/v2/auth/oauth2/token")
@@ -440,7 +330,7 @@ describe("OAuth2 Controller Endpoints", () => {
             .send({
               client_id: "non-existent-client-id",
               grant_type: "authorization_code",
-              code: newAuthCode,
+              code,
               client_secret: testClientSecret,
               redirect_uri: testRedirectUri,
             })

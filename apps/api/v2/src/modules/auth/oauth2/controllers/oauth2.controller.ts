@@ -8,27 +8,15 @@ import {
   HttpStatus,
   Param,
   Post,
-  Res,
   UseFilters,
   UseGuards,
 } from "@nestjs/common";
-import {
-  ApiBody,
-  ApiExtraModels,
-  ApiOperation,
-  ApiTags,
-  getSchemaPath,
-} from "@nestjs/swagger";
+import { ApiBody, ApiExtraModels, ApiOperation, ApiTags, getSchemaPath } from "@nestjs/swagger";
 import { plainToInstance } from "class-transformer";
-import type { Response } from "express";
 import { API_VERSIONS_VALUES } from "@/lib/api-versions";
 import { OAuthService } from "@/lib/services/oauth.service";
-import { ApiAuthGuardOnlyAllow } from "@/modules/auth/decorators/api-auth-guard-only-allow.decorator";
-import { GetUser } from "@/modules/auth/decorators/get-user/get-user.decorator";
 import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 import { OAuth2HttpExceptionFilter } from "@/modules/auth/oauth2/filters/oauth2-http-exception.filter";
-import { OAuth2RedirectExceptionFilter } from "@/modules/auth/oauth2/filters/oauth2-redirect-exception.filter";
-import { OAuth2AuthorizeInput } from "@/modules/auth/oauth2/inputs/authorize.input";
 import {
   OAuth2ExchangeConfidentialInput,
   OAuth2ExchangePublicInput,
@@ -71,39 +59,6 @@ export class OAuth2Controller {
       };
     } catch (err) {
       this.errorHandler.handleClientError(err, "Failed to retrieve OAuth client");
-    }
-  }
-
-  @Post("/clients/:clientId/authorize")
-  @UseGuards(ApiAuthGuard)
-  @ApiAuthGuardOnlyAllow(["NEXT_AUTH"])
-  @UseFilters(OAuth2HttpExceptionFilter, OAuth2RedirectExceptionFilter)
-  @ApiOperation({
-    summary: "Generate authorization code",
-    description:
-      "Generates an authorization code for the OAuth2 flow and redirects to the redirect URI with the code. Requires user authentication.",
-  })
-  async authorize(
-    @Param("clientId") clientId: string,
-    @Body() body: OAuth2AuthorizeInput,
-    @GetUser("id") userId: number,
-    @Res() res: Response
-  ): Promise<void> {
-    try {
-      const client = await this.oAuthService.getClient(clientId);
-      const result = await this.oAuthService.generateAuthorizationCode(
-        client.clientId,
-        userId,
-        body.redirect_uri,
-        body.scopes,
-        body.state,
-        body.team_slug,
-        body.code_challenge,
-        body.code_challenge_method
-      );
-      return res.redirect(303, result.redirectUrl);
-    } catch (err) {
-      this.errorHandler.handleAuthorizeError(err, body.redirect_uri, body.state);
     }
   }
 
