@@ -3,7 +3,6 @@ import type { EventType, User, Webhook } from "@calcom/prisma/client";
 import { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { v4 } from "uuid";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
-
 import type { WebhookTaskPayload } from "../../types/webhookTask";
 
 /**
@@ -217,6 +216,26 @@ describe("Webhook Producer Integration", () => {
       const payload = deliveredWebhooks[0];
       expect(payload.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED);
       expect(payload.bookingUid).toBe(bookingUid);
+    });
+
+    test("propagates paymentId in task payload end-to-end", async () => {
+      const producer = getWebhookProducer();
+      const bookingUid = "test-booking-uid-payment-with-id";
+      const paymentId = 42;
+
+      await producer.queueBookingPaymentInitiatedWebhook({
+        bookingUid,
+        eventTypeId: testEventType.id,
+        userId: testUser.id,
+        paymentId,
+      });
+
+      expect(deliveredWebhooks.length).toBe(1);
+
+      const payload = deliveredWebhooks[0];
+      expect(payload.triggerEvent).toBe(WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED);
+      expect(payload.bookingUid).toBe(bookingUid);
+      expect(payload.paymentId).toBe(paymentId);
     });
   });
 

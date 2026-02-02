@@ -7,11 +7,10 @@
  *
  * This pattern can be used as a template for testing any service that queues webhooks.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { createMockLogger } from "@calcom/testing/lib/mocks/index";
-
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WebhookTaskPayload } from "../../types/webhookTask";
 import { WebhookTaskerProducerService } from "../WebhookTaskerProducerService";
 
@@ -188,6 +187,38 @@ describe("Webhook Task Queuing - Unit Tests", () => {
         triggerEvent: WebhookTriggerEvents.BOOKING_CREATED,
         bookingUid: "oauth-booking",
         oAuthClientId: "oauth-client-123",
+      });
+    });
+  });
+
+  describe("Payment webhooks", () => {
+    it("should include paymentId in BOOKING_PAYMENT_INITIATED task payload", async () => {
+      await webhookProducer.queueBookingPaymentInitiatedWebhook({
+        bookingUid: "payment-booking-1",
+        eventTypeId: 30,
+        userId: 15,
+        paymentId: 999,
+      });
+
+      expectWebhookDeliveryQueued(mockWebhookTasker, {
+        triggerEvent: WebhookTriggerEvents.BOOKING_PAYMENT_INITIATED,
+        bookingUid: "payment-booking-1",
+        paymentId: 999,
+      });
+    });
+
+    it("should include paymentId in BOOKING_PAID task payload", async () => {
+      await webhookProducer.queueBookingPaidWebhook({
+        bookingUid: "paid-booking-1",
+        eventTypeId: 31,
+        userId: 16,
+        paymentId: 1000,
+      });
+
+      expectWebhookDeliveryQueued(mockWebhookTasker, {
+        triggerEvent: WebhookTriggerEvents.BOOKING_PAID,
+        bookingUid: "paid-booking-1",
+        paymentId: 1000,
       });
     });
   });

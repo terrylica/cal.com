@@ -240,6 +240,7 @@ export class WebhookTaskerProducerService implements IWebhookProducerService {
       userId: params.userId,
       orgId: params.orgId,
       oAuthClientId: params.oAuthClientId,
+      paymentId: params.paymentId,
       metadata: params.metadata,
       timestamp: new Date().toISOString(),
     };

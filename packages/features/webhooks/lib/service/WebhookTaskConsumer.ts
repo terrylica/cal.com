@@ -206,7 +206,7 @@ export class WebhookTaskConsumer {
       userId: booking.user?.id ?? null,
       teamId: bookingPayload.teamId ?? null,
       orgId: bookingPayload.orgId,
-      platformClientId: bookingPayload.oAuthClientId,
+      platformClientId: bookingPayload.platformClientId ?? bookingPayload.oAuthClientId,
       evt: calendarEvent,
       eventType: eventTypeInfo,
       booking: {
