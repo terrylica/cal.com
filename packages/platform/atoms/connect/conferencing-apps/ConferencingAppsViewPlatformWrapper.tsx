@@ -396,6 +396,7 @@ export const ConferencingAppsViewPlatformWrapper = ({
             credentialId={modal.credentialId}
             app={modal.app}
             handleRemoveApp={handleRemoveApp}
+            isPlatform={true}
           />
 
           <AccountDialog
