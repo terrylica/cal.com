@@ -94,9 +94,17 @@ export class BookingLocationService_2024_08_13 {
 
     const updatedBookingResponses = { ...rest, location: bookingFieldsLocation };
 
+    const existingMetadata = (existingBooking.metadata || {}) as Record<string, unknown>;
+    const videoCallUrl = this.getVideoCallUrl(bookingLocation);
+    const updatedMetadata = {
+      ...existingMetadata,
+      videoCallUrl,
+    };
+
     const updatedBooking = await this.bookingsRepository.updateBooking(bookingUid, {
       location: bookingLocation,
       responses: updatedBookingResponses,
+      metadata: updatedMetadata,
     });
 
     await this.bookingEventHandlerService.onLocationChanged({
@@ -130,5 +138,15 @@ export class BookingLocationService_2024_08_13 {
     );
 
     return undefined;
+  }
+
+  private getVideoCallUrl(location: string | null): string {
+    if (!location) {
+      return "";
+    }
+    if (location.startsWith("http")) {
+      return location;
+    }
+    return "";
   }
 }
