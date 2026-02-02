@@ -1,11 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo } from "react";
-import { z } from "zod";
-
 import dayjs from "@calcom/dayjs";
-import { useBookingLocation } from "@calcom/web/modules/bookings/hooks/useBookingLocation";
 import { shouldShowFieldInCustomResponses } from "@calcom/lib/bookings/SystemField";
 import { formatPrice } from "@calcom/lib/currencyConversions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
@@ -15,8 +10,8 @@ import { getEveryFreqFor } from "@calcom/lib/recurringStrings";
 import { BookingStatus } from "@calcom/prisma/enums";
 import {
   bookingMetadataSchema,
-  eventTypeBookingFields,
   EventTypeMetaDataSchema,
+  eventTypeBookingFields,
 } from "@calcom/prisma/zod-utils";
 import { trpc } from "@calcom/trpc/react";
 import type { RecurringEvent } from "@calcom/types/Calendar";
@@ -25,28 +20,33 @@ import { Avatar } from "@calcom/ui/components/avatar";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { Icon } from "@calcom/ui/components/icon";
+import { SegmentedControl } from "@calcom/ui/components/segmented-control";
 import {
   Sheet,
-  SheetContent,
   SheetBody,
-  SheetHeader,
+  SheetContent,
   SheetFooter,
+  SheetHeader,
   SheetTitle,
 } from "@calcom/ui/components/sheet";
-
+import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
+import { useBookingLocation } from "@calcom/web/modules/bookings/hooks/useBookingLocation";
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
-
+import Link from "next/link";
+import { Trans } from "next-i18next";
+import { useMemo, useState } from "react";
+import type { z } from "zod";
 import { AcceptBookingButton } from "../../../components/booking/AcceptBookingButton";
-import { RejectBookingButton } from "../../../components/booking/RejectBookingButton";
 import { BookingActionsDropdown } from "../../../components/booking/actions/BookingActionsDropdown";
 import { BookingActionsStoreProvider } from "../../../components/booking/actions/BookingActionsStoreProvider";
+import { RejectBookingButton } from "../../../components/booking/RejectBookingButton";
 import type { BookingListingStatus } from "../../../components/booking/types";
+import { WrongAssignmentDialog } from "../../../components/dialog/WrongAssignmentDialog";
 import { usePaymentStatus } from "../hooks/usePaymentStatus";
 import { useBookingDetailsSheetStore } from "../store/bookingDetailsSheetStore";
 import type { BookingOutput } from "../types";
 import { JoinMeetingButton } from "./JoinMeetingButton";
-import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
-import { SegmentedControl } from "@calcom/ui/components/segmented-control";
+
 type BookingMetaData = z.infer<typeof bookingMetadataSchema>;
 
 interface BookingDetailsSheetProps {
@@ -93,14 +93,23 @@ interface BookingDetailsSheetInnerProps {
 }
 
 function useActiveSegment(bookingAuditEnabled: boolean) {
-  const [activeSegment, setActiveSegmentInStore] = useBookingDetailsSheetStore((state) => [state.activeSegment, state.setActiveSegment]);
+  const [activeSegment, setActiveSegmentInStore] = useBookingDetailsSheetStore((state) => [
+    state.activeSegment,
+    state.setActiveSegment,
+  ]);
 
-  const getDerivedActiveSegment = ({ activeSegment, bookingAuditEnabled }: { activeSegment: "info" | "history" | null, bookingAuditEnabled: boolean }) => {
+  const getDerivedActiveSegment = ({
+    activeSegment,
+    bookingAuditEnabled,
+  }: {
+    activeSegment: "info" | "history" | null;
+    bookingAuditEnabled: boolean;
+  }) => {
     if (!bookingAuditEnabled && activeSegment === "history") {
       return "info";
     }
     return activeSegment ?? "info";
-  }
+  };
 
   const derivedActiveSegment = getDerivedActiveSegment({ activeSegment, bookingAuditEnabled });
 
@@ -195,15 +204,15 @@ function BookingDetailsSheetInner({
   const recurringInfo =
     booking.recurringEventId && booking.eventType?.recurringEvent
       ? {
-        count: booking.eventType.recurringEvent.count,
-        recurringEvent: booking.eventType.recurringEvent,
-      }
+          count: booking.eventType.recurringEvent.count,
+          recurringEvent: booking.eventType.recurringEvent,
+        }
       : null;
 
   const customResponses = booking.responses
     ? Object.entries(booking.responses as Record<string, unknown>)
-      .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
-      .map(([question, answer]) => [question, answer] as [string, unknown])
+        .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
+        .map(([question, answer]) => [question, answer] as [string, unknown])
     : [];
 
   const reason = booking.assignmentReason?.[0];
@@ -284,7 +293,10 @@ function BookingDetailsSheetInner({
 
             {bookingAuditEnabled && (
               <SegmentedControl
-                data={[{ value: "info", label: t("info") }, { value: "history", label: t("history") }]}
+                data={[
+                  { value: "info", label: t("info") },
+                  { value: "history", label: t("history") },
+                ]}
                 value={activeSegment}
                 onChange={(value) => setActiveSegment(value)}
               />
@@ -584,6 +596,7 @@ function RecurringInfoSection({
 
 function AssignmentReasonSection({ booking }: { booking: BookingOutput }) {
   const { t } = useLocale();
+  const [isOpenWrongAssignmentDialog, setIsOpenWrongAssignmentDialog] = useState(false);
 
   if (!booking.assignmentReason || booking.assignmentReason.length === 0) {
     return null;
@@ -595,9 +608,37 @@ function AssignmentReasonSection({ booking }: { booking: BookingOutput }) {
     return null;
   }
 
+  // Check if booking is from routing form (has team event type)
+  const isBookingFromRoutingForm = !!booking.eventType?.team;
+
   return (
     <Section title={t("assignment_reason")}>
       <div className="text-emphasis text-sm font-medium">{reason.reasonString}</div>
+      {isBookingFromRoutingForm && (
+        <>
+          <p className="text-subtle mt-1 text-xs">
+            <Trans i18nKey="incorrect_report_wrong_assignment">
+              Incorrect?{" "}
+              <button
+                type="button"
+                className="text-emphasis cursor-pointer underline hover:opacity-80"
+                onClick={() => setIsOpenWrongAssignmentDialog(true)}>
+                Report wrong assignment
+              </button>
+            </Trans>
+          </p>
+          <WrongAssignmentDialog
+            isOpenDialog={isOpenWrongAssignmentDialog}
+            setIsOpenDialog={setIsOpenWrongAssignmentDialog}
+            bookingUid={booking.uid}
+            routingReason={reason.reasonString}
+            guestEmail={booking.attendees[0]?.email ?? ""}
+            hostEmail={booking.user?.email ?? ""}
+            hostName={booking.user?.name ?? null}
+            teamId={booking.eventType?.team?.id ?? null}
+          />
+        </>
+      )}
     </Section>
   );
 }

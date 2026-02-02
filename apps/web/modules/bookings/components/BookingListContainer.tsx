@@ -10,8 +10,9 @@ import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { ToggleGroup } from "@calcom/ui/components/form";
 import { WipeMyCalActionButton } from "@calcom/web/components/apps/wipemycalother/wipeMyCalActionButton";
+import { WrongAssignmentDialog } from "@calcom/web/components/dialog/WrongAssignmentDialog";
 import { getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBookingFilters } from "~/bookings/hooks/useBookingFilters";
 import { useBookingListColumns } from "~/bookings/hooks/useBookingListColumns";
@@ -91,7 +92,29 @@ function BookingListInner({
   const user = useMeQuery().data;
   const setSelectedBookingUid = useBookingDetailsSheetStore((state) => state.setSelectedBookingUid);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showFilters, setShowFilters] = useState(true);
+
+  // Handle openWrongAssignment query parameter from insights page
+  const openWrongAssignmentUid = searchParams?.get("openWrongAssignment");
+  const [isWrongAssignmentDialogOpen, setIsWrongAssignmentDialogOpen] = useState(false);
+  const [wrongAssignmentBooking, setWrongAssignmentBooking] = useState<
+    BookingsGetOutput["bookings"][number] | null
+  >(null);
+
+  useEffect(() => {
+    if (openWrongAssignmentUid && bookings.length > 0) {
+      const booking = bookings.find((b) => b.uid === openWrongAssignmentUid);
+      if (booking) {
+        setWrongAssignmentBooking(booking);
+        setIsWrongAssignmentDialogOpen(true);
+        // Clear the query parameter from URL without navigation
+        const url = new URL(window.location.href);
+        url.searchParams.delete("openWrongAssignment");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+  }, [openWrongAssignmentUid, bookings]);
 
   // Handle auto-selection for list view
   useListAutoSelector(bookings);
@@ -223,6 +246,19 @@ function BookingListInner({
           userId={user?.id}
           userEmail={user?.email}
           bookingAuditEnabled={bookingAuditEnabled}
+        />
+      )}
+
+      {wrongAssignmentBooking && (
+        <WrongAssignmentDialog
+          isOpenDialog={isWrongAssignmentDialogOpen}
+          setIsOpenDialog={setIsWrongAssignmentDialogOpen}
+          bookingUid={wrongAssignmentBooking.uid}
+          routingReason={wrongAssignmentBooking.assignmentReason[0]?.reasonString ?? null}
+          guestEmail={wrongAssignmentBooking.attendees[0]?.email ?? ""}
+          hostEmail={wrongAssignmentBooking.user?.email ?? ""}
+          hostName={wrongAssignmentBooking.user?.name ?? null}
+          teamId={wrongAssignmentBooking.eventType?.team?.id ?? null}
         />
       )}
     </>
