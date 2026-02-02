@@ -430,7 +430,8 @@ const updateAttendees = async ({
 
   return results
     .filter((x) => x.status === "fulfilled")
-    .map((x) => (x as PromiseFulfilledResult<{ noShow: boolean; email: string }>).value)
+    .map((x) => (x as PromiseFulfilledResult<{ noShow: boolean; email: string } | null>).value)
+    .filter((x): x is { noShow: boolean; email: string } => x !== null)
     .map((x) => ({ email: x.email, noShow: x.noShow }));
 };
 
