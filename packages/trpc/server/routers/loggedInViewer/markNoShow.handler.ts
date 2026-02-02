@@ -1,4 +1,4 @@
-import { handleMarkAttendeeNoShow } from "@calcom/features/handleMarkNoShow";
+import { handleMarkAttendeesAndHostNoShow } from "@calcom/features/handleMarkNoShow";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
 
 import type { TNoShowInputSchema } from "./markNoShow.schema";
@@ -13,7 +13,7 @@ type NoShowOptions = {
 export const markNoShow = async ({ ctx, input }: NoShowOptions) => {
   const { bookingUid, attendees, noShowHost } = input;
 
-  return handleMarkAttendeeNoShow({
+  return handleMarkAttendeesAndHostNoShow({
     bookingUid,
     attendees,
     noShowHost,

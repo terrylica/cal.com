@@ -152,7 +152,7 @@ export const fireNoShowUpdatedEvent = async ({
     id: number;
     uid: string;
     user?: { id: number; uuid: string } | null;
-    eventType?: { teamId?: number | null } | null;
+    eventType?: { teamId?: number | null; parent?: { teamId?: number | null } | null } | null;
   };
   noShowHostAudit?: { old: boolean | null; new: boolean | null };
   attendeesNoShowAudit?: NoShowUpdatedAuditData["attendeesNoShow"];
@@ -172,12 +172,13 @@ export const fireNoShowUpdatedEvent = async ({
   try {
     const orgId = await getOrgIdFromMemberOrTeamId({
       memberId: booking.user?.id,
-      teamId: booking.eventType?.teamId,
+      teamId: booking.eventType?.teamId || booking.eventType?.parent?.teamId,
     });
 
     const bookingEventHandlerService = getBookingEventHandlerService();
     await bookingEventHandlerService.onNoShowUpdated({
       bookingUid: booking.uid,
+      // This action is taken by the scheduled tasker job, so we use the system actor
       actor: makeSystemActor(),
       organizationId: orgId ?? null,
       source: "SYSTEM",

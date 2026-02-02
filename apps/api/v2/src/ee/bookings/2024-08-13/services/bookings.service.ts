@@ -4,7 +4,7 @@ import {
   getCalendarLinks,
   getTranslation,
   handleCancelBooking,
-  handleMarkAttendeeNoShow,
+  handleMarkNoShow,
   roundRobinManualReassignment,
   roundRobinReassignment,
 } from "@calcom/platform-libraries";
@@ -926,7 +926,7 @@ export class BookingsService_2024_08_13 {
     bookingUid: string,
     bookingOwnerId: number,
     body: MarkAbsentBookingInput_2024_08_13,
-    userUuid?: string
+    userUuid: string
   ) {
     const bodyTransformed = this.inputService.transformInputMarkAbsentBooking(body);
     const bookingBefore = await this.bookingsRepository.getByUid(bookingUid);
@@ -948,18 +948,15 @@ export class BookingsService_2024_08_13 {
       ? await this.platformBookingsService.getOAuthClientParams(bookingBefore.eventTypeId)
       : undefined;
 
-    if (!userUuid) {
-      throw new BadRequestException("User UUID is required to mark booking as absent");
-    }
-
-    await handleMarkAttendeeNoShow({
+    await handleMarkNoShow({
       bookingUid,
       attendees: bodyTransformed.attendees,
       noShowHost: bodyTransformed.noShowHost,
       userId: bookingOwnerId,
       userUuid,
-      actionSource: "API_V2",
       platformClientParams,
+      actor: makeUserActor(userUuid),
+      actionSource: "API_V2",
     });
 
     const booking = await this.bookingsRepository.getByUidWithAttendeesAndUserAndEvent(bookingUid);

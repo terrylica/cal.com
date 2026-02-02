@@ -52,7 +52,7 @@ type HandleMarkHostNoShowArgs = {
   platformClientParams?: PlatformClientParams;
 };
 
-type HandleMarkAttendeeNoShowArgs = {
+type HandleMarkAttendeesAndHostNoShowArgs = {
   bookingUid: string;
   attendees?: { email: string; noShow: boolean }[];
   noShowHost?: boolean;
@@ -76,18 +76,18 @@ type HandleMarkNoShowArgs = {
 };
 
 const buildResultPayload = async ({
-  inputAttendees,
+  attendees,
   t,
   emailToAttendeeMap,
 }: {
-  inputAttendees: NonNullable<TNoShowInputSchema["attendees"]>;
+  attendees: NonNullable<TNoShowInputSchema["attendees"]>;
   t: TFunction;
   emailToAttendeeMap: EmailToAttendeeMap;
 }): Promise<{message: string; attendees: NoShowAttendees}> => {
-  const attendees = await updateAttendees({ attendees: inputAttendees, emailToAttendeeMap });
+  const updatedAttendees = await updateAttendees({ attendees, emailToAttendeeMap });
 
-  if (attendees.length === 1) {
-    const [attendee] = attendees;
+  if (updatedAttendees.length === 1) {
+    const [attendee] = updatedAttendees;
     return {
       message: t(attendee.noShow ? "x_marked_as_no_show" : "x_unmarked_as_no_show", {
         x: attendee.email ?? "User",
@@ -97,7 +97,7 @@ const buildResultPayload = async ({
   }
   return {
     message: t("no_show_updated"),
-    attendees: attendees,
+    attendees: updatedAttendees,
   };
 };
 
@@ -210,7 +210,7 @@ async function fireNoShowUpdated({
 
   const bookingEventHandlerService = getBookingEventHandlerService();
 
-  const isSomethingChanged = auditData.host || auditData.attendeesNoShow;
+  const isSomethingChanged = auditData.host || auditData.attendeesNoShow && auditData.attendeesNoShow.length > 0;
   if (isSomethingChanged) {
     await bookingEventHandlerService.onNoShowUpdated({
       bookingUid: booking.uid,
@@ -250,8 +250,7 @@ const handleMarkNoShow = async ({
     const [orgId, emailToAttendeeMap] = await Promise.all([
       getOrgIdFromMemberOrTeamId({
         memberId: booking.eventType?.userId,
-        // TODO: What about parent Event's teamId?
-        teamId: booking.eventType?.teamId,
+        teamId: booking.eventType?.teamId || booking.eventType?.parent?.teamId,
       }),
       getBookingAttendeesFromEmails(bookingUid, attendeeEmails),
     ]);
@@ -260,7 +259,7 @@ const handleMarkNoShow = async ({
       await assertCanAccessBooking(bookingUid, userId);
 
       const payload = await buildResultPayload({
-        inputAttendees: attendees,
+        attendees,
         t,
         emailToAttendeeMap,
       });
@@ -503,7 +502,7 @@ export const handleMarkHostNoShow = async ({
  * This is called from authenticated endpoints where a logged-in host marks attendees as absent.
  * Requires userId and userUuid for proper authorization and audit tracking.
  */
-export const handleMarkAttendeeNoShow = async ({
+export const handleMarkAttendeesAndHostNoShow = async ({
   bookingUid,
   attendees,
   noShowHost,
@@ -512,7 +511,7 @@ export const handleMarkAttendeeNoShow = async ({
   actionSource,
   locale,
   platformClientParams,
-}: HandleMarkAttendeeNoShowArgs): Promise<ResponsePayloadResult> => {
+}: HandleMarkAttendeesAndHostNoShowArgs): Promise<ResponsePayloadResult> => {
   const actor = makeUserActor(userUuid);
 
   return handleMarkNoShow({
