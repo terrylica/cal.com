@@ -30,6 +30,17 @@ export interface OptInFeatureConfig {
    * Use [] if you want the feature defined but not displayed anywhere.
    */
   displayLocations?: OptInFeatureDisplayLocation[];
+  /**
+   * Formbricks tracking configuration for delayed survey triggering after opt-in.
+   * When configured, a Formbricks action will be tracked after the specified delay
+   * has passed since the user opted in, allowing time for feature usage before collecting feedback.
+   */
+  formbricks?: {
+    /** The action name to track (e.g., "visit_bookings_v3_page"). */
+    actionName: string;
+    /** Delay in milliseconds before tracking the action after opt-in. */
+    delayMs: number;
+  };
 }
 
 /**

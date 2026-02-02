@@ -10,6 +10,7 @@ import {
   setFeatureDismissed,
   setFeatureOptedIn,
 } from "../lib/feature-opt-in-storage";
+import { useFormbricksOptInTracking } from "./useFormbricksOptInTracking";
 
 type UserRoleContext = {
   isOrgAdmin: boolean;
@@ -53,6 +54,9 @@ function useFeatureOptInBanner(featureId: string): UseFeatureOptInBannerResult {
   const [isOptedIn, setIsOptedIn] = useState(() => isFeatureOptedIn(featureId));
 
   const featureConfig = useMemo(() => getOptInFeatureConfig(featureId) ?? null, [featureId]);
+
+  useFormbricksOptInTracking(featureId, featureConfig);
+
   const utils = trpc.useUtils();
 
   const eligibilityQuery = trpc.viewer.featureOptIn.checkFeatureOptInEligibility.useQuery(
