@@ -824,15 +824,17 @@ export const getOptions = ({
             access_token: account.access_token,
             refresh_token: account.refresh_token,
             email: user.email,
-            expiry_date: account.expires_at,
+            // convert seconds to milliseconds — OAuthManager compares expiry_date against Date.now()
+            expiry_date: account.expires_at ? account.expires_at * 1000 : undefined,
           };
 
-          const outlookCredential = await CredentialRepository.create({
+          const outlookCredentialData = buildCredentialCreateData({
             userId: Number(user.id),
             key: credentialKey,
             appId: "office365-calendar",
             type: "office365_calendar",
           });
+          const outlookCredential = await CredentialRepository.create(outlookCredentialData);
 
           // Fetch default calendar from Microsoft Graph API
           try {
