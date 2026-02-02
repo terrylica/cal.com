@@ -354,13 +354,12 @@ export async function handler(req: NextRequest) {
             title: booking.title || booking.eventType?.title || "",
           };
 
+          // Organization accounts are allowed to use cloaked links (URL behind text)
+          // since they are paid accounts with lower spam/scam risk
           const isOrganization = reminder.workflowStep?.workflow?.team?.isOrganization ?? false;
           const organizationId = isOrganization
             ? reminder.workflowStep?.workflow?.teamId
             : reminder.workflowStep?.workflow?.team?.parentId ?? null;
-          const processedEmailBody = isOrganization
-            ? emailContent.emailBody
-            : replaceCloakedLinksInHtml(emailContent.emailBody);
 
           const mailData = {
             subject: emailContent.emailSubject,
@@ -462,13 +461,12 @@ export async function handler(req: NextRequest) {
         if (emailContent.emailSubject.length > 0 && !emailBodyEmpty && sendTo) {
           const batchId = isSendgridEnabled ? await getBatchId() : undefined;
 
+          // Organization accounts are allowed to use cloaked links (URL behind text)
+          // since they are paid accounts with lower spam/scam risk
           const isOrganization = reminder.workflowStep?.workflow?.team?.isOrganization ?? false;
           const organizationId = isOrganization
             ? reminder.workflowStep?.workflow?.teamId
             : reminder.workflowStep?.workflow?.team?.parentId ?? null;
-          const processedEmailBody = isOrganization
-            ? emailContent.emailBody
-            : replaceCloakedLinksInHtml(emailContent.emailBody);
 
           const mailData = {
             subject: emailContent.emailSubject,
