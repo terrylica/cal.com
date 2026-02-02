@@ -2,9 +2,11 @@ import type { NextApiRequest } from "next";
 
 import { defaultResponder } from "@calcom/lib/server/defaultResponder";
 import prisma from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
 
 import { schemaBookingReferenceReadPublic } from "~/lib/validations/booking-reference";
+import { withMiddleware } from "~/lib/helpers/withMiddleware";
+
+const MAX_TAKE = 100;
 
 /**
  * @swagger
@@ -17,6 +19,21 @@ import { schemaBookingReferenceReadPublic } from "~/lib/validations/booking-refe
  *        schema:
  *          type: string
  *        description: Your API key
+ *      - in: query
+ *        name: take
+ *        required: false
+ *        schema:
+ *          type: integer
+ *          minimum: 1
+ *          maximum: 100
+ *        description: Number of bookings to return references for (max 100)
+ *      - in: query
+ *        name: page
+ *        required: false
+ *        schema:
+ *          type: integer
+ *          minimum: 1
+ *        description: Page number for pagination
  *     operationId: listBookingReferences
  *     summary: Find all booking references
  *     tags:
@@ -30,12 +47,36 @@ import { schemaBookingReferenceReadPublic } from "~/lib/validations/booking-refe
  *         description: No booking references were found
  */
 export async function handler(req: NextApiRequest) {
-  const { userId, isSystemWideAdmin } = req;
-  const args: Prisma.BookingReferenceFindManyArgs = isSystemWideAdmin
-    ? { where: { deleted: null } }
-    : { where: { booking: { userId }, deleted: null } };
-  const data = await prisma.bookingReference.findMany(args);
+  const { userId, isSystemWideAdmin, pagination } = req;
+  const take = Math.min(pagination.take, MAX_TAKE);
+  const skip = pagination.skip;
+
+  if (isSystemWideAdmin) {
+    const data = await prisma.bookingReference.findMany({
+      where: { deleted: null },
+      take,
+      skip,
+      orderBy: { id: "desc" },
+    });
+    return { booking_references: data.map((br) => schemaBookingReferenceReadPublic.parse(br)) };
+  }
+
+  const bookingIds = await prisma.booking
+    .findMany({
+      where: { userId },
+      select: { id: true },
+      orderBy: { createdAt: "desc" },
+      take,
+      skip,
+    })
+    .then((bookings) => bookings.map((b) => b.id));
+
+  const data = await prisma.bookingReference.findMany({
+    where: { bookingId: { in: bookingIds }, deleted: null },
+    orderBy: { id: "desc" },
+  });
+
   return { booking_references: data.map((br) => schemaBookingReferenceReadPublic.parse(br)) };
 }
 
-export default defaultResponder(handler);
+export default withMiddleware("pagination")(defaultResponder(handler));

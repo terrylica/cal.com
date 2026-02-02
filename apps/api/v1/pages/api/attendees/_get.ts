@@ -21,7 +21,7 @@ type AttendeeResponse = {
   timeZone: string;
 };
 
-const MAX_TAKE = 250;
+const MAX_TAKE = 100;
 
 /**
  * @swagger
@@ -77,23 +77,19 @@ async function handler(req: NextApiRequest): Promise<{ attendees: AttendeeRespon
     return { attendees };
   }
 
-  // two-step query to avoid large IN clauses and ensure index usage
-  // step 1: get recent booking IDs with limit
   const bookingIds = await prisma.booking
     .findMany({
       where: { userId },
       select: { id: true },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take,
+      skip,
     })
     .then((bookings) => bookings.map((b) => b.id));
 
-  // step 2: direct index hit with small IN list
   const attendees = await prisma.attendee.findMany({
     where: { bookingId: { in: bookingIds } },
     select: attendeeSelect,
-    take,
-    skip,
     orderBy: { id: "desc" },
   });
 
