@@ -203,7 +203,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     updatedAt: Date;
     notes: string | null;
     showNotePublicly: boolean;
-    reason: { reason: string; emoji: string } | null;
+    reason: { reason: string; emoji: string | null } | null;
     reasonId: number | null;
     user: { id: number; name: string | null; email: string; timeZone: string };
     toUser: { id: number; name: string | null; email: string; timeZone: string } | null;
@@ -348,7 +348,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       updatedAt: createdOrUpdatedOutOfOffice.updatedAt.toISOString(),
       notes: createdOrUpdatedOutOfOffice.notes,
       reason: {
-        emoji: reason?.emoji,
+        emoji: reason?.emoji ?? undefined,
         reason: selectedReason.source === "hrms" ? selectedReason.name : reason?.reason,
       },
       reasonId,
