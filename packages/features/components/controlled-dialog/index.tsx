@@ -2,13 +2,13 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useIsPlatform } from "@calcom/lib/hooks/useIsPlatform";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { Dialog as BaseDialog } from "@calcom/ui/components/dialog";
 
 export type DialogProps = React.ComponentProps<(typeof DialogPrimitive)["Root"]> & {
   name?: string;
   clearQueryParamsOnClose?: string[];
+  isPlatform?: boolean;
 };
 
 const enum DIALOG_STATE {
@@ -20,8 +20,7 @@ const enum DIALOG_STATE {
   OPEN = "OPEN",
 }
 
-export function Dialog(props: DialogProps) {
-  const isPlatform = useIsPlatform();
+export function Dialog({ isPlatform = false, ...props }: DialogProps) {
   return !isPlatform ? <ControlledDialog {...props} /> : <DialogPrimitive.Dialog {...props} />;
 }
 

@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { useCallback } from "react";
 
-import { PlatformContext } from "@calcom/lib/hooks/useIsPlatform";
 import type { API_VERSIONS_ENUM } from "@calcom/platform-constants";
 import { IconSprites } from "@calcom/ui/components/icon";
 import deTranslations from "@calcom/web/public/static/locales/de/common.json";
@@ -168,54 +167,48 @@ export function BaseCalProvider({
     },
   };
 
-  const isPlatform = Boolean(clientId);
-
   return isInit ? (
-    <PlatformContext.Provider value={{ isPlatform }}>
-      <AtomsContext.Provider
-        value={{
-          clientId,
-          accessToken: currentAccessToken,
-          options,
-          error,
-          getClient: () => http,
-          isRefreshing: isRefreshing,
-          isInit: isInit,
-          isValidClient: Boolean(!error && clientId && isInit),
-          isAuth: Boolean(isInit && !error && clientId && currentAccessToken && http.getAuthorizationHeader()),
-          organizationId: organizationId || stateOrgId || me?.data.organizationId || 0,
-          userId: me?.data.id,
-          isEmbed,
-          ...translations,
-        }}>
+    <AtomsContext.Provider
+      value={{
+        clientId,
+        accessToken: currentAccessToken,
+        options,
+        error,
+        getClient: () => http,
+        isRefreshing: isRefreshing,
+        isInit: isInit,
+        isValidClient: Boolean(!error && clientId && isInit),
+        isAuth: Boolean(isInit && !error && clientId && currentAccessToken && http.getAuthorizationHeader()),
+        organizationId: organizationId || stateOrgId || me?.data.organizationId || 0,
+        userId: me?.data.id,
+        isEmbed,
+        ...translations,
+      }}>
+      <TooltipProvider>{children}</TooltipProvider>
+      <Toaster />
+      <IconSprites />
+    </AtomsContext.Provider>
+  ) : (
+    <AtomsContext.Provider
+      value={{
+        clientId,
+        options,
+        error,
+        getClient: () => http,
+        isAuth: false,
+        isValidClient: Boolean(!error && clientId),
+        isInit: false,
+        isRefreshing: false,
+        ...translations,
+        organizationId: 0,
+        isEmbed: false,
+      }}>
+      <>
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster />
         <IconSprites />
-      </AtomsContext.Provider>
-    </PlatformContext.Provider>
-  ) : (
-    <PlatformContext.Provider value={{ isPlatform }}>
-      <AtomsContext.Provider
-        value={{
-          clientId,
-          options,
-          error,
-          getClient: () => http,
-          isAuth: false,
-          isValidClient: Boolean(!error && clientId),
-          isInit: false,
-          isRefreshing: false,
-          ...translations,
-          organizationId: 0,
-          isEmbed: false,
-        }}>
-        <>
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster />
-          <IconSprites />
-        </>
-      </AtomsContext.Provider>
-    </PlatformContext.Provider>
+      </>
+    </AtomsContext.Provider>
   );
 }
 

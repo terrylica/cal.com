@@ -136,17 +136,19 @@ const DeleteDialogButton = ({
   isPending,
   onDeleteConfirmed,
   handleDelete,
+  isPlatform = false,
 }: {
   disabled?: boolean;
   onDeleteConfirmed?: () => void;
   buttonClassName: string;
   handleDelete: () => void;
   isPending: boolean;
+  isPlatform?: boolean;
 }) => {
   const { t } = useLocale();
 
   return (
-    <Dialog>
+    <Dialog isPlatform={isPlatform}>
       <DialogTrigger asChild>
         <Button
           StartIcon="trash"
@@ -194,6 +196,7 @@ const DateOverride = ({
   classNames,
   handleSubmit,
   isDryRun = false,
+  isPlatform = false,
 }: {
   workingHours: WorkingHours[];
   userTimeFormat: number | null;
@@ -208,6 +211,7 @@ const DateOverride = ({
   };
   handleSubmit: (data: AvailabilityFormValues) => Promise<void>;
   isDryRun?: boolean;
+  isPlatform?: boolean;
 }) => {
   const { append, replace, fields } = useFieldArray<AvailabilityFormValues, "dateOverrides">({
     name: "dateOverrides",
@@ -248,6 +252,7 @@ const DateOverride = ({
           travelSchedules={travelSchedules}
           handleAvailabilityUpdate={handleAvailabilityUpdate}
           isDryRun={isDryRun}
+          isPlatform={isPlatform}
         />
         <DateOverrideInputDialog
           className={overridesModalClassNames}
@@ -501,6 +506,7 @@ export const AvailabilitySettings = forwardRef<AvailabilitySettingsFormRef, Avai
                   disabled={schedule.isLastSchedule}
                   isPending={isDeleting}
                   handleDelete={handleDelete}
+                  isPlatform={isPlatform}
                 />
                 <VerticalDivider className="hidden sm:inline" />
               </>
@@ -530,6 +536,7 @@ export const AvailabilitySettings = forwardRef<AvailabilitySettingsFormRef, Avai
                           onDeleteConfirmed={() => {
                             setOpenSidebar(false);
                           }}
+                          isPlatform={isPlatform}
                         />
                       )}
                     </div>
@@ -721,6 +728,7 @@ export const AvailabilitySettings = forwardRef<AvailabilitySettingsFormRef, Avai
                       }
                       overridesModalClassNames={customClassNames?.overridesModalClassNames}
                       classNames={customClassNames?.dateOverrideClassNames}
+                      isPlatform={isPlatform}
                     />
                   </BookerStoreProvider>
                 </div>
