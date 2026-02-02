@@ -1,10 +1,11 @@
 import type { PipeTransform } from "@nestjs/common";
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { plainToClass } from "class-transformer";
 import type { ValidationError } from "class-validator";
 import { validateSync } from "class-validator";
 import { OAuth2ExchangeConfidentialInput, OAuth2ExchangePublicInput } from "./exchange.input";
 import { OAuth2RefreshConfidentialInput, OAuth2RefreshPublicInput } from "./refresh.input";
+import { OAuth2HttpException } from "@/modules/auth/oauth2/filters/oauth2-http.exception";
 
 export type OAuth2TokenInput =
   | OAuth2ExchangeConfidentialInput
@@ -98,7 +99,7 @@ export class OAuth2TokenInputPipe implements PipeTransform {
   }
 
   private throwOAuthError(description: string): never {
-    throw new HttpException(
+    throw new OAuth2HttpException(
       { error: "invalid_request", error_description: description },
       HttpStatus.BAD_REQUEST
     );

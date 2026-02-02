@@ -27,6 +27,7 @@ import { OAuthService } from "@/lib/services/oauth.service";
 import { ApiAuthGuardOnlyAllow } from "@/modules/auth/decorators/api-auth-guard-only-allow.decorator";
 import { GetUser } from "@/modules/auth/decorators/get-user/get-user.decorator";
 import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+import { OAuth2HttpExceptionFilter } from "@/modules/auth/oauth2/filters/oauth2-http-exception.filter";
 import { OAuth2RedirectExceptionFilter } from "@/modules/auth/oauth2/filters/oauth2-redirect-exception.filter";
 import { OAuth2AuthorizeInput } from "@/modules/auth/oauth2/inputs/authorize.input";
 import {
@@ -71,14 +72,14 @@ export class OAuth2Controller {
         data: plainToInstance(OAuth2ClientDto, client, { strategy: "excludeAll" }),
       };
     } catch (err) {
-      this.errorHandler.handleTokenError(err);
+      this.errorHandler.handleClientError(err, "Failed to retrieve OAuth client");
     }
   }
 
   @Post("/clients/:clientId/authorize")
   @UseGuards(ApiAuthGuard)
   @ApiAuthGuardOnlyAllow(["NEXT_AUTH"])
-  @UseFilters(OAuth2RedirectExceptionFilter)
+  @UseFilters(OAuth2HttpExceptionFilter, OAuth2RedirectExceptionFilter)
   @ApiOperation({
     summary: "Generate authorization code",
     description:
@@ -137,6 +138,7 @@ export class OAuth2Controller {
     OAuth2RefreshConfidentialInput,
     OAuth2RefreshPublicInput
   )
+  @UseFilters(OAuth2HttpExceptionFilter)
   @Header("Cache-Control", "no-store")
   @Header("Pragma", "no-cache")
   async token(@Body(new OAuth2TokenInputPipe()) body: OAuth2TokenInput): Promise<OAuth2TokensDto> {

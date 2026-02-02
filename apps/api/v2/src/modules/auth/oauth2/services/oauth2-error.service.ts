@@ -1,6 +1,7 @@
 import { ErrorWithCode, getHttpStatusCode } from "@calcom/platform-libraries/errors";
 import { HttpException, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { OAuthService } from "@/lib/services/oauth.service";
+import { OAuth2HttpException } from "@/modules/auth/oauth2/filters/oauth2-http.exception";
 import { OAuth2RedirectException } from "@/modules/auth/oauth2/filters/oauth2-redirect.exception";
 
 const NON_REDIRECTABLE_REASONS = new Set([
@@ -21,7 +22,7 @@ export class OAuth2ErrorService {
 
       if (reason && NON_REDIRECTABLE_REASONS.has(reason)) {
         const statusCode = getHttpStatusCode(err);
-        throw new HttpException(
+        throw new OAuth2HttpException(
           {
             error: err.message,
             error_description: reason,
@@ -39,7 +40,7 @@ export class OAuth2ErrorService {
     if (err instanceof ErrorWithCode) {
       const statusCode = getHttpStatusCode(err);
       const reason = err.data?.["reason"] as string | undefined;
-      throw new HttpException(
+      throw new OAuth2HttpException(
         {
           error: err.message,
           error_description: reason ?? err.message,
@@ -48,7 +49,7 @@ export class OAuth2ErrorService {
       );
     }
     this.logger.error(err);
-    throw new HttpException(
+    throw new OAuth2HttpException(
       {
         error: "server_error",
         error_description: "An unexpected error occurred",

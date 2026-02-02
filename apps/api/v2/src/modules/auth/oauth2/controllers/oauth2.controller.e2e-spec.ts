@@ -59,27 +59,6 @@ describe("OAuth2 Controller Endpoints", () => {
         .expect(401);
     });
 
-    it("POST /v2/auth/oauth2/clients/:clientId/exchange should return 401 without auth", () => {
-      return request(appWithoutAuth.getHttpServer())
-        .post("/api/v2/auth/oauth2/clients/test-client-id/exchange")
-        .send({
-          code: "test-code",
-          clientSecret: "test-secret",
-          redirectUri: "https://example.com/callback",
-        })
-        .expect(401);
-    });
-
-    it("POST /v2/auth/oauth2/clients/:clientId/refresh should return 401 without auth", () => {
-      return request(appWithoutAuth.getHttpServer())
-        .post("/api/v2/auth/oauth2/clients/test-client-id/refresh")
-        .send({
-          refreshToken: "test-refresh-token",
-          clientSecret: "test-secret",
-        })
-        .expect(401);
-    });
-
     it("POST /v2/auth/oauth2/token should return 401 without auth", () => {
       return request(appWithoutAuth.getHttpServer())
         .post("/api/v2/auth/oauth2/token")
@@ -437,7 +416,9 @@ describe("OAuth2 Controller Endpoints", () => {
             .expect(400);
 
           expect(response.body.error).toBe("invalid_request");
-          expect(response.body.error_description).toBe("grant_type must be 'authorization_code' or 'refresh_token'");
+          expect(response.body.error_description).toBe(
+            "grant_type must be 'authorization_code' or 'refresh_token'"
+          );
         });
 
         it("should return 401 with RFC 6749 error for non-existent client_id", async () => {
