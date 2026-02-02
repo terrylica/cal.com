@@ -32,7 +32,7 @@ is ready to be used.
 
 To initiate the OAuth flow, direct users to the following authorization URL:
 
-`https://app.cal.com/auth/oauth2/authorize`
+`https://app.cal.com/auth/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&state=YOUR_STATE`
 
 **URL Parameters:**
 
@@ -50,43 +50,19 @@ After users click **Allow**, they will be redirected to the `redirect_uri` with 
 https://your-app.com/callback?code=AUTHORIZATION_CODE&state=YOUR_STATE
 ```
 
-#### Error Responses
+#### Error Handling
 
-<AccordionGroup>
-  <Accordion title="Client not found (404)">
-    ```json
-    {
-      "error": "unauthorized_client",
-      "error_description": "client_not_found"
-    }
-    ```
-    No OAuth client exists with the provided `client_id`. Verify your client ID.
-  </Accordion>
-  <Accordion title="Client not approved (401)">
-    ```json
-    {
-      "error": "unauthorized_client",
-      "error_description": "client_not_approved"
-    }
-    ```
-    The OAuth client has not been approved by a Cal.com admin yet. Wait for approval before using the client.
-  </Accordion>
-  <Accordion title="Mismatched redirect URI (400)">
-    ```json
-    {
-      "error": "invalid_request",
-      "error_description": "redirect_uri_mismatch"
-    }
-    ```
-    The `redirect_uri` does not match the one registered for the OAuth client. Ensure it matches exactly.
-  </Accordion>
-  <Accordion title="Authorization denied (redirect with error)">
-    If the user cannot be authorized (e.g., invalid team slug), the user is redirected to the `redirect_uri` with an error:
-    ```
-    https://your-app.com/callback?error=access_denied&error_description=team_not_found_or_no_access&state=YOUR_STATE
-    ```
-  </Accordion>
-</AccordionGroup>
+Errors during the authorization step are displayed directly to the user on the Cal.com authorization page. Your application will not receive a JSON error response for these cases:
+
+- **Client not found**: No OAuth client exists with the provided `client_id`.
+- **Client not approved**: The OAuth client has not been approved by a Cal.com admin yet.
+- **Mismatched redirect URI**: The `redirect_uri` does not match the one registered for the OAuth client.
+
+If an error occurs after the client is validated (e.g., the user denies access or has insufficient permissions), the user is redirected to the `redirect_uri` with an error:
+
+```
+https://your-app.com/callback?error=access_denied&error_description=team_not_found_or_no_access&state=YOUR_STATE
+```
 
 ## 3. Exchange Token
 
