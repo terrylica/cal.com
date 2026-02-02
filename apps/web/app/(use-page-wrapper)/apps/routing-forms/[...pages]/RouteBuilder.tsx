@@ -1196,6 +1196,7 @@ function useRoutes({
           attributesQueryValue: route.attributesQueryValue,
           fallbackAttributesQueryValue: route.fallbackAttributesQueryValue,
           attributeIdForWeights: route.attributeIdForWeights,
+          fallbackAction: route.fallbackAction,
         };
       });
     }
