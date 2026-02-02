@@ -38,6 +38,7 @@ import { ZOrgPasswordResetSchema } from "./sendPasswordReset.schema";
 import { ZSetPasswordSchema } from "./setPassword.schema";
 import { ZUpdateInputSchema } from "./update.schema";
 import { ZUpdateUserInputSchema } from "./updateUser.schema";
+import { ZUploadOnboardingImageInputSchema } from "./uploadOnboardingImage.schema";
 
 export const viewerOrganizationsRouter = router({
   getOrganizationOnboarding: authedProcedure.query(async (opts) => {
@@ -218,6 +219,10 @@ export const viewerOrganizationsRouter = router({
     }),
   pendingReportsCount: authedOrgAdminProcedure.query(async (opts) => {
     const { default: handler } = await import("./pendingReportsCount.handler");
+    return handler(opts);
+  }),
+  uploadOnboardingImage: authedProcedure.input(ZUploadOnboardingImageInputSchema).mutation(async (opts) => {
+    const { default: handler } = await import("./uploadOnboardingImage.handler");
     return handler(opts);
   }),
 });

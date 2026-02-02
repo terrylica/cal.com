@@ -5,9 +5,11 @@ import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
 import { ColorPicker, Label } from "@calcom/ui/components/form";
 import { BannerUploader, ImageUploader } from "@calcom/ui/components/image-uploader";
+import { showToast } from "@calcom/ui/components/toast";
 
 import { OnboardingCard } from "../../components/OnboardingCard";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
@@ -29,6 +31,14 @@ export const OrganizationBrandView = ({ userEmail }: OrganizationBrandViewProps)
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [brandColor, setBrandColor] = useState("#000000");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+
+  const uploadOnboardingImage = trpc.viewer.organizations.uploadOnboardingImage.useMutation({
+    onError: (error) => {
+      showToast(error.message || t("error_uploading_image"), "error");
+    },
+  });
 
   useEffect(() => {
     setLogoPreview(organizationBrand.logo);
@@ -36,14 +46,36 @@ export const OrganizationBrandView = ({ userEmail }: OrganizationBrandViewProps)
     setBrandColor(organizationBrand.color);
   }, [organizationBrand]);
 
-  const handleLogoChange = (newLogo: string) => {
+  const handleLogoChange = async (newLogo: string) => {
     setLogoPreview(newLogo);
-    setOrganizationBrand({ logo: newLogo });
+    setIsUploadingLogo(true);
+    try {
+      const result = await uploadOnboardingImage.mutateAsync({
+        image: newLogo,
+        isBanner: false,
+      });
+      setOrganizationBrand({ logo: result.url });
+    } catch {
+      setLogoPreview(organizationBrand.logo);
+    } finally {
+      setIsUploadingLogo(false);
+    }
   };
 
-  const handleBannerChange = (newBanner: string) => {
+  const handleBannerChange = async (newBanner: string) => {
     setBannerPreview(newBanner);
-    setOrganizationBrand({ banner: newBanner });
+    setIsUploadingBanner(true);
+    try {
+      const result = await uploadOnboardingImage.mutateAsync({
+        image: newBanner,
+        isBanner: true,
+      });
+      setOrganizationBrand({ banner: result.url });
+    } catch {
+      setBannerPreview(organizationBrand.banner);
+    } finally {
+      setIsUploadingBanner(false);
+    }
   };
 
   const handleColorChange = (color: string) => {
@@ -62,18 +94,17 @@ export const OrganizationBrandView = ({ userEmail }: OrganizationBrandViewProps)
     return `/onboarding/organization/teams${queryString}`;
   };
 
+  const isUploading = isUploadingLogo || isUploadingBanner;
+
   const handleContinue = () => {
+    if (isUploading) return;
+
     posthog.capture("onboarding_organization_brand_continue_clicked", {
       has_logo: !!logoPreview,
       has_banner: !!bannerPreview,
       has_custom_color: brandColor !== "#000000",
     });
-    // Save to store (already saved on change, but ensure it's persisted)
-    setOrganizationBrand({
-      logo: logoPreview,
-      banner: bannerPreview,
-      color: brandColor,
-    });
+    setOrganizationBrand({ color: brandColor });
     router.push(getNextStep());
   };
 
@@ -106,7 +137,12 @@ export const OrganizationBrandView = ({ userEmail }: OrganizationBrandViewProps)
               <Button color="minimal" className="rounded-[10px]" onClick={handleSkip}>
                 {t("onboarding_skip_for_now")}
               </Button>
-              <Button color="primary" className="rounded-[10px]" onClick={handleContinue}>
+              <Button
+                color="primary"
+                className="rounded-[10px]"
+                onClick={handleContinue}
+                disabled={isUploading}
+                loading={isUploading}>
                 {t("continue")}
               </Button>
             </div>
