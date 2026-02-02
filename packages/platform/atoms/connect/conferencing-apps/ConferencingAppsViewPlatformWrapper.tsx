@@ -16,8 +16,8 @@ import {
 } from "@calcom/ui/components/dropdown";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 import { SkeletonContainer, SkeletonText } from "@calcom/ui/components/skeleton";
-import { AppList } from "@calcom/web/modules/apps/components/AppList";
-import DisconnectIntegrationModal from "@calcom/web/modules/apps/components/DisconnectIntegrationModal";
+import { AppList } from "@calcom/features/apps/components/AppList";
+import DisconnectIntegrationModal from "@calcom/features/apps/components/DisconnectIntegrationModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useReducer, useState } from "react";
 import { AtomsWrapper } from "../../src/components/atoms-wrapper";
