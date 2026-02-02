@@ -8,7 +8,7 @@ import type { UseFormGetValues, UseFormSetValue, Control, FormState } from "reac
 import type { EventLocationType } from "@calcom/app-store/locations";
 import { getEventLocationType, MeetLocationType } from "@calcom/app-store/locations";
 import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
-import type { LocationCustomClassNames } from "@calcom/features/eventtypes/components/locations/types";
+import type { LocationCustomClassNames } from "./types";
 import type { LocationFormValues, EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
 import CheckboxField from "@calcom/features/form/components/CheckboxField";
 import type { SingleValueLocationOption } from "@calcom/features/form/components/LocationSelect";
@@ -21,14 +21,19 @@ import { Button } from "@calcom/ui/components/button";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
 
-import CalVideoSettings from "./CalVideoSettings";
-import DefaultLocationSettings from "./DefaultLocationSettings";
-import LocationInput from "@calcom/features/eventtypes/components/locations/LocationInput";
+import LocationInput from "./LocationInput";
 
 export type TEventTypeLocation = Pick<EventTypeSetupProps["eventType"], "locations" | "calVideoSettings">;
 export type TLocationOptions = Pick<EventTypeSetupProps, "locationOptions">["locationOptions"];
 export type TDestinationCalendar = { integration: string } | null;
 export type TPrefillLocation = { credentialId?: number; type: string };
+
+export type DefaultLocationSettingsProps = {
+  field: LocationFormValues["locations"][number];
+  index: number;
+  disableLocationProp?: boolean;
+  customClassNames?: LocationCustomClassNames;
+};
 
 type LocationsProps = {
   team: { id: number } | null;
@@ -45,6 +50,8 @@ type LocationsProps = {
   locationOptions: TLocationOptions;
   prefillLocation?: SingleValueLocationOption;
   customClassNames?: LocationCustomClassNames;
+  CalVideoSettingsComponent?: React.ComponentType;
+  DefaultLocationSettingsComponent?: React.ComponentType<DefaultLocationSettingsProps>;
 };
 
 const getLocationFromType = (type: EventLocationType["type"], locationOptions: TLocationOptions) => {
@@ -94,6 +101,8 @@ const Locations: React.FC<LocationsProps> = ({
   eventType,
   prefillLocation,
   customClassNames,
+  CalVideoSettingsComponent,
+  DefaultLocationSettingsComponent,
   ...props
 }) => {
   const { t } = useLocale();
@@ -254,15 +263,17 @@ const Locations: React.FC<LocationsProps> = ({
                 )}
               </div>
 
-              {isCalVideo && !isPlatform && <CalVideoSettings />}
+              {isCalVideo && !isPlatform && CalVideoSettingsComponent && <CalVideoSettingsComponent />}
 
               {eventLocationType?.supportsCustomLabel && eventLocationType?.type ? (
-                <DefaultLocationSettings
-                  field={field}
-                  index={index}
-                  disableLocationProp={disableLocationProp}
-                  customClassNames={customClassNames}
-                />
+                DefaultLocationSettingsComponent ? (
+                  <DefaultLocationSettingsComponent
+                    field={field}
+                    index={index}
+                    disableLocationProp={disableLocationProp}
+                    customClassNames={customClassNames}
+                  />
+                ) : null
               ) : eventLocationType?.organizerInputType ? (
                 <div className="stack-y-2 mt-2">
                   <div className="w-full">
