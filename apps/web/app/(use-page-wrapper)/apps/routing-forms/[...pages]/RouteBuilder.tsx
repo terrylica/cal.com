@@ -677,7 +677,10 @@ const Route = ({
                   value={route.fallbackAction.value}
                   onChange={(e) => {
                     setRoute(route.id, {
-                      fallbackAction: { ...route.fallbackAction, value: e.target.value },
+                      fallbackAction: {
+                        type: route.fallbackAction.type,
+                        value: e.target.value,
+                      },
                     });
                   }}
                 />
@@ -693,7 +696,10 @@ const Route = ({
                   value={route.fallbackAction.value}
                   onChange={(e) => {
                     setRoute(route.id, {
-                      fallbackAction: { ...route.fallbackAction, value: e.target.value },
+                      fallbackAction: {
+                        type: route.fallbackAction.type,
+                        value: e.target.value,
+                      },
                     });
                   }}
                   placeholder="https://example.com"
@@ -711,7 +717,7 @@ const Route = ({
                       }
                       setRoute(route.id, {
                         fallbackAction: {
-                          ...route.fallbackAction,
+                          type: route.fallbackAction.type,
                           value: option.value,
                           eventTypeId: option.eventTypeId,
                         },
