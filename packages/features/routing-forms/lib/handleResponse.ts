@@ -223,7 +223,9 @@ const _handleResponse = async ({
       }
     }
     const getFallbackAction = () => {
-      if (chosenRoute && "fallbackAction" in chosenRoute) {
+      const noUsersFound =
+        teamMemberIdsMatchingAttributeLogic !== null && teamMemberIdsMatchingAttributeLogic.length === 0;
+      if (noUsersFound && chosenRoute && "fallbackAction" in chosenRoute) {
         return chosenRoute.fallbackAction;
       }
       return null;
