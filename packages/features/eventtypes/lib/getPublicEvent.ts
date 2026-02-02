@@ -595,6 +595,8 @@ export const getPublicEvent = async (
     disableRescheduling: event.disableRescheduling,
     allowReschedulingCancelledBookings: event.allowReschedulingCancelledBookings,
     interfaceLanguage: event.interfaceLanguage,
+    restrictionScheduleId: event.restrictionScheduleId,
+    useBookerTimezone: event.useBookerTimezone,
   };
 };
 
