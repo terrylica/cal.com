@@ -1,6 +1,6 @@
 import { useMemo, useRef, useEffect } from "react";
 
-import { useBookerTime } from "./useBookerTime";
+import { useBookerTime } from "../../hooks/useBookerTime";
 
 type TimezoneChangeDetectionEvent =
   | {

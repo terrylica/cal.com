@@ -8,11 +8,11 @@ import { TimeFormat } from "@calcom/lib/timeFormat";
 
 import { useTimezoneBasedSlotRefresh } from "./useTimezoneBasedSlotRefresh";
 
-vi.mock("./useBookerTime", () => ({
+vi.mock("../../hooks/useBookerTime", () => ({
   useBookerTime: vi.fn(),
 }));
 
-const { useBookerTime } = await import("./useBookerTime");
+const { useBookerTime } = await import("../../hooks/useBookerTime");
 const mockUseBookerTime = vi.mocked(useBookerTime);
 
 const mockTimezone = (tz: string) => {
