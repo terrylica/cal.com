@@ -10,9 +10,7 @@ export function setupAndTeardown() {
     //@ts-expect-error - It is a readonly variable
     process.env.STRIPE_WEBHOOK_SECRET = "MOCK_STRIPE_WEBHOOK_SECRET";
     // SMTP keyring for testing custom SMTP encryption
-    //@ts-expect-error - It is a readonly variable
     process.env.CALCOM_KEYRING_SMTP_CURRENT = "K1";
-    //@ts-expect-error - It is a readonly variable
     process.env.CALCOM_KEYRING_SMTP_K1 = "RNvJaRNaRGhIZGRHQY_l-i6TjEauPNWQ2qL6Xehe_XI";
     // We are setting it in vitest.config.ts because otherwise it's too late to set it.
     // process.env.DAILY_API_KEY = "MOCK_DAILY_API_KEY";
