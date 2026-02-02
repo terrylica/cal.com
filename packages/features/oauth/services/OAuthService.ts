@@ -489,5 +489,5 @@ export const OAUTH_ERROR_REASONS: Record<OAuthErrorReason, string> = {
   pkce_verification_failed: "invalid_grant",
   invalid_refresh_token: "invalid_grant",
   client_id_mismatch: "invalid_grant",
-  encryption_key_missing: "Internal server configuration error",
+  encryption_key_missing: "CALENDSO_ENCRYPTION_KEY is not set",
 };
