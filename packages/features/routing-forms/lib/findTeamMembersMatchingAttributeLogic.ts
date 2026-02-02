@@ -9,6 +9,10 @@ import async from "async";
 import type { ImmutableTree, JsonLogicResult, JsonTree } from "react-awesome-query-builder";
 import type { Config } from "react-awesome-query-builder/lib";
 import { Utils as QbUtils } from "react-awesome-query-builder/lib";
+import {
+  canUseInvertedIndexApproach,
+  findTeamMembersByAttributeValue,
+} from "./findTeamMembersByAttributeValue";
 
 const {
   getAttributesData: getAttributes,
@@ -447,6 +451,164 @@ export async function getAttributesForLogic({ teamId, orgId }: { teamId: number;
   };
 }
 
+/**
+ * Fetches only the attributes of the organization (not all team members' attribute assignments).
+ * This is used by the optimized inverted index approach.
+ */
+async function getAttributesOfOrg({ teamId, orgId }: { teamId: number; orgId: number }) {
+  const [result, ttAttributes] = await asyncPerf(async () => {
+    return getAttributesAssignmentData({ teamId, orgId });
+  });
+
+  return {
+    attributesOfTheOrg: result.attributesOfTheOrg,
+    timeTaken: ttAttributes,
+  };
+}
+
+/**
+ * Optimized attribute logic evaluation using the inverted index approach.
+ * Instead of fetching all team members' attributes and evaluating JSON logic for each,
+ * this queries the database directly for team members matching the attribute criteria.
+ */
+async function runOptimizedAttributeLogic({
+  teamId,
+  orgId,
+  attributesQueryValue,
+  fallbackAttributesQueryValue,
+  dynamicFieldValueOperands,
+  routeName,
+  routeIsFallback,
+  routingFormTraceService,
+  enablePerf,
+}: {
+  teamId: number;
+  orgId: number;
+  attributesQueryValue: AttributesQueryValue | null;
+  fallbackAttributesQueryValue?: AttributesQueryValue | null;
+  dynamicFieldValueOperands?: dynamicFieldValueOperands;
+  routeName?: string;
+  routeIsFallback?: boolean;
+  routingFormTraceService?: RoutingFormTraceService;
+  enablePerf: boolean;
+}) {
+  const startTime = performance.now();
+
+  // Fetch only the attributes of the org (not all team members' assignments)
+  const { attributesOfTheOrg, timeTaken: ttGetAttributesOfOrg } = await getAttributesOfOrg({
+    teamId,
+    orgId,
+  });
+
+  // Helper to add trace step for attribute logic evaluation
+  const addTraceStep = (checkedFallback: boolean) => {
+    if (routingFormTraceService) {
+      const attributeRoutingDetails = extractAttributeRoutingDetails({
+        resolvedAttributesQueryValue: attributesQueryValue,
+        attributesOfTheOrg,
+        dynamicFieldValueOperands,
+      });
+
+      routingFormTraceService.attributeLogicEvaluated({
+        routeName,
+        routeIsFallback,
+        checkedFallback,
+        attributeRoutingDetails,
+      });
+    }
+  };
+
+  // Run the optimized query for main logic
+  const { userIds: mainUserIds, timeTaken: ttMainQuery } = await findTeamMembersByAttributeValue({
+    teamId,
+    orgId,
+    attributesQueryValue,
+    attributesOfTheOrg,
+    dynamicFieldValueOperands,
+  });
+
+  // If mainUserIds is null, it means no logic was defined - all members match
+  if (mainUserIds === null) {
+    addTraceStep(false);
+    return {
+      teamMembersMatchingAttributeLogic: null,
+      checkedFallback: false,
+      mainAttributeLogicBuildingWarnings: [] as string[],
+      fallbackAttributeLogicBuildingWarnings: [] as string[],
+      routeName,
+      routeIsFallback,
+      timeTaken: {
+        ttGetAttributesOfOrg,
+        ttMainQuery,
+        ttTotal: enablePerf ? performance.now() - startTime : null,
+      } as Record<string, number | null>,
+      troubleshooter: undefined,
+    };
+  }
+
+  // Convert user IDs to the expected format
+  const teamMembersMatchingMainLogic = mainUserIds.map((userId) => ({
+    userId,
+    result: RaqbLogicResult.MATCH,
+  }));
+
+  // Check if we need to run fallback logic
+  const noMatchingMembersFound = teamMembersMatchingMainLogic.length === 0;
+  const considerFallback = fallbackAttributesQueryValue !== undefined;
+
+  if (noMatchingMembersFound && considerFallback) {
+    const { userIds: fallbackUserIds, timeTaken: ttFallbackQuery } = await findTeamMembersByAttributeValue({
+      teamId,
+      orgId,
+      attributesQueryValue: fallbackAttributesQueryValue,
+      attributesOfTheOrg,
+      dynamicFieldValueOperands,
+    });
+
+    addTraceStep(true);
+
+    const teamMembersMatchingFallbackLogic =
+      fallbackUserIds === null
+        ? null
+        : fallbackUserIds.map((userId) => ({
+            userId,
+            result: RaqbLogicResult.MATCH,
+          }));
+
+    return {
+      teamMembersMatchingAttributeLogic: teamMembersMatchingFallbackLogic,
+      checkedFallback: true,
+      mainAttributeLogicBuildingWarnings: [] as string[],
+      fallbackAttributeLogicBuildingWarnings: [] as string[],
+      routeName,
+      routeIsFallback,
+      timeTaken: {
+        ttGetAttributesOfOrg,
+        ttMainQuery,
+        ttFallbackQuery,
+        ttTotal: enablePerf ? performance.now() - startTime : null,
+      } as Record<string, number | null>,
+      troubleshooter: undefined,
+    };
+  }
+
+  addTraceStep(false);
+  return {
+    teamMembersMatchingAttributeLogic: teamMembersMatchingMainLogic,
+    checkedFallback: false,
+    mainAttributeLogicBuildingWarnings: [] as string[],
+    fallbackAttributeLogicBuildingWarnings: [] as string[],
+    routeName,
+    routeIsFallback,
+    timeTaken: {
+      ttGetAttributesOfOrg,
+      ttMainQuery,
+      ttTotal: enablePerf ? performance.now() - startTime : null,
+    } as Record<string, number | null>,
+    troubleshooter: undefined,
+  };
+}
+
 export async function findTeamMembersMatchingAttributeLogic(
   data: {
     teamId: number;
@@ -463,10 +625,24 @@ export async function findTeamMembersMatchingAttributeLogic(
     concurrency?: number;
     enableTroubleshooter?: boolean;
     routingFormTraceService?: RoutingFormTraceService;
+    /**
+     * When true, uses the inverted index approach for simple queries.
+     * This queries the database directly for team members matching attribute criteria
+     * instead of fetching all members and evaluating JSON logic for each.
+     * Disabled when troubleshooter is enabled (needs detailed data).
+     * @default true
+     */
+    useInvertedIndex?: boolean;
   } = {}
 ) {
   // Higher value of concurrency might not be performant as it might overwhelm the system. So, use a lower value as default.
-  const { enablePerf = false, concurrency = 2, enableTroubleshooter = false, routingFormTraceService } = options;
+  const {
+    enablePerf = false,
+    concurrency = 2,
+    enableTroubleshooter = false,
+    routingFormTraceService,
+    useInvertedIndex = true,
+  } = options;
 
   // Any explicit value being passed should cause fallback to be considered. Even undefined
   const considerFallback = "fallbackAttributesQueryValue" in data;
@@ -482,6 +658,30 @@ export async function findTeamMembersMatchingAttributeLogic(
     routeIsFallback,
   } = data;
 
+  // Check if we can use the optimized inverted index approach
+  // Conditions: useInvertedIndex is enabled, troubleshooter is disabled, and query is simple
+  const canUseOptimizedApproach =
+    useInvertedIndex &&
+    !enableTroubleshooter &&
+    canUseInvertedIndexApproach(attributesQueryValue) &&
+    (!considerFallback || canUseInvertedIndexApproach(fallbackAttributesQueryValue ?? null));
+
+  // For the optimized approach, we only need attributesOfTheOrg (not all team members' attributes)
+  if (canUseOptimizedApproach) {
+    return runOptimizedAttributeLogic({
+      teamId,
+      orgId,
+      attributesQueryValue,
+      fallbackAttributesQueryValue: considerFallback ? (fallbackAttributesQueryValue ?? null) : undefined,
+      dynamicFieldValueOperands,
+      routeName,
+      routeIsFallback,
+      routingFormTraceService,
+      enablePerf,
+    });
+  }
+
+  // Fall back to the original approach for complex queries or when troubleshooter is enabled
   const {
     attributesOfTheOrg,
     teamMembersWithAttributeOptionValuePerAttribute,

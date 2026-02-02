@@ -1,13 +1,11 @@
-import type { BaseWidget } from "react-awesome-query-builder";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
 import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
 import * as getAttributesModule from "@calcom/features/attributes/lib/getAttributes";
 import { RaqbLogicResult } from "@calcom/lib/raqb/evaluateRaqbLogic";
 import type { AttributeType } from "@calcom/prisma/enums";
 import { RoutingFormFieldType } from "@calcom/routing-forms/lib/FieldTypes";
 import type { AttributesQueryValue, FormFieldsQueryValue } from "@calcom/routing-forms/types/types";
-
+import type { BaseWidget } from "react-awesome-query-builder";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   findTeamMembersMatchingAttributeLogic,
   TroubleshooterCase,
@@ -21,6 +19,13 @@ vi.mock("@calcom/features/attributes/lib/getAttributes", () => {
 
 vi.mock("@calcom/app-store/routing-forms/components/react-awesome-query-builder/widgets", () => ({
   default: {},
+}));
+
+// Mock the inverted index module to always return that it can't use the optimized approach
+// This ensures existing tests continue to use the original JSON logic evaluation path
+vi.mock("./findTeamMembersByAttributeValue", () => ({
+  findTeamMembersByAttributeValue: vi.fn(),
+  canUseInvertedIndexApproach: vi.fn().mockReturnValue(false),
 }));
 
 const orgId = 1001;

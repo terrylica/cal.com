@@ -1,5 +1,5 @@
-import type { Attribute } from "@calcom/app-store/routing-forms/types/types";
 import { resolveQueryValue } from "@calcom/app-store/routing-forms/lib/resolveQueryValue";
+import type { Attribute } from "@calcom/app-store/routing-forms/types/types";
 import logger from "@calcom/lib/logger";
 import type { AttributesQueryValue, dynamicFieldValueOperands } from "@calcom/lib/raqb/types";
 import prisma from "@calcom/prisma";
@@ -42,7 +42,11 @@ type RaqbRuleItem = {
 
 function isQueryValueARuleGroup(
   queryValue: unknown
-): queryValue is { type: "group"; children1?: Record<string, RaqbRuleItem>; properties?: { conjunction?: string } } {
+): queryValue is {
+  type: "group";
+  children1?: Record<string, RaqbRuleItem>;
+  properties?: { conjunction?: string };
+} {
   return (
     typeof queryValue === "object" &&
     queryValue !== null &&
@@ -70,8 +74,7 @@ function parseAttributesQueryValue(queryValue: AttributesQueryValue): ParsedAttr
   }
 
   // Get conjunction from properties, default to AND
-  const conjunction: "AND" | "OR" =
-    queryValue.properties?.conjunction === "OR" ? "OR" : "AND";
+  const conjunction: "AND" | "OR" = queryValue.properties?.conjunction === "OR" ? "OR" : "AND";
 
   const rules: ParsedRule[] = [];
 

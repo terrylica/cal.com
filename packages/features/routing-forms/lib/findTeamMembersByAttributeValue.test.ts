@@ -1,12 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
 import type { Attribute } from "@calcom/app-store/routing-forms/types/types";
 import type { AttributeType } from "@calcom/prisma/enums";
 import type { AttributesQueryValue } from "@calcom/routing-forms/types/types";
-
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  findTeamMembersByAttributeValue,
   canUseInvertedIndexApproach,
+  findTeamMembersByAttributeValue,
 } from "./findTeamMembersByAttributeValue";
 
 // Mock Prisma
