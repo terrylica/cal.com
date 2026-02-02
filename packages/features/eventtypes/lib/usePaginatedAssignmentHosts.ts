@@ -12,6 +12,7 @@ const DEFAULT_PENDING_CHANGES: PendingHostChanges = {
 
 export type AssignmentHostWithMeta = Host & {
   name: string | null;
+  email: string;
   avatarUrl: string | null;
 };
 
@@ -48,6 +49,7 @@ export function usePaginatedAssignmentHosts({
         scheduleId: h.scheduleId,
         groupId: h.groupId,
         name: h.name,
+        email: h.email,
         avatarUrl: h.avatarUrl,
       }))
     ) ?? [];
@@ -61,6 +63,7 @@ export function usePaginatedAssignmentHosts({
       return changes.hostsToAdd.map((h) => ({
         ...h,
         name: null,
+        email: "",
         avatarUrl: null,
       }));
     }
@@ -81,6 +84,7 @@ export function usePaginatedAssignmentHosts({
       const added: AssignmentHostWithMeta[] = changes.hostsToAdd.map((h) => ({
         ...h,
         name: null,
+        email: "",
         avatarUrl: null,
       }));
       result = [...added, ...result];

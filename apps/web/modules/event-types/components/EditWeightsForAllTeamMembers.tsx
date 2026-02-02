@@ -1,8 +1,8 @@
 "use client";
 
-import { useTeamMembersWithSegmentPlatform } from "@calcom/atoms/event-types/hooks/useTeamMembersWithSegmentPlatform";
-import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
-import type { Host, TeamMember } from "@calcom/features/eventtypes/lib/types";
+import { useFetchMoreOnScroll } from "@calcom/features/eventtypes/lib/useFetchMoreOnScroll";
+import { useSearchTeamMembers } from "@calcom/features/eventtypes/lib/useSearchTeamMembers";
+import type { Host } from "@calcom/features/eventtypes/lib/types";
 import ServerTrans from "@calcom/lib/components/ServerTrans";
 import { downloadAsCsv } from "@calcom/lib/csvUtils";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -21,12 +21,20 @@ import {
   SheetTitle,
 } from "@calcom/ui/components/sheet";
 import { showToast } from "@calcom/ui/components/toast";
-import { useTeamMembersWithSegment } from "@calcom/web/modules/event-types/hooks/useTeamMembersWithSegment";
+import { trpc } from "@calcom/trpc/react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+type WeightMember = {
+  value: string;
+  label: string;
+  avatar: string;
+  email: string;
+  weight?: number;
+};
+
 type TeamMemberItemProps = {
-  member: Omit<TeamMember, "defaultScheduleId"> & { weight?: number };
+  member: WeightMember;
   onWeightChange: (memberId: string, weight: number) => void;
 };
 
@@ -96,7 +104,9 @@ const TeamMemberItem = ({ member, onWeightChange }: TeamMemberItemProps) => {
 interface Props {
   value: Host[];
   onChange: (hosts: Host[]) => void;
+  assignAllTeamMembers: boolean;
   assignRRMembersUsingSegment: boolean;
+  eventTypeId: number;
   teamId?: number;
   queryValue?: AttributesQueryValue | null;
 }
@@ -104,65 +114,167 @@ interface Props {
 export const EditWeightsForAllTeamMembers = ({
   value,
   onChange,
+  assignAllTeamMembers,
   assignRRMembersUsingSegment,
+  eventTypeId,
   teamId,
   queryValue,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLocale();
   const [searchQuery, setSearchQuery] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const isPlatform = useIsPlatform();
-
-  const useTeamMembersHook = isPlatform ? useTeamMembersWithSegmentPlatform : useTeamMembersWithSegment;
-
-  const { teamMembers, localWeightsInitialValues } = useTeamMembersHook({
-    assignRRMembersUsingSegment,
-    teamId,
-    queryValue,
-    value,
+  // When assignAllTeamMembers is on (possibly unsaved), query all team members
+  const {
+    members: allTeamMembers,
+    fetchNextPage: fetchNextTeamMembersPage,
+    hasNextPage: hasNextTeamMembersPage,
+    isFetchingNextPage: isFetchingNextTeamMembersPage,
+  } = useSearchTeamMembers({
+    teamId: teamId ?? 0,
+    search: searchQuery,
+    enabled: isOpen && assignAllTeamMembers && !!teamId,
   });
 
-  const [localWeights, setLocalWeights] = useState<Record<string, number>>(localWeightsInitialValues);
+  // When assignAllTeamMembers is off, query only saved hosts
+  const {
+    data: hostsData,
+    fetchNextPage: fetchNextHostsPage,
+    hasNextPage: hasNextHostsPage,
+    isFetchingNextPage: isFetchingNextHostsPage,
+  } = trpc.viewer.eventTypes.getHostsForAssignment.useInfiniteQuery(
+    { eventTypeId, limit: 20, search: searchQuery || undefined },
+    {
+      enabled: isOpen && !assignAllTeamMembers && eventTypeId > 0,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    }
+  );
+
+  const savedHosts = useMemo(() => {
+    return hostsData?.pages.flatMap((page) => page.hosts) ?? [];
+  }, [hostsData]);
+
+  // Unified pagination values based on mode
+  const fetchNextPage = assignAllTeamMembers ? fetchNextTeamMembersPage : fetchNextHostsPage;
+  const hasNextPage = assignAllTeamMembers ? hasNextTeamMembersPage : hasNextHostsPage;
+  const isFetchingNextPage = assignAllTeamMembers
+    ? isFetchingNextTeamMembersPage
+    : isFetchingNextHostsPage;
+
+  useFetchMoreOnScroll(
+    scrollContainerRef as React.RefObject<HTMLDivElement>,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage
+  );
+
+  // When segment filtering is active, query for matching member IDs
+  const { data: segmentData } = trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useQuery(
+    {
+      teamId: teamId || 0,
+      attributesQueryValue: queryValue as AttributesQueryValue,
+      _enablePerf: true,
+    },
+    {
+      enabled: assignRRMembersUsingSegment && !!queryValue && !!teamId && isOpen,
+    }
+  );
+
+  const segmentMemberIds = useMemo(() => {
+    if (!assignRRMembersUsingSegment || !segmentData?.result) return null;
+    return new Set(segmentData.result.map((m) => m.id));
+  }, [assignRRMembersUsingSegment, segmentData]);
+
+  // Build a map of current RR host weights from form state for quick lookup
+  const hostWeightsMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const host of value) {
+      if (!host.isFixed) {
+        map.set(host.userId, host.weight ?? 100);
+      }
+    }
+    return map;
+  }, [value]);
+
+  const [localWeights, setLocalWeights] = useState<Record<string, number>>({});
   const [uploadErrors, setUploadErrors] = useState<Array<{ email: string; error: string }>>([]);
   const [isErrorsExpanded, setIsErrorsExpanded] = useState(true);
+
+  // Initialize local weights from host data when sheet opens
+  useEffect(() => {
+    if (isOpen) {
+      const initial: Record<string, number> = {};
+      for (const host of value) {
+        if (!host.isFixed) {
+          initial[String(host.userId)] = host.weight ?? 100;
+        }
+      }
+      setLocalWeights(initial);
+    }
+  }, [isOpen, value]);
 
   const handleWeightChange = (memberId: string, weight: number) => {
     setLocalWeights((prev) => ({ ...prev, [memberId]: weight }));
   };
 
   const handleSave = () => {
-    // Create a map of existing hosts for easy lookup
-    const existingHostsMap = new Map(
-      value.filter((host) => !host.isFixed).map((host) => [host.userId.toString(), host])
-    );
-
-    // Create the updated value by processing all team members
-    const updatedValue = teamMembers
-      .map((member) => {
-        const existingHost = existingHostsMap.get(member.value);
-        if (!existingHost) return null;
-        return {
-          ...existingHost,
-          userId: parseInt(member.value, 10),
-          isFixed: existingHost?.isFixed ?? false,
-          priority: existingHost?.priority ?? 0,
-          weight: localWeights[member.value] ?? existingHost?.weight ?? 100,
-          groupId: existingHost?.groupId ?? null,
-        };
-      })
-      .filter(Boolean) as Host[];
+    // Build updated hosts from the current value (all hosts), applying local weight changes
+    const updatedValue = value
+      .filter((host) => !host.isFixed)
+      .map((host) => ({
+        ...host,
+        weight: localWeights[String(host.userId)] ?? host.weight ?? 100,
+      }));
 
     onChange(updatedValue);
     setIsOpen(false);
   };
 
+  // Normalize both data sources into WeightMember for display
+  const displayMembers = useMemo((): WeightMember[] => {
+    if (assignAllTeamMembers) {
+      // All team members mode: filter to RR hosts in form state + segment
+      return allTeamMembers
+        .filter((m) => hostWeightsMap.has(m.userId))
+        .filter((m) => !segmentMemberIds || segmentMemberIds.has(m.userId))
+        .map((m) => ({
+          value: String(m.userId),
+          label: m.name || m.email || "",
+          avatar: m.avatarUrl || "",
+          email: m.email,
+          weight: localWeights[String(m.userId)] ?? hostWeightsMap.get(m.userId) ?? 100,
+        }));
+    }
+
+    // Saved hosts mode: filter to non-fixed + segment
+    return savedHosts
+      .filter((h) => !h.isFixed)
+      .filter((h) => !segmentMemberIds || segmentMemberIds.has(h.userId))
+      .map((h) => ({
+        value: String(h.userId),
+        label: h.name || h.email || "",
+        avatar: h.avatarUrl || "",
+        email: h.email,
+        weight: localWeights[String(h.userId)] ?? h.weight ?? 100,
+      }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignAllTeamMembers, allTeamMembers, savedHosts, hostWeightsMap, localWeights, segmentMemberIds]);
+
+  // Unified list for CSV upload lookup
+  const loadedMembers = useMemo(() => {
+    if (assignAllTeamMembers) {
+      return allTeamMembers.map((m) => ({ userId: m.userId, email: m.email }));
+    }
+    return savedHosts.map((h) => ({ userId: h.userId, email: h.email }));
+  }, [assignAllTeamMembers, allTeamMembers, savedHosts]);
+
   const handleDownloadCsv = () => {
-    const csvData = teamMembers.map((member) => ({
+    const csvData = displayMembers.map((member) => ({
       id: member.value,
       name: member.label,
       email: member.email,
-      weight: localWeights[member.value] ?? 100,
+      weight: member.weight ?? 100,
     }));
     downloadAsCsv(csvData, "team-members-weights.csv");
   };
@@ -189,8 +301,12 @@ export const EditWeightsForAllTeamMembers = ({
         const [, , email, weightStr] = line.split(",");
         if (!email || !weightStr) continue;
 
-        const member = teamMembers.find((m) => m.email === email);
-        if (!member) {
+        const member = loadedMembers.find((m) => m.email === email);
+        if (!member || !hostWeightsMap.has(member.userId)) {
+          newErrors.push({ email, error: t("member_not_found") });
+          continue;
+        }
+        if (segmentMemberIds && !segmentMemberIds.has(member.userId)) {
           newErrors.push({ email, error: t("member_not_found") });
           continue;
         }
@@ -201,7 +317,7 @@ export const EditWeightsForAllTeamMembers = ({
           continue;
         }
 
-        newWeights[member.value] = weight;
+        newWeights[String(member.userId)] = weight;
       }
 
       setLocalWeights(newWeights);
@@ -217,22 +333,6 @@ export const EditWeightsForAllTeamMembers = ({
 
     reader.readAsText(file);
   };
-
-  const filteredMembers = useMemo(() => {
-    return teamMembers
-      .map((member) => ({
-        ...member,
-        weight: localWeights[member.value],
-      }))
-      .filter(
-        (member) =>
-          member.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          member.email.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .filter((member) => {
-        return value.some((host) => !host.isFixed && host.userId === parseInt(member.value, 10));
-      });
-  }, [teamMembers, localWeights, searchQuery, value]);
 
   return (
     <>
@@ -280,17 +380,22 @@ export const EditWeightsForAllTeamMembers = ({
               <TextField
                 placeholder={t("search")}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 addOnLeading={
                   <Icon name="search" className="text-subtle h-4 w-4" aria-hidden="true" focusable="false" />
                 }
               />
 
-              <div className="flex max-h-[80dvh] flex-col overflow-y-auto rounded-md border">
-                {filteredMembers.map((member) => (
+              <div
+                ref={scrollContainerRef}
+                className="flex max-h-[80dvh] flex-col overflow-y-auto rounded-md border">
+                {displayMembers.map((member) => (
                   <TeamMemberItem key={member.value} member={member} onWeightChange={handleWeightChange} />
                 ))}
-                {filteredMembers.length === 0 && (
+                {isFetchingNextPage && (
+                  <div className="text-subtle py-2 text-center text-sm">{t("loading")}</div>
+                )}
+                {displayMembers.length === 0 && !isFetchingNextPage && (
                   <div className="text-subtle py-4 text-center text-sm">{t("no_members_found")}</div>
                 )}
               </div>
@@ -326,8 +431,6 @@ export const EditWeightsForAllTeamMembers = ({
                 <Button
                   color="minimal"
                   onClick={() => {
-                    // Restore to default weights from the original value
-                    setLocalWeights(localWeightsInitialValues);
                     setSearchQuery("");
                   }}>
                   {t("cancel")}

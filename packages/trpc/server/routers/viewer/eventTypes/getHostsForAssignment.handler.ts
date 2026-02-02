@@ -20,6 +20,7 @@ export type AssignmentHost = {
   scheduleId: number | null;
   groupId: string | null;
   name: string | null;
+  email: string;
   avatarUrl: string | null;
 };
 
@@ -53,6 +54,7 @@ export const getHostsForAssignmentHandler = async ({
     scheduleId: item.scheduleId,
     groupId: item.groupId,
     name: item.user.name,
+    email: item.user.email,
     avatarUrl: item.user.avatarUrl,
   }));
 

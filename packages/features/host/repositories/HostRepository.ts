@@ -221,6 +221,7 @@ export class HostRepository {
         user: {
           select: {
             name: true,
+            email: true,
             avatarUrl: true,
           },
         },

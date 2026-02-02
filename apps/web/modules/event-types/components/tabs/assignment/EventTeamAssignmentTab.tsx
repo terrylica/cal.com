@@ -466,7 +466,9 @@ const RoundRobinHosts = ({
                 <EditWeightsForAllTeamMembers
                   value={value}
                   onChange={handleWeightsChange}
-                  assignRRMembersUsingSegment={assignRRMembersUsingSegment}
+                  assignAllTeamMembers={assignAllTeamMembers}
+                  assignRRMembersUsingSegment={!!assignRRMembersUsingSegment}
+                  eventTypeId={getValues("id")}
                   teamId={teamId}
                   queryValue={rrSegmentQueryValue}
                 />
