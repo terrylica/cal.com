@@ -11,6 +11,7 @@ import { ZEventTypeInputSchema, ZGetEventTypesFromGroupSchema } from "./getByVie
 import { ZGetHashedLinkInputSchema } from "./getHashedLink.schema";
 import { ZGetHashedLinksInputSchema } from "./getHashedLinks.schema";
 import { ZGetChildrenForAssignmentInputSchema } from "./getChildrenForAssignment.schema";
+import { ZExportHostsForWeightsInputSchema } from "./exportHostsForWeights.schema";
 import { ZGetHostsForAssignmentInputSchema } from "./getHostsForAssignment.schema";
 import { ZGetHostsForAvailabilityInputSchema } from "./getHostsForAvailability.schema";
 import { ZGetHostsWithLocationOptionsInputSchema } from "./getHostsWithLocationOptions.schema";
@@ -175,6 +176,20 @@ export const eventTypesRouter = router({
       const { getHostsForAssignmentHandler } = await import("./getHostsForAssignment.handler");
 
       return getHostsForAssignmentHandler({
+        ctx,
+        input,
+      });
+    }),
+
+  exportHostsForWeights: createEventPbacProcedure("eventType.update", [
+    MembershipRole.ADMIN,
+    MembershipRole.OWNER,
+  ])
+    .input(ZExportHostsForWeightsInputSchema)
+    .query(async ({ ctx, input }) => {
+      const { exportHostsForWeightsHandler } = await import("./exportHostsForWeights.handler");
+
+      return exportHostsForWeightsHandler({
         ctx,
         input,
       });

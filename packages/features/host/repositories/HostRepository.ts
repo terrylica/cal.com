@@ -244,6 +244,27 @@ export class HostRepository {
     return { items, nextCursor, hasMore, hasFixedHosts };
   }
 
+  async findAllRoundRobinHosts({ eventTypeId }: { eventTypeId: number }) {
+    return this.prismaClient.host.findMany({
+      where: {
+        eventTypeId,
+        isFixed: false,
+      },
+      select: {
+        userId: true,
+        weight: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: [{ userId: "asc" }],
+    });
+  }
+
   async findChildrenForAssignmentPaginated({
     eventTypeId,
     cursor,

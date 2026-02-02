@@ -23,7 +23,7 @@ import {
 import { showToast } from "@calcom/ui/components/toast";
 import { trpc } from "@calcom/trpc/react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type WeightMember = {
   value: string;
@@ -269,15 +269,33 @@ export const EditWeightsForAllTeamMembers = ({
     return savedHosts.map((h) => ({ userId: h.userId, email: h.email }));
   }, [assignAllTeamMembers, allTeamMembers, savedHosts]);
 
-  const handleDownloadCsv = () => {
-    const csvData = displayMembers.map((member) => ({
-      id: member.value,
-      name: member.label,
-      email: member.email,
-      weight: member.weight ?? 100,
-    }));
-    downloadAsCsv(csvData, "team-members-weights.csv");
-  };
+  const utils = trpc.useUtils();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadCsv = useCallback(async () => {
+    setIsDownloading(true);
+    try {
+      const { members } = await utils.viewer.eventTypes.exportHostsForWeights.fetch({
+        eventTypeId,
+        teamId,
+        assignAllTeamMembers,
+        assignRRMembersUsingSegment,
+        attributesQueryValue: queryValue,
+      });
+
+      downloadAsCsv(
+        members.map((m) => ({
+          id: m.userId,
+          name: m.name || m.email || "",
+          email: m.email,
+          weight: localWeights[String(m.userId)] ?? m.weight ?? hostWeightsMap.get(m.userId) ?? 100,
+        })),
+        "team-members-weights.csv"
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [utils, eventTypeId, teamId, assignAllTeamMembers, assignRRMembersUsingSegment, queryValue, localWeights, hostWeightsMap]);
 
   const handleUploadCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -373,7 +391,12 @@ export const EditWeightsForAllTeamMembers = ({
                   <input type="file" accept=".csv" className="hidden" onChange={handleUploadCsv} />
                   {t("upload")}
                 </label>
-                <Button color="secondary" StartIcon="download" onClick={handleDownloadCsv}>
+                <Button
+                  color="secondary"
+                  StartIcon="download"
+                  onClick={handleDownloadCsv}
+                  loading={isDownloading}
+                  disabled={isDownloading}>
                   {t("download")}
                 </Button>
               </div>
