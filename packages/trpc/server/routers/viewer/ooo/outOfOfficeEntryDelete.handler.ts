@@ -44,7 +44,6 @@ export const outOfOfficeEntryDelete = async ({ ctx, input }: TBookingRedirectDel
     }
   }
 
-  // First, fetch the OOO entry with its external reference before deleting (1:1 relationship)
   const oooEntry = await prisma.outOfOfficeEntry.findUnique({
     where: {
       uuid: input.outOfOfficeUid,
