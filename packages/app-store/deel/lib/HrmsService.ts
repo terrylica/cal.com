@@ -29,7 +29,7 @@ export interface DeelTimeOffRequest {
   start_date: string;
   end_date: string;
   time_off_type_id: string;
-  description: string;
+  description?: string;
   status: DeelTimeOffStatus;
 }
 
@@ -65,6 +65,31 @@ class DeelHrmsService implements HrmsService {
   constructor(credential: CredentialPayload) {
     this.credential = credential;
     this.log = logger.getSubLogger({ prefix: [`[[lib] DeelHrmsService`] });
+  }
+
+  async uninstall(): Promise<void> {
+    const credentialKey = this.credential.key as { webhookId?: string };
+
+    if (!credentialKey.webhookId) {
+      return;
+    }
+
+    const accessToken = await this.getAccessToken();
+
+    const response = await fetch(
+      `${deelApiUrl}/rest/v2/webhooks/${encodeURIComponent(credentialKey.webhookId)}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      this.log.warn(`Failed to delete Deel webhook: ${response.status}`);
+    }
   }
 
   private async getAccessToken(): Promise<string> {
@@ -139,7 +164,7 @@ class DeelHrmsService implements HrmsService {
         start_date: params.startDate,
         end_date: params.endDate,
         time_off_type_id: params.externalReasonId,
-        description: params.notes || "Synced from Cal.com",
+        description: params.notes,
         status: DeelTimeOffStatus.APPROVED,
       };
 

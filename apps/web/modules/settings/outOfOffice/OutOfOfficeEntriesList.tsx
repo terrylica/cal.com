@@ -35,7 +35,7 @@ import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 
 import CreateNewOutOfOfficeEntryButton from "./CreateNewOutOfOfficeEntryButton";
-import type { BookingRedirectForm } from "./types";
+import type { BookingRedirectForm, SelectedReason } from "./types";
 import { OutOfOfficeTab, OutOfOfficeToggleGroup } from "./OutOfOfficeToggleGroup";
 
 interface OutOfOfficeEntry {
@@ -53,6 +53,10 @@ interface OutOfOfficeEntry {
     emoji: string;
     reason: string;
     userId: number;
+  } | null;
+  externalReference: {
+    externalReasonId: string | null;
+    externalReasonName: string | null;
   } | null;
   notes: string | null;
   showNotePublicly: boolean | null;
@@ -281,6 +285,18 @@ function OutOfOfficeEntriesListContent({
                       onClick={() => {
                         const startDateOffset = -1 * item.start.getTimezoneOffset();
                         const endDateOffset = -1 * item.end.getTimezoneOffset();
+
+                        let selectedReason: SelectedReason | null = null;
+                        if (item.externalReference?.externalReasonId) {
+                          selectedReason = {
+                            source: "hrms",
+                            id: item.externalReference.externalReasonId,
+                            name: item.externalReference.externalReasonName ?? "",
+                          };
+                        } else if (item.reason?.id) {
+                          selectedReason = { source: "internal", id: item.reason.id };
+                        }
+
                         const outOfOfficeEntryData: BookingRedirectForm = {
                           uuid: item.uuid,
                           dateRange: {
@@ -290,7 +306,7 @@ function OutOfOfficeEntriesListContent({
                           startDateOffset,
                           endDateOffset,
                           toTeamUserId: item.toUserId,
-                          reasonId: item.reason?.id ?? 1,
+                          selectedReason,
                           notes: item.notes ?? undefined,
                           showNotePublicly: item.showNotePublicly ?? false,
                           forUserId: item.user?.id || null,

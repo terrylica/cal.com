@@ -104,9 +104,8 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     toUserId = user?.id;
   }
 
-  if (!input.reasonId && !input.hrmsReasonId) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "reason_id_required" });
-  }
+  const selectedReason = input.selectedReason;
+  const reasonId: number | null = selectedReason.source === "hrms" ? null : selectedReason.id;
 
   // Prevent infinite redirects but consider time ranges
   const existingOutOfOfficeEntry = await prisma.outOfOfficeEntry.findFirst({
@@ -182,7 +181,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       notes: input.notes,
       showNotePublicly: input.showNotePublicly ?? false,
       userId: oooUserId,
-      reasonId: input.reasonId,
+      reasonId,
       toUserId: toUserId,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -193,7 +192,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       notes: input.notes,
       ...(input.showNotePublicly !== undefined && { showNotePublicly: input.showNotePublicly }),
       userId: oooUserId,
-      reasonId: input.reasonId,
+      reasonId,
       toUserId: toUserId ? toUserId : null,
     },
   });
@@ -242,13 +241,15 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
         },
       })
     : null;
-  const reason = await prisma.outOfOfficeReason.findFirst({
-    where: { id: input.reasonId },
-    select: {
-      reason: true,
-      emoji: true,
-    },
-  });
+  const reason = reasonId
+    ? await prisma.outOfOfficeReason.findFirst({
+        where: { id: reasonId },
+        select: {
+          reason: true,
+          emoji: true,
+        },
+      })
+    : null;
   if (toUserId) {
     // await send email to notify user
     const userToNotify = await prisma.user.findUnique({
@@ -354,9 +355,9 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       notes: createdOrUpdatedOutOfOffice.notes,
       reason: {
         emoji: reason?.emoji ?? undefined,
-        reason: reason?.reason,
+        reason: selectedReason.source === "hrms" ? selectedReason.name : reason?.reason,
       },
-      reasonId: input.reasonId,
+      reasonId,
       user: {
         id: oooUserId,
         name: oooUserFullName,
@@ -394,11 +395,12 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     })
   );
 
-  // Early return if no HRMS reason is provided - user didn't select an HRMS reason
-  if (!input.hrmsReasonId) return {};
+  if (selectedReason.source !== "hrms") return {};
+
+  const hrmsReasonId = selectedReason.id;
+  const hrmsReasonName = selectedReason.name;
 
   try {
-    // Get the highest priority HRMS credential (org > team > user)
     const hrmsCredential = await CredentialRepository.findFirstHrmsCredentialByPriority({
       userId: oooUserId,
       category: [AppCategories.hrms],
@@ -410,9 +412,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     }
 
     const hrmsManager = new HrmsManager(hrmsCredential);
-    const source = hrmsCredential.appId || "unknown";
 
-    // Check if there's an existing reference for this OOO entry (1:1 relationship)
     const existingReference = await prisma.outOfOfficeReference.findUnique({
       where: {
         oooEntryId: createdOrUpdatedOutOfOffice.id,
@@ -420,57 +420,49 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     });
 
     if (existingReference) {
-      // Update existing HRMS time-off
       await hrmsManager.updateOOO(existingReference.externalId, {
         endDate: endTimeUtc.format("YYYY-MM-DD"),
         startDate: startTimeUtc.format("YYYY-MM-DD"),
-        notes: input?.notes ? input.notes : reason?.reason ? `Out of office: ${reason.reason}` : "",
-        externalReasonId: input.hrmsReasonId,
+        notes: input?.notes ? input.notes : `Out of office: ${hrmsReasonName}`,
+        externalReasonId: hrmsReasonId,
         userEmail: oooUserEmail,
       });
 
-      // Update the reference with new reason info
       await prisma.outOfOfficeReference.update({
         where: { id: existingReference.id },
         data: {
-          source,
-          externalReasonId: input.hrmsReasonId,
-          externalReasonName: input.hrmsReasonName,
+          externalReasonId: hrmsReasonId,
+          externalReasonName: hrmsReasonName,
           credentialId: hrmsCredential.id,
           syncedAt: new Date(),
         },
       });
 
       log.info("Updated HRMS time-off request", {
-        source,
         externalId: existingReference.externalId,
         oooEntryId: createdOrUpdatedOutOfOffice.id,
       });
     } else {
-      // Create new HRMS time-off
       const hrmsTimeOff = await hrmsManager.createOOO({
         endDate: endTimeUtc.format("YYYY-MM-DD"),
         startDate: startTimeUtc.format("YYYY-MM-DD"),
         notes: input?.notes ?? undefined,
         userEmail: oooUserEmail,
-        externalReasonId: input.hrmsReasonId,
+        externalReasonId: hrmsReasonId,
       });
 
       if (hrmsTimeOff?.id) {
-        // Create OutOfOfficeReference to track the HRMS sync (1:1 with OOO entry)
         await prisma.outOfOfficeReference.create({
           data: {
             oooEntryId: createdOrUpdatedOutOfOffice.id,
-            source,
             externalId: hrmsTimeOff.id,
-            externalReasonId: input.hrmsReasonId,
-            externalReasonName: input.hrmsReasonName,
+            externalReasonId: hrmsReasonId,
+            externalReasonName: hrmsReasonName,
             credentialId: hrmsCredential.id,
           },
         });
 
         log.info("Created HRMS time-off request", {
-          source,
           externalId: hrmsTimeOff.id,
           oooEntryId: createdOrUpdatedOutOfOffice.id,
         });

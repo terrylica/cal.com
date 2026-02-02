@@ -75,7 +75,10 @@ describe("outOfOfficeCreateOrUpdate", () => {
       },
       startDateOffset: 60,
       endDateOffset: 60,
-      reasonId: 1,
+      selectedReason: {
+        source: "internal" as const,
+        id: 1,
+      },
       notes: "",
       toTeamUserId: null,
     };
@@ -93,7 +96,10 @@ describe("outOfOfficeCreateOrUpdate", () => {
       },
       startDateOffset: 60, // Paris timezone (CET)
       endDateOffset: 120, // Paris timezone (CEST) <- After summer time begins
-      reasonId: 1,
+      selectedReason: {
+        source: "internal" as const,
+        id: 1,
+      },
       notes: "",
       toTeamUserId: null,
     };

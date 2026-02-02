@@ -137,6 +137,12 @@ export const outOfOfficeEntriesList = async ({ ctx, input }: GetOptions) => {
           userId: true,
         },
       },
+      externalReference: {
+        select: {
+          externalReasonId: true,
+          externalReasonName: true,
+        },
+      },
       notes: true,
       showNotePublicly: true,
       user: fetchTeamMembersEntries

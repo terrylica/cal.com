@@ -57,7 +57,6 @@ export const outOfOfficeEntryDelete = async ({ ctx, input }: TBookingRedirectDel
       externalReference: {
         select: {
           id: true,
-          source: true,
           externalId: true,
           credential: {
             select: {
@@ -97,7 +96,6 @@ export const outOfOfficeEntryDelete = async ({ ctx, input }: TBookingRedirectDel
       const hrmsManager = new HrmsManager(oooEntry.externalReference.credential);
       await hrmsManager.deleteOOO(oooEntry.externalReference.externalId);
       log.info("Deleted HRMS time-off request", {
-        source: oooEntry.externalReference.source,
         externalId: oooEntry.externalReference.externalId,
       });
     }

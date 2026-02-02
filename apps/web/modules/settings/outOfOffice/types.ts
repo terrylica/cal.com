@@ -1,9 +1,13 @@
+export type SelectedReason =
+  | { source: "internal"; id: number }
+  | { source: "hrms"; id: string; name: string };
+
 export type BookingRedirectForm = {
   dateRange: { startDate: Date; endDate: Date };
   startDateOffset: number;
   endDateOffset: number;
   toTeamUserId: number | null;
-  reasonId: number;
+  selectedReason: SelectedReason | null;
   notes?: string;
   showNotePublicly?: boolean;
   uuid?: string | null;
@@ -11,6 +15,4 @@ export type BookingRedirectForm = {
   forUserName?: string;
   forUserAvatar?: string;
   toUserName?: string;
-  hrmsReasonId?: string | null;
-  hrmsReasonName?: string | null;
 };

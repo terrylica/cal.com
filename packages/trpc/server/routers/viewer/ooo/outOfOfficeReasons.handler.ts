@@ -15,18 +15,27 @@ interface OutOfOfficeReasonsHandlerOptions {
   };
 }
 
-interface OOOReason {
-  id: number;
+interface BaseOOOReason {
   emoji: string | null;
   reason: string;
-  userId: number | null;
   enabled: boolean;
-  hrmsSource?: string | null;
-  hrmsReasonId?: string | null;
 }
 
+export interface InternalOOOReason extends BaseOOOReason {
+  source: "internal";
+  id: number;
+  userId: number | null;
+}
+
+export interface HrmsOOOReason extends BaseOOOReason {
+  source: "hrms";
+  hrmsSource: string;
+  hrmsReasonId: string;
+}
+
+export type OOOReason = InternalOOOReason | HrmsOOOReason;
+
 export interface OutOfOfficeReasonListResult {
-  hasHrmsIntegration: boolean;
   reasons: OOOReason[];
 }
 
@@ -53,15 +62,13 @@ export async function outOfOfficeReasonList(
     });
 
     return {
-      hasHrmsIntegration: false,
-      reasons: outOfOfficeReasons.map((reason) => ({
+      reasons: outOfOfficeReasons.map((reason): InternalOOOReason => ({
+        source: "internal",
         id: reason.id,
         emoji: reason.emoji,
         reason: reason.reason,
         userId: reason.userId,
         enabled: reason.enabled,
-        hrmsSource: null,
-        hrmsReasonId: null,
       })),
     };
   }
@@ -77,12 +84,10 @@ export async function outOfOfficeReasonList(
       const hrmsManager = new HrmsManager(hrmsCredential);
       const reasons = await hrmsManager.listOOOReasons(user.email);
 
-      let reasonId = -1;
-      const hrmsReasons: OOOReason[] = reasons.map((reason) => ({
-        id: reasonId--,
+      const hrmsReasons: HrmsOOOReason[] = reasons.map((reason) => ({
+        source: "hrms",
         emoji: null,
         reason: reason.name,
-        userId: null,
         enabled: true,
         hrmsSource: hrmsCredential.appId || "unknown",
         hrmsReasonId: reason.externalId,
@@ -95,7 +100,6 @@ export async function outOfOfficeReasonList(
 
       if (hrmsReasons.length > 0) {
         return {
-          hasHrmsIntegration: true,
           reasons: hrmsReasons,
         };
       }
@@ -113,18 +117,16 @@ export async function outOfOfficeReasonList(
     },
   });
 
-  const calComReasons: OOOReason[] = outOfOfficeReasons.map((reason) => ({
+  const calComReasons: InternalOOOReason[] = outOfOfficeReasons.map((reason) => ({
+    source: "internal",
     id: reason.id,
     emoji: reason.emoji,
     reason: reason.reason,
     userId: reason.userId,
     enabled: reason.enabled,
-    hrmsSource: null,
-    hrmsReasonId: null,
   }));
 
   return {
-    hasHrmsIntegration: false,
     reasons: calComReasons,
   };
 }

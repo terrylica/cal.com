@@ -1,11 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-
 import getParsedAppKeysFromSlug from "../../_utils/getParsedAppKeysFromSlug";
 import { encodeOAuthState } from "../../_utils/oauth/encodeOAuthState";
 import { deelAuthUrl } from "../lib/constants";
 import { appKeysSchema } from "../zod";
 
-const scopes = ["time-off:write", "time-off:read", "people:read"];
+const scopes = ["time-off:write", "time-off:read", "people:read", "webhooks:write", "webhooks:read"];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") return res.status(405).json({ message: "Method not allowed" });

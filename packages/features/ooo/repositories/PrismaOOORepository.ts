@@ -155,6 +155,7 @@ export class PrismaOOORepository {
         externalReference: {
           select: {
             externalReasonName: true,
+            externalId: true,
           },
         },
       },
@@ -201,7 +202,7 @@ export class PrismaOOORepository {
     uuid: string;
     start: Date;
     end: Date;
-    notes: string;
+    notes?: string | null;
     userId: number;
     reasonId: number;
   }) {
@@ -219,19 +220,10 @@ export class PrismaOOORepository {
     });
   }
 
-  async findOOOEntryByExternalReference({
-    source,
-    externalId,
-  }: {
-    source: string;
-    externalId: string;
-  }) {
+  async findOOOEntryByExternalReference({ externalId }: { externalId: string }) {
     const reference = await this.prismaClient.outOfOfficeReference.findUnique({
       where: {
-        source_externalId: {
-          source,
-          externalId,
-        },
+        externalId,
       },
       include: {
         oooEntry: {
@@ -265,19 +257,10 @@ export class PrismaOOORepository {
     return reference;
   }
 
-  async deleteOOOEntryByExternalReference({
-    source,
-    externalId,
-  }: {
-    source: string;
-    externalId: string;
-  }) {
+  async deleteOOOEntryByExternalReference({ externalId }: { externalId: string }) {
     const reference = await this.prismaClient.outOfOfficeReference.findUnique({
       where: {
-        source_externalId: {
-          source,
-          externalId,
-        },
+        externalId,
       },
     });
 
@@ -294,14 +277,12 @@ export class PrismaOOORepository {
 
   async createOOOReference({
     oooEntryId,
-    source,
     externalId,
     externalReasonId,
     externalReasonName,
     credentialId,
   }: {
     oooEntryId: number;
-    source: string;
     externalId: string;
     externalReasonId?: string | null;
     externalReasonName?: string | null;
@@ -310,7 +291,6 @@ export class PrismaOOORepository {
     return this.prismaClient.outOfOfficeReference.create({
       data: {
         oooEntryId,
-        source,
         externalId,
         externalReasonId,
         externalReasonName,
@@ -330,7 +310,7 @@ export class PrismaOOORepository {
     uuid: string;
     start: Date;
     end: Date;
-    notes: string;
+    notes?: string;
     userId: number;
     reasonId: number;
   }) {

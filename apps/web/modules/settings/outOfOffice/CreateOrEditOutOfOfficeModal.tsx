@@ -1,6 +1,3 @@
-import { useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-
 import dayjs from "@calcom/dayjs";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
@@ -12,20 +9,24 @@ import classNames from "@calcom/ui/classNames";
 import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
-import { DateRangePicker, TextArea, Input, Checkbox } from "@calcom/ui/components/form";
-import { Label } from "@calcom/ui/components/form";
-import { Select } from "@calcom/ui/components/form";
-import { Switch } from "@calcom/ui/components/form";
+import {
+  Checkbox,
+  DateRangePicker,
+  Label,
+  Select,
+  Switch,
+  TextArea,
+} from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { useHasTeamPlan } from "@calcom/web/modules/billing/hooks/useHasPaidPlan";
-
+import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { UpgradeTeamsBadgeWebWrapper as UpgradeTeamsBadge } from "~/billing/components/UpgradeTeamsBadgeWebWrapper";
 import { OutOfOfficeTab } from "~/settings/outOfOffice/OutOfOfficeToggleGroup";
 
 export type { BookingRedirectForm } from "~/settings/outOfOffice/types";
-import type { BookingRedirectForm } from "~/settings/outOfOffice/types";
 
-type Option = { value: number; label: string };
+import type { BookingRedirectForm, SelectedReason } from "~/settings/outOfOffice/types";
 
 export const CreateOrEditOutOfOfficeEntryModal = ({
   openModal,
@@ -57,14 +58,14 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
     label: string;
     avatarUrl: string | null;
   }[] = currentlyEditingOutOfOfficeEntry
-    ? [
+      ? [
         {
           value: currentlyEditingOutOfOfficeEntry.forUserId || -1,
           label: currentlyEditingOutOfOfficeEntry.forUserName || "",
           avatarUrl: currentlyEditingOutOfOfficeEntry.forUserAvatar || "",
         },
       ]
-    : oooForMembers?.data?.pages
+      : oooForMembers?.data?.pages
         .flatMap((page) => page.members)
         ?.filter((member) => me?.data?.id !== member.id)
         .map((member) => ({
@@ -104,16 +105,25 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
   const { data: outOfOfficeReasonData, isPending: isReasonListPending } =
     trpc.viewer.ooo.outOfOfficeReasonList.useQuery();
 
-  const hasHrmsIntegration = outOfOfficeReasonData?.hasHrmsIntegration ?? false;
+  const reasonList: { label: string; value: SelectedReason }[] = useMemo(() => {
+    return (outOfOfficeReasonData?.reasons || []).map((reason) => {
+      const label = `${reason.emoji ?? ""} ${reason.source === "internal"
+          ? t(reason.reason || "")
+          : reason.reason || ""
+        }`.trim();
 
-  const reasonList = (outOfOfficeReasonData?.reasons || []).map((reason) => ({
-    label: `${reason?.emoji ? reason.emoji : ""} ${
-      reason.userId === null ? t(reason.reason || "") : reason.reason || ""
-    }`.trim(),
-    value: reason.id,
-    hrmsSource: reason.hrmsSource,
-    hrmsReasonId: reason.hrmsReasonId,
-  }));
+      if (reason.source === "hrms") {
+        return {
+          label,
+          value: { source: "hrms", id: reason.hrmsReasonId, name: label },
+        };
+      }
+      return {
+        label,
+        value: { source: "internal", id: reason.id },
+      };
+    });
+  }, [outOfOfficeReasonData?.reasons, t]);
 
   const [profileRedirect, setProfileRedirect] = useState(!!currentlyEditingOutOfOfficeEntry?.toTeamUserId);
 
@@ -128,26 +138,20 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
     formState: { isSubmitting },
     getValues,
   } = useForm<BookingRedirectForm>({
-    defaultValues: currentlyEditingOutOfOfficeEntry
-      ? currentlyEditingOutOfOfficeEntry
-      : {
-          dateRange: {
-            startDate: dayjs().startOf("d").toDate(),
-            endDate: dayjs().startOf("d").add(2, "d").toDate(),
-          },
-          startDateOffset: dayjs().utcOffset(),
-          endDateOffset: dayjs().utcOffset(),
-          toTeamUserId: null,
-          reasonId: 1,
-          forUserId: null,
-          showNotePublicly: false,
-          hrmsReasonId: null,
-          hrmsReasonName: null,
-        },
+    defaultValues: currentlyEditingOutOfOfficeEntry ?? {
+      dateRange: {
+        startDate: dayjs().startOf("d").toDate(),
+        endDate: dayjs().startOf("d").add(2, "d").toDate(),
+      },
+      startDateOffset: dayjs().utcOffset(),
+      endDateOffset: dayjs().utcOffset(),
+      toTeamUserId: null,
+      selectedReason: null,
+      forUserId: null,
+      showNotePublicly: false,
+    },
   });
 
-  const watchedTeamUserId = watch("toTeamUserId");
-  const watchForUserId = watch("forUserId");
   const watchedDateRange = watch("dateRange");
   const watchedNotes = watch("notes");
   const hasValidNotes = Boolean(watchedNotes?.trim());
@@ -204,13 +208,23 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
           onSubmit={handleSubmit((data) => {
             if (!data.dateRange.endDate) {
               showToast(t("end_date_not_selected"), "error");
-            } else {
-              createOrEditOutOfOfficeEntry.mutate({
-                ...data,
-                startDateOffset: -1 * data.dateRange.startDate.getTimezoneOffset(),
-                endDateOffset: -1 * data.dateRange.endDate.getTimezoneOffset(),
-              });
+              return;
             }
+            if (!data.selectedReason) {
+              showToast(t("reason_id_required"), "error");
+              return;
+            }
+            createOrEditOutOfOfficeEntry.mutate({
+              uuid: data.uuid,
+              forUserId: data.forUserId,
+              dateRange: data.dateRange,
+              startDateOffset: -1 * data.dateRange.startDate.getTimezoneOffset(),
+              endDateOffset: -1 * data.dateRange.endDate.getTimezoneOffset(),
+              toTeamUserId: data.toTeamUserId,
+              selectedReason: data.selectedReason,
+              notes: data.notes,
+              showNotePublicly: data.showNotePublicly,
+            });
           })}>
           <div className="h-full px-1">
             <DialogHeader
@@ -218,8 +232,8 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                 currentlyEditingOutOfOfficeEntry
                   ? t("edit_an_out_of_office")
                   : oooType === "team"
-                  ? t("create_ooo_dialog_team_title")
-                  : t("create_an_out_of_office")
+                    ? t("create_ooo_dialog_team_title")
+                    : t("create_an_out_of_office")
               }
               subtitle={
                 oooType === "team"
@@ -294,16 +308,16 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                   message={
                     overlappingHolidays.length === 1
                       ? t("holiday_overlap_message_single", {
-                          holiday: overlappingHolidays[0].holiday.name,
-                          date: dayjs(overlappingHolidays[0].date).format("D MMM"),
-                        })
+                        holiday: overlappingHolidays[0].holiday.name,
+                        date: dayjs(overlappingHolidays[0].date).format("D MMM"),
+                      })
                       : t("holiday_overlap_message_multiple", {
-                          count: overlappingHolidays.length,
-                          holidays: overlappingHolidays
-                            .slice(0, 3)
-                            .map((h) => h.holiday.name)
-                            .join(", "),
-                        })
+                        count: overlappingHolidays.length,
+                        holidays: overlappingHolidays
+                          .slice(0, 3)
+                          .map((h) => h.holiday.name)
+                          .join(", "),
+                      })
                   }
                 />
               )}
@@ -315,31 +329,22 @@ export const CreateOrEditOutOfOfficeEntryModal = ({
                 <p className="text-emphasis block text-sm font-medium">{t("reason")}</p>
                 <Controller
                   control={control}
-                  name="reasonId"
+                  name="selectedReason"
                   render={({ field: { onChange, value } }) => (
-                    <Select<{
-                      value: number;
-                      label: string;
-                      hrmsSource?: string | null;
-                      hrmsReasonId?: string | null;
-                    }>
+                    <Select<{ label: string; value: SelectedReason }>
                       className="mb-0 mt-1 text-white"
                       name="reason"
                       data-testid="reason_select"
-                      value={reasonList.find((reason) => reason.value === value)}
+                      menuPlacement="bottom"
+                      value={reasonList.find((option) => {
+                        if (!value) return false;
+                        if (value.source !== option.value.source) return false;
+                        return value.id === option.value.id;
+                      })}
                       placeholder={t("ooo_select_reason")}
                       options={reasonList}
                       onChange={(selectedOption) => {
-                        if (selectedOption?.value) {
-                          onChange(selectedOption.value);
-                          if (selectedOption.hrmsSource) {
-                            setValue("hrmsReasonId", selectedOption.hrmsReasonId || null);
-                            setValue("hrmsReasonName", selectedOption.label || null);
-                          } else {
-                            setValue("hrmsReasonId", null);
-                            setValue("hrmsReasonName", null);
-                          }
-                        }
+                        onChange(selectedOption?.value ?? null);
                       }}
                     />
                   )}

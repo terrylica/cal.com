@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
 import { PrismaOOORepository } from "@calcom/features/ooo/repositories/PrismaOOORepository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
@@ -8,7 +9,6 @@ import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import { AppCategories } from "@calcom/prisma/enums";
-import { createHmac } from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 import getRawBody from "raw-body";
 import { z } from "zod";
@@ -119,8 +119,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const payload = parseResult.data.data;
     if (payload.meta.event_type === "time-off.created" || payload.meta.event_type === "time-off.reviewed") {
-      if (payload.resource.status !== "APPROVED")
+      if (payload.resource.status !== "APPROVED" && payload.resource.status !== "USED") {
         return res.status(200).json({ message: "Time-off not approved, skipping processing" });
+      }
 
       const email = payload.resource.requester.work_email;
       if (!email) {
@@ -136,10 +137,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const oooRepo = new PrismaOOORepository(prisma);
-      const existingOOO = await oooRepo.findUserOOODays({
-        userId: user.id,
-        dateFrom: payload.resource.start_date,
-        dateTo: payload.resource.end_date,
+
+      const existingReference = await oooRepo.findOOOEntryByExternalReference({
+        externalId: payload.resource.id,
+      });
+      if (existingReference) {
+        log.info("OOO entry already exists for external reference, skipping creation", {
+          externalId: payload.resource.id,
+        });
+        return res.status(200).json({ message: "OOO entry already exists, skipping creation" });
+      }
+
+      const existingOOO = await oooRepo.findOOOEntriesInInterval({
+        userIds: [user.id],
+        startDate: new Date(payload.resource.start_date),
+        endDate: new Date(payload.resource.end_date),
       });
       if (existingOOO && existingOOO.length > 0) {
         log.info("OOO entry already exists for user and date range, skipping creation", {
@@ -175,7 +187,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const oooEntry = await oooRepo.createOOOEntry({
         end: new Date(payload.resource.end_date),
         start: new Date(payload.resource.start_date),
-        notes: payload.resource.reason || "Synced from Deel",
+        notes: payload.resource.reason,
         userId: user.id,
         uuid: crypto.randomUUID(),
         reasonId: 1,
@@ -183,7 +195,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await oooRepo.createOOOReference({
         oooEntryId: oooEntry.id,
-        source: "deel",
         externalId: payload.resource.id,
         externalReasonId: matchingPolicy?.externalId || null,
         externalReasonName: payload.resource.type,
@@ -194,12 +205,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (payload.resource.status === "CANCELED") {
         await oooRepo.deleteOOOEntryByExternalReference({
-          source: "deel",
           externalId: payload.resource.id,
         });
       } else if (payload.resource.status === "APPROVED") {
         const reference = await oooRepo.findOOOEntryByExternalReference({
-          source: "deel",
           externalId: payload.resource.id,
         });
 
@@ -220,7 +229,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           uuid: reference.oooEntry.uuid,
           start: new Date(payload.resource.start_date),
           end: new Date(payload.resource.end_date),
-          notes: payload.resource.reason || "Synced from Deel",
+          notes: payload.resource.reason || undefined,
           reasonId: 1,
           userId: reference.oooEntry.userId,
         });

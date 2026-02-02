@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+const ZInternalReason = z.object({
+  source: z.literal("internal"),
+  id: z.number(),
+});
+
+const ZHrmsReason = z.object({
+  source: z.literal("hrms"),
+  id: z.string(),
+  name: z.string(),
+});
+
+export const ZSelectedReason = z.discriminatedUnion("source", [ZInternalReason, ZHrmsReason]);
+
+export type TSelectedReason = z.infer<typeof ZSelectedReason>;
+
 export const ZOutOfOfficeInputSchema = z.object({
   uuid: z.string().nullish(),
   forUserId: z.number().nullish(),
@@ -10,12 +25,9 @@ export const ZOutOfOfficeInputSchema = z.object({
   startDateOffset: z.number(),
   endDateOffset: z.number(),
   toTeamUserId: z.number().nullable(),
-  reasonId: z.number().optional(),
+  selectedReason: ZSelectedReason,
   notes: z.string().nullable().optional(),
   showNotePublicly: z.boolean().optional(),
-  // HRMS integration fields - optional, only used when HRMS is installed
-  hrmsReasonId: z.string().nullable().optional(),
-  hrmsReasonName: z.string().nullable().optional(),
 });
 
 export type TOutOfOfficeInputSchema = z.infer<typeof ZOutOfOfficeInputSchema>;

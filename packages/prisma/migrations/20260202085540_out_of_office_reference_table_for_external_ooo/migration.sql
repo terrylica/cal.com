@@ -6,7 +6,6 @@ CREATE TABLE "public"."OutOfOfficeReference" (
     "id" SERIAL NOT NULL,
     "uuid" TEXT NOT NULL,
     "oooEntryId" INTEGER NOT NULL,
-    "source" TEXT NOT NULL,
     "externalId" TEXT NOT NULL,
     "externalReasonName" TEXT,
     "externalReasonId" TEXT,
@@ -20,13 +19,13 @@ CREATE TABLE "public"."OutOfOfficeReference" (
 CREATE UNIQUE INDEX "OutOfOfficeReference_uuid_key" ON "public"."OutOfOfficeReference"("uuid");
 
 -- CreateIndex
-CREATE INDEX "OutOfOfficeReference_oooEntryId_idx" ON "public"."OutOfOfficeReference"("oooEntryId");
+CREATE UNIQUE INDEX "OutOfOfficeReference_oooEntryId_key" ON "public"."OutOfOfficeReference"("oooEntryId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OutOfOfficeReference_externalId_key" ON "public"."OutOfOfficeReference"("externalId");
 
 -- CreateIndex
 CREATE INDEX "OutOfOfficeReference_credentialId_idx" ON "public"."OutOfOfficeReference"("credentialId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "OutOfOfficeReference_source_externalId_key" ON "public"."OutOfOfficeReference"("source", "externalId");
 
 -- AddForeignKey
 ALTER TABLE "public"."OutOfOfficeReference" ADD CONSTRAINT "OutOfOfficeReference_oooEntryId_fkey" FOREIGN KEY ("oooEntryId") REFERENCES "public"."OutOfOfficeEntry"("id") ON DELETE CASCADE ON UPDATE CASCADE;

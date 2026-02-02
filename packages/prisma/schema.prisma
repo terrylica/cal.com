@@ -2040,17 +2040,15 @@ model OutOfOfficeReference {
   oooEntryId Int              @unique
   oooEntry   OutOfOfficeEntry @relation(fields: [oooEntryId], references: [id], onDelete: Cascade)
 
-  source             String // App slug: "deel", "bamboohr"
-  externalId         String // Time-off entry ID in HRMS
-  externalReasonName String? // Display: "Parental Leave", "PTO"
-  externalReasonId   String? // HRMS reason ID for API calls
+  externalId         String  @unique
+  externalReasonName String?
+  externalReasonId   String?
 
   credentialId Int?
   credential   Credential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
 
   syncedAt DateTime @default(now())
 
-  @@unique([source, externalId])
   @@index([credentialId])
 }
 
