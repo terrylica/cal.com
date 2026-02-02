@@ -78,8 +78,13 @@ type BookingWithDetails = {
   }>;
 };
 
+type BookingForLocationUpdate = Pick<
+  Booking,
+  "id" | "uid" | "userId" | "eventTypeId" | "location" | "responses" | "metadata"
+>;
+
 type IntegrationHandlerContext = {
-  existingBooking: Booking;
+  existingBooking: BookingForLocationUpdate;
   booking: BookingWithDetails;
   integrationSlug: string;
   internalLocation: string;
@@ -302,7 +307,7 @@ export class BookingLocationService_2024_08_13 {
   }
 
   private async updateLocation(
-    existingBooking: Booking,
+    existingBooking: BookingForLocationUpdate,
     inputLocation: UpdateBookingInputLocation_2024_08_13,
     user: ApiAuthGuardUser
   ): Promise<
@@ -401,7 +406,7 @@ export class BookingLocationService_2024_08_13 {
    * dispatches to the appropriate handler based on integration type.
    */
   private async handleIntegrationLocationUpdate(
-    existingBooking: Booking,
+    existingBooking: BookingForLocationUpdate,
     inputLocation: { type: "integration"; integration: Integration_2024_08_13 },
     user: ApiAuthGuardUser,
     existingBookingHost: Awaited<ReturnType<typeof this.usersRepository.findById>>
