@@ -202,9 +202,8 @@ export const useEventTypeForm = ({
     formState: { isDirty: isFormDirty, dirtyFields },
   } = form;
 
-  // Only watch all form values when onFormStateChange is provided
-  // This avoids expensive re-renders when watching large arrays like hosts (700+ items)
-  const watchedValues = onFormStateChange ? form.watch() : undefined;
+  // Watch all form values to trigger onFormStateChange on any change
+  const watchedValues = form.watch();
 
   const isObject = <T>(value: T): boolean => {
     return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -443,7 +442,7 @@ export const useEventTypeForm = ({
   };
 
   useEffect(() => {
-    if (onFormStateChange && watchedValues) {
+    if (onFormStateChange) {
       onFormStateChange({
         isDirty: isFormDirty,
         dirtyFields: dirtyFields as Partial<FormValues>,
