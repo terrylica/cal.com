@@ -218,14 +218,10 @@ export class OAuthService {
     ];
 
     if (error instanceof ErrorWithCode) {
-      const reason = error.data?.reason as OAuthErrorReason | undefined;
-      const errorDescription =
-        (reason && OAUTH_ERROR_REASONS[reason]) || ((error.data?.reason as string | undefined) ?? error.message);
-
       if (validOAuthErrors.includes(error.message)) {
         return {
           error: error.message,
-          errorDescription,
+          errorDescription: (error.data?.reason as string | undefined) ?? error.message,
         };
       }
 
@@ -233,17 +229,17 @@ export class OAuthService {
         case ErrorCode.BadRequest:
           return {
             error: "invalid_request",
-            errorDescription,
+            errorDescription: (error.data?.reason as string | undefined) ?? error.message,
           };
         case ErrorCode.Unauthorized:
           return {
             error: "unauthorized_client",
-            errorDescription,
+            errorDescription: (error.data?.reason as string | undefined) ?? error.message,
           };
         default:
           return {
             error: "server_error",
-            errorDescription,
+            errorDescription: (error.data?.reason as string | undefined) ?? error.message,
           };
       }
     }
