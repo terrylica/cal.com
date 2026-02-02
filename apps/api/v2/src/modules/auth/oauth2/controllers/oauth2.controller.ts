@@ -14,7 +14,6 @@ import {
 } from "@nestjs/common";
 import {
   ApiBody,
-  ApiExcludeController,
   ApiExtraModels,
   ApiOperation,
   ApiTags,
@@ -48,7 +47,6 @@ import { OAuth2ErrorService } from "@/modules/auth/oauth2/services/oauth2-error.
   path: "/v2/auth/oauth2",
   version: API_VERSIONS_VALUES,
 })
-@ApiExcludeController(true)
 @ApiTags("OAuth2")
 export class OAuth2Controller {
   constructor(
