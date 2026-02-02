@@ -1,3 +1,4 @@
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -7,7 +8,7 @@ import getParsedAppKeysFromSlug from "../../_utils/getParsedAppKeysFromSlug";
 import createOAuthAppCredential from "../../_utils/oauth/createOAuthAppCredential";
 import { decodeOAuthState } from "../../_utils/oauth/decodeOAuthState";
 import metadata from "../_metadata";
-import { deelAuthUrl } from "../lib/constants";
+import { deelApiUrl, deelAuthUrl } from "../lib/constants";
 import { appKeysSchema } from "../zod";
 
 export interface DeelToken {
@@ -17,9 +18,10 @@ export interface DeelToken {
   refresh_token: string;
   scope: string;
   expiryDate?: number;
+  webhookId?: string;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   const { code } = req.query;
   const state = decodeOAuthState(req);
   const log = logger.getSubLogger({ prefix: [`[[lib] DeelHrmsService`] });
@@ -30,10 +32,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (!req.session?.user?.id) {
-    return res.status(401).json({ message: "You must be logged in to do this" });
+    res.status(401).json({ message: "You must be logged in to do this" });
+    return;
   }
 
-  const { client_id, client_secret, redirect_uris } = await getParsedAppKeysFromSlug("deel", appKeysSchema);
+  const { client_id, client_secret, redirect_uris, webhook_signing_key } = await getParsedAppKeysFromSlug(
+    "deel",
+    appKeysSchema
+  );
 
   const tokenResponse = await fetch(`${deelAuthUrl}/oauth2/tokens`, {
     method: "POST",
@@ -51,12 +57,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!tokenResponse.ok) {
     const data = await tokenResponse.json();
     log.error("Invalid token response from Deel: ", safeStringify(data));
-    return res.status(400).json({ message: "There was an issue logging you in with Deel" });
+    res.status(400).json({ message: "There was an issue logging you in with Deel" });
+    return;
   }
 
   const deelToken: DeelToken = await tokenResponse.json();
 
   deelToken.expiryDate = Math.round(Date.now() + deelToken.expires_in * 1000);
+
+  if (webhook_signing_key) {
+    try {
+      const webhookUrl = `${WEBAPP_URL}/api/integrations/deel/webhook`;
+      const webhookResponse = await fetch(`${deelApiUrl}/rest/v2/webhooks`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${deelToken.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Cal.com Time-Off Sync",
+          description: "Webhook to sync time-off requests from Deel to Cal.com",
+          status: "enabled",
+          url: webhookUrl,
+          signing_key: webhook_signing_key,
+          api_version: "v2",
+          events: ["time-off.created", "time-off.reviewed", "time-off.updated"],
+        }),
+      });
+
+      if (!webhookResponse.ok) {
+        const errorData = await webhookResponse.json();
+        log.warn("Failed to register Deel webhook", safeStringify(errorData));
+      } else {
+        const webhookData = await webhookResponse.json();
+        deelToken.webhookId = webhookData.data?.id;
+      }
+    } catch (error) {
+      log.error("Error registering Deel webhook", safeStringify(error));
+    }
+  }
 
   await createOAuthAppCredential({ appId: metadata.slug, type: metadata.type }, deelToken, req);
 
