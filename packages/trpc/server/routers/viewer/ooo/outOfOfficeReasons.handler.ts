@@ -95,6 +95,13 @@ export async function outOfOfficeReasonList(
     where: {
       enabled: true,
     },
+    select: {
+      id: true,
+      emoji: true,
+      reason: true,
+      userId: true,
+      enabled: true,
+    },
   });
 
   const calComReasons: InternalOOOReason[] = outOfOfficeReasons.map((reason) => ({

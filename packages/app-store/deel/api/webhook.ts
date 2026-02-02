@@ -125,14 +125,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const email = payload.resource.requester.work_email;
       if (!email) {
-        log.warn("No work email provided in Deel webhook payload", safeStringify(payload));
+        log.warn("No work email provided in Deel webhook payload");
         return res.status(200).json({ message: "No work email provided, skipping processing" });
       }
 
       const userRepo = new UserRepository(prisma);
       const user = await userRepo.findByEmailCaseInsensitive({ email });
       if (!user) {
-        log.warn("No matching Cal.com user found for Deel webhook", { email });
+        log.warn("No matching Cal.com user found for Deel webhook");
         return res.status(200).json({ message: "No matching user found, skipping processing" });
       }
 
@@ -158,7 +158,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userId: user.id,
           dateFrom: payload.resource.start_date,
           dateTo: payload.resource.end_date,
-          work_email: email,
         });
         return res.status(200).json({ message: "OOO entry already exists, skipping creation" });
       }
@@ -243,7 +242,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
     } else {
-      log.info("Ignoring deel incoming webhook", safeStringify(payload));
+      log.info("Ignoring deel incoming webhook", { eventType: payload.meta.event_type });
     }
 
     res.status(200).json({ message: "Webhook processed successfully" });

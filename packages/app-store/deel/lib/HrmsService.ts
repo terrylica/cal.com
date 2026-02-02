@@ -1,5 +1,5 @@
-import process from "node:process";
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import type { CredentialPayload } from "@calcom/types/Credential";
 import type { HrmsService } from "@calcom/types/HrmsService";
@@ -124,7 +124,7 @@ class DeelHrmsService implements HrmsService {
       body: new URLSearchParams({
         grant_type: "refresh_token",
         refresh_token: refreshToken,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/integrations/deel/callback`,
+        redirect_uri: `${WEBAPP_URL}/api/integrations/deel/callback`,
       }),
     });
 
@@ -155,8 +155,7 @@ class DeelHrmsService implements HrmsService {
 
       const recipientProfileId = await this.getRecipientProfileId(params.userEmail);
       if (!recipientProfileId) {
-        this.log.error("Recipient profile ID not found for user", { email: params.userEmail });
-        throw new Error(`Recipient profile ID not found for user: ${params.userEmail}`);
+        throw new Error("Recipient profile ID not found for user");
       }
 
       const request: DeelTimeOffRequest = {
@@ -211,8 +210,7 @@ class DeelHrmsService implements HrmsService {
 
       const recipientProfileId = await this.getRecipientProfileId(params.userEmail);
       if (!recipientProfileId) {
-        this.log.error("Recipient profile ID not found for user", { email: params.userEmail });
-        throw new Error(`Recipient profile ID not found for user: ${params.userEmail}`);
+        throw new Error("Recipient profile ID not found for user");
       }
 
       const request: Partial<DeelTimeOffRequest> = {};

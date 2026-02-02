@@ -24,6 +24,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     authUrl.searchParams.set("state", state);
   }
 
-  console.log("auth url: ", authUrl.toString());
   res.status(200).json({ url: authUrl.toString() });
 }
