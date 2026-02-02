@@ -676,6 +676,7 @@ const Route = ({
                   }}
                   value={route.fallbackAction.value}
                   onChange={(e) => {
+                    if (!route.fallbackAction) return;
                     setRoute(route.id, {
                       fallbackAction: {
                         type: route.fallbackAction.type,
@@ -695,6 +696,7 @@ const Route = ({
                   labelSrOnly
                   value={route.fallbackAction.value}
                   onChange={(e) => {
+                    if (!route.fallbackAction) return;
                     setRoute(route.id, {
                       fallbackAction: {
                         type: route.fallbackAction.type,
@@ -712,7 +714,7 @@ const Route = ({
                     isDisabled={disabled}
                     options={fallbackActionOptions}
                     onChange={(option) => {
-                      if (!option) {
+                      if (!option || !route.fallbackAction) {
                         return;
                       }
                       setRoute(route.id, {
