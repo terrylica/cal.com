@@ -25,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "@calcom/ui/components/dropdown";
 import { List } from "@calcom/ui/components/list";
-import { showToast } from "@calcom/ui/components/toast";
 
 import {
   AppSetDefaultLinkDialog,
@@ -74,7 +73,6 @@ export const AppList = ({
   );
   const onSuccessCallback = useCallback(() => {
     setBulkUpdateModal(true);
-    showToast("Default app updated successfully", "success");
   }, []);
 
   const ChildAppCard = ({ item }: { item: AppCardApp }) => {
