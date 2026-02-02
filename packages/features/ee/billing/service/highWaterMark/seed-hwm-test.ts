@@ -34,11 +34,13 @@ import { ORGANIZATION_SELF_SERVE_PRICE } from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
 import { BillingPeriod, MembershipRole } from "@calcom/prisma/enums";
 
-// Pricing constants (in cents)
-// Team price is not defined as a constant - it comes from STRIPE_TEAM_MONTHLY_PRICE_ID
-// Using $15/seat/month as per existing billing tests and proration seed
-const TEAM_PRICE_PER_SEAT_CENTS = 1500; // $15/seat/month
-const ORG_PRICE_PER_SEAT_CENTS = ORGANIZATION_SELF_SERVE_PRICE * 100; // $37/seat/month
+// Stripe product/price IDs from environment
+const STRIPE_TEAM_MONTHLY_PRICE_ID = process.env.STRIPE_TEAM_MONTHLY_PRICE_ID;
+const STRIPE_ORG_MONTHLY_PRICE_ID = process.env.STRIPE_ORG_MONTHLY_PRICE_ID;
+
+// Fallback pricing constants (in cents) - used when Stripe price lookup fails
+const TEAM_PRICE_PER_SEAT_CENTS_FALLBACK = 1500; // $15/seat/month
+const ORG_PRICE_PER_SEAT_CENTS_FALLBACK = ORGANIZATION_SELF_SERVE_PRICE * 100; // $37/seat/month
 
 async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(10);
@@ -178,15 +180,8 @@ async function cleanupStripeResources(stripe: Stripe) {
     }
   }
 
-  // Find and archive test products
-  const products = await stripe.products.list({ limit: 100 });
-
-  for (const product of products.data) {
-    if (product.name.startsWith("HWM Test") && product.active) {
-      await stripe.products.update(product.id, { active: false });
-      console.log(`  Archived product: ${product.id}`);
-    }
-  }
+  // Note: We don't archive products here because we're using the real
+  // team/org products from STRIPE_TEAM_PRODUCT_ID and STRIPE_ORG_PRODUCT_ID
 }
 
 async function createStripeResourcesForTeam(
@@ -195,33 +190,23 @@ async function createStripeResourcesForTeam(
   email: string,
   name: string,
   seatCount: number,
-  pricePerSeatCents: number
-): Promise<StripeResources> {
+  priceId: string
+): Promise<StripeResources & { pricePerSeatCents: number }> {
   console.log(`Creating Stripe resources for ${name}...`);
 
-  // Create a test product
-  const product = await stripe.products.create({
-    name: `HWM Test Product - ${name} - ${Date.now()}`,
-    description: "Test product for HWM billing testing",
-    metadata: {
-      testData: "true",
-      teamId: teamId.toString(),
-    },
-  });
-  console.log(`  Created product: ${product.id}`);
+  // Use existing price from env
+  const price = await stripe.prices.retrieve(priceId);
+  if (!price) {
+    throw new Error(`Price not found: ${priceId}`);
+  }
+  const pricePerSeatCents = price.unit_amount || 0;
+  console.log(`  Using existing price: ${price.id} ($${pricePerSeatCents / 100}/seat)`);
 
-  // Create a price for the product
-  const price = await stripe.prices.create({
-    product: product.id,
-    unit_amount: pricePerSeatCents,
-    currency: "usd",
-    recurring: {
-      interval: "month",
-      usage_type: "licensed",
-    },
-    metadata: { testData: "true" },
-  });
-  console.log(`  Created price: ${price.id} ($${pricePerSeatCents / 100}/seat)`);
+  // Get the product
+  const product = typeof price.product === "string"
+    ? await stripe.products.retrieve(price.product)
+    : price.product as Stripe.Product;
+  console.log(`  Using existing product: ${product.id} (${product.name})`);
 
   // Create a customer
   const customer = await stripe.customers.create({
@@ -258,7 +243,7 @@ async function createStripeResourcesForTeam(
   });
   console.log(`  Created subscription: ${subscription.id} (${seatCount} seats)`);
 
-  return { customer, subscription, product, price };
+  return { customer, subscription, product, price, pricePerSeatCents };
 }
 
 async function cleanupDatabaseResources() {
@@ -378,19 +363,25 @@ async function seedHwmTeam(stripe: Stripe | null): Promise<TeamSeedResult> {
   let stripeCustomerId = `cus_fake_hwm_team_${Date.now()}`;
   let stripeSubscriptionId = `sub_fake_hwm_team_${Date.now()}`;
   let stripeSubscriptionItemId = `si_fake_hwm_team_${Date.now()}`;
+  let teamPricePerSeatCents = TEAM_PRICE_PER_SEAT_CENTS_FALLBACK;
 
   if (stripe) {
-    stripeResources = await createStripeResourcesForTeam(
+    if (!STRIPE_TEAM_MONTHLY_PRICE_ID) {
+      throw new Error("STRIPE_TEAM_MONTHLY_PRICE_ID is required when running with Stripe");
+    }
+    const result = await createStripeResourcesForTeam(
       stripe,
       team.id,
       HWM_TEAM_ADMIN_EMAIL,
       "HWM Test Team",
       paidSeats,
-      TEAM_PRICE_PER_SEAT_CENTS
+      STRIPE_TEAM_MONTHLY_PRICE_ID
     );
-    stripeCustomerId = stripeResources.customer!.id;
-    stripeSubscriptionId = stripeResources.subscription!.id;
-    stripeSubscriptionItemId = stripeResources.subscription!.items.data[0].id;
+    stripeResources = result;
+    stripeCustomerId = result.customer!.id;
+    stripeSubscriptionId = result.subscription!.id;
+    stripeSubscriptionItemId = result.subscription!.items.data[0].id;
+    teamPricePerSeatCents = result.pricePerSeatCents;
   }
 
   // Monthly subscription dates
@@ -408,7 +399,7 @@ async function seedHwmTeam(stripe: Stripe | null): Promise<TeamSeedResult> {
       subscriptionId: stripeSubscriptionId,
       subscriptionItemId: stripeSubscriptionItemId,
       billingPeriod: BillingPeriod.MONTHLY,
-      pricePerSeat: TEAM_PRICE_PER_SEAT_CENTS,
+      pricePerSeat: teamPricePerSeatCents,
       paidSeats,
       subscriptionStart,
       subscriptionEnd,
@@ -424,7 +415,7 @@ async function seedHwmTeam(stripe: Stripe | null): Promise<TeamSeedResult> {
       status: "ACTIVE",
       planName: "TEAM",
       billingPeriod: BillingPeriod.MONTHLY,
-      pricePerSeat: TEAM_PRICE_PER_SEAT_CENTS,
+      pricePerSeat: teamPricePerSeatCents,
       paidSeats,
       subscriptionStart,
       subscriptionEnd,
@@ -434,7 +425,7 @@ async function seedHwmTeam(stripe: Stripe | null): Promise<TeamSeedResult> {
     },
   });
 
-  console.log(`  TeamBilling created (MONTHLY, $${TEAM_PRICE_PER_SEAT_CENTS / 100}/seat, ${paidSeats} paid, HWM=${peakMemberCount})`);
+  console.log(`  TeamBilling created (MONTHLY, $${teamPricePerSeatCents / 100}/seat, ${paidSeats} paid, HWM=${peakMemberCount})`);
 
   // Get billing record for linking seat changes
   const teamBilling = await prisma.teamBilling.findUnique({ where: { teamId: team.id } });
@@ -564,19 +555,25 @@ async function seedHwmOrg(stripe: Stripe | null): Promise<OrgSeedResult> {
   let stripeCustomerId = `cus_fake_hwm_org_${Date.now()}`;
   let stripeSubscriptionId = `sub_fake_hwm_org_${Date.now()}`;
   let stripeSubscriptionItemId = `si_fake_hwm_org_${Date.now()}`;
+  let orgPricePerSeatCents = ORG_PRICE_PER_SEAT_CENTS_FALLBACK;
 
   if (stripe) {
-    stripeResources = await createStripeResourcesForTeam(
+    if (!STRIPE_ORG_MONTHLY_PRICE_ID) {
+      throw new Error("STRIPE_ORG_MONTHLY_PRICE_ID is required when running with Stripe");
+    }
+    const result = await createStripeResourcesForTeam(
       stripe,
       org.id,
       HWM_ORG_ADMIN_EMAIL,
       "HWM Test Org",
       paidSeats,
-      ORG_PRICE_PER_SEAT_CENTS
+      STRIPE_ORG_MONTHLY_PRICE_ID
     );
-    stripeCustomerId = stripeResources.customer!.id;
-    stripeSubscriptionId = stripeResources.subscription!.id;
-    stripeSubscriptionItemId = stripeResources.subscription!.items.data[0].id;
+    stripeResources = result;
+    stripeCustomerId = result.customer!.id;
+    stripeSubscriptionId = result.subscription!.id;
+    stripeSubscriptionItemId = result.subscription!.items.data[0].id;
+    orgPricePerSeatCents = result.pricePerSeatCents;
   }
 
   // Monthly subscription dates
@@ -594,7 +591,7 @@ async function seedHwmOrg(stripe: Stripe | null): Promise<OrgSeedResult> {
       subscriptionId: stripeSubscriptionId,
       subscriptionItemId: stripeSubscriptionItemId,
       billingPeriod: BillingPeriod.MONTHLY,
-      pricePerSeat: ORG_PRICE_PER_SEAT_CENTS, // $25/seat for orgs
+      pricePerSeat: orgPricePerSeatCents,
       paidSeats,
       subscriptionStart,
       subscriptionEnd,
@@ -610,7 +607,7 @@ async function seedHwmOrg(stripe: Stripe | null): Promise<OrgSeedResult> {
       status: "ACTIVE",
       planName: "ORGANIZATION",
       billingPeriod: BillingPeriod.MONTHLY,
-      pricePerSeat: ORG_PRICE_PER_SEAT_CENTS,
+      pricePerSeat: orgPricePerSeatCents,
       paidSeats,
       subscriptionStart,
       subscriptionEnd,
@@ -631,7 +628,7 @@ async function seedHwmOrg(stripe: Stripe | null): Promise<OrgSeedResult> {
     },
   });
 
-  console.log(`  OrganizationBilling created (MONTHLY, $${ORG_PRICE_PER_SEAT_CENTS / 100}/seat, ${paidSeats} paid, HWM=${peakMemberCount})`);
+  console.log(`  OrganizationBilling created (MONTHLY, $${orgPricePerSeatCents / 100}/seat, ${paidSeats} paid, HWM=${peakMemberCount})`);
 
   // Get billing record for linking seat changes
   const orgBilling = await prisma.organizationBilling.findUnique({ where: { teamId: org.id } });

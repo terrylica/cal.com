@@ -115,10 +115,10 @@ async function handleTeamBillingRenewal(
   if (teamBilling) {
     await teamBillingRepo.updateById(teamBilling.id, billingUpdateData);
 
-    // Reset high water mark for monthly billing on new period
+    // Reset high water mark and subscription quantity for monthly billing on new period
     if (billingPeriod === "MONTHLY") {
       if (subscriptionStart) {
-        await resetHighWaterMark(teamBilling.teamId, false, subscriptionStart);
+        await resetSubscriptionAfterRenewal(subscription.id, subscriptionStart);
       } else {
         log.warn("Cannot reset high water mark: subscriptionStart is null for monthly team billing", {
           teamId: teamBilling.teamId,
@@ -135,10 +135,10 @@ async function handleTeamBillingRenewal(
   if (orgBilling) {
     await orgBillingRepo.updateById(orgBilling.id, billingUpdateData);
 
-    // Reset high water mark for monthly billing on new period
+    // Reset high water mark and subscription quantity for monthly billing on new period
     if (billingPeriod === "MONTHLY") {
       if (subscriptionStart) {
-        await resetHighWaterMark(orgBilling.teamId, true, subscriptionStart);
+        await resetSubscriptionAfterRenewal(subscription.id, subscriptionStart);
       } else {
         log.warn("Cannot reset high water mark: subscriptionStart is null for monthly org billing", {
           teamId: orgBilling.teamId,
@@ -161,28 +161,29 @@ async function handleTeamBillingRenewal(
   return { skipped: true, reason: "no billing record found" };
 }
 
-async function resetHighWaterMark(
-  teamId: number,
-  isOrganization: boolean,
+async function resetSubscriptionAfterRenewal(
+  subscriptionId: string,
   newPeriodStart: Date
 ): Promise<void> {
   try {
-    const highWaterMarkService = new HighWaterMarkService(log);
-    await highWaterMarkService.resetHighWaterMark({
-      teamId,
-      isOrganization,
+    const billingProviderService = getBillingProviderService();
+    const highWaterMarkService = new HighWaterMarkService({
+      logger: log,
+      billingService: billingProviderService,
+    });
+    const updated = await highWaterMarkService.resetSubscriptionAfterRenewal({
+      subscriptionId,
       newPeriodStart,
     });
-    log.info("High water mark reset on billing period renewal", {
-      teamId,
-      isOrganization,
+    log.info("Subscription reset after billing period renewal", {
+      subscriptionId,
       newPeriodStart,
+      updated,
     });
   } catch (error) {
     // Log but don't fail the webhook
-    log.error("Failed to reset high water mark on renewal", {
-      teamId,
-      isOrganization,
+    log.error("Failed to reset subscription after renewal", {
+      subscriptionId,
       error,
     });
   }

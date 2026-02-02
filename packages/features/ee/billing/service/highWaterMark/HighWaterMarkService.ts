@@ -219,19 +219,22 @@ export class HighWaterMarkService {
       }
     }
 
-    // If HWM is not higher than paid seats, no update needed
-    if (highWaterMark <= paidSeats) {
-      this.logger.debug(`No HWM update needed for team ${teamId}`, {
+    // If HWM equals paid seats, no update needed
+    if (highWaterMark === paidSeats) {
+      this.logger.debug(`No HWM update needed for team ${teamId} - already at correct quantity`, {
         highWaterMark,
         paidSeats,
       });
       return false;
     }
 
-    this.logger.info(`Applying high water mark for team ${teamId}`, {
+    // Determine if scaling up or down
+    const isScalingUp = highWaterMark > paidSeats;
+    this.logger.info(`${isScalingUp ? "Scaling up" : "Scaling down"} subscription for team ${teamId}`, {
       highWaterMark,
       currentPaidSeats: paidSeats,
       subscriptionId,
+      direction: isScalingUp ? "up" : "down",
     });
 
     // Update the subscription quantity to the high water mark
@@ -258,5 +261,103 @@ export class HighWaterMarkService {
 
   async getHighWaterMarkData(teamId: number) {
     return this.repository.getByTeamId(teamId);
+  }
+
+  /**
+   * Reset subscription quantity to current member count after a billing period renewal.
+   * This allows seats to scale DOWN when members have been removed during the previous period.
+   *
+   * Flow:
+   * 1. invoice.upcoming: applyHighWaterMarkToSubscription sets quantity to HWM (peak)
+   * 2. Stripe generates invoice for HWM seats
+   * 3. customer.subscription.updated (period change): This method resets to current members
+   */
+  async resetSubscriptionAfterRenewal(params: {
+    subscriptionId: string;
+    newPeriodStart: Date;
+  }): Promise<boolean> {
+    const { subscriptionId, newPeriodStart } = params;
+
+    if (!this.billingService) {
+      this.logger.error("BillingService not configured for subscription reset");
+      return false;
+    }
+
+    const billing = await this.repository.getBySubscriptionId(subscriptionId);
+    if (!billing) {
+      this.logger.warn(`No billing record found for subscription ${subscriptionId}`);
+      return false;
+    }
+
+    // Only apply for monthly billing
+    if (billing.billingPeriod !== "MONTHLY") {
+      this.logger.debug(`Skipping reset for non-monthly subscription ${subscriptionId}`);
+      return false;
+    }
+
+    const { teamId, subscriptionItemId, isOrganization, paidSeats } = billing;
+
+    // Get current member count
+    const memberCount = await this.teamRepository.getTeamMemberCount(teamId);
+    if (memberCount === null) {
+      this.logger.warn(`Could not get member count for team ${teamId}`);
+      return false;
+    }
+
+    // If current members equals paid seats, no update needed
+    if (memberCount === paidSeats) {
+      this.logger.debug(`No reset needed for team ${teamId} - already at correct quantity`, {
+        memberCount,
+        paidSeats,
+      });
+
+      // Still reset HWM for the new period
+      await this.repository.reset({
+        teamId,
+        isOrganization,
+        currentSeatCount: memberCount,
+        newPeriodStart,
+      });
+
+      return false;
+    }
+
+    this.logger.info(`Resetting subscription for team ${teamId} after renewal`, {
+      currentMembers: memberCount,
+      previousPaidSeats: paidSeats,
+      subscriptionId,
+      direction: memberCount < (paidSeats ?? 0) ? "down" : "up",
+    });
+
+    // Update the subscription quantity to current member count
+    await this.billingService.handleSubscriptionUpdate({
+      subscriptionId,
+      subscriptionItemId,
+      membershipCount: memberCount,
+      prorationBehavior: "none",
+    });
+
+    // Reset HWM to current member count for the new period
+    await this.repository.reset({
+      teamId,
+      isOrganization,
+      currentSeatCount: memberCount,
+      newPeriodStart,
+    });
+
+    // Update our local record of paid seats
+    await this.repository.updateQuantityAfterStripeSync({
+      teamId,
+      isOrganization,
+      paidSeats: memberCount,
+    });
+
+    this.logger.info(`Successfully reset subscription for team ${teamId}`, {
+      newPaidSeats: memberCount,
+      newHighWaterMark: memberCount,
+      newPeriodStart,
+    });
+
+    return true;
   }
 }

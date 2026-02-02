@@ -1,5 +1,5 @@
+import { getBillingProviderService } from "@calcom/features/ee/billing/di/containers/Billing";
 import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
-import { StripeBillingService } from "@calcom/features/ee/billing/service/billingProvider/StripeBillingService";
 import logger from "@calcom/lib/logger";
 
 import type { SWHMap } from "./__handler";
@@ -26,13 +26,11 @@ const handler = async (data: Data) => {
     customerId: typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id,
   });
 
-  const billingService = new StripeBillingService();
-  const highWaterMarkService = new HighWaterMarkService(
-    log,
-    undefined,
-    undefined,
-    billingService
-  );
+  const billingService = getBillingProviderService();
+  const highWaterMarkService = new HighWaterMarkService({
+    logger: log,
+    billingService,
+  });
 
   try {
     const applied = await highWaterMarkService.applyHighWaterMarkToSubscription(subscriptionId);
