@@ -1,15 +1,15 @@
 import { randomBytes } from "node:crypto";
-import jwt from "jsonwebtoken";
-
-import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
-import { AccessCodeRepository } from "@calcom/features/oauth/repositories/AccessCodeRepository";
-import { OAuthClientRepository } from "@calcom/features/oauth/repositories/OAuthClientRepository";
+import process from "node:process";
+import type { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
+import type { AccessCodeRepository } from "@calcom/features/oauth/repositories/AccessCodeRepository";
+import type { OAuthClientRepository } from "@calcom/features/oauth/repositories/OAuthClientRepository";
 import { generateSecret } from "@calcom/features/oauth/utils/generateSecret";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
 import { verifyCodeChallenge } from "@calcom/lib/pkce";
-import { OAuthClientStatus } from "@calcom/prisma/enums";
 import type { AccessScope, OAuthClientType } from "@calcom/prisma/enums";
+import { OAuthClientStatus } from "@calcom/prisma/enums";
+import jwt from "jsonwebtoken";
 
 export interface OAuth2Client {
   clientId: string;
@@ -82,7 +82,11 @@ export class OAuthService {
     };
   }
 
-  async getClientForAuthorization(clientId: string, redirectUri: string): Promise<OAuth2Client> {
+  async getClientForAuthorization(
+    clientId: string,
+    redirectUri: string,
+    loggedInUserId?: number
+  ): Promise<OAuth2Client> {
     const client = await this.oAuthClientRepository.findByClientId(clientId);
 
     if (!client) {
@@ -91,7 +95,9 @@ export class OAuthService {
 
     this.validateRedirectUri(client.redirectUri, redirectUri);
 
-    this.ensureClientIsApproved(client);
+    if (!loggedInUserId || loggedInUserId !== client.userId) {
+      this.ensureClientIsApproved(client);
+    }
 
     return {
       clientId: client.clientId,
@@ -105,7 +111,7 @@ export class OAuthService {
 
   async generateAuthorizationCode(
     clientId: string,
-    userId: number,
+    loggedInUserId: number,
     redirectUri: string,
     scopes: AccessScope[],
     state?: string,
@@ -119,7 +125,9 @@ export class OAuthService {
       throw new ErrorWithCode(ErrorCode.Unauthorized, "unauthorized_client", { reason: "client_not_found" });
     }
 
-    this.ensureClientIsApproved(client);
+    if (loggedInUserId !== client.userId) {
+      this.ensureClientIsApproved(client);
+    }
 
     // RFC 6749 4.1.2.1: Redirect URI mismatch on Auth step is 'invalid_request'
     this.validateRedirectUri(client.redirectUri, redirectUri);
@@ -143,7 +151,7 @@ export class OAuthService {
 
     let teamId: number | undefined;
     if (teamSlug) {
-      const team = await this.teamsRepository.findTeamBySlugWithAdminRole(teamSlug, userId);
+      const team = await this.teamsRepository.findTeamBySlugWithAdminRole(teamSlug, loggedInUserId);
       if (!team) {
         // Specific OAuth error for user denying or failing permission
         throw new ErrorWithCode(ErrorCode.Unauthorized, "access_denied", {
@@ -158,7 +166,7 @@ export class OAuthService {
     await this.accessCodeRepository.create({
       code: authorizationCode,
       clientId,
-      userId: teamSlug ? undefined : userId,
+      userId: teamSlug ? undefined : loggedInUserId,
       teamId,
       scopes,
       codeChallenge,
@@ -175,7 +183,9 @@ export class OAuthService {
 
   private ensureClientIsApproved(client: { status: OAuthClientStatus }): void {
     if (client.status !== OAuthClientStatus.APPROVED) {
-      throw new ErrorWithCode(ErrorCode.Unauthorized, "unauthorized_client", { reason: "client_not_approved" });
+      throw new ErrorWithCode(ErrorCode.Unauthorized, "unauthorized_client", {
+        reason: "client_not_approved",
+      });
     }
   }
 
@@ -316,8 +326,6 @@ export class OAuthService {
       });
     }
 
-    this.ensureClientIsApproved(client);
-
     const decodedToken = this.verifyRefreshToken(refreshToken);
 
     if (!decodedToken || decodedToken.token_type !== "Refresh Token") {
@@ -326,6 +334,10 @@ export class OAuthService {
 
     if (decodedToken.clientId !== clientId) {
       throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_grant", { reason: "client_id_mismatch" });
+    }
+
+    if (!decodedToken.userId || decodedToken.userId !== client.userId) {
+      this.ensureClientIsApproved(client);
     }
 
     const tokens = this.createTokens({
