@@ -42,7 +42,11 @@ import {
 import type { OAuth2TokenInput } from "@/modules/auth/oauth2/inputs/token.input.pipe";
 import { OAuth2TokenInputPipe } from "@/modules/auth/oauth2/inputs/token.input.pipe";
 import { OAuth2ClientDto, OAuth2ClientResponseDto } from "@/modules/auth/oauth2/outputs/oauth2-client.output";
-import { OAuth2TokensDto, OAuth2TokensResponseDto } from "@/modules/auth/oauth2/outputs/oauth2-tokens.output";
+import {
+  OAuth2TokensDto,
+  OAuth2LegacyTokensDto,
+  OAuth2TokensResponseDto,
+} from "@/modules/auth/oauth2/outputs/oauth2-tokens.output";
 import { OAuth2ErrorService } from "@/modules/auth/oauth2/services/oauth2-error.service";
 
 @Controller({
@@ -173,7 +177,7 @@ export class OAuth2Controller {
       );
       return {
         status: SUCCESS_STATUS,
-        data: plainToInstance(OAuth2TokensDto, tokens, { strategy: "excludeAll" }),
+        data: plainToInstance(OAuth2LegacyTokensDto, tokens, { strategy: "excludeAll" }),
       };
     } catch (err) {
       this.errorHandler.handleClientError(err, "Could not exchange code for tokens");
@@ -200,7 +204,7 @@ export class OAuth2Controller {
       );
       return {
         status: SUCCESS_STATUS,
-        data: plainToInstance(OAuth2TokensDto, tokens, { strategy: "excludeAll" }),
+        data: plainToInstance(OAuth2LegacyTokensDto, tokens, { strategy: "excludeAll" }),
       };
     } catch (err) {
       this.errorHandler.handleClientError(err, "Could not refresh tokens");

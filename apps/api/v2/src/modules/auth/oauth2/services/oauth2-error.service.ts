@@ -23,7 +23,7 @@ const OAUTH_ERROR_DESCRIPTIONS: Record<string, string> = {
   pkce_verification_failed: "PKCE verification failed",
   invalid_refresh_token: "Refresh token is invalid",
   client_id_mismatch: "Client ID mismatch",
-  encryption_key_missing: "CALENDSO_ENCRYPTION_KEY is not set",
+  encryption_key_missing: "Internal server configuration error",
 };
 
 function getErrorDescription(reason: string | undefined, fallbackMessage: string): string {

@@ -38,6 +38,40 @@ export class OAuth2TokensDto {
   expires_in!: number;
 }
 
+export class OAuth2LegacyTokensDto {
+  @ApiProperty({
+    description: "The access token",
+    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  })
+  @IsString()
+  @Expose()
+  accessToken!: string;
+
+  @ApiProperty({
+    description: "The token type",
+    example: "bearer",
+  })
+  @IsString()
+  @Expose()
+  tokenType!: string;
+
+  @ApiProperty({
+    description: "The refresh token",
+    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  })
+  @IsString()
+  @Expose()
+  refreshToken!: string;
+
+  @ApiProperty({
+    description: "The number of seconds until the access token expires",
+    example: 1800,
+  })
+  @IsNumber()
+  @Expose()
+  expiresIn!: number;
+}
+
 export class OAuth2TokensResponseDto {
   @ApiProperty({ example: SUCCESS_STATUS, enum: [SUCCESS_STATUS, ERROR_STATUS] })
   @IsEnum([SUCCESS_STATUS, ERROR_STATUS])
@@ -45,11 +79,11 @@ export class OAuth2TokensResponseDto {
   status!: typeof SUCCESS_STATUS | typeof ERROR_STATUS;
 
   @ApiProperty({
-    type: OAuth2TokensDto,
+    type: OAuth2LegacyTokensDto,
   })
   @IsNotEmptyObject()
   @ValidateNested()
-  @Type(() => OAuth2TokensDto)
+  @Type(() => OAuth2LegacyTokensDto)
   @Expose()
-  data!: OAuth2TokensDto;
+  data!: OAuth2LegacyTokensDto;
 }
