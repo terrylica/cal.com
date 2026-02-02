@@ -21,7 +21,7 @@ type AttendeeResponse = {
   timeZone: string;
 };
 
-const MAX_TAKE = 100;
+const MAX_TAKE = 250;
 
 /**
  * @swagger
