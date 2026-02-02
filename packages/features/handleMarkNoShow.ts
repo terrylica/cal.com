@@ -210,7 +210,7 @@ async function fireNoShowUpdated({
 
   const bookingEventHandlerService = getBookingEventHandlerService();
 
-  const isSomethingChanged = auditData.host || auditData.attendeesNoShow && auditData.attendeesNoShow.length > 0;
+  const isSomethingChanged = auditData.host || (auditData.attendeesNoShow && auditData.attendeesNoShow.length > 0);
   if (isSomethingChanged) {
     await bookingEventHandlerService.onNoShowUpdated({
       bookingUid: booking.uid,
