@@ -102,12 +102,20 @@ describe("WorkflowRepository (Integration Tests)", () => {
       });
       createdEventTypeIds.push(parentEventType.id);
 
+      const childUser1 = await prisma.user.findFirstOrThrow({
+        where: { email: "member1-acme@example.com" },
+      });
+
+      const childUser2 = await prisma.user.findFirstOrThrow({
+        where: { email: "member2-acme@example.com" },
+      });
+
       const childEventType1 = await prisma.eventType.create({
         data: {
           title: "Child Event Type 1",
           slug: `child-1-${Date.now()}`,
           length: 30,
-          userId: testUserId,
+          userId: childUser1.id,
           parentId: parentEventType.id,
         },
       });
@@ -118,7 +126,7 @@ describe("WorkflowRepository (Integration Tests)", () => {
           title: "Child Event Type 2",
           slug: `child-2-${Date.now()}`,
           length: 30,
-          userId: testUserId,
+          userId: childUser2.id,
           parentId: parentEventType.id,
         },
       });
@@ -155,6 +163,22 @@ describe("WorkflowRepository (Integration Tests)", () => {
     });
 
     it("should handle workflows with multiple event types having different children counts", async () => {
+      const childUser1 = await prisma.user.findFirstOrThrow({
+        where: { email: "member1-acme@example.com" },
+      });
+
+      const childUser2 = await prisma.user.findFirstOrThrow({
+        where: { email: "member2-acme@example.com" },
+      });
+
+      const childUser3 = await prisma.user.findFirstOrThrow({
+        where: { email: "member3-acme@example.com" },
+      });
+
+      const childUser4 = await prisma.user.findFirstOrThrow({
+        where: { email: "owner1-acme@example.com" },
+      });
+
       const parentEventType1 = await prisma.eventType.create({
         data: {
           title: "Parent Event Type 1",
@@ -170,7 +194,7 @@ describe("WorkflowRepository (Integration Tests)", () => {
           title: "Child of Parent 1",
           slug: `child-of-parent-1-${Date.now()}`,
           length: 30,
-          userId: testUserId,
+          userId: childUser1.id,
           parentId: parentEventType1.id,
         },
       });
@@ -191,7 +215,7 @@ describe("WorkflowRepository (Integration Tests)", () => {
           title: "Child 2a of Parent 2",
           slug: `child-2a-${Date.now()}`,
           length: 30,
-          userId: testUserId,
+          userId: childUser2.id,
           parentId: parentEventType2.id,
         },
       });
@@ -202,7 +226,7 @@ describe("WorkflowRepository (Integration Tests)", () => {
           title: "Child 2b of Parent 2",
           slug: `child-2b-${Date.now()}`,
           length: 30,
-          userId: testUserId,
+          userId: childUser3.id,
           parentId: parentEventType2.id,
         },
       });
@@ -213,7 +237,7 @@ describe("WorkflowRepository (Integration Tests)", () => {
           title: "Child 2c of Parent 2",
           slug: `child-2c-${Date.now()}`,
           length: 30,
-          userId: testUserId,
+          userId: childUser4.id,
           parentId: parentEventType2.id,
         },
       });
