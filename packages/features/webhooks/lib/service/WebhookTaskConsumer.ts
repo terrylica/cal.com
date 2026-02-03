@@ -1,31 +1,27 @@
+import type { BookingForCalEventBuilder } from "@calcom/features/CalendarEventBuilder";
+import { WebhookTriggerEvents } from "@calcom/prisma/enums";
+import type { CalendarEvent } from "@calcom/types/Calendar";
+import type { WebhookEventDTO, WebhookSubscriber } from "../dto/types";
+import type { PayloadBuilderFactory } from "../factory/versioned/PayloadBuilderFactory";
 import type { IWebhookDataFetcher } from "../interface/IWebhookDataFetcher";
 import type { IWebhookRepository } from "../interface/IWebhookRepository";
+import { DEFAULT_WEBHOOK_VERSION } from "../interface/IWebhookRepository";
 import type { ILogger } from "../interface/infrastructure";
-import type { WebhookTaskPayload } from "../types/webhookTask";
+import type { IWebhookService } from "../interface/services";
+import type {
+  BookingWebhookTaskPayload,
+  PaymentWebhookTaskPayload,
+  WebhookTaskPayload,
+} from "../types/webhookTask";
 
-/**
- * Webhook Task Consumer
- *
- * Processes webhook delivery tasks from the queue:
- * 1. Fetches webhook subscribers
- * 2. Fetches event-specific data from database (via injected data fetchers)
- * 3. Builds and sends webhook payloads
- *
- * Architecture:
- * - Uses Strategy Pattern: Data fetchers are injected, consumer orchestrates
- * - Open/Closed: Add new webhook types by registering fetchers, no code modification
- * - Single Responsibility: Consumer orchestrates, fetchers handle domain logic
- * - Dependency Inversion: Depends on IWebhookDataFetcher interface
- *
- * Phase 0: Scaffold with placeholders for HTTP delivery
- * Phase 1+: Full implementation with PayloadBuilders and HTTP client
- */
 export class WebhookTaskConsumer {
   private readonly log: ILogger;
 
   constructor(
     private readonly webhookRepository: IWebhookRepository,
     private readonly dataFetchers: IWebhookDataFetcher[],
+    private readonly payloadBuilderFactory: PayloadBuilderFactory,
+    private readonly webhookService: IWebhookService,
     logger: ILogger
   ) {
     this.log = logger.getSubLogger({ prefix: ["[WebhookTaskConsumer]"] });
@@ -104,18 +100,121 @@ export class WebhookTaskConsumer {
   }
 
   /**
-   * Build webhook payloads and send to each subscriber.
-   *
-   * TODO: Implement with PayloadBuilders and HTTP client (Phase 1+)
+   * Build webhook payloads and send to each subscriber via WebhookService.
+   * Uses proper DI flow: WebhookService.processWebhooks() for HTTP delivery.
    */
   private async sendWebhooksToSubscribers(
-    subscribers: unknown[],
+    subscribers: WebhookSubscriber[],
     eventData: Record<string, unknown>,
     payload: WebhookTaskPayload
   ): Promise<void> {
-    this.log.debug("Webhook sending not implemented yet (Phase 0 scaffold)", {
-      subscriberCount: subscribers.length,
-      triggerEvent: payload.triggerEvent,
-    });
+    if (subscribers.length === 0) {
+      this.log.debug("No subscribers to send webhooks to");
+      return;
+    }
+
+    try {
+      // Build DTO from fetched data
+      const dto = this.buildDTO(eventData, payload);
+
+      if (!dto) {
+        this.log.warn("Failed to build DTO for webhook", {
+          triggerEvent: payload.triggerEvent,
+          operationId: payload.operationId,
+        });
+        return;
+      }
+
+      // Build versioned payload using PayloadBuilderFactory
+      const builder = this.payloadBuilderFactory.getBuilder(DEFAULT_WEBHOOK_VERSION, dto.triggerEvent);
+      const webhookPayload = builder.build(dto);
+
+      // Send via WebhookService (proper DI, no legacy sendPayload)
+      await this.webhookService.processWebhooks(dto.triggerEvent, webhookPayload, subscribers);
+
+      this.log.debug("Webhook sending completed", {
+        subscriberCount: subscribers.length,
+        triggerEvent: payload.triggerEvent,
+        operationId: payload.operationId,
+      });
+    } catch (error) {
+      this.log.error("Error in sendWebhooksToSubscribers", {
+        error: error instanceof Error ? error.message : String(error),
+        triggerEvent: payload.triggerEvent,
+      });
+      throw error;
+    }
+  }
+  /**
+   * Build WebhookEventDTO from fetched event data.
+   *
+   * This method maps the data fetched from DB into the DTO structure
+   * expected by PayloadBuilders.
+   */
+  private buildDTO(eventData: Record<string, unknown>, payload: WebhookTaskPayload): WebhookEventDTO | null {
+    const { triggerEvent, timestamp } = payload;
+
+    // Extract common fields from event data
+    const calendarEvent = eventData.calendarEvent as CalendarEvent | undefined;
+    const booking = eventData.booking as BookingForCalEventBuilder | undefined;
+    const eventType = booking?.eventType;
+
+    if (!calendarEvent || !booking || !eventType) {
+      this.log.warn("Missing required data to build DTO", {
+        hasCalendarEvent: !!calendarEvent,
+        hasBooking: !!booking,
+        hasEventType: !!eventType,
+      });
+      return null;
+    }
+
+    // Transform DB eventType shape to EventTypeInfo shape expected by PayloadBuilder
+    // DB has: title, description, price, currency, length, requiresConfirmation
+    // PayloadBuilder expects: eventTitle, eventDescription, price, currency, length, requiresConfirmation
+    const eventTypeInfo = {
+      id: eventType.id,
+      eventTitle: eventType.title,
+      eventDescription: eventType.description,
+      requiresConfirmation: eventType.requiresConfirmation,
+      price: eventType.price,
+      currency: eventType.currency,
+      length: eventType.length,
+    };
+
+    // Build DTO based on trigger event type
+    const bookingPayload = payload as BookingWebhookTaskPayload;
+    const baseDTO = {
+      createdAt: timestamp,
+      bookingId: booking.id,
+      eventTypeId: eventType.id,
+      userId: booking.user?.id ?? null,
+      teamId: bookingPayload.teamId ?? null,
+      orgId: bookingPayload.orgId,
+      platformClientId: bookingPayload.platformClientId ?? bookingPayload.oAuthClientId,
+      evt: calendarEvent,
+      eventType: eventTypeInfo,
+      booking: {
+        id: booking.id,
+        eventTypeId: booking.eventTypeId,
+        userId: booking.userId,
+        startTime: booking.startTime,
+        smsReminderNumber: booking.smsReminderNumber,
+        iCalSequence: booking.iCalSequence,
+        // Raw assignmentReason from DB for legacy format [{ reasonEnum, reasonString }]
+        assignmentReason: booking.assignmentReason,
+      },
+    };
+
+    switch (triggerEvent) {
+      case WebhookTriggerEvents.BOOKING_REQUESTED:
+        return {
+          ...baseDTO,
+          triggerEvent,
+          metadata: bookingPayload.metadata ?? {},
+        } as WebhookEventDTO;
+      default:
+        this.log.warn("Unsupported trigger event for DTO building", { triggerEvent });
+        return null;
+    }
   }
 }
