@@ -1,5 +1,6 @@
 import { createSalesforceCrmServiceWithSalesforceType } from "@calcom/app-store/salesforce/lib/CrmService";
 import { prisma } from "@calcom/prisma";
+import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
 
 import { TRPCError } from "@trpc/server";
@@ -22,21 +23,7 @@ export const salesforceFieldsHandler = async ({ ctx, input }: SalesforceFieldsOp
       type: "salesforce_other_calendar",
       OR: [{ userId: ctx.user.id }, { team: { members: { some: { userId: ctx.user.id } } } }],
     },
-    select: {
-      id: true,
-      type: true,
-      key: true,
-      userId: true,
-      teamId: true,
-      appId: true,
-      invalid: true,
-      delegationCredentialId: true,
-      user: {
-        select: {
-          email: true,
-        },
-      },
-    },
+    select: credentialForCalendarServiceSelect,
   });
 
   if (!credential) {
