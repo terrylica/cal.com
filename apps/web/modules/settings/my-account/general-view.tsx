@@ -30,13 +30,14 @@ import {
 import { Switch } from "@coss/ui/components/switch";
 import {
   Card,
+  CardFrame,
   CardFrameDescription,
+  CardFrameFooter,
   CardFrameHeader,
   CardFrameTitle,
   CardPanel,
 } from "@coss/ui/components/card";
 
-import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { formatLocalizedDateTime } from "@calcom/lib/dayjs";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -236,8 +237,15 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             });
           }}
         >
-          <div className="border-subtle border-x border-y-0 px-4 py-8 sm:px-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <CardFrame>
+            <CardFrameHeader>
+              <CardFrameTitle>{t("general")}</CardFrameTitle>
+              <CardFrameDescription>{t("general_description")}</CardFrameDescription>
+            </CardFrameHeader>
+
+            <Card className="rounded-b-none!">
+              <CardPanel className="py-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <Controller
                 name="locale"
                 render={({ field: { value, onChange } }) => (
@@ -411,75 +419,77 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                   )}
                 />
               </div>
-            </div>
-            {watchedTzSchedules.length > 0 && (
-              <div className="bg-cal-muted border-subtle mt-2 rounded-md border p-4">
-                <Label>{t("travel_schedule")}</Label>
-                <div className="border-subtle bg-default mt-4 rounded-md border text-sm">
-                  {watchedTzSchedules.map((schedule, index) => {
-                    return (
-                      <div
-                        className={classNames(
-                          "flex items-center p-4",
-                          index !== 0 ? "border-subtle border-t" : ""
-                        )}
-                        key={index}
-                      >
-                        <div>
-                          <div className="text-emphasis font-semibold">{`${formatLocalizedDateTime(
-                            schedule.startDate,
-                            { day: "numeric", month: "long" },
-                            language
-                          )} ${
-                            schedule.endDate
-                              ? `- ${formatLocalizedDateTime(
-                                  schedule.endDate,
-                                  { day: "numeric", month: "long" },
-                                  language
-                                )}`
-                              : ``
-                          }`}</div>
-                          <div className="text-subtle">
-                            {schedule.timeZone.replace(/_/g, " ")}
-                          </div>
-                        </div>
-                        <Button
-                          color="destructive"
-                          className="ml-auto"
-                          variant="icon"
-                          StartIcon="trash-2"
-                          onClick={() => {
-                            const updatedSchedules = watchedTzSchedules.filter(
-                              (s, filterIndex) => filterIndex !== index
-                            );
-                            formMethods.setValue(
-                              "travelSchedules",
-                              updatedSchedules,
-                              { shouldDirty: true }
-                            );
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
                 </div>
-                <Button
-                  StartIcon="plus"
-                  color="secondary"
-                  className="mt-4"
-                  onClick={() => setIsTZScheduleOpen(true)}
-                >
-                  {t("add")}
-                </Button>
-              </div>
-            )}
-          </div>
+                {watchedTzSchedules.length > 0 && (
+                  <div className="bg-cal-muted border-subtle mt-2 rounded-md border p-4">
+                    <Label>{t("travel_schedule")}</Label>
+                    <div className="border-subtle bg-default mt-4 rounded-md border text-sm">
+                      {watchedTzSchedules.map((schedule, index) => {
+                        return (
+                          <div
+                            className={classNames(
+                              "flex items-center p-4",
+                              index !== 0 ? "border-subtle border-t" : ""
+                            )}
+                            key={index}
+                          >
+                            <div>
+                              <div className="text-emphasis font-semibold">{`${formatLocalizedDateTime(
+                                schedule.startDate,
+                                { day: "numeric", month: "long" },
+                                language
+                              )} ${
+                                schedule.endDate
+                                  ? `- ${formatLocalizedDateTime(
+                                      schedule.endDate,
+                                      { day: "numeric", month: "long" },
+                                      language
+                                    )}`
+                                  : ``
+                              }`}</div>
+                              <div className="text-subtle">
+                                {schedule.timeZone.replace(/_/g, " ")}
+                              </div>
+                            </div>
+                            <Button
+                              color="destructive"
+                              className="ml-auto"
+                              variant="icon"
+                              StartIcon="trash-2"
+                              onClick={() => {
+                                const updatedSchedules = watchedTzSchedules.filter(
+                                  (s, filterIndex) => filterIndex !== index
+                                );
+                                formMethods.setValue(
+                                  "travelSchedules",
+                                  updatedSchedules,
+                                  { shouldDirty: true }
+                                );
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      StartIcon="plus"
+                      color="secondary"
+                      className="mt-4"
+                      onClick={() => setIsTZScheduleOpen(true)}
+                    >
+                      {t("add")}
+                    </Button>
+                  </div>
+                )}
+              </CardPanel>
+            </Card>
 
-          <SectionBottomActions align="end">
-            <CossButton type="submit" disabled={isDisabled || isUpdateBtnLoading} data-testid="general-submit-button">
-              {t("update")}
-            </CossButton>
-          </SectionBottomActions>
+            <CardFrameFooter className="flex justify-end">
+              <CossButton type="submit" disabled={isDisabled || isUpdateBtnLoading} data-testid="general-submit-button">
+                {t("update")}
+              </CossButton>
+            </CardFrameFooter>
+          </CardFrame>
         </Form>
 
         <Card>
