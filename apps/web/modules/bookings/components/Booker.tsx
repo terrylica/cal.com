@@ -4,10 +4,7 @@ import { useIsPlatformBookerEmbed } from "@calcom/atoms/hooks/useIsPlatformBooke
 import dayjs from "@calcom/dayjs";
 import { useEmbedUiConfig } from "@calcom/embed-core/embed-iframe";
 import { updateEmbedBookerState } from "@calcom/embed-core/src/embed-iframe";
-import TurnstileCaptcha from "@calcom/web/modules/auth/components/Turnstile";
 import { useBookerStoreContext } from "@calcom/features/bookings/Booker/BookerStoreProvider";
-import { useIsQuickAvailabilityCheckFeatureEnabled } from "../hooks/useIsQuickAvailabilityCheckFeatureEnabled";
-import { useSkipConfirmStep } from "@calcom/web/modules/bookings/hooks/useSkipConfirmStep";
 import {
   fadeInLeft,
   getBookerSizeClassNames,
@@ -15,10 +12,11 @@ import {
 } from "@calcom/features/bookings/Booker/config";
 import framerFeatures from "@calcom/features/bookings/Booker/framer-features";
 import type { BookerProps } from "@calcom/features/bookings/Booker/types";
-import type { WrappedBookerProps } from "../types";
 import { isBookingDryRun } from "@calcom/features/bookings/Booker/utils/isBookingDryRun";
 import { isTimeSlotAvailable } from "@calcom/features/bookings/Booker/utils/isTimeslotAvailable";
 import { getQueryParam } from "@calcom/features/bookings/Booker/utils/query-param";
+import { Header } from "@calcom/features/bookings/components/Header";
+import { BookerSection } from "@calcom/features/bookings/components/Section";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useNonEmptyScheduleDays } from "@calcom/features/schedules/lib/use-schedule/useNonEmptyScheduleDays";
 import { scrollIntoViewSmooth } from "@calcom/lib/browser/browser.utils";
@@ -31,13 +29,19 @@ import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { BookerLayouts } from "@calcom/prisma/zod-utils";
 import classNames from "@calcom/ui/classNames";
 import { DialogContent } from "@calcom/ui/components/dialog";
+import { SkeletonText } from "@calcom/ui/components/skeleton";
 import { UnpublishedEntity } from "@calcom/ui/components/unpublished-entity";
+import TurnstileCaptcha from "@calcom/web/modules/auth/components/Turnstile";
+import { useSkipConfirmStep } from "@calcom/web/modules/bookings/hooks/useSkipConfirmStep";
 import PoweredBy from "@calcom/web/modules/ee/common/components/PoweredBy";
 import { AnimatePresence, LazyMotion, m } from "framer-motion";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef } from "react";
 import StickyBox from "react-sticky-box";
 import { Toaster } from "sonner";
 import { shallow } from "zustand/shallow";
+import { useIsQuickAvailabilityCheckFeatureEnabled } from "../hooks/useIsQuickAvailabilityCheckFeatureEnabled";
+import type { WrappedBookerProps } from "../types";
 import { AvailableTimeSlots } from "./AvailableTimeSlots";
 import { BookEventForm } from "./BookEventForm";
 import { BookFormAsModal } from "./BookEventForm/BookFormAsModal";
@@ -45,15 +49,41 @@ import { DatePicker } from "./DatePicker";
 import { DryRunMessage } from "./DryRunMessage";
 import { EventMeta } from "./EventMeta";
 import { HavingTroubleFindingTime } from "./HavingTroubleFindingTime";
-import { Header } from "@calcom/features/bookings/components/Header";
-import { InstantBooking } from "./InstantBooking";
-import { LargeCalendar } from "./LargeCalendar";
-import { OverlayCalendar } from "./OverlayCalendar/OverlayCalendar";
 import { RedirectToInstantMeetingModal } from "./RedirectToInstantMeetingModal";
-import { BookerSection } from "@calcom/features/bookings/components/Section";
 import { SlotSelectionModalHeader } from "./SlotSelectionModalHeader";
 import { NotFound } from "./Unavailable";
-import { VerifyCodeDialog } from "./VerifyCodeDialog";
+
+/**
+ * Lazy-loaded components for performance optimization.
+ * These components are conditionally rendered and benefit from code-splitting.
+ */
+
+/** LargeCalendar - Only used for WEEK_VIEW layout */
+const LargeCalendar = dynamic(() => import("./LargeCalendar").then((mod) => mod.LargeCalendar), {
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center">
+      <SkeletonText className="h-8 w-24" />
+    </div>
+  ),
+});
+
+/** OverlayCalendar - Only needed when user has session and not in embed mode */
+const OverlayCalendar = dynamic(
+  () => import("./OverlayCalendar/OverlayCalendar").then((mod) => mod.OverlayCalendar),
+  {
+    loading: () => <SkeletonText className="h-4 w-16" />,
+  }
+);
+
+/** InstantBooking - Only for instant meeting flows when showInstantEventConnectNowModal is true */
+const InstantBooking = dynamic(() => import("./InstantBooking").then((mod) => mod.InstantBooking), {
+  ssr: false,
+});
+
+/** VerifyCodeDialog - Only when email verification is needed */
+const VerifyCodeDialog = dynamic(() => import("./VerifyCodeDialog").then((mod) => mod.VerifyCodeDialog), {
+  ssr: false,
+});
 
 const BookerComponent = ({
   username,
@@ -253,12 +283,12 @@ const BookerComponent = ({
 
   const unavailableTimeSlots = isQuickAvailabilityCheckFeatureEnabled
     ? allSelectedTimeslots.filter((slot) => {
-      return !isTimeSlotAvailable({
-        scheduleData: schedule?.data ?? null,
-        slotToCheckInIso: slot,
-        quickAvailabilityChecks: slots.quickAvailabilityChecks,
-      });
-    })
+        return !isTimeSlotAvailable({
+          scheduleData: schedule?.data ?? null,
+          slotToCheckInIso: slot,
+          quickAvailabilityChecks: slots.quickAvailabilityChecks,
+        });
+      })
     : [];
 
   const slot = getQueryParam("slot");
@@ -401,7 +431,7 @@ const BookerComponent = ({
                 className={classNames(
                   layout === BookerLayouts.MONTH_VIEW && "fixed top-4 z-10 ltr:right-4 rtl:left-4",
                   (layout === BookerLayouts.COLUMN_VIEW || layout === BookerLayouts.WEEK_VIEW) &&
-                  "bg-default dark:bg-cal-muted sticky top-0 z-10"
+                    "bg-default dark:bg-cal-muted sticky top-0 z-10"
                 )}>
                 {isPlatform && layout === BookerLayouts.MONTH_VIEW ? (
                   <></>
@@ -503,7 +533,10 @@ const BookerComponent = ({
               visible={bookerState !== "booking" && layout === BookerLayouts.MONTH_VIEW}
               {...fadeInLeft}
               initial="visible"
-              className={classNames("md:border-subtle -ml-px h-full shrink px-5 py-3  lg:w-(--booker-main-width)", hideEventTypeDetails ? "" : "md:border-l")}>
+              className={classNames(
+                "md:border-subtle -ml-px h-full shrink px-5 py-3  lg:w-(--booker-main-width)",
+                hideEventTypeDetails ? "" : "md:border-l"
+              )}>
               <DatePicker
                 classNames={customClassNames?.datePickerCustomClassNames}
                 event={event}
@@ -539,7 +572,7 @@ const BookerComponent = ({
               className={classNames(
                 "border-subtle rtl:border-default flex h-full w-full flex-col overflow-x-auto px-5 py-3 pb-0 rtl:border-r ltr:md:border-l",
                 layout === BookerLayouts.MONTH_VIEW &&
-                "h-full overflow-hidden md:w-(--booker-timeslots-width)",
+                  "h-full overflow-hidden md:w-(--booker-timeslots-width)",
                 layout !== BookerLayouts.MONTH_VIEW && "sticky top-0"
               )}
               ref={timeslotsRef}
