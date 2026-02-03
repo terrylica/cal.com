@@ -1,6 +1,7 @@
 import z from "zod";
 
 import { getCalendar } from "@calcom/app-store/_utils/getCalendar";
+import HrmsManager from "@calcom/lib/hrmsManager/hrmsManager";
 import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
 import { DailyLocationType } from "@calcom/app-store/locations";
 import {
@@ -431,6 +432,15 @@ const handleDeleteCredential = async ({
       userId: teamId ? undefined : userId,
       teamId,
     });
+  }
+
+  if (credential.app?.slug === "deel") {
+    try {
+      const hrmsManager = new HrmsManager(credential);
+      await hrmsManager.uninstall();
+    } catch (error) {
+      console.warn("Error running Deel uninstall", error);
+    }
   }
 
   let metadata = userMetadataSchema.parse(userMetadata);
