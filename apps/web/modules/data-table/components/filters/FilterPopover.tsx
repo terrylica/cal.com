@@ -1,30 +1,32 @@
- 
-import startCase from "lodash/startCase";
-
+import { useFilterValue } from "@calcom/features/data-table/hooks";
+import {
+  ColumnFilterType,
+  type FilterableColumn,
+  type FilterValue,
+  ZFilterValue,
+} from "@calcom/features/data-table/lib/types";
+import {
+  isMultiSelectFilterValue,
+  isNumberFilterValue,
+  isSingleSelectFilterValue,
+  isTextFilterValue,
+} from "@calcom/features/data-table/lib/utils";
 import type { FilterType } from "@calcom/types/data-table";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import type { IconName } from "@calcom/ui/components/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@calcom/ui/components/popover";
-
-import { useFilterValue } from "@calcom/features/data-table/hooks";
-import { type FilterableColumn, type FilterValue, ZFilterValue, ColumnFilterType } from "@calcom/features/data-table/lib/types";
-import {
-  isSingleSelectFilterValue,
-  isMultiSelectFilterValue,
-  isTextFilterValue,
-  isNumberFilterValue,
-} from "@calcom/features/data-table/lib/utils";
+import startCase from "lodash/startCase";
 import { FilterOptions } from "./FilterOptions";
 import { useFilterPopoverOpen } from "./useFilterPopoverOpen";
 import { numberFilterOperatorOptions, useTextFilterOperatorOptions } from "./utils";
 
 const FILTER_ICONS: Record<FilterType, IconName> = {
-  [ColumnFilterType.TEXT]: "file-text",
-  [ColumnFilterType.NUMBER]: "binary",
-  [ColumnFilterType.MULTI_SELECT]: "layers",
-  [ColumnFilterType.SINGLE_SELECT]: "disc",
-  [ColumnFilterType.DATE_RANGE]: "calendar-range",
+  [ColumnFilterType.TEXT]: "filter",
+  [ColumnFilterType.NUMBER]: "filter",
+  [ColumnFilterType.MULTI_SELECT]: "filter",
+  [ColumnFilterType.SINGLE_SELECT]: "filter",
+  [ColumnFilterType.DATE_RANGE]: "filter",
 };
 
 type FilterPopoverProps = {
