@@ -1,11 +1,8 @@
-import { z } from "zod";
-
 import { FORM_TRIGGER_WORKFLOW_EVENTS } from "@calcom/ee/workflows/lib/constants";
 import { deleteScheduledAIPhoneCall } from "@calcom/ee/workflows/lib/reminders/aiPhoneCallManager";
 import { deleteScheduledEmailReminder } from "@calcom/ee/workflows/lib/reminders/emailReminderManager";
 import { deleteScheduledSMSReminder } from "@calcom/ee/workflows/lib/reminders/smsReminderManager";
-import type { WorkflowListType as WorkflowType } from "@calcom/ee/workflows/lib/types";
-import type { WorkflowStep } from "@calcom/ee/workflows/lib/types";
+import type { WorkflowStep, WorkflowListType as WorkflowType } from "@calcom/ee/workflows/lib/types";
 import { hasFilter } from "@calcom/features/filters/lib/hasFilter";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
 import { HttpError } from "@calcom/lib/http-error";
@@ -14,14 +11,15 @@ import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import {
   MembershipRole,
-  TimeUnit,
-  WorkflowTriggerEvents,
   WorkflowType as PrismaWorkflowType,
+  type TimeUnit,
+  WorkflowMethods,
+  type WorkflowTriggerEvents,
 } from "@calcom/prisma/enums";
-import { WorkflowMethods } from "@calcom/prisma/enums";
 import type { TFilteredListInputSchema } from "@calcom/trpc/server/routers/viewer/workflows/filteredList.schema";
 import type { TGetVerifiedEmailsInputSchema } from "@calcom/trpc/server/routers/viewer/workflows/getVerifiedEmails.schema";
 import type { TGetVerifiedNumbersInputSchema } from "@calcom/trpc/server/routers/viewer/workflows/getVerifiedNumbers.schema";
+import { z } from "zod";
 
 export const ZGetInputSchema = z.object({
   id: z.number(),
@@ -574,7 +572,7 @@ export class WorkflowRepository {
 
     results.forEach((result, index) => {
       if (result.status !== "fulfilled") {
-        this.log.error(
+        WorkflowRepository.log.error(
           `An error occurred when deleting reminder ${remindersToDelete[index].id}, method: ${remindersToDelete[index].method}`,
           result.reason
         );
