@@ -51,6 +51,8 @@ export interface SalesforceCRM extends CRM {
   ): Promise<void>;
 
   getAllPossibleAccountWebsiteFromEmailDomain(emailDomain: string): string;
+
+  getObjectFields(sobject: string): Promise<SalesforceFieldInfo[]>;
 }
 import { getSalesforceAppKeys } from "./getSalesforceAppKeys";
 import { getSalesforceTokenLifetime } from "./getSalesforceTokenLifetime";
@@ -105,6 +107,15 @@ type SalesforceDuplicateError = {
 };
 
 type Attendee = { email: string; name: string };
+
+/**
+ * Represents a Salesforce field with metadata for use in field selection dropdowns.
+ */
+export type SalesforceFieldInfo = {
+  name: string;
+  label: string;
+  type: string;
+};
 
 const salesforceTokenSchema = z.object({
   id: z.string(),
@@ -1073,6 +1084,31 @@ class SalesforceCRMService implements CRM {
       return foundFields;
     } catch (e) {
       log.error(`Error ensuring fields ${fieldsToTest} exist on object ${sobject} with error ${e}`);
+      return [];
+    }
+  }
+
+  /**
+   * Get all fields for a Salesforce object type.
+   * Returns field metadata including name, label, and type for use in field selection dropdowns.
+   */
+  public async getObjectFields(sobject: string): Promise<SalesforceFieldInfo[]> {
+    const log = logger.getSubLogger({ prefix: [`[getObjectFields]`] });
+    const conn = await this.conn;
+
+    try {
+      const salesforceEntity = await conn.describe(sobject);
+      const fields = salesforceEntity.fields;
+
+      return fields
+        .filter((field) => field.updateable)
+        .map((field) => ({
+          name: field.name,
+          label: field.label,
+          type: field.type,
+        }));
+    } catch (e) {
+      log.error(`Error getting fields for object ${sobject} with error ${e}`);
       return [];
     }
   }

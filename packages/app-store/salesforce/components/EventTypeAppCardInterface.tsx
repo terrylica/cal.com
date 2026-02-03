@@ -19,9 +19,11 @@ import { showToast } from "@calcom/ui/components/toast";
 import { SalesforceRecordEnum } from "../lib/enums";
 import type { appDataSchema } from "../zod";
 import WriteToObjectSettings, { BookingActionEnum } from "./components/WriteToObjectSettings";
+import SalesforceFieldSelect from "./SalesforceFieldSelect";
 
 const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({ app, eventType, onAppInstallSuccess }) {
   const pathname = usePathname();
+  const credentialId = app.credentialOwner?.credentialId ?? app.credentialIds?.[0];
 
   const { getAppData, setAppData, disabled } = useAppContextWithSchema<typeof appDataSchema>();
   const { enabled, updateEnabled } = useIsAppEnabled(app);
@@ -475,11 +477,12 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({ 
                 className="text-subtle text-sm font-medium">
                 Field name to check (must be checkbox data type)
               </Label>
-              <InputField
-                id="send-no-show-attendee-data-field-name"
-                size="sm"
+              <SalesforceFieldSelect
+                credentialId={credentialId}
+                objectType="Event"
                 value={sendNoShowAttendeeDataField}
-                onChange={(e) => setAppData("sendNoShowAttendeeDataField", e.target.value)}
+                onChange={(value) => setAppData("sendNoShowAttendeeDataField", value)}
+                filterByType={["boolean"]}
               />
             </Section.SubSectionContent>
           ) : null}

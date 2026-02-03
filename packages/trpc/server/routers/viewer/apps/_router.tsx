@@ -7,6 +7,7 @@ import { ZIntegrationsInputSchema } from "./integrations.schema";
 import { ZListLocalInputSchema } from "./listLocal.schema";
 import { ZLocationOptionsInputSchema } from "./locationOptions.schema";
 import { ZQueryForDependenciesInputSchema } from "./queryForDependencies.schema";
+import { ZSalesforceFieldsInputSchema } from "./salesforceFields.schema";
 import { ZSaveKeysInputSchema } from "./saveKeys.schema";
 import { ZSetDefaultConferencingAppSchema } from "./setDefaultConferencingApp.schema";
 import { ZToggleInputSchema } from "./toggle.schema";
@@ -28,6 +29,7 @@ type AppsRouterHandlerCache = {
   checkGlobalKeys?: typeof import("./checkGlobalKeys.handler").checkForGlobalKeysHandler;
   setDefaultConferencingApp?: typeof import("./setDefaultConferencingApp.handler").setDefaultConferencingAppHandler;
   updateUserDefaultConferencingApp?: typeof import("./updateUserDefaultConferencingApp.handler").updateUserDefaultConferencingAppHandler;
+  salesforceFields?: typeof import("./salesforceFields.handler").salesforceFieldsHandler;
 };
 
 export const appsRouter = router({
@@ -132,4 +134,8 @@ export const appsRouter = router({
       );
       return updateUserDefaultConferencingAppHandler({ ctx, input });
     }),
+  salesforceFields: authedProcedure.input(ZSalesforceFieldsInputSchema).query(async ({ ctx, input }) => {
+    const { salesforceFieldsHandler } = await import("./salesforceFields.handler");
+    return salesforceFieldsHandler({ ctx, input });
+  }),
 });
