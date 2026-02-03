@@ -46,8 +46,8 @@ export class OAuthRefreshTokenRepository {
       this.prisma.oAuthRefreshToken.deleteMany({
         where: {
           clientId,
-          ...(userId != null ? { userId } : {}),
-          ...(teamId != null ? { teamId } : {}),
+          ...(userId !== undefined ? { userId } : {}),
+          ...(teamId !== undefined ? { teamId } : {}),
         },
       }),
       this.prisma.oAuthRefreshToken.create({
