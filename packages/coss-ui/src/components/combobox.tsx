@@ -139,29 +139,38 @@ function ComboboxTrigger({
 function ComboboxPopup({
   className,
   children,
+  side = "bottom",
   sideOffset = 4,
+  alignOffset,
+  align = "start",
   ...props
 }: ComboboxPrimitive.Popup.Props & {
-  sideOffset?: number;
+  align?: ComboboxPrimitive.Positioner.Props["align"];
+  sideOffset?: ComboboxPrimitive.Positioner.Props["sideOffset"];
+  alignOffset?: ComboboxPrimitive.Positioner.Props["alignOffset"];
+  side?: ComboboxPrimitive.Positioner.Props["side"];
 }) {
   const { chipsRef } = React.useContext(ComboboxContext);
 
   return (
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
+        align={align}
+        alignOffset={alignOffset}
         anchor={chipsRef}
         className="z-50 select-none"
         data-slot="combobox-positioner"
+        side={side}
         sideOffset={sideOffset}
       >
         <span
           className={cn(
-            "relative flex max-h-full origin-(--transform-origin) rounded-lg border bg-popover not-dark:bg-clip-padding shadow-lg/5 transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/6%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+            "relative flex max-h-full min-w-(--anchor-width) max-w-(--available-width) origin-(--transform-origin) rounded-lg border bg-popover not-dark:bg-clip-padding shadow-lg/5 transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/6%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
             className,
           )}
         >
           <ComboboxPrimitive.Popup
-            className="flex max-h-[min(var(--available-height),23rem)] w-(--anchor-width) max-w-(--available-width) flex-col"
+            className="flex max-h-[min(var(--available-height),23rem)] flex-1 flex-col text-foreground"
             data-slot="combobox-popup"
             {...props}
           >
