@@ -337,7 +337,7 @@ export async function triggerFallbackWebhook({
         responses: response,
       },
     }).catch((e) => {
-      moduleLogger.error(`Error executing ROUTING_FORM_FALLBACK_HIT webhook`, webhook, e);
+      moduleLogger.error(`Error executing ROUTING_FORM_FALLBACK_HIT webhook`, e);
     })
   );
 
