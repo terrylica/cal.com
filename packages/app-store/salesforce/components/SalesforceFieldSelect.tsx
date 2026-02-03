@@ -38,7 +38,7 @@ export default function SalesforceFieldSelect({
     { credentialId: credentialId!, objectType },
     {
       enabled: isOpen && !!credentialId,
-      staleTime: 5 * 60 * 1000,
+      staleTime: Infinity,
       refetchOnWindowFocus: false,
     }
   );
