@@ -50,6 +50,8 @@ async function hashPassword(password: string): Promise<string> {
 const TEST_PASSWORD = "password123";
 const SKIP_STRIPE = process.argv.includes("--skip-stripe");
 const CLEANUP_FIRST = process.argv.includes("--cleanup");
+const ADVANCE_INVOICE_UPCOMING = process.argv.includes("--advance-invoice-upcoming");
+const ADVANCE_RENEWAL = process.argv.includes("--advance-renewal");
 
 // Test team (standalone, not in org)
 const HWM_TEAM_SLUG = "hwm-test-team";

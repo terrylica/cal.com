@@ -1,10 +1,14 @@
-import { _generateMetadata } from "app/_utils";
-import { getTranslate } from "app/_utils";
+import { cookies, headers } from "next/headers";
 
-import SettingsHeader from "@calcom/web/modules/settings/components/SettingsHeader";
+import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { MembershipRole } from "@calcom/prisma/enums";
+import SettingsHeader from "@calcom/web/modules/settings/components/SettingsHeader";
+
+import { _generateMetadata, getTranslate } from "app/_utils";
 
 import BillingView from "~/settings/billing/billing-view";
+import { SeatBillingDebug } from "~/settings/billing/components/SeatBillingDebug";
 
 import { validateUserHasOrgPerms } from "../../actions/validateUserHasOrgPerms";
 
@@ -19,6 +23,8 @@ export const generateMetadata = async () =>
 
 const Page = async () => {
   const t = await getTranslate();
+  const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
+  const orgId = session?.user?.org?.id;
 
   await validateUserHasOrgPerms({
     permission: "organization.manageBilling",
@@ -31,6 +37,7 @@ const Page = async () => {
       description={t("manage_billing_description")}
       borderInShellHeader={false}>
       <BillingView />
+      {orgId && <SeatBillingDebug teamId={orgId} />}
     </SettingsHeader>
   );
 };
