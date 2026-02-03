@@ -78,7 +78,7 @@ export class BillingPeriodService {
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
 
       if (!isFeatureEnabled) {
         return false;
