@@ -20,13 +20,6 @@ import {
 import { Field, FieldLabel } from "@coss/ui/components/field";
 import { Fieldset, FieldsetLegend } from "@coss/ui/components/fieldset";
 import { Label as CossLabel } from "@coss/ui/components/label";
-import {
-  Select as CossSelect,
-  SelectItem,
-  SelectPopup,
-  SelectTrigger,
-  SelectValue,
-} from "@coss/ui/components/select";
 
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
@@ -236,27 +229,42 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                 render={({ field: { value, onChange } }) => (
                   <Field className="max-md:col-span-2">
                     <FieldLabel>{t("language")}</FieldLabel>
-                    <CossSelect
-                      aria-label={t("language")}
-                      value={value.value}
+                    <Combobox
+                      autoHighlight
+                      value={value}
                       onValueChange={(newValue) => {
-                        const selectedOption = localeOptions.find((opt) => opt.value === newValue);
-                        if (selectedOption) {
-                          onChange(selectedOption);
+                        if (newValue) {
+                          onChange(newValue);
                         }
                       }}
                       items={localeOptions}>
-                      <SelectTrigger className="w-full capitalize">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectPopup>
-                        {localeOptions.map(({ label, value: optValue }) => (
-                          <SelectItem key={optValue} value={optValue}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectPopup>
-                    </CossSelect>
+                      <ComboboxTrigger
+                        className="flex-1"
+                        render={
+                          <CossButton className="w-full justify-between font-normal capitalize" variant="outline" />
+                        }>
+                        <ComboboxValue />
+                        <ChevronsUpDownIcon className="-me-1!" />
+                      </ComboboxTrigger>
+                      <ComboboxPopup aria-label={t("language")}>
+                        <div className="border-b p-2">
+                          <ComboboxInput
+                            className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
+                            placeholder={t("search")}
+                            showTrigger={false}
+                            startAddon={<SearchIcon />}
+                          />
+                        </div>
+                        <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
+                        <ComboboxList>
+                          {(item: { label: string; value: string }) => (
+                            <ComboboxItem key={item.value} value={item}>
+                              {item.label}
+                            </ComboboxItem>
+                          )}
+                        </ComboboxList>
+                      </ComboboxPopup>
+                    </Combobox>
                   </Field>
                 )}
               />
