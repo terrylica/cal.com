@@ -1,11 +1,29 @@
 "use client";
 
 import { revalidateSettingsGeneral } from "app/(use-page-wrapper)/settings/(settings-layout)/my-account/general/actions";
+import { CalendarIcon, SearchIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { TimezoneSelect } from "@calcom/web/modules/timezone/components/TimezoneSelect";
+import { Button as CossButton } from "@coss/ui/components/button";
+import {
+  Combobox,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+} from "@coss/ui/components/combobox";
+import { Field, FieldLabel } from "@coss/ui/components/field";
+import {
+  Select as CossSelect,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@coss/ui/components/select";
+
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { formatLocalizedDateTime } from "@calcom/lib/dayjs";
@@ -103,6 +121,34 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
     { value: "Saturday", label: nameOfDay(localeProp, 6) },
   ];
 
+  const timezones = Intl.supportedValuesOf("timeZone");
+
+  const formattedTimezones = useMemo(() => {
+    return timezones
+      .map((timezone) => {
+        const formatter = new Intl.DateTimeFormat("en", {
+          timeZone: timezone,
+          timeZoneName: "shortOffset",
+        });
+        const parts = formatter.formatToParts(new Date());
+        const offset = parts.find((part) => part.type === "timeZoneName")?.value || "";
+        const modifiedOffset = offset === "GMT" ? "GMT+0" : offset;
+
+        const offsetMatch = offset.match(/GMT([+-]?)(\d+)(?::(\d+))?/);
+        const sign = offsetMatch?.[1] === "-" ? -1 : 1;
+        const hours = Number.parseInt(offsetMatch?.[2] || "0", 10);
+        const minutes = Number.parseInt(offsetMatch?.[3] || "0", 10);
+        const totalMinutes = sign * (hours * 60 + minutes);
+
+        return {
+          label: `(${modifiedOffset}) ${timezone.replace(/_/g, " ")}`,
+          numericOffset: totalMinutes,
+          value: timezone,
+        };
+      })
+      .sort((a, b) => a.numericOffset - b.numericOffset);
+  }, [timezones]);
+
   const formMethods = useForm<FormValues>({
     defaultValues: {
       locale: {
@@ -183,53 +229,79 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <Controller
               name="locale"
               render={({ field: { value, onChange } }) => (
-                <>
-                  <Label className="text-emphasis">
-                    <>{t("language")}</>
-                  </Label>
-                  <Select<{ label: string; value: string }>
-                    className="capitalize"
-                    options={localeOptions}
-                    value={value}
-                    onChange={onChange}
-                  />
-                </>
+                <Field>
+                  <FieldLabel>{t("language")}</FieldLabel>
+                  <CossSelect
+                    aria-label={t("language")}
+                    value={value.value}
+                    onValueChange={(newValue) => {
+                      const selectedOption = localeOptions.find((opt) => opt.value === newValue);
+                      if (selectedOption) {
+                        onChange(selectedOption);
+                      }
+                    }}
+                    items={localeOptions}>
+                    <SelectTrigger className="w-full capitalize">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      {localeOptions.map(({ label, value: optValue }) => (
+                        <SelectItem key={optValue} value={optValue}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </CossSelect>
+                </Field>
               )}
             />
             <Controller
               name="timeZone"
               control={formMethods.control}
-              render={({ field: { value } }) => (
-                <>
-                  <Label className="text-emphasis mt-6">
-                    <>{t("timezone")}</>
-                  </Label>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                    <div className="w-full sm:w-1/2">
-                      <TimezoneSelect
-                        id="timezone"
-                        value={value}
-                        onChange={(event) => {
-                          if (event)
-                            formMethods.setValue("timeZone", event.value, {
-                              shouldDirty: true,
-                            });
-                        }}
-                      />
+              render={({ field: { value } }) => {
+                const currentTimezone = formattedTimezones.find((tz) => tz.value === value);
+                return (
+                  <Field className="mt-6">
+                    <FieldLabel>{t("timezone")}</FieldLabel>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                      <div className="w-full sm:w-1/2">
+                        <Combobox
+                          autoHighlight
+                          value={currentTimezone}
+                          onValueChange={(newValue) => {
+                            if (newValue) {
+                              formMethods.setValue("timeZone", newValue.value, {
+                                shouldDirty: true,
+                              });
+                            }
+                          }}
+                          items={formattedTimezones}>
+                          <ComboboxInput placeholder={t("search_timezone")} startAddon={<SearchIcon />} />
+                          <ComboboxPopup aria-label={t("timezone")}>
+                            <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
+                            <ComboboxList>
+                              {(item: { label: string; value: string; numericOffset: number }) => (
+                                <ComboboxItem key={item.value} value={item}>
+                                  {item.label}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxPopup>
+                        </Combobox>
+                      </div>
+                      {!watchedTzSchedules.length && (
+                        <CossButton
+                          className="w-full sm:w-1/2"
+                          variant="outline"
+                          onClick={() => setIsTZScheduleOpen(true)}>
+                          <CalendarIcon />
+                          <span>{t("schedule_timezone_change")}</span>
+                        </CossButton>
+                      )}
                     </div>
-                    {!watchedTzSchedules.length && (
-                      <Button
-                        className="w-full sm:w-1/2"
-                        color="secondary"
-                        StartIcon="calendar"
-                        onClick={() => setIsTZScheduleOpen(true)}
-                      >
-                        {t("schedule_timezone_change")}
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
+                  </Field>
+                );
+              }}
             />
             {watchedTzSchedules.length > 0 && (
               <div className="bg-cal-muted border-subtle mt-2 rounded-md border p-4">
