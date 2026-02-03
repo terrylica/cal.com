@@ -219,7 +219,7 @@ const TravelScheduleModal = ({
                 <ComboboxValue />
                 <ChevronsUpDownIcon className="-me-1!" />
               </ComboboxTrigger>
-              <ComboboxPopup aria-label={t("timezone")} sameWidth={{ match: "trigger" }}>
+              <ComboboxPopup aria-label={t("timezone")}>
                 <div className="border-b p-2">
                   <ComboboxInput
                     className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
