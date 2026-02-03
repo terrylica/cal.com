@@ -38,7 +38,7 @@ export interface OptInFeatureConfig {
   formbricks?: {
     /** The action name to track (e.g., "visit_bookings_v3_page"). */
     actionName: string;
-    /** Delay in milliseconds before tracking the action after opt-in. */
+    /** Show feedback form only after a certain delay */
     delayMs: number;
   };
 }
@@ -63,6 +63,10 @@ export const OPT_IN_FEATURES: OptInFeatureConfig[] = [
     policy: "permissive",
     displayLocations: ["settings"],
     scope: ["org", "team", "user"], // Optional: defaults to all scopes if not specified
+    formbricks: {
+      actionName: "visit_bookings_v3_page",
+      delayMs: 3 * 24 * 60 * 60 * 1000, // 3 days
+    },
   },
 ];
 

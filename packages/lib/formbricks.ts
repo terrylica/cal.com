@@ -4,8 +4,8 @@ import type { Feedback } from "@calcom/emails/templates/feedback-email";
 
 enum Rating {
   "Extremely unsatisfied" = 1,
-  "Unsatisfied" = 2,
-  "Satisfied" = 3,
+  Unsatisfied = 2,
+  Satisfied = 3,
   "Extremely satisfied" = 4,
 }
 
@@ -13,7 +13,7 @@ export const sendFeedbackFormbricks = async (userId: number, feedback: Feedback)
   if (!process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL || !process.env.NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID)
     throw new Error("Missing FORMBRICKS_HOST_URL or FORMBRICKS_ENVIRONMENT_ID env variable");
   const api = new FormbricksAPI({
-    apiHost: process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL,
+    appUrl: process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL,
     environmentId: process.env.NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID,
   });
   if (process.env.FORMBRICKS_FEEDBACK_SURVEY_ID) {

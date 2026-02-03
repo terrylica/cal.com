@@ -1,4 +1,4 @@
-import formbricks from "@formbricks/js/app";
+import formbricks from "@formbricks/js";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 
@@ -19,9 +19,9 @@ const initFormbricks = ({
   });
 
   if (process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL && process.env.NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID) {
-    formbricks.init({
+    formbricks.setup({
       environmentId: process.env.NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID,
-      apiHost: process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL,
+      appUrl: process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL,
       debug: process.env.NODE_ENV === "development",
       userId,
       attributes: filteredAttributes,
