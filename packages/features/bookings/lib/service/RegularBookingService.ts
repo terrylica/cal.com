@@ -58,6 +58,7 @@ import type { UserRepository } from "@calcom/features/users/repositories/UserRep
 import { UsersRepository } from "@calcom/features/users/users.repository";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
+import type { IWebhookProducerService } from "@calcom/features/webhooks/lib/interface/WebhookProducerService";
 import {
   cancelNoShowTasksForBooking,
   deleteWebhookScheduledTriggers,
@@ -101,7 +102,6 @@ import type { CredentialForCalendarService } from "@calcom/types/Credential";
 import type { EventResult, PartialReference } from "@calcom/types/EventManager";
 import short, { uuid } from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
-import type { IWebhookProducerService } from "~/webhooks/lib/interface/WebhookProducerService";
 import type { BookingRepository } from "../../repositories/BookingRepository";
 import { BookingActionMap, type BookingActionType, BookingEmailSmsHandler } from "../BookingEmailSmsHandler";
 import { getAllCredentialsIncludeServiceAccountKey } from "../getAllCredentialsForUsersOnEvent/getAllCredentials";
