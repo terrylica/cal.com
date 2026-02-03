@@ -67,31 +67,6 @@ class DeelHrmsService implements HrmsService {
     this.log = logger.getSubLogger({ prefix: [`[[lib] DeelHrmsService`] });
   }
 
-  async uninstall(): Promise<void> {
-    const credentialKey = this.credential.key as { webhookId?: string };
-
-    if (!credentialKey.webhookId) {
-      return;
-    }
-
-    const accessToken = await this.getAccessToken();
-
-    const response = await fetch(
-      `${deelApiUrl}/rest/v2/webhooks/${encodeURIComponent(credentialKey.webhookId)}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      this.log.warn(`Failed to delete Deel webhook: ${response.status}`);
-    }
-  }
-
   private async getAccessToken(): Promise<string> {
     const key = this.credential.key as unknown as DeelToken;
 

@@ -13,7 +13,6 @@ import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventR
 import { deletePayment } from "@calcom/features/bookings/lib/payment/deletePayment";
 import { deleteWebhookScheduledTriggers } from "@calcom/features/webhooks/lib/scheduleTrigger";
 import { buildNonDelegationCredential } from "@calcom/lib/delegationCredential";
-import HrmsManager from "@calcom/lib/hrmsManager/hrmsManager";
 import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
 import { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
 import { getTranslation } from "@calcom/lib/server/i18n";
@@ -432,15 +431,6 @@ const handleDeleteCredential = async ({
       userId: teamId ? undefined : userId,
       teamId,
     });
-  }
-
-  if (credential.app?.slug === "deel") {
-    try {
-      const hrmsManager = new HrmsManager(credential);
-      await hrmsManager.uninstall();
-    } catch (error) {
-      console.warn("Error running Deel uninstall", error);
-    }
   }
 
   let metadata = userMetadataSchema.parse(userMetadata);

@@ -41,6 +41,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
   const startTimeUtc = dayjs.utc(startDate).add(input.startDateOffset, "minute").startOf("day");
   const endTimeUtc = dayjs.utc(endDate).add(input.endDateOffset, "minute").endOf("day");
 
+  // If start date is after end date throw error
   if (startTimeUtc.isAfter(endTimeUtc)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "start_date_must_be_before_end_date" });
   }
@@ -82,6 +83,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     const user = await prisma.user.findUnique({
       where: {
         id: input.toTeamUserId,
+        /** You can only redirect OOO for members of teams you belong to */
         teams: {
           some: {
             team: {
@@ -111,6 +113,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
   const selectedReason = input.selectedReason;
   const reasonId: number | null = selectedReason.source === "hrms" ? null : selectedReason.id;
 
+  // Prevent infinite redirects but consider time ranges
   const existingOutOfOfficeEntry = await prisma.outOfOfficeEntry.findFirst({
     select: {
       userId: true,
@@ -119,10 +122,13 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     where: {
       ...(toUserId && { userId: toUserId }),
       toUserId: oooUserId,
+      // Check for time overlap or collision
       OR: [
+        // Outside of range
         {
           AND: [{ start: { lte: endTimeUtc.toISOString() } }, { end: { gte: startTimeUtc.toISOString() } }],
         },
+        // Inside of range
         {
           AND: [{ start: { gte: startTimeUtc.toISOString() } }, { end: { lte: endTimeUtc.toISOString() } }],
         },
@@ -130,6 +136,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     },
   });
 
+  // don't allow infinite redirects
   if (existingOutOfOfficeEntry) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -151,6 +158,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     throw new TRPCError({ code: "CONFLICT", message: "out_of_office_entry_already_exists" });
   }
 
+  // Get the existing redirected user from existing out of office entry to send that user appropriate email.
   const previousOutOfOfficeEntry = await prisma.outOfOfficeEntry.findUnique({
     where: {
       uuid: input.uuid ?? "",
@@ -195,6 +203,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     },
   });
 
+  // Explicit type to avoid Prisma.OutOfOfficeEntryGetPayload conditional types leaking into .d.ts files
   type OOOEntryResult = {
     id: number;
     start: Date;
@@ -250,6 +259,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       })
     : null;
   if (toUserId) {
+    // await send email to notify user
     const userToNotify = await prisma.user.findUnique({
       where: {
         id: toUserId,
@@ -274,6 +284,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
       ? previousOutOfOfficeEntry.toUser
       : undefined;
 
+    // Send cancel email to the old redirect user if it is not same as the current redirect user.
     if (existingRedirectedUser && existingRedirectedUser?.email !== userToNotify?.email) {
       await sendBookingRedirectNotification({
         language: t,
@@ -287,6 +298,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
     }
 
     if (userToNotify?.email) {
+      // If new redirect user exists and it is same as the old redirect user, then send update email.
       if (
         existingRedirectedUser &&
         existingRedirectedUser.email === userToNotify.email &&
@@ -302,6 +314,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
           dates: `${formattedStartDate} - ${formattedEndDate}`,
           action: "update",
         });
+        // If new redirect user exists and the previous redirect user didn't existed or the previous redirect user is not same as the new user, then send add email.
       } else if (
         !existingRedirectedUser ||
         (existingRedirectedUser && existingRedirectedUser.email !== userToNotify.email)
@@ -328,6 +341,7 @@ export const outOfOfficeCreateOrUpdate = async ({ ctx, input }: TBookingRedirect
 
   const teamIds = memberships.map((membership) => membership.teamId);
 
+  // Send webhook to notify other services
   const subscriberOptions: GetSubscriberOptions = {
     userId: oooUserId,
     teamId: teamIds,

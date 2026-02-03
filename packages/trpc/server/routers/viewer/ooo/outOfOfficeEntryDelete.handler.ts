@@ -90,7 +90,6 @@ export const outOfOfficeEntryDelete = async ({ ctx, input }: TBookingRedirectDel
     throw new TRPCError({ code: "NOT_FOUND", message: "booking_redirect_not_found" });
   }
 
-  // Delete HRMS time-off entry before deleting the OOO entry (1:1 relationship)
   try {
     if (oooEntry.externalReference?.credential) {
       const hrmsManager = new HrmsManager(oooEntry.externalReference.credential);
@@ -103,7 +102,6 @@ export const outOfOfficeEntryDelete = async ({ ctx, input }: TBookingRedirectDel
     log.error("Failed to delete HRMS time-off request", { error });
   }
 
-  // Now delete the OOO entry (cascade will delete references)
   const deletedOutOfOfficeEntry = await prisma.outOfOfficeEntry.delete({
     where: {
       uuid: input.outOfOfficeUid,
