@@ -258,7 +258,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                         <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
                         <ComboboxList>
                           {(item: { label: string; value: string }) => (
-                            <ComboboxItem key={item.value} value={item}>
+                            <ComboboxItem className="capitalize" key={item.value} value={item}>
                               {item.label}
                             </ComboboxItem>
                           )}
