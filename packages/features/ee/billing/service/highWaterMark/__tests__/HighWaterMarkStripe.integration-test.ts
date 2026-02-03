@@ -39,6 +39,19 @@ describeIfStripe("HighWaterMark Stripe E2E Test", () => {
   beforeAll(async () => {
     stripe = new Stripe(STRIPE_PRIVATE_KEY!, { apiVersion: "2020-08-27" });
 
+    // Enable the hwm-seating feature flag for the test
+    await prisma.feature.upsert({
+      where: { slug: "hwm-seating" },
+      update: { enabled: true },
+      create: {
+        slug: "hwm-seating",
+        enabled: true,
+        description: "High water mark seating for monthly billing",
+        type: "RELEASE",
+        stale: false,
+      },
+    });
+
     // Create test users
     const adminUser = await prisma.user.create({
       data: {

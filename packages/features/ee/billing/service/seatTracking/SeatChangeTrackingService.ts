@@ -1,9 +1,9 @@
 import { formatMonthKey } from "@calcom/features/ee/billing/lib/month-key";
 import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
-import { SeatChangeLogRepository } from "@calcom/features/ee/billing/repository/seatChangeLogs/SeatChangeLogRepository";
 import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
-import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
+import { SeatChangeLogRepository } from "@calcom/features/ee/billing/repository/seatChangeLogs/SeatChangeLogRepository";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
@@ -48,7 +48,11 @@ export class SeatChangeTrackingService {
     teamRepo?: MonthlyProrationTeamRepository
   ) {
     // Support both old positional args and new deps object for backwards compatibility
-    if (repositoryOrDeps && typeof repositoryOrDeps === "object" && "featuresRepository" in repositoryOrDeps) {
+    if (
+      repositoryOrDeps &&
+      typeof repositoryOrDeps === "object" &&
+      "featuresRepository" in repositoryOrDeps
+    ) {
       const deps = repositoryOrDeps as SeatChangeTrackingServiceDeps;
       this.repository = deps.repository || new SeatChangeLogRepository();
       this.highWaterMarkRepo = deps.highWaterMarkRepo || new HighWaterMarkRepository();
@@ -97,7 +101,7 @@ export class SeatChangeTrackingService {
   private async updateHighWaterMarkIfNeeded(teamId: number): Promise<void> {
     try {
       // Check if the feature is enabled
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
 
       if (!isFeatureEnabled) {
         return;

@@ -722,6 +722,20 @@ async function seedHwmOrg(stripe: Stripe | null): Promise<OrgSeedResult> {
 async function seedHwmTest(): Promise<SeedResult> {
   const stripe = getStripeClient();
 
+  // Enable the hwm-seating feature flag
+  await prisma.feature.upsert({
+    where: { slug: "hwm-seating" },
+    update: { enabled: true },
+    create: {
+      slug: "hwm-seating",
+      enabled: true,
+      description: "High water mark seating for monthly billing",
+      type: "RELEASE",
+      stale: false,
+    },
+  });
+  console.log("Enabled hwm-seating feature flag");
+
   if (CLEANUP_FIRST) {
     await cleanupDatabaseResources();
     if (stripe) {

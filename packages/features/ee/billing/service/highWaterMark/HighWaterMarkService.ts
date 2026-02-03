@@ -1,11 +1,10 @@
 import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
 import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
-import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
 import type { Logger } from "tslog";
-
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
 
 const log = logger.getSubLogger({ prefix: ["HighWaterMarkService"] });
@@ -57,7 +56,7 @@ export class HighWaterMarkService {
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
 
       if (!isFeatureEnabled) {
         return false;
@@ -149,6 +148,15 @@ export class HighWaterMarkService {
   }
 
   async applyHighWaterMarkToSubscription(subscriptionId: string): Promise<boolean> {
+    // Check feature flag first
+    const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+    if (!isFeatureEnabled) {
+      this.logger.debug(
+        `HWM feature flag disabled, skipping applyHighWaterMarkToSubscription for ${subscriptionId}`
+      );
+      return false;
+    }
+
     if (!this.billingService) {
       this.logger.error("BillingService not configured for high water mark processing");
       return false;
@@ -181,7 +189,9 @@ export class HighWaterMarkService {
       // Prefer subscription start date over arbitrary new Date()
       const periodStart = billing.highWaterMarkPeriodStart || billing.subscriptionStart;
       if (!periodStart) {
-        this.logger.warn(`Could not determine period start for team ${teamId} during lazy init - no subscriptionStart available`);
+        this.logger.warn(
+          `Could not determine period start for team ${teamId} during lazy init - no subscriptionStart available`
+        );
         return false;
       }
 
@@ -277,6 +287,15 @@ export class HighWaterMarkService {
     newPeriodStart: Date;
   }): Promise<boolean> {
     const { subscriptionId, newPeriodStart } = params;
+
+    // Check feature flag first
+    const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+    if (!isFeatureEnabled) {
+      this.logger.debug(
+        `HWM feature flag disabled, skipping resetSubscriptionAfterRenewal for ${subscriptionId}`
+      );
+      return false;
+    }
 
     if (!this.billingService) {
       this.logger.error("BillingService not configured for subscription reset");
