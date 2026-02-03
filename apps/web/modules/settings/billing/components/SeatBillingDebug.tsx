@@ -1,3 +1,5 @@
+"use server";
+
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import { prisma } from "@calcom/prisma";
 import { SeatBillingDebugClient } from "./SeatBillingDebugClient";
@@ -39,7 +41,7 @@ export interface SeatBillingDebugData {
   };
 }
 
-async function fetchSeatBillingDebugData(teamId: number): Promise<SeatBillingDebugData | null> {
+export async function fetchSeatBillingDebugData(teamId: number): Promise<SeatBillingDebugData | null> {
   const team = await prisma.team.findUnique({
     where: { id: teamId },
     select: {
@@ -170,5 +172,5 @@ export async function SeatBillingDebug({ teamId }: SeatBillingDebugProps) {
     return null;
   }
 
-  return <SeatBillingDebugClient data={data} />;
+  return <SeatBillingDebugClient data={data} teamId={teamId} />;
 }
