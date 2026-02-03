@@ -239,7 +239,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
       it("should get org user event slots in UTC", async () => {
         return request(app.getHttpServer())
           .get(
-            `/v2/slots?organizationSlug=${organization.slug}&eventTypeSlug=${sharedEventTypeSlug}&username=${sharedUsername}&start=2026-09-05&end=2026-09-09`
+            `/v2/slots?organizationSlug=${organization.slug}&eventTypeSlug=${sharedEventTypeSlug}&username=${sharedUsername}&start=2026-09-07&end=2026-09-11`
           )
           .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
           .expect(200)
@@ -258,7 +258,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
       it("should get non org user event slots in UTC", async () => {
         return request(app.getHttpServer())
           .get(
-            `/v2/slots?&eventTypeSlug=${sharedEventTypeSlug}&username=${sharedUsername}&start=2026-09-05&end=2026-09-09`
+            `/v2/slots?&eventTypeSlug=${sharedEventTypeSlug}&username=${sharedUsername}&start=2026-09-07&end=2026-09-11`
           )
           .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
           .expect(200)
@@ -270,14 +270,14 @@ describe("Slots 2024-09-04 Endpoints", () => {
             expect(slots).toBeDefined();
             const days = Object.keys(slots);
             expect(days.length).toEqual(1);
-            expect(slots).toEqual({ "2026-09-05": expectedSlotsUTC["2026-09-05"] });
+            expect(slots).toEqual({ "2026-09-07": expectedSlotsUTC["2026-09-07"] });
           });
       });
     });
 
     it("should get collective team event slots in UTC", async () => {
       return request(app.getHttpServer())
-        .get(`/v2/slots?eventTypeId=${collectiveEventTypeId}&start=2026-09-05&end=2026-09-09`)
+        .get(`/v2/slots?eventTypeId=${collectiveEventTypeId}&start=2026-09-07&end=2026-09-11`)
         .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
         .expect(200)
         .then(async (response) => {
@@ -295,7 +295,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
     it("should get collective team event slots in UTC using teamSlug, eventTypeSlug and organizationSlug", async () => {
       return request(app.getHttpServer())
         .get(
-          `/v2/slots?organizationSlug=${orgSlug}&teamSlug=${teamSlug}&eventTypeSlug=${collectiveEventTypeSlug}&start=2026-09-05&end=2026-09-09`
+          `/v2/slots?organizationSlug=${orgSlug}&teamSlug=${teamSlug}&eventTypeSlug=${collectiveEventTypeSlug}&start=2026-09-07&end=2026-09-11`
         )
         .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
         .expect(200)
@@ -314,7 +314,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
     it("should not get collective team event slots in UTC using teamSlug, eventTypeSlug if organizationSlug is missing", async () => {
       return request(app.getHttpServer())
         .get(
-          `/v2/slots?teamSlug=${teamSlug}&eventTypeSlug=${collectiveEventTypeSlug}&start=2026-09-05&end=2026-09-09`
+          `/v2/slots?teamSlug=${teamSlug}&eventTypeSlug=${collectiveEventTypeSlug}&start=2026-09-07&end=2026-09-11`
         )
         .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
         .expect(404);
@@ -322,7 +322,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
 
     it("should get round robin team event slots in UTC", async () => {
       return request(app.getHttpServer())
-        .get(`/v2/slots?eventTypeId=${roundRobinEventTypeId}&start=2026-09-05&end=2026-09-09`)
+        .get(`/v2/slots?eventTypeId=${roundRobinEventTypeId}&start=2026-09-07&end=2026-09-11`)
         .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
         .expect(200)
         .then(async (response) => {
@@ -338,12 +338,12 @@ describe("Slots 2024-09-04 Endpoints", () => {
     });
 
     it("should book collective event type and slot should not be available at that time", async () => {
-      const startTime = "2026-09-05T11:00:00.000Z";
+      const startTime = "2026-09-07T11:00:00.000Z";
       const booking = await bookingsRepositoryFixture.create({
         uid: `booking-uid-${collectiveEventTypeId}`,
         title: "booking title",
         startTime,
-        endTime: "2026-09-05T12:00:00.000Z",
+        endTime: "2026-09-07T12:00:00.000Z",
         eventType: {
           connect: {
             id: collectiveEventTypeId,
@@ -364,7 +364,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
       collectiveBookingId = booking.id;
 
       const response = await request(app.getHttpServer())
-        .get(`/v2/slots?eventTypeId=${collectiveEventTypeId}&start=2026-09-05&end=2026-09-09`)
+        .get(`/v2/slots?eventTypeId=${collectiveEventTypeId}&start=2026-09-07&end=2026-09-11`)
         .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
         .expect(200);
 
@@ -376,20 +376,20 @@ describe("Slots 2024-09-04 Endpoints", () => {
       const days = Object.keys(slots);
       expect(days.length).toEqual(5);
 
-      const expectedSlotsUTC2026_09_05 = expectedSlotsUTC["2026-09-05"].filter(
+      const expectedSlotsUTC2026_09_05 = expectedSlotsUTC["2026-09-07"].filter(
         (slot) => slot.start !== startTime
       );
-      expect(slots).toEqual({ ...expectedSlotsUTC, "2026-09-05": expectedSlotsUTC2026_09_05 });
+      expect(slots).toEqual({ ...expectedSlotsUTC, "2026-09-07": expectedSlotsUTC2026_09_05 });
       bookingsRepositoryFixture.deleteById(booking.id);
     });
 
     it("should book round robin event type and slot should be available at that time", async () => {
-      const startTime = "2026-09-05T11:00:00.000Z";
+      const startTime = "2026-09-07T11:00:00.000Z";
       const booking = await bookingsRepositoryFixture.create({
         uid: `booking-uid-${roundRobinEventTypeId}`,
         title: "booking title",
         startTime,
-        endTime: "2026-09-05T12:00:00.000Z",
+        endTime: "2026-09-07T12:00:00.000Z",
         eventType: {
           connect: {
             id: roundRobinEventTypeId,
@@ -410,7 +410,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
       roundRobinBookingId = booking.id;
 
       const response = await request(app.getHttpServer())
-        .get(`/v2/slots?eventTypeId=${roundRobinEventTypeId}&start=2026-09-05&end=2026-09-09`)
+        .get(`/v2/slots?eventTypeId=${roundRobinEventTypeId}&start=2026-09-07&end=2026-09-11`)
         .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
         .expect(200);
 
@@ -427,12 +427,12 @@ describe("Slots 2024-09-04 Endpoints", () => {
     });
 
     it("should fully book round robin event type and slot should not be available at that time", async () => {
-      const startTime = "2026-09-05T11:00:00.000Z";
+      const startTime = "2026-09-07T11:00:00.000Z";
       const bookingOne = await bookingsRepositoryFixture.create({
         uid: `booking-uid-${roundRobinEventTypeId}-1`,
         title: "booking title",
         startTime,
-        endTime: "2026-09-05T12:00:00.000Z",
+        endTime: "2026-09-07T12:00:00.000Z",
         eventType: {
           connect: {
             id: roundRobinEventTypeId,
@@ -456,7 +456,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
         uid: `booking-uid-${roundRobinEventTypeId}-2`,
         title: "booking title",
         startTime,
-        endTime: "2026-09-05T12:00:00.000Z",
+        endTime: "2026-09-07T12:00:00.000Z",
         eventType: {
           connect: {
             id: roundRobinEventTypeId,
@@ -477,7 +477,7 @@ describe("Slots 2024-09-04 Endpoints", () => {
       fullyBookedRoundRobinBookingIdTwo = bookingTwo.id;
 
       const response = await request(app.getHttpServer())
-        .get(`/v2/slots?eventTypeId=${roundRobinEventTypeId}&start=2026-09-05&end=2026-09-09`)
+        .get(`/v2/slots?eventTypeId=${roundRobinEventTypeId}&start=2026-09-07&end=2026-09-11`)
         .set(CAL_API_VERSION_HEADER, VERSION_2024_09_04)
         .expect(200);
 
@@ -489,10 +489,10 @@ describe("Slots 2024-09-04 Endpoints", () => {
       const days = Object.keys(slots);
       expect(days.length).toEqual(5);
 
-      const expectedSlotsUTC2026_09_05 = expectedSlotsUTC["2026-09-05"].filter(
+      const expectedSlotsUTC2026_09_05 = expectedSlotsUTC["2026-09-07"].filter(
         (slot) => slot.start !== startTime
       );
-      expect(slots).toEqual({ ...expectedSlotsUTC, "2026-09-05": expectedSlotsUTC2026_09_05 });
+      expect(slots).toEqual({ ...expectedSlotsUTC, "2026-09-07": expectedSlotsUTC2026_09_05 });
       bookingsRepositoryFixture.deleteById(bookingOne.id);
       bookingsRepositoryFixture.deleteById(bookingTwo.id);
     });
