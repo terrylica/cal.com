@@ -1,7 +1,7 @@
 "use client";
 
 import { AxiomJSTransport, Logger } from "@axiomhq/logging";
-import { nextJsFormatters } from "@axiomhq/nextjs/client";
+import { nextJsFormatters } from "@axiomhq/nextjs";
 import { createUseLogger, createWebVitalsComponent } from "@axiomhq/react";
 
 import axiomClient from "./axiom";
