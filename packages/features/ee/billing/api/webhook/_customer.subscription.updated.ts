@@ -1,12 +1,10 @@
 import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
 import { PrismaPhoneNumberRepository } from "@calcom/features/calAIPhone/repositories/PrismaPhoneNumberRepository";
+import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
 import { PrismaOrganizationBillingRepository } from "@calcom/features/ee/billing/repository/billing/PrismaOrganizationBillingRepository";
 import { PrismaTeamBillingRepository } from "@calcom/features/ee/billing/repository/billing/PrismaTeamBillingRepository";
-import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
-import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
-
 import { PhoneNumberSubscriptionStatus } from "@calcom/prisma/enums";
 
 const log = logger.getSubLogger({ prefix: ["subscription-updated-webhook"] });
@@ -33,10 +31,7 @@ const handler = async (data: Data) => {
     ? await handleCalAIPhoneNumberSubscriptionUpdate(subscription, phoneNumber)
     : null;
 
-  const teamBillingResult = await handleTeamBillingRenewal(
-    subscription,
-    previousAttributes
-  );
+  const teamBillingResult = await handleTeamBillingRenewal(subscription, previousAttributes);
 
   return {
     phoneNumber: phoneNumberResult,
@@ -62,8 +57,7 @@ async function handleCalAIPhoneNumberSubscriptionUpdate(
     paused: PhoneNumberSubscriptionStatus.CANCELLED,
   };
 
-  const subscriptionStatus =
-    statusMap[subscription.status] || PhoneNumberSubscriptionStatus.UNPAID;
+  const subscriptionStatus = statusMap[subscription.status] || PhoneNumberSubscriptionStatus.UNPAID;
 
   await prisma.calAiPhoneNumber.update({
     where: {
@@ -93,8 +87,7 @@ async function handleTeamBillingRenewal(
   const { subscriptionStart, subscriptionEnd, subscriptionTrialEnd } =
     billingProviderService.extractSubscriptionDates(subscription);
 
-  const { billingPeriod, pricePerSeat, paidSeats } =
-    extractBillingDataFromStripeSubscription(subscription);
+  const { billingPeriod, pricePerSeat, paidSeats } = extractBillingDataFromStripeSubscription(subscription);
 
   const teamBillingRepo = new PrismaTeamBillingRepository(prisma);
   const orgBillingRepo = new PrismaOrganizationBillingRepository(prisma);
@@ -108,25 +101,11 @@ async function handleTeamBillingRenewal(
     pricePerSeat: pricePerSeat ?? null,
   };
 
-  const teamBilling = await teamBillingRepo.findBySubscriptionId(
-    subscription.id
-  );
+  const teamBilling = await teamBillingRepo.findBySubscriptionId(subscription.id);
 
   if (teamBilling) {
     await teamBillingRepo.updateById(teamBilling.id, billingUpdateData);
-
-    // Reset high water mark and subscription quantity for monthly billing on new period
-    if (billingPeriod === "MONTHLY") {
-      if (subscriptionStart) {
-        await resetSubscriptionAfterRenewal(subscription.id, subscriptionStart);
-      } else {
-        log.warn("Cannot reset high water mark: subscriptionStart is null for monthly team billing", {
-          teamId: teamBilling.teamId,
-          subscriptionId: subscription.id,
-        });
-      }
-    }
-
+    // HWM reset is handled by invoice.paid webhook after payment completes
     return { success: true, type: "team", teamId: teamBilling.teamId };
   }
 
@@ -134,59 +113,16 @@ async function handleTeamBillingRenewal(
 
   if (orgBilling) {
     await orgBillingRepo.updateById(orgBilling.id, billingUpdateData);
-
-    // Reset high water mark and subscription quantity for monthly billing on new period
-    if (billingPeriod === "MONTHLY") {
-      if (subscriptionStart) {
-        await resetSubscriptionAfterRenewal(subscription.id, subscriptionStart);
-      } else {
-        log.warn("Cannot reset high water mark: subscriptionStart is null for monthly org billing", {
-          teamId: orgBilling.teamId,
-          subscriptionId: subscription.id,
-        });
-      }
-    }
-
+    // HWM reset is handled by invoice.paid webhook after payment completes
     return { success: true, type: "organization", teamId: orgBilling.teamId };
   }
 
   log.warn("Subscription renewal received but no billing record found", {
     subscriptionId: subscription.id,
-    customerId:
-      typeof subscription.customer === "string"
-        ? subscription.customer
-        : subscription.customer?.id,
+    customerId: typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id,
   });
 
   return { skipped: true, reason: "no billing record found" };
-}
-
-async function resetSubscriptionAfterRenewal(
-  subscriptionId: string,
-  newPeriodStart: Date
-): Promise<void> {
-  try {
-    const billingProviderService = getBillingProviderService();
-    const highWaterMarkService = new HighWaterMarkService({
-      logger: log,
-      billingService: billingProviderService,
-    });
-    const updated = await highWaterMarkService.resetSubscriptionAfterRenewal({
-      subscriptionId,
-      newPeriodStart,
-    });
-    log.info("Subscription reset after billing period renewal", {
-      subscriptionId,
-      newPeriodStart,
-      updated,
-    });
-  } catch (error) {
-    // Log but don't fail the webhook
-    log.error("Failed to reset subscription after renewal", {
-      subscriptionId,
-      error,
-    });
-  }
 }
 
 export default handler;
