@@ -1,31 +1,18 @@
 /**
- * Centralized public environment variables for Next.js applications.
+ * Centralized NEXT_PUBLIC_* environment variables for Next.js applications.
  *
  * This file is the ONLY place where process.env.NEXT_PUBLIC_* should be accessed directly.
  * All other files should import from this module to get public env var values.
  *
  * Why this pattern?
- * 1. Next.js replaces process.env.NEXT_PUBLIC_* at build time, but only when `process` is the global.
- * 2. Biome's noProcessGlobal rule auto-fixes by adding `import process from "node:process"`,
- *    which breaks Next.js's compile-time replacement (the imported process module is undefined in browser).
- * 3. By centralizing all NEXT_PUBLIC_* access here, we can configure Biome to allow process.env
- *    only in this file, preventing the auto-import issue elsewhere.
- * 4. This also provides type safety - all env vars are typed and have sensible defaults.
+ * Biome's noProcessGlobal rule auto-fixes by adding `import process from "node:process"`,
+ * which breaks Next.js's compile-time replacement of NEXT_PUBLIC_* vars (the imported
+ * process module is undefined in browser). By centralizing access here with a Biome
+ * override, we prevent this issue.
  *
  * Usage:
  *   import { NEXT_PUBLIC_WEBAPP_URL } from "@calcom/lib/public-env";
- *
- * Adding new env vars:
- *   1. Add the env var to this file with appropriate typing and default value
- *   2. Export it for use in other files
  */
-
-// =============================================================================
-// Node Environment
-// =============================================================================
-
-export const isENVProd = process.env.NODE_ENV === "production";
-export const isENVDev = process.env.NODE_ENV === "development";
 
 // =============================================================================
 // Core URLs
