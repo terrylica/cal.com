@@ -27,6 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@coss/ui/components/select";
+import { Switch } from "@coss/ui/components/switch";
+import {
+  Card,
+  CardFrameDescription,
+  CardFrameHeader,
+  CardFrameTitle,
+  CardPanel,
+} from "@coss/ui/components/card";
 
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
@@ -41,7 +49,6 @@ import { Button } from "@calcom/ui/components/button";
 import { Form } from "@calcom/ui/components/form";
 import { Label } from "@calcom/ui/components/form";
 import { Select } from "@calcom/ui/components/form";
-import { SettingsToggle } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { revalidateTravelSchedules } from "@calcom/web/app/cache/travelSchedule";
 
@@ -469,73 +476,87 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
           </div>
 
           <SectionBottomActions align="end">
-            <Button
-              loading={isUpdateBtnLoading}
-              disabled={isDisabled}
-              color="primary"
-              type="submit"
-              data-testid="general-submit-button"
-            >
-              <>{t("update")}</>
-            </Button>
+            <CossButton type="submit" disabled={isDisabled || isUpdateBtnLoading} data-testid="general-submit-button">
+              {t("update")}
+            </CossButton>
           </SectionBottomActions>
         </Form>
 
-        <SettingsToggle
-          toggleSwitchAtTheEnd={true}
-          title={t("dynamic_booking")}
-          description={t("allow_dynamic_booking")}
-          disabled={mutation.isPending}
-          checked={isAllowDynamicBookingChecked}
-          onCheckedChange={(checked) => {
-            setIsAllowDynamicBookingChecked(checked);
-            mutation.mutate({ allowDynamicBooking: checked });
-          }}
-          switchContainerClassName="mt-6"
-        />
+        <Card className="mt-6">
+          <CardPanel>
+            <div className="flex items-center justify-between gap-4">
+              <CardFrameHeader className="gap-0 p-0!">
+                <CardFrameTitle>{t("dynamic_booking")}</CardFrameTitle>
+                <CardFrameDescription>{t("allow_dynamic_booking")}</CardFrameDescription>
+              </CardFrameHeader>
+              <Switch
+                disabled={mutation.isPending}
+                checked={isAllowDynamicBookingChecked}
+                onCheckedChange={(checked) => {
+                  setIsAllowDynamicBookingChecked(checked);
+                  mutation.mutate({ allowDynamicBooking: checked });
+                }}
+              />
+            </div>
+          </CardPanel>
+        </Card>
 
-        <SettingsToggle
-          data-testid="my-seo-indexing-switch"
-          toggleSwitchAtTheEnd={true}
-          title={t("seo_indexing")}
-          description={t("allow_seo_indexing")}
-          disabled={
-            mutation.isPending ||
-            user.organizationSettings?.allowSEOIndexing === false
-          }
-          checked={isAllowSEOIndexingChecked}
-          onCheckedChange={(checked) => {
-            setIsAllowSEOIndexingChecked(checked);
-            mutation.mutate({ allowSEOIndexing: checked });
-          }}
-          switchContainerClassName="mt-6"
-        />
+        <Card className="mt-6" data-testid="my-seo-indexing-switch">
+          <CardPanel>
+            <div className="flex items-center justify-between gap-4">
+              <CardFrameHeader className="gap-0 p-0!">
+                <CardFrameTitle>{t("seo_indexing")}</CardFrameTitle>
+                <CardFrameDescription>{t("allow_seo_indexing")}</CardFrameDescription>
+              </CardFrameHeader>
+              <Switch
+                disabled={mutation.isPending || user.organizationSettings?.allowSEOIndexing === false}
+                checked={isAllowSEOIndexingChecked}
+                onCheckedChange={(checked) => {
+                  setIsAllowSEOIndexingChecked(checked);
+                  mutation.mutate({ allowSEOIndexing: checked });
+                }}
+              />
+            </div>
+          </CardPanel>
+        </Card>
 
-        <SettingsToggle
-          toggleSwitchAtTheEnd={true}
-          title={t("monthly_digest_email")}
-          description={t("monthly_digest_email_for_teams")}
-          disabled={mutation.isPending}
-          checked={isReceiveMonthlyDigestEmailChecked}
-          onCheckedChange={(checked) => {
-            setIsReceiveMonthlyDigestEmailChecked(checked);
-            mutation.mutate({ receiveMonthlyDigestEmail: checked });
-          }}
-          switchContainerClassName="mt-6"
-        />
+        <Card className="mt-6">
+          <CardPanel>
+            <div className="flex items-center justify-between gap-4">
+              <CardFrameHeader className="gap-0 p-0!">
+                <CardFrameTitle>{t("monthly_digest_email")}</CardFrameTitle>
+                <CardFrameDescription>{t("monthly_digest_email_for_teams")}</CardFrameDescription>
+              </CardFrameHeader>
+              <Switch
+                disabled={mutation.isPending}
+                checked={isReceiveMonthlyDigestEmailChecked}
+                onCheckedChange={(checked) => {
+                  setIsReceiveMonthlyDigestEmailChecked(checked);
+                  mutation.mutate({ receiveMonthlyDigestEmail: checked });
+                }}
+              />
+            </div>
+          </CardPanel>
+        </Card>
 
-        <SettingsToggle
-          toggleSwitchAtTheEnd={true}
-          title={t("require_booker_email_verification")}
-          description={t("require_booker_email_verification_description")}
-          disabled={mutation.isPending}
-          checked={isRequireBookerEmailVerificationChecked}
-          onCheckedChange={(checked) => {
-            setIsRequireBookerEmailVerificationChecked(checked);
-            mutation.mutate({ requiresBookerEmailVerification: checked });
-          }}
-          switchContainerClassName="mt-6"
-        />
+        <Card className="mt-6">
+          <CardPanel>
+            <div className="flex items-center justify-between gap-4">
+              <CardFrameHeader className="gap-0 p-0!">
+                <CardFrameTitle>{t("require_booker_email_verification")}</CardFrameTitle>
+                <CardFrameDescription>{t("require_booker_email_verification_description")}</CardFrameDescription>
+              </CardFrameHeader>
+              <Switch
+                disabled={mutation.isPending}
+                checked={isRequireBookerEmailVerificationChecked}
+                onCheckedChange={(checked) => {
+                  setIsRequireBookerEmailVerificationChecked(checked);
+                  mutation.mutate({ requiresBookerEmailVerification: checked });
+                }}
+              />
+            </div>
+          </CardPanel>
+        </Card>
         <TravelScheduleModal
           open={isTZScheduleOpen}
           onOpenChange={setIsTZScheduleOpen}
