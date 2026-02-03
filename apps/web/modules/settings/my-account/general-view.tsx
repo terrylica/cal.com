@@ -1,7 +1,7 @@
 "use client";
 
 import { revalidateSettingsGeneral } from "app/(use-page-wrapper)/settings/(settings-layout)/my-account/general/actions";
-import { CalendarIcon, SearchIcon } from "lucide-react";
+import { CalendarIcon, ChevronsUpDownIcon, SearchIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -14,6 +14,8 @@ import {
   ComboboxItem,
   ComboboxList,
   ComboboxPopup,
+  ComboboxTrigger,
+  ComboboxValue,
 } from "@coss/ui/components/combobox";
 import { Field, FieldLabel } from "@coss/ui/components/field";
 import {
@@ -276,8 +278,23 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                             }
                           }}
                           items={formattedTimezones}>
-                          <ComboboxInput placeholder={t("search_timezone")} startAddon={<SearchIcon />} />
+                          <ComboboxTrigger
+                            className="flex-1"
+                            render={
+                              <CossButton className="w-full justify-between font-normal" variant="outline" />
+                            }>
+                            <ComboboxValue />
+                            <ChevronsUpDownIcon className="-me-1!" />
+                          </ComboboxTrigger>
                           <ComboboxPopup aria-label={t("timezone")}>
+                            <div className="border-b p-2">
+                              <ComboboxInput
+                                className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
+                                placeholder={t("search_timezone")}
+                                showTrigger={false}
+                                startAddon={<SearchIcon />}
+                              />
+                            </div>
                             <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
                             <ComboboxList>
                               {(item: { label: string; value: string; numericOffset: number }) => (
