@@ -17,9 +17,16 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from "@coss/ui/components/combobox";
-import { Field, FieldLabel } from "@coss/ui/components/field";
+import { Field, FieldDescription, FieldLabel } from "@coss/ui/components/field";
 import { Fieldset, FieldsetLegend } from "@coss/ui/components/fieldset";
 import { Label as CossLabel } from "@coss/ui/components/label";
+import {
+  Select as CossSelect,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@coss/ui/components/select";
 
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
@@ -394,55 +401,73 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
               </div>
             )}
 
-            <Controller
-              name="timeFormat"
-              control={formMethods.control}
-              render={({ field: { value } }) => (
-                <>
-                  <Label className="text-emphasis mt-6">
-                    <>{t("time_format")}</>
-                  </Label>
-                  <Select
-                    value={value}
-                    options={timeFormatOptions}
-                    onChange={(event) => {
-                      if (event)
-                        formMethods.setValue(
-                          "timeFormat",
-                          { ...event },
-                          { shouldDirty: true }
+            <div className="col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Controller
+                name="timeFormat"
+                control={formMethods.control}
+                render={({ field: { value } }) => (
+                  <Field>
+                    <FieldLabel>{t("time_format")}</FieldLabel>
+                    <CossSelect
+                      aria-label={t("time_format")}
+                      value={String(value.value)}
+                      onValueChange={(newValue) => {
+                        const selectedOption = timeFormatOptions.find(
+                          (opt) => String(opt.value) === newValue
                         );
-                    }}
-                  />
-                </>
-              )}
-            />
-            <div className="text-gray text-subtle mt-2 flex items-center text-xs">
-              {t("timeformat_profile_hint")}
+                        if (selectedOption) {
+                          formMethods.setValue("timeFormat", selectedOption, {
+                            shouldDirty: true,
+                          });
+                        }
+                      }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {timeFormatOptions.map(({ label, value: optValue }) => (
+                          <SelectItem key={optValue} value={String(optValue)}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </CossSelect>
+                    <FieldDescription>{t("timeformat_profile_hint")}</FieldDescription>
+                  </Field>
+                )}
+              />
+              <Controller
+                name="weekStart"
+                control={formMethods.control}
+                render={({ field: { value } }) => (
+                  <Field>
+                    <FieldLabel>{t("start_of_week")}</FieldLabel>
+                    <CossSelect
+                      aria-label={t("start_of_week")}
+                      value={value.value}
+                      onValueChange={(newValue) => {
+                        const selectedOption = weekStartOptions.find((opt) => opt.value === newValue);
+                        if (selectedOption) {
+                          formMethods.setValue("weekStart", selectedOption, {
+                            shouldDirty: true,
+                          });
+                        }
+                      }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {weekStartOptions.map(({ label, value: optValue }) => (
+                          <SelectItem key={optValue} value={optValue}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </CossSelect>
+                  </Field>
+                )}
+              />
             </div>
-            <Controller
-              name="weekStart"
-              control={formMethods.control}
-              render={({ field: { value } }) => (
-                <>
-                  <Label className="text-emphasis mt-6">
-                    <>{t("start_of_week")}</>
-                  </Label>
-                  <Select
-                    value={value}
-                    options={weekStartOptions}
-                    onChange={(event) => {
-                      if (event)
-                        formMethods.setValue(
-                          "weekStart",
-                          { ...event },
-                          { shouldDirty: true }
-                        );
-                    }}
-                  />
-                </>
-              )}
-            />
           </div>
 
           <SectionBottomActions align="end">
