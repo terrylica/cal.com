@@ -344,6 +344,21 @@ describe("handleResponse", () => {
   });
 
   describe("Fallback action", () => {
+    // Mock attributesQueryValue with actual rules
+    const mockAttributesQueryValueWithRules = {
+      type: "group",
+      children1: {
+        "rule-1": {
+          type: "rule",
+          properties: {
+            field: "attr-1",
+            operator: "select_equals",
+            value: ["option-1"],
+          },
+        },
+      },
+    };
+
     it("should return fallbackAction when no team members match attribute logic", async () => {
       const fallbackAction = {
         type: "externalRedirectUrl" as const,
@@ -359,7 +374,7 @@ describe("handleResponse", () => {
         },
         attributeRoutingConfig: null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        attributesQueryValue: { type: "group", children1: {} } as any,
+        attributesQueryValue: mockAttributesQueryValueWithRules as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fallbackAttributesQueryValue: { type: "group", children1: {} } as any,
         fallbackAction,
@@ -390,6 +405,14 @@ describe("handleResponse", () => {
 
       expect(result.teamMembersMatchingAttributeLogic).toEqual([]);
       expect(result.fallbackAction).toEqual(fallbackAction);
+
+      // Verify that fallbackAttributesQueryValue is NOT passed when fallbackAction is configured
+      expect(findTeamMembersMatchingAttributeLogic).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fallbackAttributesQueryValue: undefined,
+        }),
+        expect.anything()
+      );
     });
 
     it("should return null fallbackAction when team members are found", async () => {
@@ -407,7 +430,7 @@ describe("handleResponse", () => {
         },
         attributeRoutingConfig: null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        attributesQueryValue: { type: "group", children1: {} } as any,
+        attributesQueryValue: mockAttributesQueryValueWithRules as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fallbackAttributesQueryValue: { type: "group", children1: {} } as any,
         fallbackAction,
@@ -483,6 +506,14 @@ describe("handleResponse", () => {
 
       expect(result.teamMembersMatchingAttributeLogic).toEqual([]);
       expect(result.fallbackAction).toBeNull();
+
+      // Verify that fallbackAttributesQueryValue IS passed when fallbackAction is NOT configured (backwards compatibility)
+      expect(findTeamMembersMatchingAttributeLogic).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fallbackAttributesQueryValue: { type: "group", children1: {} },
+        }),
+        expect.anything()
+      );
     });
 
     it("should return null fallbackAction when teamMembersMatchingAttributeLogic is null (non-team form)", async () => {
@@ -529,8 +560,57 @@ describe("handleResponse", () => {
 
       // teamMembersMatchingAttributeLogic is null for non-team forms
       expect(result.teamMembersMatchingAttributeLogic).toBeNull();
-      // fallbackAction should be null because we only trigger it when teamMembersMatchingAttributeLogic is an empty array
+      // fallbackAction should be null because attribute routing has no rules configured (empty children1)
       expect(result.fallbackAction).toBeNull();
+    });
+
+    it("should return fallbackAction when team has no orgId but attribute routing is configured", async () => {
+      const fallbackAction = {
+        type: "externalRedirectUrl" as const,
+        value: "https://example.com/fallback",
+      };
+      const chosenRoute = {
+        id: "route1",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        queryValue: { type: "group", children1: {} } as any,
+        action: {
+          type: "eventTypeRedirectUrl" as const,
+          value: "team/30min",
+        },
+        attributeRoutingConfig: null,
+        // Route has attribute routing rules configured
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        attributesQueryValue: mockAttributesQueryValueWithRules as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        fallbackAttributesQueryValue: { type: "group", children1: {} } as any,
+        fallbackAction,
+        isFallback: false,
+      };
+      // Team form but team has no parentId (not part of an org)
+      const teamWithoutOrgForm: TargetRoutingFormForResponse = {
+        ...mockForm,
+        teamId: 123,
+        team: { parentId: null }, // No org
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        routes: [chosenRoute as any],
+      };
+
+      const result = await handleResponse({
+        response: mockResponse,
+        form: teamWithoutOrgForm,
+        formFillerId: "user1",
+        chosenRouteId: "route1",
+        isPreview: true,
+        identifierKeyedResponse: {
+          name: "John Doe",
+          email: "john.doe@example.com",
+        },
+      });
+
+      // teamMembersMatchingAttributeLogic is null because orgId is missing (attribute routing couldn't run)
+      expect(result.teamMembersMatchingAttributeLogic).toBeNull();
+      // fallbackAction SHOULD be returned because attribute routing was configured but couldn't run
+      expect(result.fallbackAction).toEqual(fallbackAction);
     });
 
     it("should return null fallbackAction when no team members found but CRM contact owner exists", async () => {
@@ -548,7 +628,7 @@ describe("handleResponse", () => {
         },
         attributeRoutingConfig: null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        attributesQueryValue: { type: "group", children1: {} } as any,
+        attributesQueryValue: mockAttributesQueryValueWithRules as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fallbackAttributesQueryValue: { type: "group", children1: {} } as any,
         fallbackAction,

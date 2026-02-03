@@ -135,6 +135,9 @@ const _handleResponse = async ({
             crmRecordId = contactOwnerQuery?.recordId ?? null;
           })(),
           (async () => {
+            // If fallbackAction is configured, skip fallbackAttributesQueryValue to prioritize fallbackAction
+            // This maintains backwards compatibility: only use fallbackAttributesQueryValue when fallbackAction is not set
+            const hasFallbackAction = "fallbackAction" in chosenRoute && chosenRoute.fallbackAction;
             const teamMembersMatchingAttributeLogicWithResult =
               formTeamId && formOrgId
                 ? await findTeamMembersMatchingAttributeLogic(
@@ -144,7 +147,10 @@ const _handleResponse = async ({
                         fields: form.fields || [],
                       },
                       attributesQueryValue: chosenRoute.attributesQueryValue ?? null,
-                      fallbackAttributesQueryValue: chosenRoute.fallbackAttributesQueryValue,
+                      // Skip fallback attribute routing if fallbackAction is configured
+                      fallbackAttributesQueryValue: hasFallbackAction
+                        ? undefined
+                        : chosenRoute.fallbackAttributesQueryValue,
                       teamId: formTeamId,
                       orgId: formOrgId,
                       routeName: chosenRoute.name,
@@ -223,12 +229,37 @@ const _handleResponse = async ({
       }
     }
     const getFallbackAction = () => {
-      const noUsersFound =
-        teamMemberIdsMatchingAttributeLogic !== null && teamMemberIdsMatchingAttributeLogic.length === 0;
+      if (!chosenRoute || !("fallbackAction" in chosenRoute)) {
+        return null;
+      }
+
+      // Check if attribute routing is configured on this route (has rules in attributesQueryValue)
+      const attributesQueryValue =
+        "attributesQueryValue" in chosenRoute ? chosenRoute.attributesQueryValue : null;
+      const hasAttributeRoutingConfigured =
+        attributesQueryValue &&
+        typeof attributesQueryValue === "object" &&
+        "children1" in attributesQueryValue &&
+        attributesQueryValue.children1 &&
+        Object.keys(attributesQueryValue.children1 as Record<string, unknown>).length > 0;
+
+      if (!hasAttributeRoutingConfigured) {
+        // Attribute routing wasn't configured on this route, fallbackAction doesn't apply
+        return null;
+      }
+
+      // Attribute routing was configured. Check if we got any team members.
+      // - null means routing couldn't run (e.g., missing orgId) or query was intentionally empty
+      // - [] means routing ran but found no matching members
+      const noTeamMembersFound =
+        teamMemberIdsMatchingAttributeLogic === null || teamMemberIdsMatchingAttributeLogic.length === 0;
+
       const hasCrmContactOwner = crmContactOwnerEmail !== null;
-      if (noUsersFound && !hasCrmContactOwner && chosenRoute && "fallbackAction" in chosenRoute) {
+
+      if (noTeamMembersFound && !hasCrmContactOwner) {
         return chosenRoute.fallbackAction;
       }
+
       return null;
     };
 
