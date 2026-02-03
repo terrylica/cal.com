@@ -42,7 +42,6 @@ import customTemplate, {
 } from "../reminders/templates/customTemplate";
 import emailRatingTemplate from "../reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "../reminders/templates/emailReminderTemplate";
-import { replaceCloakedLinksInHtml } from "../reminders/utils";
 import type {
   AttendeeInBookingInfo,
   BookingInfo,
