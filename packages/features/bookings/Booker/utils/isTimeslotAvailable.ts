@@ -1,4 +1,4 @@
-import dayjs from "@calcom/dayjs";
+import { addDays, format, subDays } from "date-fns";
 
 import type { QuickAvailabilityCheck } from "../types";
 import { isSlotEquivalent, isValidISOFormat } from "./isSlotEquivalent";
@@ -43,8 +43,9 @@ function _isSlotPresentInSchedule({
   // Check if the slot is present under the date, previous date and next date
   // Timezones can't be more than 1 day apart, so we can safely assume that previous and next day covers all the dates where a time slot can be present
   // We don't want to look up for a slot over all the dates in the schedule data unnecessarily for performance reasons
-  const dateBefore = dayjs(dateInGMT).subtract(1, "day").format("YYYY-MM-DD");
-  const dateAfter = dayjs(dateInGMT).add(1, "day").format("YYYY-MM-DD");
+  const dateObj = new Date(dateInGMT + "T00:00:00Z");
+  const dateBefore = format(subDays(dateObj, 1), "yyyy-MM-dd");
+  const dateAfter = format(addDays(dateObj, 1), "yyyy-MM-dd");
 
   // No matter what timezone the booker is in, the slot has to be in one of these three dates
   const slotsInIsoForDate = scheduleData.slots[dateInGMT] as Maybe<SlotsInIso>;

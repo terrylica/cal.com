@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
-import dayjs from "@calcom/dayjs";
+import { addMinutes } from "date-fns";
+
 import type { CalendarAvailableTimeslots } from "@calcom/features/calendars/weeklyview/types/state";
 import type { IGetAvailableSlots } from "@calcom/trpc/server/routers/viewer/slots/util";
 
@@ -17,9 +18,10 @@ export const useAvailableTimeSlots = ({ schedule, eventDuration }: UseAvailableT
     for (const day in schedule.slots) {
       availableTimeslots[day] = schedule.slots[day].map((slot) => {
         const { time, ...rest } = slot;
+        const startDate = new Date(time);
         return {
-          start: dayjs(time).toDate(),
-          end: dayjs(time).add(eventDuration, "minutes").toDate(),
+          start: startDate,
+          end: addMinutes(startDate, eventDuration),
           ...rest,
         };
       });

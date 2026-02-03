@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { createWithEqualityFn } from "zustand/traditional";
 
-import dayjs from "@calcom/dayjs";
+import { addDays, format, getMonth, isBefore, isValid, parseISO, startOfDay } from "date-fns";
+
 import { BOOKER_NUMBER_OF_DAYS_TO_LOAD } from "@calcom/lib/constants";
 import { BookerLayouts } from "@calcom/prisma/zod-utils";
 
@@ -461,7 +462,7 @@ export const createBookerStore = () =>
         ["week_view", "column_view"].includes(layout) &&
         !get().selectedDate
       ) {
-        set({ selectedDate: dayjs().format("YYYY-MM-DD") });
+        set({ selectedDate: format(new Date(), "yyyy-MM-dd") });
       }
       if (!get().isPlatform || get().allowUpdatingUrlParams) {
         updateQueryParam("layout", layout);
@@ -480,8 +481,8 @@ export const createBookerStore = () =>
         return;
       }
 
-      const currentSelection = dayjs(get().selectedDate);
-      const newSelection = dayjs(selectedDate);
+      const currentSelectionDate = get().selectedDate ? parseISO(get().selectedDate!) : new Date();
+      const newSelectionDate = parseISO(selectedDate);
       set({ selectedDate });
       if (
         !omitUpdatingParams &&
@@ -494,14 +495,14 @@ export const createBookerStore = () =>
       // preventMonthSwitching is true in monthly view
       if (
         !preventMonthSwitching &&
-        newSelection.month() !== currentSelection.month()
+        getMonth(newSelectionDate) !== getMonth(currentSelectionDate)
       ) {
-        set({ month: newSelection.format("YYYY-MM") });
+        set({ month: format(newSelectionDate, "yyyy-MM") });
         if (
           !omitUpdatingParams &&
           (!get().isPlatform || get().allowUpdatingUrlParams)
         ) {
-          updateQueryParam("month", newSelection.format("YYYY-MM"));
+          updateQueryParam("month", format(newSelectionDate, "yyyy-MM"));
         }
       }
     },
@@ -510,20 +511,20 @@ export const createBookerStore = () =>
       set({ selectedDatesAndTimes });
     },
     addToSelectedDate: (days: number) => {
-      const currentSelection = dayjs(get().selectedDate);
-      let newSelection = currentSelection.add(days, "day");
+      const currentSelectionDate = get().selectedDate ? parseISO(get().selectedDate!) : new Date();
+      let newSelectionDate = addDays(currentSelectionDate, days);
 
       // If newSelection is before the current date, set it to today
-      if (newSelection.isBefore(dayjs(), "day")) {
-        newSelection = dayjs();
+      if (isBefore(newSelectionDate, startOfDay(new Date()))) {
+        newSelectionDate = new Date();
       }
 
-      const newSelectionFormatted = newSelection.format("YYYY-MM-DD");
+      const newSelectionFormatted = format(newSelectionDate, "yyyy-MM-dd");
 
-      if (newSelection.month() !== currentSelection.month()) {
-        set({ month: newSelection.format("YYYY-MM") });
+      if (getMonth(newSelectionDate) !== getMonth(currentSelectionDate)) {
+        set({ month: format(newSelectionDate, "yyyy-MM") });
         if (!get().isPlatform || get().allowUpdatingUrlParams) {
-          updateQueryParam("month", newSelection.format("YYYY-MM"));
+          updateQueryParam("month", format(newSelectionDate, "yyyy-MM"));
         }
       }
 
@@ -546,10 +547,10 @@ export const createBookerStore = () =>
     },
     month:
       getQueryParam("month") ||
-      (getQueryParam("date") && dayjs(getQueryParam("date")).isValid()
-        ? dayjs(getQueryParam("date")).format("YYYY-MM")
+      (getQueryParam("date") && isValid(parseISO(getQueryParam("date")!))
+        ? format(parseISO(getQueryParam("date")!), "yyyy-MM")
         : null) ||
-      dayjs().format("YYYY-MM"),
+      format(new Date(), "yyyy-MM"),
     setMonth: (month: string | null) => {
       if (!month) {
         removeQueryParam("month");
@@ -645,7 +646,7 @@ export const createBookerStore = () =>
         selectedDate:
           selectedDateInStore ||
           (["week_view", "column_view"].includes(layout)
-            ? dayjs().format("YYYY-MM-DD")
+            ? format(new Date(), "yyyy-MM-dd")
             : null),
         teamMemberEmail,
         crmOwnerRecordType,
@@ -674,8 +675,8 @@ export const createBookerStore = () =>
       if (month) set({ month });
 
       if (isInstantMeeting) {
-        const month = dayjs().format("YYYY-MM");
-        const selectedDate = dayjs().format("YYYY-MM-DD");
+        const month = format(new Date(), "yyyy-MM");
+        const selectedDate = format(new Date(), "yyyy-MM-dd");
         const selectedTimeslot = new Date().toISOString();
         set({
           month,

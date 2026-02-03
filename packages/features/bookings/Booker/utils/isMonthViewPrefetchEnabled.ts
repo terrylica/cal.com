@@ -1,10 +1,19 @@
-import dayjs from "@calcom/dayjs";
+import { addWeeks, isAfter, isValid, parseISO, startOfMonth } from "date-fns";
 
 export const isMonthViewPrefetchEnabled = (date: string, month: string | null) => {
-  const isValidDate = dayjs(date).isValid();
-  const twoWeeksAfter = dayjs(month).startOf("month").add(2, "week");
-  const isSameMonth = dayjs().isSame(dayjs(month), "month");
-  const isAfter2Weeks = dayjs().isAfter(twoWeeksAfter);
+  const parsedDate = parseISO(date);
+  const isValidDate = isValid(parsedDate);
+
+  if (!month) {
+    return false;
+  }
+
+  const monthDate = parseISO(month.length === 7 ? month + "-01" : month);
+  const twoWeeksAfter = addWeeks(startOfMonth(monthDate), 2);
+  const now = new Date();
+  const isSameMonth =
+    now.getFullYear() === monthDate.getFullYear() && now.getMonth() === monthDate.getMonth();
+  const isAfter2Weeks = isAfter(now, twoWeeksAfter);
 
   if (isAfter2Weeks && (!isValidDate || isSameMonth)) {
     return true;
