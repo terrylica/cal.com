@@ -321,7 +321,7 @@ function BookingListItem(booking: BookingItemProps) {
                   <div>
                     {(provider?.label ||
                       (typeof locationToDisplay === "string" && locationToDisplay?.startsWith("https://"))) &&
-                      locationToDisplay.startsWith("http") && (
+                      (locationToDisplay.startsWith("http://") || locationToDisplay.startsWith("https://")) && (
                         <a
                           href={locationToDisplay}
                           onClick={(e) => e.stopPropagation()}

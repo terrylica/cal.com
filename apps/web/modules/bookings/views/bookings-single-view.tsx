@@ -1180,7 +1180,7 @@ const DisplayLocation = ({
   providerName?: string;
   className?: string;
 }) =>
-  locationToDisplay.startsWith("http") ? (
+  locationToDisplay.startsWith("http://") || locationToDisplay.startsWith("https://") ? (
     <a
       href={locationToDisplay}
       target="_blank"

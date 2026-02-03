@@ -184,7 +184,7 @@ export const handleRescheduleEventManager = async ({
   });
 
   try {
-    if (bookingLocation?.startsWith("http")) {
+    if (bookingLocation?.startsWith("http://") || bookingLocation?.startsWith("https://")) {
       videoCallUrl = bookingLocation;
     }
 

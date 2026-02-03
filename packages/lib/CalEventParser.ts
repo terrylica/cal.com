@@ -642,7 +642,7 @@ export const getVideoCallUrlFromCalEvent = (calEvent: {
   if (calEvent.additionalInformation?.hangoutLink) {
     return calEvent.additionalInformation.hangoutLink;
   }
-  if (calEvent.location?.startsWith("http")) {
+  if (calEvent.location?.startsWith("http://") || calEvent.location?.startsWith("https://")) {
     return calEvent.location;
   }
   return "";

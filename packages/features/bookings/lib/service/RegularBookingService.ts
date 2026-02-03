@@ -2445,7 +2445,7 @@ async function handler(
     }
   }
 
-  if (booking.location?.startsWith("http")) {
+  if (booking.location?.startsWith("http://") || booking.location?.startsWith("https://")) {
     videoCallUrl = booking.location;
   }
 

@@ -66,7 +66,10 @@ export function useBookingLocation({
   }, [location]);
 
   const isLocationURL = useMemo(() => {
-    return typeof locationToDisplay === "string" && locationToDisplay.startsWith("http");
+    return (
+      typeof locationToDisplay === "string" &&
+      (locationToDisplay.startsWith("http://") || locationToDisplay.startsWith("https://"))
+    );
   }, [locationToDisplay]);
 
   return {
