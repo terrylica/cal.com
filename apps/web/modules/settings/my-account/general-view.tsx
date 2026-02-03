@@ -246,7 +246,6 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                       }}
                       items={localeOptions}>
                       <ComboboxTrigger
-                        className="flex-1"
                         render={
                           <CossButton className="w-full justify-between font-normal capitalize" variant="outline" />
                         }>
@@ -299,7 +298,6 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                               }}
                               items={formattedTimezones}>
                               <ComboboxTrigger
-                                className="flex-1"
                                 render={
                                   <CossButton className="w-full justify-between font-normal" variant="outline" />
                                 }>
