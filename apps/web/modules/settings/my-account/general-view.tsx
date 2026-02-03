@@ -18,6 +18,8 @@ import {
   ComboboxValue,
 } from "@coss/ui/components/combobox";
 import { Field, FieldLabel } from "@coss/ui/components/field";
+import { Fieldset, FieldsetLegend } from "@coss/ui/components/fieldset";
+import { Label as CossLabel } from "@coss/ui/components/label";
 import {
   Select as CossSelect,
   SelectItem,
@@ -228,98 +230,100 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
           }}
         >
           <div className="border-subtle border-x border-y-0 px-4 py-8 sm:px-6">
-            <Controller
-              name="locale"
-              render={({ field: { value, onChange } }) => (
-                <Field>
-                  <FieldLabel>{t("language")}</FieldLabel>
-                  <CossSelect
-                    aria-label={t("language")}
-                    value={value.value}
-                    onValueChange={(newValue) => {
-                      const selectedOption = localeOptions.find((opt) => opt.value === newValue);
-                      if (selectedOption) {
-                        onChange(selectedOption);
-                      }
-                    }}
-                    items={localeOptions}>
-                    <SelectTrigger className="w-full capitalize">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectPopup>
-                      {localeOptions.map(({ label, value: optValue }) => (
-                        <SelectItem key={optValue} value={optValue}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectPopup>
-                  </CossSelect>
-                </Field>
-              )}
-            />
-            <Controller
-              name="timeZone"
-              control={formMethods.control}
-              render={({ field: { value } }) => {
-                const currentTimezone = formattedTimezones.find((tz) => tz.value === value);
-                return (
-                  <Field className="mt-6">
-                    <FieldLabel>{t("timezone")}</FieldLabel>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                      <div className="w-full sm:w-1/2">
-                        <Combobox
-                          autoHighlight
-                          value={currentTimezone}
-                          onValueChange={(newValue) => {
-                            if (newValue) {
-                              formMethods.setValue("timeZone", newValue.value, {
-                                shouldDirty: true,
-                              });
-                            }
-                          }}
-                          items={formattedTimezones}>
-                          <ComboboxTrigger
-                            className="flex-1"
-                            render={
-                              <CossButton className="w-full justify-between font-normal" variant="outline" />
-                            }>
-                            <ComboboxValue />
-                            <ChevronsUpDownIcon className="-me-1!" />
-                          </ComboboxTrigger>
-                          <ComboboxPopup aria-label={t("timezone")}>
-                            <div className="border-b p-2">
-                              <ComboboxInput
-                                className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
-                                placeholder={t("search_timezone")}
-                                showTrigger={false}
-                                startAddon={<SearchIcon />}
-                              />
-                            </div>
-                            <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
-                            <ComboboxList>
-                              {(item: { label: string; value: string; numericOffset: number }) => (
-                                <ComboboxItem key={item.value} value={item}>
-                                  {item.label}
-                                </ComboboxItem>
-                              )}
-                            </ComboboxList>
-                          </ComboboxPopup>
-                        </Combobox>
-                      </div>
-                      {!watchedTzSchedules.length && (
-                        <CossButton
-                          className="w-full sm:w-1/2"
-                          variant="outline"
-                          onClick={() => setIsTZScheduleOpen(true)}>
-                          <CalendarIcon />
-                          <span>{t("schedule_timezone_change")}</span>
-                        </CossButton>
-                      )}
-                    </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <Controller
+                name="locale"
+                render={({ field: { value, onChange } }) => (
+                  <Field className="max-md:col-span-2">
+                    <FieldLabel>{t("language")}</FieldLabel>
+                    <CossSelect
+                      aria-label={t("language")}
+                      value={value.value}
+                      onValueChange={(newValue) => {
+                        const selectedOption = localeOptions.find((opt) => opt.value === newValue);
+                        if (selectedOption) {
+                          onChange(selectedOption);
+                        }
+                      }}
+                      items={localeOptions}>
+                      <SelectTrigger className="w-full capitalize">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {localeOptions.map(({ label, value: optValue }) => (
+                          <SelectItem key={optValue} value={optValue}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </CossSelect>
                   </Field>
-                );
-              }}
-            />
+                )}
+              />
+
+              <div className="col-span-2">
+                <Controller
+                  name="timeZone"
+                  control={formMethods.control}
+                  render={({ field: { value } }) => {
+                    const currentTimezone = formattedTimezones.find((tz) => tz.value === value);
+                    return (
+                      <Fieldset className="max-w-none gap-2">
+                        <CossLabel render={<FieldsetLegend />}>{t("timezone")}</CossLabel>
+                        <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                          <Field className="contents">
+                            <Combobox
+                              autoHighlight
+                              value={currentTimezone}
+                              onValueChange={(newValue) => {
+                                if (newValue) {
+                                  formMethods.setValue("timeZone", newValue.value, {
+                                    shouldDirty: true,
+                                  });
+                                }
+                              }}
+                              items={formattedTimezones}>
+                              <ComboboxTrigger
+                                className="flex-1"
+                                render={
+                                  <CossButton className="w-full justify-between font-normal" variant="outline" />
+                                }>
+                                <ComboboxValue />
+                                <ChevronsUpDownIcon className="-me-1!" />
+                              </ComboboxTrigger>
+                              <ComboboxPopup aria-label={t("timezone")}>
+                                <div className="border-b p-2">
+                                  <ComboboxInput
+                                    className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
+                                    placeholder={t("search_timezone")}
+                                    showTrigger={false}
+                                    startAddon={<SearchIcon />}
+                                  />
+                                </div>
+                                <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
+                                <ComboboxList>
+                                  {(item: { label: string; value: string; numericOffset: number }) => (
+                                    <ComboboxItem key={item.value} value={item}>
+                                      {item.label}
+                                    </ComboboxItem>
+                                  )}
+                                </ComboboxList>
+                              </ComboboxPopup>
+                            </Combobox>
+                          </Field>
+                          {!watchedTzSchedules.length && (
+                            <CossButton variant="outline" onClick={() => setIsTZScheduleOpen(true)}>
+                              <CalendarIcon />
+                              <span>{t("schedule_timezone_change")}</span>
+                            </CossButton>
+                          )}
+                        </div>
+                      </Fieldset>
+                    );
+                  }}
+                />
+              </div>
+            </div>
             {watchedTzSchedules.length > 0 && (
               <div className="bg-cal-muted border-subtle mt-2 rounded-md border p-4">
                 <Label>{t("travel_schedule")}</Label>
