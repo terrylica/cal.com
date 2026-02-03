@@ -1,10 +1,24 @@
+import { ChevronsUpDownIcon, SearchIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { UseFormSetValue } from "react-hook-form";
+
 import dayjs from "@calcom/dayjs";
 import { useTimePreferences } from "@calcom/features/bookings/lib/timePreferences";
-import { TimezoneSelect } from "@calcom/web/modules/timezone/components/TimezoneSelect";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { DatePicker, SettingsToggle } from "@calcom/ui/components/form";
 import { DatePickerWithRange as DateRangePicker } from "@calcom/ui/components/form/date-range-picker/DateRangePicker";
+
 import { Button } from "@coss/ui/components/button";
+import {
+  Combobox,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+  ComboboxTrigger,
+  ComboboxValue,
+} from "@coss/ui/components/combobox";
 import {
   Dialog,
   DialogClose,
@@ -17,8 +31,7 @@ import {
 } from "@coss/ui/components/dialog";
 import { Label } from "@coss/ui/components/label";
 import { useIsMobile } from "@coss/ui/hooks/use-mobile";
-import { useState } from "react";
-import type { UseFormSetValue } from "react-hook-form";
+
 import type { FormValues } from "~/settings/my-account/general-view";
 
 interface TravelScheduleModalProps {
@@ -27,6 +40,8 @@ interface TravelScheduleModalProps {
   setValue: UseFormSetValue<FormValues>;
   existingSchedules: FormValues["travelSchedules"];
 }
+
+const timezones = Intl.supportedValuesOf("timeZone");
 
 const TravelScheduleModal = ({
   open,
@@ -42,6 +57,34 @@ const TravelScheduleModal = ({
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   const [selectedTimeZone, setSelectedTimeZone] = useState(preferredTimezone);
+
+  const formattedTimezones = useMemo(() => {
+    return timezones
+      .map((timezone) => {
+        const formatter = new Intl.DateTimeFormat("en", {
+          timeZone: timezone,
+          timeZoneName: "shortOffset",
+        });
+        const parts = formatter.formatToParts(new Date());
+        const offset = parts.find((part) => part.type === "timeZoneName")?.value || "";
+        const modifiedOffset = offset === "GMT" ? "GMT+0" : offset;
+
+        const offsetMatch = offset.match(/GMT([+-]?)(\d+)(?::(\d+))?/);
+        const sign = offsetMatch?.[1] === "-" ? -1 : 1;
+        const hours = Number.parseInt(offsetMatch?.[2] || "0", 10);
+        const minutes = Number.parseInt(offsetMatch?.[3] || "0", 10);
+        const totalMinutes = sign * (hours * 60 + minutes);
+
+        return {
+          label: `(${modifiedOffset}) ${timezone.replace(/_/g, " ")}`,
+          numericOffset: totalMinutes,
+          value: timezone,
+        };
+      })
+      .sort((a, b) => a.numericOffset - b.numericOffset);
+  }, []);
+
+  const currentTimezone = formattedTimezones.find((tz) => tz.value === selectedTimeZone);
   const [isNoEndDate, setIsNoEndDate] = useState(false);
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -162,15 +205,39 @@ const TravelScheduleModal = ({
             </div>
 
             <Label className="mt-6">{t("timezone")}</Label>
-            <TimezoneSelect
-              id="timeZone"
-              value={selectedTimeZone}
-              onChange={({ value }) => setSelectedTimeZone(value)}
-              menuPortalTarget={typeof document === "undefined" ? undefined : document.body}
-              menuPlacement={isMobile ? "top" : "auto"}
-              styles={{ menuPortal: (base) => Object.assign({}, base, { zIndex: 9999 }) }}
-              className="mb-11 mt-2 w-full rounded-md text-sm"
-            />
+            <Combobox
+              autoHighlight
+              value={currentTimezone}
+              onValueChange={(newValue) => {
+                if (newValue) {
+                  setSelectedTimeZone(newValue.value);
+                }
+              }}
+              items={formattedTimezones}>
+              <ComboboxTrigger
+                render={<Button className="mt-2 w-full justify-between font-normal" variant="outline" />}>
+                <ComboboxValue />
+                <ChevronsUpDownIcon className="-me-1!" />
+              </ComboboxTrigger>
+              <ComboboxPopup aria-label={t("timezone")} sameWidth={{ match: "trigger" }}>
+                <div className="border-b p-2">
+                  <ComboboxInput
+                    className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
+                    placeholder={t("search_timezone")}
+                    showTrigger={false}
+                    startAddon={<SearchIcon />}
+                  />
+                </div>
+                <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
+                <ComboboxList>
+                  {(item: { label: string; value: string; numericOffset: number }) => (
+                    <ComboboxItem key={item.value} value={item}>
+                      {item.label}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxPopup>
+            </Combobox>
           </div>
         </DialogPanel>
         <DialogFooter>
