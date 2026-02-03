@@ -208,7 +208,26 @@
       }
     },
     {
-      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.e2e-spec.ts", "**/*.integration-test.ts"],
+      "includes": ["packages/lib/env.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noProcessEnv": "off"
+          },
+          "correctness": {
+            "noProcessGlobal": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.e2e-spec.ts",
+        "**/*.integration-test.ts"
+      ],
       "linter": {
         "rules": {
           "complexity": {
