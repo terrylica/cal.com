@@ -9,13 +9,11 @@ import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { withReporting } from "@calcom/lib/sentryWrapper";
 import { prisma } from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
-import type { App_RoutingForms_Form, User } from "@calcom/prisma/client";
+import type { App_RoutingForms_Form, Prisma, User } from "@calcom/prisma/client";
 import { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { RoutingFormSettings } from "@calcom/prisma/zod-utils";
 import type { Ensure } from "@calcom/types/utils";
-
-import type { FormResponse, SerializableForm, SerializableField, OrderedResponses } from "../types/types";
+import type { FormResponse, OrderedResponses, SerializableField, SerializableForm } from "../types/types";
 import getFieldIdentifier from "./getFieldIdentifier";
 
 const moduleLogger = logger.getSubLogger({ prefix: ["routing-forms/lib/formSubmissionUtils"] });
@@ -192,11 +190,14 @@ export async function _onFormSubmission(
       },
       rootData: {
         // Send responses unwrapped at root level for backwards compatibility
-        ...Object.entries(fieldResponsesByIdentifier).reduce((acc, [key, value]) => {
-          const normalizedKey = normalizeIdentifierForHandlebars(key);
-          acc[normalizedKey] = value.value;
-          return acc;
-        }, {} as Record<string, FormResponse[keyof FormResponse]["value"]>),
+        ...Object.entries(fieldResponsesByIdentifier).reduce(
+          (acc, [key, value]) => {
+            const normalizedKey = normalizeIdentifierForHandlebars(key);
+            acc[normalizedKey] = value.value;
+            return acc;
+          },
+          {} as Record<string, FormResponse[keyof FormResponse]["value"]>
+        ),
       },
     }).catch((e) => {
       console.error(`Error executing routing form webhook`, webhook, e);
@@ -279,6 +280,69 @@ export async function _onFormSubmission(
   }
 }
 export const onFormSubmission = withReporting(_onFormSubmission, "onFormSubmission");
+
+/**
+ * Triggers the ROUTING_FORM_FALLBACK_HIT webhook when a fallback route is hit
+ * This is called separately from onFormSubmission because the fallback action
+ * is determined after the form response is recorded
+ */
+export async function triggerFallbackWebhook({
+  form,
+  responseId,
+  response,
+  fallbackAction,
+}: {
+  form: {
+    id: string;
+    name: string;
+    teamId?: number | null;
+    user: { id: number };
+  };
+  responseId: number;
+  response: FormResponse;
+  fallbackAction: {
+    type: "customPageMessage" | "externalRedirectUrl" | "eventTypeRedirectUrl";
+    value: string;
+    eventTypeId?: number;
+  };
+}) {
+  const { userId, teamId } = getWebhookTargetEntity(form);
+  const orgId = await getOrgIdFromMemberOrTeamId({ memberId: userId, teamId });
+
+  const subscriberOptions = {
+    userId,
+    teamId,
+    orgId,
+    triggerEvent: WebhookTriggerEvents.ROUTING_FORM_FALLBACK_HIT,
+  };
+
+  const webhooks = await getWebhooks(subscriberOptions);
+
+  const promises = webhooks.map((webhook) =>
+    sendGenericWebhookPayload({
+      secretKey: webhook.secret,
+      triggerEvent: "ROUTING_FORM_FALLBACK_HIT",
+      createdAt: new Date().toISOString(),
+      webhook,
+      data: {
+        formId: form.id,
+        formName: form.name,
+        teamId: form.teamId,
+        responseId,
+        fallbackAction: {
+          type: fallbackAction.type,
+          value: fallbackAction.value,
+          ...(fallbackAction.eventTypeId ? { eventTypeId: fallbackAction.eventTypeId } : {}),
+        },
+        responses: response,
+      },
+    }).catch((e) => {
+      moduleLogger.error(`Error executing ROUTING_FORM_FALLBACK_HIT webhook`, webhook, e);
+    })
+  );
+
+  await Promise.all(promises);
+}
 
 export type TargetRoutingFormForResponse = SerializableForm<
   App_RoutingForms_Form & {

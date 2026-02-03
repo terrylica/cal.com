@@ -2,8 +2,10 @@ import routerGetCrmContactOwnerEmail from "@calcom/app-store/routing-forms/lib/c
 import {
   onSubmissionOfFormResponse,
   type TargetRoutingFormForResponse,
+  triggerFallbackWebhook,
 } from "@calcom/app-store/routing-forms/lib/formSubmissionUtils";
 import isRouter from "@calcom/app-store/routing-forms/lib/isRouter";
+import type { FormResponse } from "@calcom/app-store/routing-forms/types/types";
 import type { RoutingFormTraceService } from "@calcom/features/routing-trace/domains/RoutingFormTraceService";
 import type { RoutingTraceService } from "@calcom/features/routing-trace/services/RoutingTraceService";
 import { emailSchema } from "@calcom/lib/emailSchema";
@@ -263,6 +265,23 @@ const _handleResponse = async ({
       return null;
     };
 
+    const fallbackAction = getFallbackAction();
+
+    // Trigger fallback webhook if fallback action is being used
+    if (fallbackAction && dbFormResponse && !isPreview) {
+      await triggerFallbackWebhook({
+        form: {
+          id: form.id,
+          name: form.name,
+          teamId: form.teamId,
+          user: { id: form.user.id },
+        },
+        responseId: dbFormResponse.id,
+        response: response as FormResponse,
+        fallbackAction,
+      });
+    }
+
     return {
       isPreview: !!isPreview,
       formResponse: dbFormResponse,
@@ -279,7 +298,7 @@ const _handleResponse = async ({
         : null,
       checkedFallback,
       timeTaken,
-      fallbackAction: getFallbackAction(),
+      fallbackAction,
     };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
