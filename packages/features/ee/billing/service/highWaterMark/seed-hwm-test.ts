@@ -270,6 +270,15 @@ async function createStripeResourcesForTeam(
 async function cleanupDatabaseResources() {
   console.log("Cleaning up database test resources...");
 
+  // Delete test users (cascade will handle related records)
+  const testEmails = [HWM_TEAM_ADMIN_EMAIL, ...HWM_TEAM_MEMBER_EMAILS, HWM_ORG_ADMIN_EMAIL, ...HWM_ORG_MEMBER_EMAILS];
+  const deleteResult = await prisma.user.deleteMany({
+    where: { email: { in: testEmails } },
+  });
+  if (deleteResult.count > 0) {
+    console.log(`  Deleted ${deleteResult.count} test users`);
+  }
+
   // Clean up HWM test team
   const team = await prisma.team.findFirst({
     where: { slug: HWM_TEAM_SLUG, isOrganization: false },
@@ -280,7 +289,7 @@ async function cleanupDatabaseResources() {
     await prisma.teamBilling.deleteMany({ where: { teamId: team.id } });
     await prisma.membership.deleteMany({ where: { teamId: team.id } });
     await prisma.team.delete({ where: { id: team.id } });
-    console.log("  Deleted HWM test team");
+    console.log(`  Deleted HWM test team (ID: ${team.id})`);
   }
 
   // Clean up HWM test org
@@ -291,6 +300,7 @@ async function cleanupDatabaseResources() {
   if (org) {
     await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
     await prisma.organizationBilling.deleteMany({ where: { teamId: org.id } });
+    await prisma.organizationSettings.deleteMany({ where: { organizationId: org.id } });
 
     // Delete child teams
     const childTeams = await prisma.team.findMany({ where: { parentId: org.id } });
@@ -301,23 +311,7 @@ async function cleanupDatabaseResources() {
 
     await prisma.membership.deleteMany({ where: { teamId: org.id } });
     await prisma.team.delete({ where: { id: org.id } });
-    console.log("  Deleted HWM test org");
-  }
-
-  // Delete test users
-  const testEmails = [HWM_TEAM_ADMIN_EMAIL, ...HWM_TEAM_MEMBER_EMAILS, HWM_ORG_ADMIN_EMAIL, ...HWM_ORG_MEMBER_EMAILS];
-  for (const email of testEmails) {
-    try {
-      const user = await prisma.user.findUnique({ where: { email } });
-      if (user) {
-        await prisma.password.deleteMany({ where: { userId: user.id } });
-        await prisma.membership.deleteMany({ where: { userId: user.id } });
-        await prisma.profile.deleteMany({ where: { userId: user.id } });
-        await prisma.user.delete({ where: { id: user.id } });
-      }
-    } catch {
-      // Ignore errors
-    }
+    console.log(`  Deleted HWM test org (ID: ${org.id})`);
   }
 
   console.log("  Database cleanup complete");
