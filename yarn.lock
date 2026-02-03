@@ -960,6 +960,51 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@axiomhq/js@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "@axiomhq/js@npm:1.4.0"
+  dependencies:
+    fetch-retry: "npm:^6.0.0"
+  checksum: 10/3643bb45f8aaebc3ade15ba9e0443b4b696b81aed765571bb75c3701a8c2fc8f085cc56bfb46f720fe746949a62e5d590823f59c05669101ea6e5290023366e3
+  languageName: node
+  linkType: hard
+
+"@axiomhq/logging@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@axiomhq/logging@npm:0.2.0"
+  peerDependencies:
+    "@axiomhq/js": 1.4.0
+  peerDependenciesMeta:
+    "@axiomhq/js":
+      optional: true
+  checksum: 10/0322bb807aa677e99a1de1e5cdc6386c4e6968dd5f27f10410a5d4ce73d144a8ff215d76ec15694d68c0b81a47ab80b034bfd7b4cd8a15962493ae194110291a
+  languageName: node
+  linkType: hard
+
+"@axiomhq/nextjs@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@axiomhq/nextjs@npm:0.2.0"
+  peerDependencies:
+    "@axiomhq/logging": 0.2.0
+    next: ">=13"
+  checksum: 10/12effcc85307431db56a5d27ca06d576b24fd743b66a4a862587fecc590b4bc4d3c1d7790429726a732f41b29b2e793cce428a67a87d66886deada8c0dd1a31e
+  languageName: node
+  linkType: hard
+
+"@axiomhq/react@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@axiomhq/react@npm:0.2.0"
+  dependencies:
+    use-deep-compare: "npm:^1.3.0"
+    web-vitals: "npm:^4.2.4"
+  peerDependencies:
+    "@axiomhq/logging": 0.2.0
+    react: ^18 || ^19
+    react-dom: ^18 || ^19
+  checksum: 10/f7660d37b2623c9ac3e1c9d0c93e000a2f08835c1cca5cc0166d5cca4fb02df9986639c63dc470267c5ad78e3c144575cb397c245f84f4372142eb0c23bf9858
+  languageName: node
+  linkType: hard
+
 "@axiomhq/winston@npm:1.2.0":
   version: 1.2.0
   resolution: "@axiomhq/winston@npm:1.2.0"
@@ -2020,6 +2065,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@calcom/api@workspace:apps/api/v1"
   dependencies:
+    "@axiomhq/js": "npm:^1.4.0"
+    "@axiomhq/logging": "npm:^0.2.0"
+    "@axiomhq/nextjs": "npm:^0.2.0"
     "@calcom/app-store": "workspace:*"
     "@calcom/dayjs": "workspace:*"
     "@calcom/emails": "workspace:*"
@@ -2036,7 +2084,6 @@ __metadata:
     memory-cache: "npm:0.2.0"
     next: "npm:16.1.5"
     next-api-middleware: "npm:1.0.1"
-    next-axiom: "npm:0.17.0"
     next-swagger-doc: "npm:0.3.6"
     next-validations: "npm:0.2.1"
     node-mocks-http: "npm:1.16.2"
@@ -3489,6 +3536,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@calcom/web@workspace:apps/web"
   dependencies:
+    "@axiomhq/js": "npm:^1.4.0"
+    "@axiomhq/logging": "npm:^0.2.0"
+    "@axiomhq/nextjs": "npm:^0.2.0"
+    "@axiomhq/react": "npm:^0.2.0"
     "@babel/core": "npm:7.26.10"
     "@biomejs/biome": "npm:2.3.10"
     "@boxyhq/saml-jackson": "npm:1.52.2"
@@ -3606,7 +3657,6 @@ __metadata:
     module-alias: "npm:2.2.2"
     next: "npm:16.1.5"
     next-auth: "npm:4.24.13"
-    next-axiom: "npm:0.17.0"
     next-i18next: "npm:15.4.2"
     next-seo: "npm:6.1.0"
     next-themes: "npm:0.2.0"
@@ -21096,7 +21146,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dequal@npm:^2.0.0, dequal@npm:^2.0.3":
+"dequal@npm:2.0.3, dequal@npm:^2.0.0, dequal@npm:^2.0.3":
   version: 2.0.3
   resolution: "dequal@npm:2.0.3"
   checksum: 10/6ff05a7561f33603df87c45e389c9ac0a95e3c056be3da1a0c4702149e3a7f6fe5ffbb294478687ba51a9e95f3a60e8b6b9005993acd79c292c7d15f71964b6b
@@ -30202,17 +30252,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next-axiom@npm:0.17.0":
-  version: 0.17.0
-  resolution: "next-axiom@npm:0.17.0"
-  dependencies:
-    whatwg-fetch: "npm:^3.6.2"
-  peerDependencies:
-    next: ^12.1.4 || ^13
-  checksum: 10/0edd16dcbaefb85c5acb596013f3ca5eea29437e399bf0d00e757fdf27507d87e4c372da08f0cda6704b83197cb9b25ceb3c1b3d01fcadc9b775d750f85e8890
-  languageName: node
-  linkType: hard
-
 "next-i18next@npm:15.4.2":
   version: 15.4.2
   resolution: "next-i18next@npm:15.4.2"
@@ -38764,6 +38803,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"use-deep-compare@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "use-deep-compare@npm:1.3.0"
+  dependencies:
+    dequal: "npm:2.0.3"
+  peerDependencies:
+    react: ">=16.8.0"
+  checksum: 10/4412c771a195729b7ec1b1e885141b097001adfce1e206d26b70f379ffd7dcaf5eeefec66bf82dfbcbcefe61cacbd1d5b6749b56e48987d46c330853b9e457eb
+  languageName: node
+  linkType: hard
+
 "use-isomorphic-layout-effect@npm:^1.1.2":
   version: 1.1.2
   resolution: "use-isomorphic-layout-effect@npm:1.1.2"
@@ -39447,7 +39497,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"whatwg-fetch@npm:^3.4.1, whatwg-fetch@npm:^3.6.2":
+"whatwg-fetch@npm:^3.4.1":
   version: 3.6.20
   resolution: "whatwg-fetch@npm:3.6.20"
   checksum: 10/2b4ed92acd6a7ad4f626a6cb18b14ec982bbcaf1093e6fe903b131a9c6decd14d7f9c9ca3532663c2759d1bdf01d004c77a0adfb2716a5105465c20755a8c57c

@@ -2,7 +2,6 @@ import { withBotId } from "botid/next/config";
 import { config as dotenvConfig } from "dotenv";
 import type { NextConfig } from "next";
 import type { RouteHas } from "next/dist/lib/load-custom-routes";
-import { withAxiom } from "next-axiom";
 import i18nConfig from "./next-i18next.config";
 import packageJson from "./package.json";
 import {
@@ -136,8 +135,6 @@ if (process.env.ANALYZE === "true") {
   });
   plugins.push(withBundleAnalyzer);
 }
-
-plugins.push(withAxiom);
 
 if (process.env.NEXT_PUBLIC_VERCEL_USE_BOTID_IN_BOOKER === "1") {
   plugins.push(withBotId);

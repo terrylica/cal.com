@@ -25,6 +25,9 @@
     "typescript": "5.9.3"
   },
   "dependencies": {
+    "@axiomhq/js": "^1.4.0",
+    "@axiomhq/logging": "^0.2.0",
+    "@axiomhq/nextjs": "^0.2.0",
     "@calcom/app-store": "workspace:*",
     "@calcom/dayjs": "workspace:*",
     "@calcom/emails": "workspace:*",
@@ -38,7 +41,6 @@
     "memory-cache": "0.2.0",
     "next": "16.1.5",
     "next-api-middleware": "1.0.1",
-    "next-axiom": "0.17.0",
     "next-swagger-doc": "0.3.6",
     "next-validations": "0.2.1",
     "tzdata": "1.0.40",
