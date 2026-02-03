@@ -254,6 +254,7 @@ const _getRoutedUrl = async (context: Pick<GetServerSidePropsContext, "query" | 
             crmContactOwnerEmail,
             crmContactOwnerRecordType,
             crmAppSlug,
+            crmLookupDone: fetchCrm,
             teamId: form?.teamId,
             orgId: form.team?.parentId,
           }),
