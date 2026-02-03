@@ -612,7 +612,7 @@ const Route = ({
           <div className="border-subtle rounded-lg border p-1">
             <Icon name="blocks" className="text-subtle h-4 w-4" />
           </div>
-          <span className="text-emphasis ml-2 text-sm font-medium">Fallback</span>
+          <span className="text-emphasis ml-2 text-sm font-medium">{t("fallback_action")}</span>
         </div>
         <div className="bg-cal-muted mt-2 rounded-xl p-2">
           <div className="mb-2 ml-2 flex items-center gap-0.5">
