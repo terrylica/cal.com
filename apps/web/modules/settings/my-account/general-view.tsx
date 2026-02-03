@@ -223,7 +223,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
       description={t("general_description")}
       borderInShellHeader={true}
     >
-      <div>
+      <div className="flex flex-col gap-4">
         <Form
           form={formMethods}
           handleSubmit={async (values) => {
@@ -482,7 +482,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
           </SectionBottomActions>
         </Form>
 
-        <Card className="mt-6">
+        <Card>
           <CardPanel>
             <div className="flex items-center justify-between gap-4">
               <CardFrameHeader className="gap-0 p-0!">
@@ -501,7 +501,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
           </CardPanel>
         </Card>
 
-        <Card className="mt-6" data-testid="my-seo-indexing-switch">
+        <Card data-testid="my-seo-indexing-switch">
           <CardPanel>
             <div className="flex items-center justify-between gap-4">
               <CardFrameHeader className="gap-0 p-0!">
@@ -520,7 +520,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
           </CardPanel>
         </Card>
 
-        <Card className="mt-6">
+        <Card>
           <CardPanel>
             <div className="flex items-center justify-between gap-4">
               <CardFrameHeader className="gap-0 p-0!">
@@ -539,7 +539,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
           </CardPanel>
         </Card>
 
-        <Card className="mt-6">
+        <Card>
           <CardPanel>
             <div className="flex items-center justify-between gap-4">
               <CardFrameHeader className="gap-0 p-0!">
