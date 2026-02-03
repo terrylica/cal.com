@@ -532,5 +532,64 @@ describe("handleResponse", () => {
       // fallbackAction should be null because we only trigger it when teamMembersMatchingAttributeLogic is an empty array
       expect(result.fallbackAction).toBeNull();
     });
+
+    it("should return null fallbackAction when no team members found but CRM contact owner exists", async () => {
+      const fallbackAction = {
+        type: "externalRedirectUrl" as const,
+        value: "https://example.com/fallback",
+      };
+      const chosenRoute = {
+        id: "route1",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        queryValue: { type: "group", children1: {} } as any,
+        action: {
+          type: "eventTypeRedirectUrl" as const,
+          value: "team/30min",
+        },
+        attributeRoutingConfig: null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        attributesQueryValue: { type: "group", children1: {} } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        fallbackAttributesQueryValue: { type: "group", children1: {} } as any,
+        fallbackAction,
+        isFallback: false,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formWithRoute: TargetRoutingFormForResponse = { ...mockForm, routes: [chosenRoute as any] };
+
+      vi.mocked(findTeamMembersMatchingAttributeLogic).mockResolvedValue({
+        teamMembersMatchingAttributeLogic: [], // Empty array = no users found
+        checkedFallback: false,
+        fallbackAttributeLogicBuildingWarnings: [],
+        mainAttributeLogicBuildingWarnings: [],
+        timeTaken: {},
+      });
+
+      // Mock CRM contact owner found
+      vi.mocked(routerGetCrmContactOwnerEmail).mockResolvedValue({
+        email: "crm-owner@example.com",
+        recordType: "contact",
+        crmAppSlug: "hubspot",
+        recordId: "123",
+      });
+
+      const result = await handleResponse({
+        response: mockResponse,
+        form: formWithRoute,
+        formFillerId: "user1",
+        chosenRouteId: "route1",
+        isPreview: true,
+        fetchCrm: true,
+        identifierKeyedResponse: {
+          name: "John Doe",
+          email: "john.doe@example.com",
+        },
+      });
+
+      expect(result.teamMembersMatchingAttributeLogic).toEqual([]);
+      expect(result.crmContactOwnerEmail).toEqual("crm-owner@example.com");
+      // fallbackAction should be null because CRM contact owner was found
+      expect(result.fallbackAction).toBeNull();
+    });
   });
 });
