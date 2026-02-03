@@ -395,7 +395,7 @@ const RouteActionSelector = ({
             };
 
             if (newAction.type === "customPageMessage") {
-              newAction.value = "We are not ready for you yet :(";
+              newAction.value = t("default_custom_page_message");
             } else {
               newAction.value = "";
             }
