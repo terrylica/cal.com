@@ -38,7 +38,6 @@ import {
   CardPanel,
 } from "@coss/ui/components/card";
 
-import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { formatLocalizedDateTime } from "@calcom/lib/dayjs";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localeOptions } from "@calcom/lib/i18n";
@@ -49,7 +48,6 @@ import classNames from "@calcom/ui/classNames";
 import { Button } from "@calcom/ui/components/button";
 import { Form } from "@calcom/ui/components/form";
 import { Label } from "@calcom/ui/components/form";
-import { Select } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { revalidateTravelSchedules } from "@calcom/web/app/cache/travelSchedule";
 
@@ -219,362 +217,356 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
   const watchedTzSchedules = formMethods.watch("travelSchedules");
 
   return (
-    <SettingsHeader
-      title={t("general")}
-      description={t("general_description")}
-      borderInShellHeader={true}
-    >
-      <div className="flex flex-col gap-4">
-        <Form
-          form={formMethods}
-          handleSubmit={async (values) => {
-            setIsUpdateBtnLoading(true);
-            mutation.mutate({
-              ...values,
-              locale: values.locale.value,
-              timeFormat: values.timeFormat.value,
-              weekStart: values.weekStart.value,
-            });
-          }}
-        >
-          <CardFrame>
-            <CardFrameHeader>
-              <CardFrameTitle>{t("general")}</CardFrameTitle>
-              <CardFrameDescription>{t("general_description")}</CardFrameDescription>
-            </CardFrameHeader>
+    <div className="flex flex-col gap-4">
+      <Form
+        form={formMethods}
+        handleSubmit={async (values) => {
+          setIsUpdateBtnLoading(true);
+          mutation.mutate({
+            ...values,
+            locale: values.locale.value,
+            timeFormat: values.timeFormat.value,
+            weekStart: values.weekStart.value,
+          });
+        }}
+      >
+        <CardFrame>
+          <CardFrameHeader>
+            <CardFrameTitle>{t("general")}</CardFrameTitle>
+            <CardFrameDescription>{t("general_description")}</CardFrameDescription>
+          </CardFrameHeader>
 
-            <Card className="rounded-b-none!">
-              <CardPanel className="py-6">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <Card className="rounded-b-none!">
+            <CardPanel className="py-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Controller
+              name="locale"
+              render={({ field: { value, onChange } }) => (
+                <Field className="max-md:col-span-2">
+                  <FieldLabel>{t("language")}</FieldLabel>
+                  <Combobox
+                    autoHighlight
+                    value={value}
+                    onValueChange={(newValue) => {
+                      if (newValue) {
+                        onChange(newValue);
+                      }
+                    }}
+                    items={localeOptions}>
+                    <ComboboxTrigger
+                      render={
+                        <CossButton className="w-full justify-between font-normal capitalize" variant="outline" />
+                      }>
+                      <ComboboxValue />
+                      <ChevronsUpDownIcon className="-me-1!" />
+                    </ComboboxTrigger>
+                    <ComboboxPopup aria-label={t("language")}>
+                      <div className="border-b p-2">
+                        <ComboboxInput
+                          className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
+                          placeholder={t("search")}
+                          showTrigger={false}
+                          startAddon={<SearchIcon />}
+                        />
+                      </div>
+                      <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
+                      <ComboboxList>
+                        {(item: { label: string; value: string }) => (
+                          <ComboboxItem className="capitalize" key={item.value} value={item}>
+                            {item.label}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxPopup>
+                  </Combobox>
+                </Field>
+              )}
+            />
+
+            <div className="col-span-2">
               <Controller
-                name="locale"
-                render={({ field: { value, onChange } }) => (
-                  <Field className="max-md:col-span-2">
-                    <FieldLabel>{t("language")}</FieldLabel>
-                    <Combobox
-                      autoHighlight
-                      value={value}
+                name="timeZone"
+                control={formMethods.control}
+                render={({ field: { value } }) => {
+                  const currentTimezone = formattedTimezones.find((tz) => tz.value === value);
+                  return (
+                    <Fieldset className="max-w-none gap-2">
+                      <CossLabel render={<FieldsetLegend />}>{t("timezone")}</CossLabel>
+                      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+                        <Field className="contents">
+                          <Combobox
+                            autoHighlight
+                            value={currentTimezone}
+                            onValueChange={(newValue) => {
+                              if (newValue) {
+                                formMethods.setValue("timeZone", newValue.value, {
+                                  shouldDirty: true,
+                                });
+                              }
+                            }}
+                            items={formattedTimezones}>
+                            <ComboboxTrigger
+                              render={
+                                <CossButton className="w-full justify-between font-normal" variant="outline" />
+                              }>
+                              <ComboboxValue />
+                              <ChevronsUpDownIcon className="-me-1!" />
+                            </ComboboxTrigger>
+                            <ComboboxPopup aria-label={t("timezone")}>
+                              <div className="border-b p-2">
+                                <ComboboxInput
+                                  className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
+                                  placeholder={t("search_timezone")}
+                                  showTrigger={false}
+                                  startAddon={<SearchIcon />}
+                                />
+                              </div>
+                              <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
+                              <ComboboxList>
+                                {(item: { label: string; value: string; numericOffset: number }) => (
+                                  <ComboboxItem key={item.value} value={item}>
+                                    {item.label}
+                                  </ComboboxItem>
+                                )}
+                              </ComboboxList>
+                            </ComboboxPopup>
+                          </Combobox>
+                        </Field>
+                        {!watchedTzSchedules.length && (
+                          <CossButton variant="outline" onClick={() => setIsTZScheduleOpen(true)}>
+                            <CalendarIcon />
+                            <span>{t("schedule_timezone_change")}</span>
+                          </CossButton>
+                        )}
+                      </div>
+                    </Fieldset>
+                  );
+                }}
+              />
+            </div>
+
+            <div className="col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Controller
+                name="timeFormat"
+                control={formMethods.control}
+                render={({ field: { value } }) => (
+                  <Field>
+                    <FieldLabel>{t("time_format")}</FieldLabel>
+                    <CossSelect
+                      aria-label={t("time_format")}
+                      value={String(value.value)}
                       onValueChange={(newValue) => {
-                        if (newValue) {
-                          onChange(newValue);
+                        const selectedOption = timeFormatOptions.find(
+                          (opt) => String(opt.value) === newValue
+                        );
+                        if (selectedOption) {
+                          formMethods.setValue("timeFormat", selectedOption, {
+                            shouldDirty: true,
+                          });
                         }
-                      }}
-                      items={localeOptions}>
-                      <ComboboxTrigger
-                        render={
-                          <CossButton className="w-full justify-between font-normal capitalize" variant="outline" />
-                        }>
-                        <ComboboxValue />
-                        <ChevronsUpDownIcon className="-me-1!" />
-                      </ComboboxTrigger>
-                      <ComboboxPopup aria-label={t("language")}>
-                        <div className="border-b p-2">
-                          <ComboboxInput
-                            className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
-                            placeholder={t("search")}
-                            showTrigger={false}
-                            startAddon={<SearchIcon />}
-                          />
-                        </div>
-                        <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
-                        <ComboboxList>
-                          {(item: { label: string; value: string }) => (
-                            <ComboboxItem className="capitalize" key={item.value} value={item}>
-                              {item.label}
-                            </ComboboxItem>
-                          )}
-                        </ComboboxList>
-                      </ComboboxPopup>
-                    </Combobox>
+                      }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {timeFormatOptions.map(({ label, value: optValue }) => (
+                          <SelectItem key={optValue} value={String(optValue)}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </CossSelect>
+                    <FieldDescription>{t("timeformat_profile_hint")}</FieldDescription>
                   </Field>
                 )}
               />
-
-              <div className="col-span-2">
-                <Controller
-                  name="timeZone"
-                  control={formMethods.control}
-                  render={({ field: { value } }) => {
-                    const currentTimezone = formattedTimezones.find((tz) => tz.value === value);
-                    return (
-                      <Fieldset className="max-w-none gap-2">
-                        <CossLabel render={<FieldsetLegend />}>{t("timezone")}</CossLabel>
-                        <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-                          <Field className="contents">
-                            <Combobox
-                              autoHighlight
-                              value={currentTimezone}
-                              onValueChange={(newValue) => {
-                                if (newValue) {
-                                  formMethods.setValue("timeZone", newValue.value, {
-                                    shouldDirty: true,
-                                  });
-                                }
-                              }}
-                              items={formattedTimezones}>
-                              <ComboboxTrigger
-                                render={
-                                  <CossButton className="w-full justify-between font-normal" variant="outline" />
-                                }>
-                                <ComboboxValue />
-                                <ChevronsUpDownIcon className="-me-1!" />
-                              </ComboboxTrigger>
-                              <ComboboxPopup aria-label={t("timezone")}>
-                                <div className="border-b p-2">
-                                  <ComboboxInput
-                                    className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
-                                    placeholder={t("search_timezone")}
-                                    showTrigger={false}
-                                    startAddon={<SearchIcon />}
-                                  />
-                                </div>
-                                <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
-                                <ComboboxList>
-                                  {(item: { label: string; value: string; numericOffset: number }) => (
-                                    <ComboboxItem key={item.value} value={item}>
-                                      {item.label}
-                                    </ComboboxItem>
-                                  )}
-                                </ComboboxList>
-                              </ComboboxPopup>
-                            </Combobox>
-                          </Field>
-                          {!watchedTzSchedules.length && (
-                            <CossButton variant="outline" onClick={() => setIsTZScheduleOpen(true)}>
-                              <CalendarIcon />
-                              <span>{t("schedule_timezone_change")}</span>
-                            </CossButton>
-                          )}
-                        </div>
-                      </Fieldset>
-                    );
-                  }}
-                />
-              </div>
-
-              <div className="col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Controller
-                  name="timeFormat"
-                  control={formMethods.control}
-                  render={({ field: { value } }) => (
-                    <Field>
-                      <FieldLabel>{t("time_format")}</FieldLabel>
-                      <CossSelect
-                        aria-label={t("time_format")}
-                        value={String(value.value)}
-                        onValueChange={(newValue) => {
-                          const selectedOption = timeFormatOptions.find(
-                            (opt) => String(opt.value) === newValue
-                          );
-                          if (selectedOption) {
-                            formMethods.setValue("timeFormat", selectedOption, {
-                              shouldDirty: true,
-                            });
-                          }
-                        }}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectPopup>
-                          {timeFormatOptions.map(({ label, value: optValue }) => (
-                            <SelectItem key={optValue} value={String(optValue)}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectPopup>
-                      </CossSelect>
-                      <FieldDescription>{t("timeformat_profile_hint")}</FieldDescription>
-                    </Field>
-                  )}
-                />
-                <Controller
-                  name="weekStart"
-                  control={formMethods.control}
-                  render={({ field: { value } }) => (
-                    <Field>
-                      <FieldLabel>{t("start_of_week")}</FieldLabel>
-                      <CossSelect
-                        aria-label={t("start_of_week")}
-                        value={value.value}
-                        onValueChange={(newValue) => {
-                          const selectedOption = weekStartOptions.find((opt) => opt.value === newValue);
-                          if (selectedOption) {
-                            formMethods.setValue("weekStart", selectedOption, {
-                              shouldDirty: true,
-                            });
-                          }
-                        }}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectPopup>
-                          {weekStartOptions.map(({ label, value: optValue }) => (
-                            <SelectItem key={optValue} value={optValue}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectPopup>
-                      </CossSelect>
-                    </Field>
-                  )}
-                />
-              </div>
-                </div>
-                {watchedTzSchedules.length > 0 && (
-                  <div className="bg-cal-muted border-subtle mt-2 rounded-md border p-4">
-                    <Label>{t("travel_schedule")}</Label>
-                    <div className="border-subtle bg-default mt-4 rounded-md border text-sm">
-                      {watchedTzSchedules.map((schedule, index) => {
-                        return (
-                          <div
-                            className={classNames(
-                              "flex items-center p-4",
-                              index !== 0 ? "border-subtle border-t" : ""
-                            )}
-                            key={index}
-                          >
-                            <div>
-                              <div className="text-emphasis font-semibold">{`${formatLocalizedDateTime(
-                                schedule.startDate,
-                                { day: "numeric", month: "long" },
-                                language
-                              )} ${
-                                schedule.endDate
-                                  ? `- ${formatLocalizedDateTime(
-                                      schedule.endDate,
-                                      { day: "numeric", month: "long" },
-                                      language
-                                    )}`
-                                  : ``
-                              }`}</div>
-                              <div className="text-subtle">
-                                {schedule.timeZone.replace(/_/g, " ")}
-                              </div>
-                            </div>
-                            <Button
-                              color="destructive"
-                              className="ml-auto"
-                              variant="icon"
-                              StartIcon="trash-2"
-                              onClick={() => {
-                                const updatedSchedules = watchedTzSchedules.filter(
-                                  (s, filterIndex) => filterIndex !== index
-                                );
-                                formMethods.setValue(
-                                  "travelSchedules",
-                                  updatedSchedules,
-                                  { shouldDirty: true }
-                                );
-                              }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <Button
-                      StartIcon="plus"
-                      color="secondary"
-                      className="mt-4"
-                      onClick={() => setIsTZScheduleOpen(true)}
-                    >
-                      {t("add")}
-                    </Button>
-                  </div>
+              <Controller
+                name="weekStart"
+                control={formMethods.control}
+                render={({ field: { value } }) => (
+                  <Field>
+                    <FieldLabel>{t("start_of_week")}</FieldLabel>
+                    <CossSelect
+                      aria-label={t("start_of_week")}
+                      value={value.value}
+                      onValueChange={(newValue) => {
+                        const selectedOption = weekStartOptions.find((opt) => opt.value === newValue);
+                        if (selectedOption) {
+                          formMethods.setValue("weekStart", selectedOption, {
+                            shouldDirty: true,
+                          });
+                        }
+                      }}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {weekStartOptions.map(({ label, value: optValue }) => (
+                          <SelectItem key={optValue} value={optValue}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </CossSelect>
+                  </Field>
                 )}
-              </CardPanel>
-            </Card>
-
-            <CardFrameFooter className="flex justify-end">
-              <CossButton type="submit" disabled={isDisabled || isUpdateBtnLoading} data-testid="general-submit-button">
-                {t("update")}
-              </CossButton>
-            </CardFrameFooter>
-          </CardFrame>
-        </Form>
-
-        <Card>
-          <CardPanel>
-            <div className="flex items-center justify-between gap-4">
-              <CardFrameHeader className="gap-0 p-0!">
-                <CardFrameTitle>{t("dynamic_booking")}</CardFrameTitle>
-                <CardFrameDescription>{t("allow_dynamic_booking")}</CardFrameDescription>
-              </CardFrameHeader>
-              <Switch
-                disabled={mutation.isPending}
-                checked={isAllowDynamicBookingChecked}
-                onCheckedChange={(checked) => {
-                  setIsAllowDynamicBookingChecked(checked);
-                  mutation.mutate({ allowDynamicBooking: checked });
-                }}
               />
             </div>
-          </CardPanel>
-        </Card>
+              </div>
+              {watchedTzSchedules.length > 0 && (
+                <div className="bg-cal-muted border-subtle mt-2 rounded-md border p-4">
+                  <Label>{t("travel_schedule")}</Label>
+                  <div className="border-subtle bg-default mt-4 rounded-md border text-sm">
+                    {watchedTzSchedules.map((schedule, index) => {
+                      return (
+                        <div
+                          className={classNames(
+                            "flex items-center p-4",
+                            index !== 0 ? "border-subtle border-t" : ""
+                          )}
+                          key={index}
+                        >
+                          <div>
+                            <div className="text-emphasis font-semibold">{`${formatLocalizedDateTime(
+                              schedule.startDate,
+                              { day: "numeric", month: "long" },
+                              language
+                            )} ${
+                              schedule.endDate
+                                ? `- ${formatLocalizedDateTime(
+                                    schedule.endDate,
+                                    { day: "numeric", month: "long" },
+                                    language
+                                  )}`
+                                : ``
+                            }`}</div>
+                            <div className="text-subtle">
+                              {schedule.timeZone.replace(/_/g, " ")}
+                            </div>
+                          </div>
+                          <Button
+                            color="destructive"
+                            className="ml-auto"
+                            variant="icon"
+                            StartIcon="trash-2"
+                            onClick={() => {
+                              const updatedSchedules = watchedTzSchedules.filter(
+                                (s, filterIndex) => filterIndex !== index
+                              );
+                              formMethods.setValue(
+                                "travelSchedules",
+                                updatedSchedules,
+                                { shouldDirty: true }
+                              );
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    StartIcon="plus"
+                    color="secondary"
+                    className="mt-4"
+                    onClick={() => setIsTZScheduleOpen(true)}
+                  >
+                    {t("add")}
+                  </Button>
+                </div>
+              )}
+            </CardPanel>
+          </Card>
 
-        <Card data-testid="my-seo-indexing-switch">
-          <CardPanel>
-            <div className="flex items-center justify-between gap-4">
-              <CardFrameHeader className="gap-0 p-0!">
-                <CardFrameTitle>{t("seo_indexing")}</CardFrameTitle>
-                <CardFrameDescription>{t("allow_seo_indexing")}</CardFrameDescription>
-              </CardFrameHeader>
-              <Switch
-                disabled={mutation.isPending || user.organizationSettings?.allowSEOIndexing === false}
-                checked={isAllowSEOIndexingChecked}
-                onCheckedChange={(checked) => {
-                  setIsAllowSEOIndexingChecked(checked);
-                  mutation.mutate({ allowSEOIndexing: checked });
-                }}
-              />
-            </div>
-          </CardPanel>
-        </Card>
+          <CardFrameFooter className="flex justify-end">
+            <CossButton type="submit" disabled={isDisabled || isUpdateBtnLoading} data-testid="general-submit-button">
+              {t("update")}
+            </CossButton>
+          </CardFrameFooter>
+        </CardFrame>
+      </Form>
 
-        <Card>
-          <CardPanel>
-            <div className="flex items-center justify-between gap-4">
-              <CardFrameHeader className="gap-0 p-0!">
-                <CardFrameTitle>{t("monthly_digest_email")}</CardFrameTitle>
-                <CardFrameDescription>{t("monthly_digest_email_for_teams")}</CardFrameDescription>
-              </CardFrameHeader>
-              <Switch
-                disabled={mutation.isPending}
-                checked={isReceiveMonthlyDigestEmailChecked}
-                onCheckedChange={(checked) => {
-                  setIsReceiveMonthlyDigestEmailChecked(checked);
-                  mutation.mutate({ receiveMonthlyDigestEmail: checked });
-                }}
-              />
-            </div>
-          </CardPanel>
-        </Card>
+      <Card>
+        <CardPanel>
+          <div className="flex items-center justify-between gap-4">
+            <CardFrameHeader className="gap-0 p-0!">
+              <CardFrameTitle>{t("dynamic_booking")}</CardFrameTitle>
+              <CardFrameDescription>{t("allow_dynamic_booking")}</CardFrameDescription>
+            </CardFrameHeader>
+            <Switch
+              disabled={mutation.isPending}
+              checked={isAllowDynamicBookingChecked}
+              onCheckedChange={(checked) => {
+                setIsAllowDynamicBookingChecked(checked);
+                mutation.mutate({ allowDynamicBooking: checked });
+              }}
+            />
+          </div>
+        </CardPanel>
+      </Card>
 
-        <Card>
-          <CardPanel>
-            <div className="flex items-center justify-between gap-4">
-              <CardFrameHeader className="gap-0 p-0!">
-                <CardFrameTitle>{t("require_booker_email_verification")}</CardFrameTitle>
-                <CardFrameDescription>{t("require_booker_email_verification_description")}</CardFrameDescription>
-              </CardFrameHeader>
-              <Switch
-                disabled={mutation.isPending}
-                checked={isRequireBookerEmailVerificationChecked}
-                onCheckedChange={(checked) => {
-                  setIsRequireBookerEmailVerificationChecked(checked);
-                  mutation.mutate({ requiresBookerEmailVerification: checked });
-                }}
-              />
-            </div>
-          </CardPanel>
-        </Card>
-        <TravelScheduleModal
-          open={isTZScheduleOpen}
-          onOpenChange={setIsTZScheduleOpen}
-          setValue={formMethods.setValue}
-          existingSchedules={formMethods.getValues("travelSchedules") ?? []}
-        />
-      </div>
-    </SettingsHeader>
+      <Card data-testid="my-seo-indexing-switch">
+        <CardPanel>
+          <div className="flex items-center justify-between gap-4">
+            <CardFrameHeader className="gap-0 p-0!">
+              <CardFrameTitle>{t("seo_indexing")}</CardFrameTitle>
+              <CardFrameDescription>{t("allow_seo_indexing")}</CardFrameDescription>
+            </CardFrameHeader>
+            <Switch
+              disabled={mutation.isPending || user.organizationSettings?.allowSEOIndexing === false}
+              checked={isAllowSEOIndexingChecked}
+              onCheckedChange={(checked) => {
+                setIsAllowSEOIndexingChecked(checked);
+                mutation.mutate({ allowSEOIndexing: checked });
+              }}
+            />
+          </div>
+        </CardPanel>
+      </Card>
+
+      <Card>
+        <CardPanel>
+          <div className="flex items-center justify-between gap-4">
+            <CardFrameHeader className="gap-0 p-0!">
+              <CardFrameTitle>{t("monthly_digest_email")}</CardFrameTitle>
+              <CardFrameDescription>{t("monthly_digest_email_for_teams")}</CardFrameDescription>
+            </CardFrameHeader>
+            <Switch
+              disabled={mutation.isPending}
+              checked={isReceiveMonthlyDigestEmailChecked}
+              onCheckedChange={(checked) => {
+                setIsReceiveMonthlyDigestEmailChecked(checked);
+                mutation.mutate({ receiveMonthlyDigestEmail: checked });
+              }}
+            />
+          </div>
+        </CardPanel>
+      </Card>
+
+      <Card>
+        <CardPanel>
+          <div className="flex items-center justify-between gap-4">
+            <CardFrameHeader className="gap-0 p-0!">
+              <CardFrameTitle>{t("require_booker_email_verification")}</CardFrameTitle>
+              <CardFrameDescription>{t("require_booker_email_verification_description")}</CardFrameDescription>
+            </CardFrameHeader>
+            <Switch
+              disabled={mutation.isPending}
+              checked={isRequireBookerEmailVerificationChecked}
+              onCheckedChange={(checked) => {
+                setIsRequireBookerEmailVerificationChecked(checked);
+                mutation.mutate({ requiresBookerEmailVerification: checked });
+              }}
+            />
+          </div>
+        </CardPanel>
+      </Card>
+      <TravelScheduleModal
+        open={isTZScheduleOpen}
+        onOpenChange={setIsTZScheduleOpen}
+        setValue={formMethods.setValue}
+        existingSchedules={formMethods.getValues("travelSchedules") ?? []}
+      />
+    </div>
   );
 };
 
