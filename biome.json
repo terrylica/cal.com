@@ -208,7 +208,7 @@
       }
     },
     {
-      "includes": ["packages/lib/env.ts"],
+      "includes": ["packages/lib/public-env.ts"],
       "linter": {
         "rules": {
           "style": {

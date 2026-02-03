@@ -13,7 +13,7 @@
  * 4. This also provides type safety - all env vars are typed and have sensible defaults.
  *
  * Usage:
- *   import { NEXT_PUBLIC_WEBAPP_URL } from "@calcom/lib/env";
+ *   import { NEXT_PUBLIC_WEBAPP_URL } from "@calcom/lib/public-env";
  *
  * Adding new env vars:
  *   1. Add the env var to this file with appropriate typing and default value
