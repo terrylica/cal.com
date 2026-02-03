@@ -1,5 +1,5 @@
+import { BookingAccessService } from "@/lib/services/booking-access.service";
 import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
-import { PrismaReadService } from "@/modules/prisma/prisma-read.service";
 import {
   Injectable,
   CanActivate,
@@ -10,15 +10,9 @@ import {
 } from "@nestjs/common";
 import { Request } from "express";
 
-import { BookingAccessService } from "@calcom/platform-libraries";
-
 @Injectable()
 export class BookingPbacGuard implements CanActivate {
-  private bookingAccessService: BookingAccessService;
-
-  constructor(private readonly prismaReadService: PrismaReadService) {
-    this.bookingAccessService = new BookingAccessService(this.prismaReadService.prisma);
-  }
+  constructor(private readonly bookingAccessService: BookingAccessService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context

@@ -1,3 +1,5 @@
+import { PrismaFeaturesRepository } from "@/lib/repositories/prisma-features.repository";
+import { PermissionCheckService } from "@/lib/services/permission-check.service";
 import { MembershipsModule } from "@/modules/memberships/memberships.module";
 import { OrganizationsRepository } from "@/modules/organizations/index/organizations.repository";
 import { OrganizationsTeamsRepository } from "@/modules/organizations/teams/index/organizations-teams.repository";
@@ -12,7 +14,7 @@ import { OrganizationsTeamsRolesController } from "./organizations-teams-roles.c
 
 @Module({
   imports: [StripeModule, PrismaModule, RedisModule, MembershipsModule, RolesModule],
-  providers: [OrganizationsRepository, OrganizationsTeamsRepository],
+  providers: [OrganizationsRepository, OrganizationsTeamsRepository, PrismaFeaturesRepository, PermissionCheckService],
   controllers: [OrganizationsTeamsRolesController, OrganizationsTeamsRolesPermissionsController],
 })
 export class OrganizationsTeamsRolesModule {}

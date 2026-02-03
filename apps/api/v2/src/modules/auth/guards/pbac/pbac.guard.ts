@@ -1,6 +1,7 @@
+import { PrismaFeaturesRepository } from "@/lib/repositories/prisma-features.repository";
+import { PermissionCheckService } from "@/lib/services/permission-check.service";
 import { Pbac } from "@/modules/auth/decorators/pbac/pbac.decorator";
 import { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
-import { PrismaReadService } from "@/modules/prisma/prisma-read.service";
 import { RedisService } from "@/modules/redis/redis.service";
 import {
   Injectable,
@@ -14,7 +15,6 @@ import { Reflector } from "@nestjs/core";
 import { Request } from "express";
 
 import type { PermissionString } from "@calcom/platform-libraries/pbac";
-import { PermissionCheckService, FeaturesRepository } from "@calcom/platform-libraries/pbac";
 
 export const REDIS_PBAC_CACHE_KEY = (teamId: number) => `apiv2:team:${teamId}:has:pbac:guard:pbac`;
 export const REDIS_REQUIRED_PERMISSIONS_CACHE_KEY = (
@@ -30,7 +30,8 @@ export const REDIS_REQUIRED_PERMISSIONS_CACHE_KEY = (
 export class PbacGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private prismaReadService: PrismaReadService,
+    private readonly featuresRepository: PrismaFeaturesRepository,
+    private readonly permissionCheckService: PermissionCheckService,
     private readonly redisService: RedisService
   ) {}
 
@@ -85,8 +86,7 @@ export class PbacGuard implements CanActivate {
     }
 
     const pbacFeatureFlag = "pbac";
-    const featuresRepository = new FeaturesRepository(this.prismaReadService.prisma);
-    const hasPbacEnabled = await featuresRepository.checkIfTeamHasFeature(teamId, pbacFeatureFlag);
+    const hasPbacEnabled = await this.featuresRepository.checkIfTeamHasFeature(teamId, pbacFeatureFlag);
 
     if (hasPbacEnabled) {
       await this.setCachePbacEnabled(teamId, hasPbacEnabled);
@@ -106,8 +106,7 @@ export class PbacGuard implements CanActivate {
       return cachedAccess;
     }
 
-    const permissionCheckService = new PermissionCheckService();
-    const hasRequiredPermissions = await permissionCheckService.checkPermissions({
+    const hasRequiredPermissions = await this.permissionCheckService.checkPermissions({
       userId,
       teamId,
       permissions: requiredPermissions,

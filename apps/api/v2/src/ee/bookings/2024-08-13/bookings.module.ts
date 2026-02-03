@@ -15,6 +15,7 @@ import { InputBookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/servic
 import { OutputBookingReferencesService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/output-booking-references.service";
 import { OutputBookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/output.service";
 import { PlatformBookingsService } from "@/ee/bookings/shared/platform-bookings.service";
+import { BookingAccessService } from "@/lib/services/booking-access.service";
 import { CalendarsRepository } from "@/ee/calendars/calendars.repository";
 import { CalendarsCacheService } from "@/ee/calendars/services/calendars-cache.service";
 import { CalendarsService } from "@/ee/calendars/services/calendars.service";
@@ -105,6 +106,7 @@ import { BookingEventHandlerModule } from "@/lib/modules/booking-event-handler.m
     CalVideoOutputService,
     BookingPbacGuard,
     BookingLocationService_2024_08_13,
+    BookingAccessService,
   ],
   controllers: [
     BookingsController_2024_08_13,
