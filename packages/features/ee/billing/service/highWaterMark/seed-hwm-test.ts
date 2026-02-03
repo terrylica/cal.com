@@ -66,6 +66,7 @@ interface StripeResources {
   subscription: Stripe.Subscription | null;
   product: Stripe.Product | null;
   price: Stripe.Price | null;
+  testClock: Stripe.TestHelpers.TestClock | null;
 }
 
 interface TeamSeedResult {
@@ -151,6 +152,20 @@ async function createTestUser(email: string, name: string, username: string, org
 async function cleanupStripeResources(stripe: Stripe) {
   console.log("Cleaning up existing Stripe test resources...");
 
+  // Clean up test clocks first (this will also delete associated customers/subscriptions)
+  const testClocks = await stripe.testHelpers.testClocks.list({ limit: 100 });
+  for (const clock of testClocks.data) {
+    if (clock.name?.startsWith("HWM Test")) {
+      try {
+        await stripe.testHelpers.testClocks.del(clock.id);
+        console.log(`  Deleted test clock: ${clock.id} (${clock.name})`);
+      } catch (error) {
+        console.log(`  Could not delete test clock ${clock.id}:`, error);
+      }
+    }
+  }
+
+  // Clean up any customers not attached to test clocks
   const emailsToCleanup = [HWM_TEAM_ADMIN_EMAIL, HWM_ORG_ADMIN_EMAIL];
   for (const email of emailsToCleanup) {
     const customers = await stripe.customers.list({
@@ -179,9 +194,6 @@ async function cleanupStripeResources(stripe: Stripe) {
       }
     }
   }
-
-  // Note: We don't archive products here because we're using the real
-  // team/org products from STRIPE_TEAM_PRODUCT_ID and STRIPE_ORG_PRODUCT_ID
 }
 
 async function createStripeResourcesForTeam(
@@ -203,22 +215,31 @@ async function createStripeResourcesForTeam(
   console.log(`  Using existing price: ${price.id} ($${pricePerSeatCents / 100}/seat)`);
 
   // Get the product
-  const product = typeof price.product === "string"
-    ? await stripe.products.retrieve(price.product)
-    : price.product as Stripe.Product;
+  const product =
+    typeof price.product === "string"
+      ? await stripe.products.retrieve(price.product)
+      : (price.product as Stripe.Product);
   console.log(`  Using existing product: ${product.id} (${product.name})`);
 
-  // Create a customer
+  // Create a test clock for time simulation
+  const testClock = await stripe.testHelpers.testClocks.create({
+    frozen_time: Math.floor(Date.now() / 1000),
+    name: `HWM Test - ${name}`,
+  });
+  console.log(`  Created test clock: ${testClock.id}`);
+
+  // Create a customer attached to the test clock
   const customer = await stripe.customers.create({
     email,
     name,
+    test_clock: testClock.id,
     metadata: {
       testData: "true",
       teamId: teamId.toString(),
       calTeamId: teamId.toString(),
     },
   });
-  console.log(`  Created customer: ${customer.id}`);
+  console.log(`  Created customer: ${customer.id} (attached to test clock)`);
 
   // Add a test payment method (test card)
   const paymentMethod = await stripe.paymentMethods.create({
@@ -243,7 +264,7 @@ async function createStripeResourcesForTeam(
   });
   console.log(`  Created subscription: ${subscription.id} (${seatCount} seats)`);
 
-  return { customer, subscription, product, price, pricePerSeatCents };
+  return { customer, subscription, product, price, testClock, pricePerSeatCents };
 }
 
 async function cleanupDatabaseResources() {
@@ -354,12 +375,18 @@ async function seedHwmTeam(stripe: Stripe | null): Promise<TeamSeedResult> {
 
   const currentMemberCount = 4; // 1 admin + 3 members
   const peakMemberCount = 5; // At some point had 5 members
-  const paidSeats = 3; // Currently paying for 3 seats (will be updated to HWM at renewal)
+  const paidSeats = currentMemberCount; // Subscription quantity matches current members
 
   console.log(`  Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
 
   // Stripe resources or fake IDs
-  let stripeResources: StripeResources = { customer: null, subscription: null, product: null, price: null };
+  let stripeResources: StripeResources = {
+    customer: null,
+    subscription: null,
+    product: null,
+    price: null,
+    testClock: null,
+  };
   let stripeCustomerId = `cus_fake_hwm_team_${Date.now()}`;
   let stripeSubscriptionId = `sub_fake_hwm_team_${Date.now()}`;
   let stripeSubscriptionItemId = `si_fake_hwm_team_${Date.now()}`;
@@ -546,12 +573,18 @@ async function seedHwmOrg(stripe: Stripe | null): Promise<OrgSeedResult> {
 
   const currentMemberCount = 6; // 1 admin + 5 members
   const peakMemberCount = 8; // At some point had 8 members
-  const paidSeats = 5; // Currently paying for 5 seats
+  const paidSeats = currentMemberCount; // Subscription quantity matches current members
 
   console.log(`  Users added: ${currentMemberCount} current members (peak was ${peakMemberCount})`);
 
   // Stripe resources or fake IDs
-  let stripeResources: StripeResources = { customer: null, subscription: null, product: null, price: null };
+  let stripeResources: StripeResources = {
+    customer: null,
+    subscription: null,
+    product: null,
+    price: null,
+    testClock: null,
+  };
   let stripeCustomerId = `cus_fake_hwm_org_${Date.now()}`;
   let stripeSubscriptionId = `sub_fake_hwm_org_${Date.now()}`;
   let stripeSubscriptionItemId = `si_fake_hwm_org_${Date.now()}`;
@@ -733,39 +766,71 @@ async function main() {
 
     console.log("\n=== Seed Complete ===\n");
 
-    // Team summary
-    console.log("=== Team Billing Test ===");
-    console.log("Team:", result.team.team);
-    console.log(`  Current members: ${result.team.memberCount}`);
-    console.log(`  High Water Mark: ${result.team.highWaterMark}`);
-    console.log(`  Paid seats: ${result.team.paidSeats}`);
-    console.log(`  At renewal: Will be charged for ${result.team.highWaterMark} seats`);
+    // Summary table
+    const teamSubUrl = result.team.stripe.subscription
+      ? `https://dashboard.stripe.com/test/subscriptions/${result.team.stripe.subscription.id}`
+      : "N/A (--skip-stripe)";
+    const teamCustUrl = result.team.stripe.customer
+      ? `https://dashboard.stripe.com/test/customers/${result.team.stripe.customer.id}`
+      : "N/A";
+    const teamClockUrl = result.team.stripe.testClock
+      ? `https://dashboard.stripe.com/test/test-clocks/${result.team.stripe.testClock.id}`
+      : "N/A";
+    const orgSubUrl = result.organization.stripe.subscription
+      ? `https://dashboard.stripe.com/test/subscriptions/${result.organization.stripe.subscription.id}`
+      : "N/A (--skip-stripe)";
+    const orgCustUrl = result.organization.stripe.customer
+      ? `https://dashboard.stripe.com/test/customers/${result.organization.stripe.customer.id}`
+      : "N/A";
+    const orgClockUrl = result.organization.stripe.testClock
+      ? `https://dashboard.stripe.com/test/test-clocks/${result.organization.stripe.testClock.id}`
+      : "N/A";
 
-    if (result.team.stripe.customer) {
-      console.log(`\nStripe (Team):`);
-      console.log(`  Customer: https://dashboard.stripe.com/test/customers/${result.team.stripe.customer.id}`);
-      console.log(
-        `  Subscription: https://dashboard.stripe.com/test/subscriptions/${result.team.stripe.subscription?.id}`
-      );
-    }
+    // Calculate test clock dates from subscription period end
+    const teamPeriodEnd = result.team.stripe.subscription?.current_period_end
+      ? new Date(result.team.stripe.subscription.current_period_end * 1000)
+      : null;
+    const orgPeriodEnd = result.organization.stripe.subscription?.current_period_end
+      ? new Date(result.organization.stripe.subscription.current_period_end * 1000)
+      : null;
 
-    // Org summary
-    console.log("\n=== Organization Billing Test ===");
-    console.log("Organization:", result.organization.organization);
-    console.log(`  Current members: ${result.organization.memberCount}`);
-    console.log(`  High Water Mark: ${result.organization.highWaterMark}`);
-    console.log(`  Paid seats: ${result.organization.paidSeats}`);
-    console.log(`  At renewal: Will be charged for ${result.organization.highWaterMark} seats`);
+    // invoice.upcoming fires ~3 days before period end
+    const teamInvoiceUpcomingDate = teamPeriodEnd
+      ? new Date(teamPeriodEnd.getTime() - 3 * 24 * 60 * 60 * 1000)
+      : null;
+    const orgInvoiceUpcomingDate = orgPeriodEnd
+      ? new Date(orgPeriodEnd.getTime() - 3 * 24 * 60 * 60 * 1000)
+      : null;
 
-    if (result.organization.stripe.customer) {
-      console.log(`\nStripe (Org):`);
-      console.log(
-        `  Customer: https://dashboard.stripe.com/test/customers/${result.organization.stripe.customer.id}`
-      );
-      console.log(
-        `  Subscription: https://dashboard.stripe.com/test/subscriptions/${result.organization.stripe.subscription?.id}`
-      );
-    }
+    const formatDate = (d: Date | null) => (d ? d.toISOString().split("T")[0] : "N/A");
+
+    console.log("=== Summary Table ===\n");
+    console.log(
+      "| Entity | Qty | Members | HWM | invoice.upcoming | After Renewal | Price |"
+    );
+    console.log(
+      "|--------|-----|---------|-----|------------------|---------------|-------|"
+    );
+    console.log(
+      `| Team (ID:${result.team.team.id}) | ${result.team.paidSeats} | ${result.team.memberCount} | ${result.team.highWaterMark} | qty → ${result.team.highWaterMark} | qty → ${result.team.memberCount} (scale down) | $6.99 |`
+    );
+    console.log(
+      `| Org (ID:${result.organization.organization.id}) | ${result.organization.paidSeats} | ${result.organization.memberCount} | ${result.organization.highWaterMark} | qty → ${result.organization.highWaterMark} | qty → ${result.organization.memberCount} (scale down) | $37 |`
+    );
+
+    console.log("\n=== Test Clock Dates ===\n");
+    console.log(`  1. Advance to ${formatDate(teamInvoiceUpcomingDate)} → triggers invoice.upcoming (scale UP to HWM)`);
+    console.log(`  2. Advance to ${formatDate(teamPeriodEnd)} → triggers renewal (scale DOWN to current members)`);
+
+    console.log("\n=== Stripe Resources ===\n");
+    console.log("Team:");
+    console.log(`  Subscription: ${teamSubUrl}`);
+    console.log(`  Customer:     ${teamCustUrl}`);
+    console.log(`  Test Clock:   ${teamClockUrl}`);
+    console.log("\nOrg:");
+    console.log(`  Subscription: ${orgSubUrl}`);
+    console.log(`  Customer:     ${orgCustUrl}`);
+    console.log(`  Test Clock:   ${orgClockUrl}`);
 
     // Test users
     console.log("\n=== Test Users ===");
@@ -775,24 +840,36 @@ async function main() {
     });
 
     console.log("\n=== Testing Instructions ===\n");
-    console.log("1. invoice.upcoming webhook flow:");
-    console.log("   - When Stripe sends invoice.upcoming (~3 days before renewal)");
-    console.log("   - The webhook handler calls HighWaterMarkService.applyHighWaterMarkToSubscription()");
+    console.log("1. ADVANCE TEST CLOCK to trigger invoice.upcoming:");
+    console.log("   Go to the Test Clock URL above and click 'Advance time'");
+    console.log("   Advance to ~3 days before the billing period ends (e.g., +27 days)");
+    console.log("   This will trigger the invoice.upcoming webhook");
+    console.log("");
+    console.log("   Or use Stripe CLI:");
+    if (result.team.stripe.testClock) {
+      const advanceTime = Math.floor(Date.now() / 1000) + 27 * 24 * 60 * 60;
+      console.log(`   stripe test_clocks advance ${result.team.stripe.testClock.id} --frozen-time ${advanceTime}`);
+    }
+    console.log("");
+    console.log("2. invoice.upcoming webhook flow:");
+    console.log("   - Stripe sends invoice.upcoming ~3 days before renewal");
+    console.log("   - The webhook calls HighWaterMarkService.applyHighWaterMarkToSubscription()");
     console.log("   - This updates the subscription quantity to the HWM value");
-    console.log("   - Team: subscription quantity updated from 3 to 5");
-    console.log("   - Org: subscription quantity updated from 5 to 8");
+    console.log("   - Team: subscription quantity updated from 4 to 5");
+    console.log("   - Org: subscription quantity updated from 6 to 8");
     console.log("");
-    console.log("2. customer.subscription.updated webhook flow:");
+    console.log("3. ADVANCE TEST CLOCK again to trigger renewal:");
+    console.log("   Advance to after the billing period ends (e.g., +31 days from start)");
+    console.log("   This will trigger customer.subscription.updated webhook");
+    console.log("");
+    console.log("4. customer.subscription.updated webhook flow:");
     console.log("   - After renewal completes, this webhook fires");
-    console.log("   - For MONTHLY billing, it calls resetHighWaterMark()");
-    console.log("   - This resets HWM to current member count for the new period");
+    console.log("   - For MONTHLY billing, it calls resetSubscriptionAfterRenewal()");
+    console.log("   - This resets subscription quantity AND HWM to current member count");
+    console.log("   - Team: subscription quantity reset from 5 to 4, HWM reset to 4");
+    console.log("   - Org: subscription quantity reset from 8 to 6, HWM reset to 6");
     console.log("");
-    console.log("3. To simulate adding a new member:");
-    console.log("   - Add a user to the team/org");
-    console.log("   - SeatChangeTrackingService.logSeatAddition() is called");
-    console.log("   - This updates HWM if new count > current HWM");
-    console.log("");
-    console.log("4. To verify HWM in database:");
+    console.log("5. To verify HWM in database:");
     console.log(`   SELECT "highWaterMark", "highWaterMarkPeriodStart", "paidSeats" FROM "TeamBilling" WHERE "teamId" = ${result.team.team.id};`);
     console.log(`   SELECT "highWaterMark", "highWaterMarkPeriodStart", "paidSeats" FROM "OrganizationBilling" WHERE "teamId" = ${result.organization.organization.id};`);
     console.log("");
