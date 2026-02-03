@@ -22,11 +22,14 @@ export interface IPlatformOrganizationBillingTasker {
     options?: TriggerOptions
   ): Promise<{ runId: string }>;
 
-  cancelUsageIncrement(payload: { bookingUid: string }): Promise<{ runId: string }>;
+  cancelUsageIncrement(payload: { bookingUid: string }, options?: TriggerOptions): Promise<{ runId: string }>;
 
   rescheduleUsageIncrement(
-    payload: { bookingUid: string },
-    options: { delay: NonNullable<TriggerOptions["delay"]> }
+    payload: {
+      bookingUid: string;
+      rescheduledTime: Date;
+    },
+    options?: TriggerOptions
   ): Promise<{ runId: string }>;
 
   countActiveManagedUsers(payload: CountActiveManagedUsersPayload): Promise<{ runId: string }>;
