@@ -3,13 +3,19 @@
  * Reusable component for displaying and managing multiple event type locations
  */
 
-import { Button, ContextMenu, Host, HStack, Image } from "@expo/ui/swift-ui";
-import { buttonStyle, frame } from "@expo/ui/swift-ui/modifiers";
 import { Ionicons } from "@expo/vector-icons";
-import { isLiquidGlassAvailable } from "expo-glass-effect";
 import type React from "react";
 import { useState } from "react";
-import { Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
 import type { LocationItem, LocationOptionGroup } from "@/types/locations";
 import {
   createLocationItemFromOption,
@@ -17,6 +23,7 @@ import {
   getLocationInputPlaceholder,
   locationRequiresInput,
 } from "@/utils/locationHelpers";
+import { LocationsListIOSPicker } from "./LocationsListIOSPicker";
 import { SvgImage } from "./SvgImage";
 
 interface LocationsListProps {
@@ -54,19 +61,6 @@ function isLocationAlreadyAdded(locations: LocationItem[], optionValue: string):
   });
 }
 
-const getSFSymbolForType = (type: string) => {
-  switch (type) {
-    case "address":
-      return "mappin.and.ellipse";
-    case "link":
-      return "link";
-    case "phone":
-      return "phone";
-    default:
-      return "video";
-  }
-};
-
 export const AddLocationTrigger = ({
   isHeader = false,
   locationOptions,
@@ -84,29 +78,34 @@ export const AddLocationTrigger = ({
   loading?: boolean;
   onPressFallback?: () => void;
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const trigger = isHeader ? (
     <TouchableOpacity
       disabled={disabled || loading}
       onPress={Platform.OS !== "ios" ? onPressFallback : undefined}
       hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-      className="flex-row items-center rounded-full border border-[#E5E5E5] bg-[#F2F2F7] p-1"
+      className="flex-row items-center rounded-full border border-[#E5E5E5] bg-[#F2F2F7] p-1 dark:border-[#4D4D4D] dark:bg-[#262626]"
     >
-      <Ionicons name="add" size={18} color="#000000" />
+      <Ionicons name="add" size={18} color={isDark ? "#FFFFFF" : "#000000"} />
     </TouchableOpacity>
   ) : (
     <TouchableOpacity
       disabled={disabled || loading}
       onPress={Platform.OS !== "ios" ? onPressFallback : undefined}
-      className={`flex-row items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 ${
-        disabled ? "opacity-50" : "active:bg-gray-100"
+      className={`flex-row items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-3 dark:border-[#4D4D4D] dark:bg-[#262626] ${
+        disabled ? "opacity-50" : "active:bg-gray-100 dark:active:bg-[#171717]"
       }`}
     >
       {loading ? (
-        <Text className="text-sm text-gray-500">Loading options...</Text>
+        <Text className="text-sm text-gray-500 dark:text-[#A3A3A3]">Loading options...</Text>
       ) : (
         <>
           <Ionicons name="add-circle-outline" size={20} color="#6B7280" />
-          <Text className="ml-2 text-sm font-medium text-gray-600">Add Location</Text>
+          <Text className="ml-2 text-sm font-medium text-gray-600 dark:text-[#A3A3A3]">
+            Add Location
+          </Text>
         </>
       )}
     </TouchableOpacity>
@@ -116,30 +115,17 @@ export const AddLocationTrigger = ({
     return trigger;
   }
 
-  return (
-    <Host matchContents>
-      <ContextMenu
-        modifiers={!isHeader ? [buttonStyle(isLiquidGlassAvailable() ? "glass" : "bordered")] : []}
-        activationMethod="singlePress"
-      >
-        <ContextMenu.Items>
-          {locationOptions.flatMap((group) =>
-            group.options
-              .filter((opt) => !isLocationAlreadyAdded(locations, opt.value))
-              .map((option) => (
-                <Button
-                  key={option.value}
-                  onPress={() => onSelectOption(option.value, option.label)}
-                  label={option.label}
-                  systemImage={getSFSymbolForType(option.value)}
-                />
-              ))
-          )}
-        </ContextMenu.Items>
-        <ContextMenu.Trigger>{trigger}</ContextMenu.Trigger>
-      </ContextMenu>
-    </Host>
+  const iosPicker = (
+    <LocationsListIOSPicker
+      isHeader={isHeader}
+      locationOptions={locationOptions}
+      locations={locations}
+      onSelectOption={onSelectOption}
+      trigger={trigger}
+    />
   );
+
+  return iosPicker ?? trigger;
 };
 
 export const LocationsList: React.FC<LocationsListProps> = ({
@@ -171,13 +157,13 @@ export const LocationsList: React.FC<LocationsListProps> = ({
   const renderLocationIcon = (location: LocationItem) => {
     if (location.iconUrl) {
       return (
-        <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-[#F2F2F7]">
+        <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-[#F2F2F7] dark:bg-[#262626]">
           <SvgImage uri={location.iconUrl} width={20} height={20} />
         </View>
       );
     }
     return (
-      <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-[#F2F2F7]">
+      <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-[#F2F2F7] dark:bg-[#262626]">
         <Ionicons name="location" size={18} color="#000000" />
       </View>
     );
@@ -211,9 +197,9 @@ export const LocationsList: React.FC<LocationsListProps> = ({
 
     return (
       <View className="mt-2">
-        <Text className="mb-1 text-[13px] text-[#6D6D72]">{label}</Text>
+        <Text className="mb-1 text-[13px] text-[#6D6D72] dark:text-[#A3A3A3]">{label}</Text>
         <TextInput
-          className="rounded-lg bg-[#F2F2F7] px-3 py-2 text-[17px] text-black"
+          className="rounded-lg bg-[#F2F2F7] px-3 py-2 text-[17px] text-black dark:bg-[#262626] dark:text-white"
           placeholder={placeholder}
           value={value}
           onChangeText={(text) => onUpdate(location.id, { [fieldKey]: text })}
@@ -226,7 +212,7 @@ export const LocationsList: React.FC<LocationsListProps> = ({
   };
 
   return (
-    <View className="bg-white">
+    <View className="bg-white dark:bg-[#171717]">
       {/* Locations List */}
       {locations.length > 0 ? (
         <View className="mb-2">
@@ -234,7 +220,9 @@ export const LocationsList: React.FC<LocationsListProps> = ({
             <View
               key={location.id}
               className={`pl-4 ${
-                index !== locations.length - 1 ? "border-b border-[#E5E5E5]" : ""
+                index !== locations.length - 1
+                  ? "border-b border-[#E5E5E5] dark:border-[#4D4D4D]"
+                  : ""
               }`}
             >
               <View
@@ -245,7 +233,10 @@ export const LocationsList: React.FC<LocationsListProps> = ({
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 flex-row items-center">
                     {renderLocationIcon(location)}
-                    <Text className="flex-1 text-[17px] text-black font-normal" numberOfLines={1}>
+                    <Text
+                      className="flex-1 text-[17px] text-black font-normal dark:text-white"
+                      numberOfLines={1}
+                    >
                       {location.displayName}
                     </Text>
                   </View>
@@ -288,10 +279,12 @@ export const LocationsList: React.FC<LocationsListProps> = ({
         onRequestClose={() => setShowAddModal(false)}
       >
         <View className="flex-1 justify-end bg-black/50">
-          <View className="max-h-[70%] rounded-t-3xl bg-white">
+          <View className="max-h-[70%] rounded-t-3xl bg-white dark:bg-[#171717]">
             {/* Header */}
-            <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-              <Text className="text-lg font-semibold text-gray-900">Add Location</Text>
+            <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-[#4D4D4D]">
+              <Text className="text-lg font-semibold text-gray-900 dark:text-white">
+                Add Location
+              </Text>
               <TouchableOpacity onPress={() => setShowAddModal(false)} className="p-1">
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
@@ -301,7 +294,7 @@ export const LocationsList: React.FC<LocationsListProps> = ({
             <ScrollView className="px-4 py-2">
               {locationOptions.map((group, groupIndex) => (
                 <View key={group.category} className={groupIndex > 0 ? "mt-4" : ""}>
-                  <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-[#A3A3A3]">
                     {group.category}
                   </Text>
                   {group.options.map((option) => {
@@ -313,7 +306,9 @@ export const LocationsList: React.FC<LocationsListProps> = ({
                         onPress={() => handleSelectOption(option.value, option.label)}
                         disabled={alreadyAdded}
                         className={`flex-row items-center rounded-lg px-2 py-3 ${
-                          alreadyAdded ? "opacity-40" : "active:bg-gray-100"
+                          alreadyAdded
+                            ? "opacity-40"
+                            : "active:bg-gray-100 dark:active:bg-[#262626]"
                         }`}
                       >
                         {option.iconUrl ? (
@@ -328,7 +323,9 @@ export const LocationsList: React.FC<LocationsListProps> = ({
                             <Ionicons name="location-outline" size={24} color="#6B7280" />
                           </View>
                         )}
-                        <Text className="flex-1 text-base text-gray-900">{option.label}</Text>
+                        <Text className="flex-1 text-base text-gray-900 dark:text-white">
+                          {option.label}
+                        </Text>
                         {alreadyAdded && <Ionicons name="checkmark" size={20} color="#10B981" />}
                       </TouchableOpacity>
                     );
