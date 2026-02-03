@@ -14,6 +14,7 @@ import { BookingUidGuard } from "@/ee/bookings/2024-08-13/guards/booking-uid.gua
 import { UpdateBookingLocationOutput_2024_08_13 } from "@/ee/bookings/2024-08-13/outputs/update-location.output";
 import { BookingLocationService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-location.service";
 import { VERSION_2024_08_13, VERSION_2024_08_13_VALUE } from "@/lib/api-versions";
+import { Throttle } from "@/lib/endpoint-throttler-decorator";
 import { API_KEY_OR_ACCESS_TOKEN_HEADER } from "@/lib/docs/headers";
 import { GetUser } from "@/modules/auth/decorators/get-user/get-user.decorator";
 import { Permissions } from "@/modules/auth/decorators/permissions/permissions.decorator";
@@ -46,6 +47,7 @@ export class BookingLocationController_2024_08_13 {
 
   @Patch("/")
   @HttpCode(HttpStatus.OK)
+  @Throttle({ name: "booking_location_update", limit: 5, ttl: 60000, blockDuration: 60000 })
   @Permissions([BOOKING_WRITE])
   @UseGuards(ApiAuthGuard, BookingUidGuard)
   @ApiHeader(API_KEY_OR_ACCESS_TOKEN_HEADER)
