@@ -470,6 +470,7 @@ model User {
   organizationId       Int?
   organization         Team?                   @relation("scope", fields: [organizationId], references: [id], onDelete: SetNull)
   accessCodes          AccessCode[]
+  oAuthRefreshTokens   OAuthRefreshToken[]
   bookingRedirects     OutOfOfficeEntry[]
   bookingRedirectsTo   OutOfOfficeEntry[]      @relation(name: "toUser")
 
@@ -598,6 +599,7 @@ model Team {
   apiKeys                ApiKey[]
   credentials            Credential[]
   accessCodes            AccessCode[]
+  oAuthRefreshTokens     OAuthRefreshToken[]
   isOrganization         Boolean                 @default(false)
   organizationSettings   OrganizationSettings?
   instantMeetingTokens   InstantMeetingToken[]
@@ -1831,6 +1833,8 @@ model OAuthClient {
   user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt       DateTime          @default(now())
 
+  refreshTokens OAuthRefreshToken[]
+
   @@index([userId])
 }
 
@@ -1847,6 +1851,23 @@ model AccessCode {
   team                Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
   codeChallenge       String?
   codeChallengeMethod String?       @default("S256")
+}
+
+model OAuthRefreshToken {
+  id        Int         @id @default(autoincrement())
+  secret    String      @unique
+  clientId  String
+  client    OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId    Int?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId    Int?
+  team      Team?       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime    @default(now())
+
+  @@index([clientId, userId])
+  @@index([clientId, teamId])
+  @@index([expiresAt])
 }
 
 enum AccessScope {
