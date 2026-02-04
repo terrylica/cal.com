@@ -2,8 +2,6 @@ import type { BookingRepository } from "@calcom/features/bookings/repositories/B
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
-import prisma from "@calcom/prisma";
-import { BookingStatus } from "@calcom/prisma/enums";
 
 const log = logger.getSubLogger({ prefix: ["[checkActiveBookingsLimitForBooker]"] });
 
@@ -18,7 +16,7 @@ export const checkActiveBookingsLimitForBooker = async ({
   maxActiveBookingsPerBooker: number | null;
   bookerEmail: string;
   offerToRescheduleLastBooking: boolean;
-  bookingRepository?: BookingRepository;
+  bookingRepository: BookingRepository;
 }) => {
   if (!maxActiveBookingsPerBooker) {
     return;
@@ -45,26 +43,9 @@ const checkActiveBookingsLimit = async ({
   eventTypeId: number;
   maxActiveBookingsPerBooker: number;
   bookerEmail: string;
-  bookingRepository?: BookingRepository;
+  bookingRepository: BookingRepository;
 }) => {
-  const bookingsCount = bookingRepository
-    ? await bookingRepository.countActiveBookingsForEventType({ eventTypeId, bookerEmail })
-    : await prisma.booking.count({
-        where: {
-          eventTypeId,
-          startTime: {
-            gte: new Date(),
-          },
-          status: {
-            in: [BookingStatus.ACCEPTED],
-          },
-          attendees: {
-            some: {
-              email: bookerEmail,
-            },
-          },
-        },
-      });
+  const bookingsCount = await bookingRepository.countActiveBookingsForEventType({ eventTypeId, bookerEmail });
 
   if (bookingsCount >= maxActiveBookingsPerBooker) {
     log.warn(`Maximum booking limit reached for ${bookerEmail} for event type ${eventTypeId}`);
@@ -83,52 +64,13 @@ const checkActiveBookingsLimitAndOfferReschedule = async ({
   eventTypeId: number;
   maxActiveBookingsPerBooker: number;
   bookerEmail: string;
-  bookingRepository?: BookingRepository;
+  bookingRepository: BookingRepository;
 }) => {
-  const bookings = bookingRepository
-    ? await bookingRepository.findActiveBookingsForEventType({
-        eventTypeId,
-        bookerEmail,
-        limit: maxActiveBookingsPerBooker,
-      })
-    : await prisma.booking.findMany({
-        where: {
-          eventTypeId,
-          startTime: {
-            gte: new Date(),
-          },
-          status: {
-            in: [BookingStatus.ACCEPTED],
-          },
-          attendees: {
-            some: {
-              email: bookerEmail,
-            },
-          },
-        },
-        orderBy: {
-          startTime: "desc",
-        },
-        take: maxActiveBookingsPerBooker,
-        select: {
-          uid: true,
-          startTime: true,
-          attendees: {
-            select: {
-              name: true,
-              email: true,
-              bookingSeat: {
-                select: {
-                  referenceUid: true,
-                },
-              },
-            },
-            where: {
-              email: bookerEmail,
-            },
-          },
-        },
-      });
+  const bookings = await bookingRepository.findActiveBookingsForEventType({
+    eventTypeId,
+    bookerEmail,
+    limit: maxActiveBookingsPerBooker,
+  });
 
   const lastBooking = bookings[bookings.length - 1];
   const seatUid = lastBooking?.attendees[0]?.bookingSeat?.referenceUid;
