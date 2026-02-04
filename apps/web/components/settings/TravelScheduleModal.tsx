@@ -5,7 +5,7 @@ import type { UseFormSetValue } from "react-hook-form";
 import dayjs from "@calcom/dayjs";
 import { useTimePreferences } from "@calcom/features/bookings/lib/timePreferences";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { DatePicker, SettingsToggle } from "@calcom/ui/components/form";
+import { DatePicker } from "@calcom/ui/components/form";
 import { DatePickerWithRange as DateRangePicker } from "@calcom/ui/components/form/date-range-picker/DateRangePicker";
 
 import { Button } from "@coss/ui/components/button";
@@ -29,7 +29,9 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@coss/ui/components/dialog";
+import { Field, FieldLabel } from "@coss/ui/components/field";
 import { Label } from "@coss/ui/components/label";
+import { Switch } from "@coss/ui/components/switch";
 import { useIsMobile } from "@coss/ui/hooks/use-mobile";
 
 import type { FormValues } from "~/settings/my-account/general-view";
@@ -188,21 +190,22 @@ const TravelScheduleModal = ({
             )}
             <div className="text-error mt-1 text-sm">{errorMessage}</div>
 
-            <div className="mt-3">
-              <SettingsToggle
-                labelClassName="mt-1 font-normal"
-                title={t("schedule_tz_without_end_date")}
-                checked={isNoEndDate}
-                onCheckedChange={(checked) => {
-                  setEndDate(!checked ? startDate : undefined);
-                  setIsNoEndDate(checked);
-                  if (checked) {
-                    setIsDateRangeOpen(false);
-                  }
-                  setErrorMessage("");
-                }}
-              />
-            </div>
+            <Field className="mt-3">
+              <FieldLabel>
+                <Switch
+                  checked={isNoEndDate}
+                  onCheckedChange={(checked) => {
+                    setEndDate(!checked ? startDate : undefined);
+                    setIsNoEndDate(checked);
+                    if (checked) {
+                      setIsDateRangeOpen(false);
+                    }
+                    setErrorMessage("");
+                  }}
+                />
+                {t("schedule_tz_without_end_date")}
+              </FieldLabel>
+            </Field>
 
             <Label className="mt-6">{t("timezone")}</Label>
             <Combobox
