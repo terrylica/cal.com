@@ -74,7 +74,9 @@ export class HighWaterMarkRepository {
 
     if (!team) return null;
 
-    const billing = team.isOrganization ? team.organizationBilling : team.teamBilling;
+    const billing = team.isOrganization
+      ? team.organizationBilling
+      : team.teamBilling;
     if (!billing) return null;
 
     return {
@@ -83,7 +85,9 @@ export class HighWaterMarkRepository {
     };
   }
 
-  async getBySubscriptionId(subscriptionId: string): Promise<HighWaterMarkBySubscriptionData | null> {
+  async getBySubscriptionId(
+    subscriptionId: string
+  ): Promise<HighWaterMarkBySubscriptionData | null> {
     // Try team billing first
     const teamBilling = await this.prisma.teamBilling.findUnique({
       where: { subscriptionId },
@@ -141,44 +145,73 @@ export class HighWaterMarkRepository {
   }): Promise<{ updated: boolean; previousHighWaterMark: number | null }> {
     const { teamId, isOrganization, newSeatCount, periodStart } = params;
 
-    // Get current high water mark
-    const current = await this.getByTeamId(teamId);
-    if (!current) {
-      throw new Error(`No billing record found for team ${teamId}`);
-    }
-
-    const currentHwm = current.highWaterMark;
-    const currentPeriodStart = current.highWaterMarkPeriodStart;
-
-    // Check if we're in a new period (period start changed)
-    const isNewPeriod =
-      !currentPeriodStart || periodStart.getTime() !== currentPeriodStart.getTime();
-
-    // If new period, always update. Otherwise, only update if higher.
-    const shouldUpdate = isNewPeriod || currentHwm === null || newSeatCount > currentHwm;
-
-    if (!shouldUpdate) {
-      return { updated: false, previousHighWaterMark: currentHwm };
-    }
-
-    const updateData = {
-      highWaterMark: newSeatCount,
-      highWaterMarkPeriodStart: periodStart,
-    };
-
-    if (isOrganization) {
-      await this.prisma.organizationBilling.update({
-        where: { teamId },
-        data: updateData,
+    return this.prisma.$transaction(async (tx) => {
+      // Get current high water mark within transaction
+      const team = await tx.team.findUnique({
+        where: { id: teamId },
+        select: {
+          isOrganization: true,
+          teamBilling: {
+            select: {
+              highWaterMark: true,
+              highWaterMarkPeriodStart: true,
+            },
+          },
+          organizationBilling: {
+            select: {
+              highWaterMark: true,
+              highWaterMarkPeriodStart: true,
+            },
+          },
+        },
       });
-    } else {
-      await this.prisma.teamBilling.update({
-        where: { teamId },
-        data: updateData,
-      });
-    }
 
-    return { updated: true, previousHighWaterMark: currentHwm };
+      if (!team) {
+        throw new Error(`No team found for teamId ${teamId}`);
+      }
+
+      const billing = isOrganization
+        ? team.organizationBilling
+        : team.teamBilling;
+      if (!billing) {
+        throw new Error(`No billing record found for team ${teamId}`);
+      }
+
+      const currentHwm = billing.highWaterMark;
+      const currentPeriodStart = billing.highWaterMarkPeriodStart;
+
+      // Check if we're in a new period (period start changed)
+      const isNewPeriod =
+        !currentPeriodStart ||
+        periodStart.getTime() !== currentPeriodStart.getTime();
+
+      // If new period, always update. Otherwise, only update if higher.
+      const shouldUpdate =
+        isNewPeriod || currentHwm === null || newSeatCount > currentHwm;
+
+      if (!shouldUpdate) {
+        return { updated: false, previousHighWaterMark: currentHwm };
+      }
+
+      const updateData = {
+        highWaterMark: newSeatCount,
+        highWaterMarkPeriodStart: periodStart,
+      };
+
+      if (isOrganization) {
+        await tx.organizationBilling.update({
+          where: { teamId },
+          data: updateData,
+        });
+      } else {
+        await tx.teamBilling.update({
+          where: { teamId },
+          data: updateData,
+        });
+      }
+
+      return { updated: true, previousHighWaterMark: currentHwm };
+    });
   }
 
   async reset(params: {
