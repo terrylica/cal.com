@@ -253,8 +253,7 @@ class Office365CalendarService implements Calendar {
     return this.azureUserId;
   }
 
-  // It would error if the delegation credential is not set up correctly
-  async testDelegationCredentialSetup(): Promise<boolean> {
+  async testDelegationCredentialSetup(): Promise<void> {
     const delegationCredentialClientId = this.credential.delegatedTo?.serviceAccountKey?.client_id;
     const delegationCredentialClientSecret = this.credential.delegatedTo?.serviceAccountKey?.private_key;
     const url = await this.getAuthUrl(
@@ -263,7 +262,9 @@ class Office365CalendarService implements Calendar {
     );
 
     if (!delegationCredentialClientId || !delegationCredentialClientSecret) {
-      return false;
+      throw new CalendarAppDelegationCredentialConfigurationError(
+        "Delegation credential is missing client_id or client_secret"
+      );
     }
     const loginResponse = await fetch(url, {
       method: "POST",
@@ -276,7 +277,13 @@ class Office365CalendarService implements Calendar {
       }),
     });
     const parsedLoginResponse = await loginResponse.json();
-    return Boolean(parsedLoginResponse?.access_token);
+    if (!parsedLoginResponse?.access_token) {
+      const errorDescription =
+        parsedLoginResponse?.error_description || parsedLoginResponse?.error || "Unknown error";
+      throw new CalendarAppDelegationCredentialInvalidGrantError(
+        `Failed to obtain access token from Microsoft: ${errorDescription}`
+      );
+    }
   }
 
   async getUserEndpoint(): Promise<string> {
