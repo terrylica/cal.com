@@ -312,6 +312,11 @@ const selectStatementToGetBookingForCalEventBuilder = {
           destinationCalendar: true,
         },
       },
+      owner: {
+        select: {
+          hideBranding: true,
+        },
+      },
       hosts: {
         select: {
           userId: true,
