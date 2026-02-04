@@ -425,7 +425,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                       {t("add")}
                     </Button>                    
                   </FrameHeader>
-                  <FramePanel className="p-0">
+                  <FramePanel className="p-0 bg-card">
                     {watchedTzSchedules.map((schedule, index) => (
                       <Fragment key={index}>
                         <div className="p-5 flex items-center justify-between gap-2">
