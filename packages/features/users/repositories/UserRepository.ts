@@ -1410,4 +1410,38 @@ export class UserRepository {
       },
     });
   }
+
+  async findVerifiedUserByEmail({ email }: { email: string }): Promise<{
+    id: number;
+    email: string;
+    requiresBookerEmailVerification: boolean | null;
+  } | null> {
+    return this.prismaClient.user.findFirst({
+      where: {
+        OR: [
+          {
+            email,
+            emailVerified: {
+              not: null,
+            },
+          },
+          {
+            secondaryEmails: {
+              some: {
+                email,
+                emailVerified: {
+                  not: null,
+                },
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        email: true,
+        requiresBookerEmailVerification: true,
+      },
+    });
+  }
 }
