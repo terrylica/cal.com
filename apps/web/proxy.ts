@@ -1,13 +1,13 @@
-import { get } from "@vercel/edge-config";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-
+import process from "node:process";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import getIP from "@calcom/lib/getIP";
 import { HttpError } from "@calcom/lib/http-error";
 import { piiHasher } from "@calcom/lib/server/PiiHasher";
-
 import { getCspHeader, getCspNonce } from "@lib/csp";
+import { get } from "@vercel/edge-config";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { C } from "nuqs/dist/parsers-U3P6hK0x";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
@@ -18,7 +18,7 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
   }
 };
 
-export const POST_METHODS_ALLOWED_API_ROUTES = [
+export const POST_METHODS_ALLOWED_API_ROUTES: string[] = [
   "/api/auth/forgot-password",
   "/api/auth/oauth/me",
   "/api/auth/oauth/refreshToken",
@@ -264,9 +264,22 @@ function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
   return reqWithCSP;
 }
 
+
+/**
+ * API routes that should be completely excluded from middleware processing.
+ * These routes bypass all middleware logic including rate limiting, CSP, etc.
+ */
+const MIDDLEWARE_EXCLUDED_API_ROUTES: string[] = ["/api/logo"];
+
+const excludedRoutes: string = MIDDLEWARE_EXCLUDED_API_ROUTES.map((route) =>
+  route.replace(/\//g, "\\/").replace(/\./g, "\\.")
+).join("|");
+
+const baseExclusions: string =
+  "_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$";
+const apiExclusions: string = excludedRoutes.length > 0 ? `|${excludedRoutes}(?:/|$|\\?)` : "";
 export const config = {
-  matcher: [
-    "/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|api/logo(?:/|$|\\?)).*)"],
+  matcher: [`/((?!${baseExclusions}${apiExclusions}).*)`],
 };
 
 export default proxy;
