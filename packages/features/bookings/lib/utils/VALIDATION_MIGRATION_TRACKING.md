@@ -32,7 +32,8 @@ Move all validation/enrichment logic out of `RegularBookingService.handler()` in
 
 ## Integration Status
 
-- [ ] **This PR**: Service created with tests, NOT integrated into handler
-- [ ] **Follow-up PR 1**: Integrate into `RegularBookingService.handler()`
-- [ ] **Follow-up PR 2**: Integrate into `RecurringBookingService`
-- [ ] **Follow-up PR 3**: Create API v2 wrapper service
+- [x] **This PR**: Service created with tests, NOT integrated into handler
+- [x] **Follow-up PR 1**: Integrate into `RegularBookingService.handler()`
+- [x] **Follow-up PR 2**: Integrate into `RecurringBookingService` (delegates to RegularBookingService)
+- [x] **Follow-up PR 3**: Create API v2 wrapper service
+
