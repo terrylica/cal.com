@@ -1,8 +1,8 @@
 import { BillingPeriodRepository } from "@calcom/features/ee/billing/repository/billingPeriod/BillingPeriodRepository";
 import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
+import { getFeatureRepository } from "@calcom/features/di/containers/FeatureRepository";
 import stripe from "@calcom/features/ee/payments/server/stripe";
-import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
-import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+import type { IFeatureRepository } from "@calcom/features/flags/repositories/PrismaFeatureRepository";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
 import type { BillingPeriod } from "@calcom/prisma/enums";
@@ -23,29 +23,29 @@ export interface BillingPeriodInfo {
 export interface BillingPeriodServiceDeps {
   logger?: Logger<unknown>;
   repository?: BillingPeriodRepository;
-  featuresRepository?: IFeaturesRepository;
+  featureRepository?: IFeatureRepository;
 }
 
 export class BillingPeriodService {
   private logger: Logger<unknown>;
   private repository: BillingPeriodRepository;
-  private featuresRepository: IFeaturesRepository;
+  private featureRepository: IFeatureRepository;
 
   constructor(
     loggerOrDeps?: Logger<unknown> | BillingPeriodServiceDeps,
     repository?: BillingPeriodRepository
   ) {
     // Support both old positional args and new deps object for backwards compatibility
-    if (loggerOrDeps && typeof loggerOrDeps === "object" && "featuresRepository" in loggerOrDeps) {
+    if (loggerOrDeps && typeof loggerOrDeps === "object" && "featureRepository" in loggerOrDeps) {
       const deps = loggerOrDeps as BillingPeriodServiceDeps;
       this.logger = deps.logger || log;
       this.repository = deps.repository || new BillingPeriodRepository();
-      this.featuresRepository = deps.featuresRepository || new FeaturesRepository(prisma);
+      this.featureRepository = deps.featureRepository || getFeatureRepository();
     } else {
       // Legacy constructor signature
       this.logger = (loggerOrDeps as Logger<unknown>) || log;
       this.repository = repository || new BillingPeriodRepository();
-      this.featuresRepository = new FeaturesRepository(prisma);
+      this.featureRepository = getFeatureRepository();
     }
   }
 
@@ -61,9 +61,8 @@ export class BillingPeriodService {
 
   async shouldApplyMonthlyProration(teamId: number): Promise<boolean> {
     try {
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
-
-      if (!isFeatureEnabled) {
+      const feature = await this.featureRepository.findBySlug("monthly-proration");
+      if (!feature?.enabled) {
         return false;
       }
 
@@ -78,9 +77,8 @@ export class BillingPeriodService {
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
-
-      if (!isFeatureEnabled) {
+      const feature = await this.featureRepository.findBySlug("hwm-seating");
+      if (!feature?.enabled) {
         return false;
       }
 

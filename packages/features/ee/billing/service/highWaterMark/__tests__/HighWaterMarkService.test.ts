@@ -30,9 +30,9 @@ const createMockBillingService = () => ({
   getSubscription: vi.fn(),
 });
 
-// Mock features repository
-const createMockFeaturesRepository = () => ({
-  checkIfFeatureIsEnabledGlobally: vi.fn(),
+// Mock feature repository
+const createMockFeatureRepository = () => ({
+  findBySlug: vi.fn(),
 });
 
 describe("HighWaterMarkService", () => {
@@ -41,14 +41,14 @@ describe("HighWaterMarkService", () => {
   let mockRepository: ReturnType<typeof createMockRepository>;
   let mockTeamRepository: ReturnType<typeof createMockTeamRepository>;
   let mockBillingService: ReturnType<typeof createMockBillingService>;
-  let mockFeaturesRepository: ReturnType<typeof createMockFeaturesRepository>;
+  let mockFeatureRepository: ReturnType<typeof createMockFeatureRepository>;
 
   beforeEach(() => {
     mockLogger = createMockLogger();
     mockRepository = createMockRepository();
     mockTeamRepository = createMockTeamRepository();
     mockBillingService = createMockBillingService();
-    mockFeaturesRepository = createMockFeaturesRepository();
+    mockFeatureRepository = createMockFeatureRepository();
 
     service = new HighWaterMarkService({
       // @ts-expect-error - mock logger
@@ -59,14 +59,14 @@ describe("HighWaterMarkService", () => {
       teamRepository: mockTeamRepository,
       // @ts-expect-error - mock billing service
       billingService: mockBillingService,
-      // @ts-expect-error - mock features repository
-      featuresRepository: mockFeaturesRepository,
+      // @ts-expect-error - mock feature repository
+      featureRepository: mockFeatureRepository,
     });
   });
 
   describe("shouldApplyHighWaterMark", () => {
     it("returns false when feature flag is disabled", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(false);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: false });
 
       const result = await service.shouldApplyHighWaterMark(123);
 
@@ -75,7 +75,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns false when no billing record exists", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getByTeamId.mockResolvedValue(null);
 
       const result = await service.shouldApplyHighWaterMark(123);
@@ -84,7 +84,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns false for annual billing", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getByTeamId.mockResolvedValue({ billingPeriod: "ANNUAL" });
 
       const result = await service.shouldApplyHighWaterMark(123);
@@ -93,7 +93,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns true for monthly billing with feature enabled", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getByTeamId.mockResolvedValue({ billingPeriod: "MONTHLY" });
 
       const result = await service.shouldApplyHighWaterMark(123);
@@ -102,9 +102,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns false and logs error when exception occurs", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockRejectedValue(
-        new Error("DB error")
-      );
+      mockFeatureRepository.findBySlug.mockRejectedValue(new Error("DB error"));
 
       const result = await service.shouldApplyHighWaterMark(123);
 
@@ -118,7 +116,7 @@ describe("HighWaterMarkService", () => {
     const currentPeriodStart = new Date("2024-01-01");
 
     it("returns null when shouldApplyHighWaterMark returns false", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(false);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: false });
 
       const result = await service.updateHighWaterMarkOnSeatAddition({
         teamId,
@@ -129,7 +127,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns null when no billing record found", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getByTeamId.mockResolvedValueOnce({ billingPeriod: "MONTHLY" });
       mockRepository.getByTeamId.mockResolvedValueOnce(null);
 
@@ -143,7 +141,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns null when member count cannot be retrieved", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getByTeamId.mockResolvedValue({
         billingPeriod: "MONTHLY",
         isOrganization: false,
@@ -160,7 +158,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("updates HWM and returns result when successful", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getByTeamId.mockResolvedValue({
         billingPeriod: "MONTHLY",
         isOrganization: false,
@@ -194,7 +192,7 @@ describe("HighWaterMarkService", () => {
     const subscriptionId = "sub_123";
 
     it("returns false when feature flag is disabled", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(false);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: false });
 
       const result = await service.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -212,9 +210,9 @@ describe("HighWaterMarkService", () => {
         teamRepository: mockTeamRepository,
         billingService: undefined,
         // @ts-expect-error - mock features repository
-        featuresRepository: mockFeaturesRepository,
+        featureRepository: mockFeatureRepository,
       });
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
 
       const result = await serviceWithoutBilling.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -223,7 +221,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns false when no billing record found", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue(null);
 
       const result = await service.applyHighWaterMarkToSubscription(subscriptionId);
@@ -233,7 +231,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns false for non-monthly billing", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         billingPeriod: "ANNUAL",
       });
@@ -245,7 +243,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns false when HWM equals paidSeats (no update needed)", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         teamId: 123,
         subscriptionItemId: "si_123",
@@ -262,7 +260,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("lazy initializes HWM when null", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         teamId: 123,
         subscriptionItemId: "si_123",
@@ -281,7 +279,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("syncs paidSeats from Stripe when null", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         teamId: 123,
         subscriptionItemId: "si_123",
@@ -305,7 +303,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("scales up subscription when HWM > paidSeats", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         teamId: 123,
         subscriptionItemId: "si_123",
@@ -337,7 +335,7 @@ describe("HighWaterMarkService", () => {
     const newPeriodStart = new Date("2024-02-01");
 
     it("returns false when feature flag is disabled", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(false);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: false });
 
       const result = await service.resetSubscriptionAfterRenewal({
         subscriptionId,
@@ -357,9 +355,9 @@ describe("HighWaterMarkService", () => {
         teamRepository: mockTeamRepository,
         billingService: undefined,
         // @ts-expect-error - mock features repository
-        featuresRepository: mockFeaturesRepository,
+        featureRepository: mockFeatureRepository,
       });
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
 
       const result = await serviceWithoutBilling.resetSubscriptionAfterRenewal({
         subscriptionId,
@@ -370,7 +368,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("returns false for non-monthly billing", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         billingPeriod: "ANNUAL",
       });
@@ -384,7 +382,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("resets HWM but returns false when memberCount equals paidSeats", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         teamId: 123,
         subscriptionItemId: "si_123",
@@ -410,7 +408,7 @@ describe("HighWaterMarkService", () => {
     });
 
     it("scales down subscription when memberCount < paidSeats", async () => {
-      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
       mockRepository.getBySubscriptionId.mockResolvedValue({
         teamId: 123,
         subscriptionItemId: "si_123",
