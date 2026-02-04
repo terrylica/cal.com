@@ -264,9 +264,21 @@ function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
   return reqWithCSP;
 }
 
+/**
+ * API routes that should be completely excluded from middleware processing.
+ * These routes bypass all middleware logic including rate limiting, CSP, etc.
+ */
+const MIDDLEWARE_EXCLUDED_API_ROUTES: string[] = ["/api/avatar"];
+
+const excludedRoutes: string = MIDDLEWARE_EXCLUDED_API_ROUTES.map((route) =>
+  route.replace(/\//g, "\\/").replace(/\./g, "\\.")
+).join("|");
+
+const baseExclusions: string =
+  "_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$";
+const apiExclusions: string = excludedRoutes.length > 0 ? `|${excludedRoutes}(?:/|$|\\?)` : "";
 export const config = {
-  matcher: [
-    "/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|api/avatar(?:/|$)).*)"],
+  matcher: [`/((?!${baseExclusions}${apiExclusions}).*)`],
 };
 
 export default proxy;
