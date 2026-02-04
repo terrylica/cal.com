@@ -71,7 +71,7 @@ async function handler(req: NextRequest, { params }: { params: Promise<Params> }
     headers: {
       "Content-Type": "image/png",
       "Content-Length": imageResp.length.toString(),
-      "Cache-Control": "max-age=86400",
+      "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
     },
     status: 200,
   });
