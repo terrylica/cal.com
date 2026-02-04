@@ -303,6 +303,15 @@ class GoogleCalendarService implements Calendar {
               ...calEvent,
               additionalInformation: { hangoutLink: event.hangoutLink },
             }),
+            location: getLocation({
+              videoCallData: calEvent.videoCallData,
+              additionalInformation: {
+                ...calEvent.additionalInformation,
+                hangoutLink: event.hangoutLink,
+              },
+              location: calEvent.location,
+              uid: calEvent.uid,
+            }),
           },
         });
       }
@@ -406,7 +415,7 @@ class GoogleCalendarService implements Calendar {
       });
 
       if (evt && evt.data.id && evt.data.hangoutLink && event.location === MeetLocationType) {
-        calendar.events.patch({
+        await calendar.events.patch({
           // Update the same event but this time we know the hangout link
           calendarId: selectedCalendar,
           eventId: evt.data.id || "",
@@ -414,6 +423,15 @@ class GoogleCalendarService implements Calendar {
             description: getRichDescription({
               ...event,
               additionalInformation: { hangoutLink: evt.data.hangoutLink },
+            }),
+            location: getLocation({
+              videoCallData: event.videoCallData,
+              additionalInformation: {
+                ...event.additionalInformation,
+                hangoutLink: evt.data.hangoutLink,
+              },
+              location: event.location,
+              uid: event.uid,
             }),
           },
         });
