@@ -1,6 +1,12 @@
 import type { ITranslationService } from "@calcom/features/translation/services/ITranslationService";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const mockPrisma = vi.hoisted(() => ({
+  workflowStep: {
+    findUnique: vi.fn(),
+  },
+}));
+
 const mockTranslationService: ITranslationService = {
   translateText: vi.fn(),
   getTargetLocales: vi.fn(),
@@ -25,14 +31,29 @@ vi.mock("@calcom/lib/logger", () => ({
   default: { error: vi.fn(), warn: vi.fn() },
 }));
 
+vi.mock("@calcom/prisma", () => ({
+  __esModule: true,
+  default: mockPrisma,
+}));
+
 import { translateWorkflowStepData } from "./translateWorkflowStepData";
 
 describe("translateWorkflowStepData", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(mockPrisma.workflowStep.findUnique).mockResolvedValue({
+      reminderBody: "Hello",
+      emailSubject: null,
+      sourceLocale: "en",
+    });
   });
 
   it("should translate reminderBody to all supported locales", async () => {
+    vi.mocked(mockPrisma.workflowStep.findUnique).mockResolvedValue({
+      reminderBody: "Hello {ATTENDEE_NAME}",
+      emailSubject: null,
+      sourceLocale: "en",
+    });
     vi.mocked(mockTranslationService.translateText).mockResolvedValue({
       translations: [
         { translatedText: "Translated text", targetLocale: "es" },
@@ -66,6 +87,11 @@ describe("translateWorkflowStepData", () => {
   });
 
   it("should translate emailSubject when provided", async () => {
+    vi.mocked(mockPrisma.workflowStep.findUnique).mockResolvedValue({
+      reminderBody: null,
+      emailSubject: "Booking Reminder",
+      sourceLocale: "en",
+    });
     vi.mocked(mockTranslationService.translateText).mockResolvedValue({
       translations: [{ translatedText: "Translated subject", targetLocale: "es" }],
       failedLocales: [],
@@ -92,6 +118,11 @@ describe("translateWorkflowStepData", () => {
   });
 
   it("should translate both body and subject when provided", async () => {
+    vi.mocked(mockPrisma.workflowStep.findUnique).mockResolvedValue({
+      reminderBody: "Body text",
+      emailSubject: "Subject text",
+      sourceLocale: "en",
+    });
     vi.mocked(mockTranslationService.translateText).mockResolvedValue({
       translations: [{ translatedText: "Translated", targetLocale: "es" }],
       failedLocales: [],
@@ -112,6 +143,11 @@ describe("translateWorkflowStepData", () => {
   });
 
   it("should not call repository when no translations are returned", async () => {
+    vi.mocked(mockPrisma.workflowStep.findUnique).mockResolvedValue({
+      reminderBody: "Hello",
+      emailSubject: null,
+      sourceLocale: "en",
+    });
     vi.mocked(mockTranslationService.translateText).mockResolvedValue({
       translations: [],
       failedLocales: ["es", "de"],
@@ -134,6 +170,11 @@ describe("translateWorkflowStepData", () => {
   });
 
   it("should preserve targetLocale in translation data", async () => {
+    vi.mocked(mockPrisma.workflowStep.findUnique).mockResolvedValue({
+      reminderBody: "Hello",
+      emailSubject: null,
+      sourceLocale: "en",
+    });
     vi.mocked(mockTranslationService.translateText).mockResolvedValue({
       translations: [
         { translatedText: "Hola", targetLocale: "es" },
