@@ -205,6 +205,7 @@ async function getHandler(request: NextRequest) {
     });
   }
 
+  // Create a legacy request object for compatibility with the legacy request object
   const legacyReq = buildLegacyRequest(await headers(), await cookies());
   const { isValidOrgDomain } = orgDomainConfig(legacyReq);
 
