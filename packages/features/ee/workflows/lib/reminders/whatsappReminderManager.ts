@@ -24,6 +24,7 @@ import {
   whatsappEventRescheduledTemplate,
   whatsappReminderTemplate,
 } from "./templates/whatsapp";
+import { getAttendeeToBeUsedInSMS, getSMSMessageWithVariables } from "./utils";
 
 const log = logger.getSubLogger({ prefix: ["[whatsappReminderManager]"] });
 
@@ -96,7 +97,7 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs & 
   const locale = evt.organizer.language.locale;
   const timeFormat = evt.organizer.timeFormat;
 
-  const contentSid = getContentSidForTemplate(template);
+  let contentSid: string | undefined = getContentSidForTemplate(template);
   const contentVariables = getContentVariablesForTemplate({
     name,
     attendeeName,
@@ -190,13 +191,15 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs & 
   ) {
     const attendeeLocale = evt.attendees[0].language?.locale || "en";
     const translationService = await getTranslationService();
-    const { translatedBody } = await translationService.getWorkflowStepTranslations(
+    const { translatedBody } = await translationService.getWorkflowStepTranslation(
       workflowStepId,
       attendeeLocale,
       { includeBody: true }
     );
     if (translatedBody) {
-      textMessage = translatedBody;
+      const attendeeToBeUsedInSMS = getAttendeeToBeUsedInSMS(action, evt, reminderPhone);
+      textMessage = await getSMSMessageWithVariables(translatedBody, evt, attendeeToBeUsedInSMS, action);
+      contentSid = undefined;
     }
   }
 

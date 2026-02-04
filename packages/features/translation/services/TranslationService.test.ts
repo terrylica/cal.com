@@ -137,13 +137,13 @@ describe("TranslationService", () => {
     });
   });
 
-  describe("getWorkflowStepTranslations", () => {
+  describe("getWorkflowStepTranslation", () => {
     it("should return translated body when includeBody is true", async () => {
       mockWorkflowStepTranslationRepository.findByLocale.mockResolvedValue({
         translatedText: "Translated body",
       });
 
-      const result = await service.getWorkflowStepTranslations(1, "es", { includeBody: true });
+      const result = await service.getWorkflowStepTranslation(1, "es", { includeBody: true });
 
       expect(result.translatedBody).toBe("Translated body");
       expect(mockWorkflowStepTranslationRepository.findByLocale).toHaveBeenCalledWith(
@@ -158,7 +158,7 @@ describe("TranslationService", () => {
         translatedText: "Translated subject",
       });
 
-      const result = await service.getWorkflowStepTranslations(1, "es", { includeSubject: true });
+      const result = await service.getWorkflowStepTranslation(1, "es", { includeSubject: true });
 
       expect(result.translatedSubject).toBe("Translated subject");
       expect(mockWorkflowStepTranslationRepository.findByLocale).toHaveBeenCalledWith(
@@ -173,7 +173,7 @@ describe("TranslationService", () => {
         .mockResolvedValueOnce({ translatedText: "Translated body" })
         .mockResolvedValueOnce({ translatedText: "Translated subject" });
 
-      const result = await service.getWorkflowStepTranslations(1, "es", {
+      const result = await service.getWorkflowStepTranslation(1, "es", {
         includeBody: true,
         includeSubject: true,
       });
@@ -185,7 +185,7 @@ describe("TranslationService", () => {
     it("should return empty object when no translation found", async () => {
       mockWorkflowStepTranslationRepository.findByLocale.mockResolvedValue(null);
 
-      const result = await service.getWorkflowStepTranslations(1, "es", { includeBody: true });
+      const result = await service.getWorkflowStepTranslation(1, "es", { includeBody: true });
 
       expect(result.translatedBody).toBeUndefined();
     });
@@ -195,7 +195,7 @@ describe("TranslationService", () => {
         translatedText: "Translated body",
       });
 
-      await service.getWorkflowStepTranslations(1, "es");
+      await service.getWorkflowStepTranslation(1, "es");
 
       expect(mockWorkflowStepTranslationRepository.findByLocale).toHaveBeenCalledWith(
         1,
@@ -205,13 +205,13 @@ describe("TranslationService", () => {
     });
   });
 
-  describe("getEventTypeTranslations", () => {
+  describe("getEventTypeTranslation", () => {
     it("should return translated description when includeDescription is true", async () => {
       mockEventTypeTranslationRepository.findByLocale.mockResolvedValue({
         translatedText: "Translated description",
       });
 
-      const result = await service.getEventTypeTranslations(1, "es", { includeDescription: true });
+      const result = await service.getEventTypeTranslation(1, "es", { includeDescription: true });
 
       expect(result.translatedDescription).toBe("Translated description");
       expect(mockEventTypeTranslationRepository.findByLocale).toHaveBeenCalledWith(1, "DESCRIPTION", "es");
@@ -222,7 +222,7 @@ describe("TranslationService", () => {
         translatedText: "Translated title",
       });
 
-      const result = await service.getEventTypeTranslations(1, "es", { includeTitle: true });
+      const result = await service.getEventTypeTranslation(1, "es", { includeTitle: true });
 
       expect(result.translatedTitle).toBe("Translated title");
       expect(mockEventTypeTranslationRepository.findByLocale).toHaveBeenCalledWith(1, "TITLE", "es");
@@ -233,7 +233,7 @@ describe("TranslationService", () => {
         .mockResolvedValueOnce({ translatedText: "Translated title" })
         .mockResolvedValueOnce({ translatedText: "Translated description" });
 
-      const result = await service.getEventTypeTranslations(1, "es", {
+      const result = await service.getEventTypeTranslation(1, "es", {
         includeTitle: true,
         includeDescription: true,
       });
@@ -245,7 +245,7 @@ describe("TranslationService", () => {
     it("should return empty object when no translation found", async () => {
       mockEventTypeTranslationRepository.findByLocale.mockResolvedValue(null);
 
-      const result = await service.getEventTypeTranslations(1, "es", { includeDescription: true });
+      const result = await service.getEventTypeTranslation(1, "es", { includeDescription: true });
 
       expect(result.translatedDescription).toBeUndefined();
     });
@@ -255,7 +255,7 @@ describe("TranslationService", () => {
         translatedText: "Translated description",
       });
 
-      await service.getEventTypeTranslations(1, "es");
+      await service.getEventTypeTranslation(1, "es");
 
       expect(mockEventTypeTranslationRepository.findByLocale).toHaveBeenCalledWith(1, "DESCRIPTION", "es");
     });

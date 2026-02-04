@@ -38,12 +38,12 @@ export type EventTypeTranslationLookupOptions = {
 export interface ITranslationService {
   translateText(params: TranslateTextParams): Promise<TranslateTextResult>;
   getTargetLocales(sourceLocale: string): TranslationSupportedLocale[];
-  getWorkflowStepTranslations(
+  getWorkflowStepTranslation(
     workflowStepId: number,
     targetLocale: string,
     options?: WorkflowStepTranslationLookupOptions
   ): Promise<WorkflowStepTranslationLookupResult>;
-  getEventTypeTranslations(
+  getEventTypeTranslation(
     eventTypeId: number,
     targetLocale: string,
     options?: EventTypeTranslationLookupOptions

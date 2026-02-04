@@ -34,7 +34,7 @@ vi.mock("@calcom/emails/lib/generateIcsString", () => ({
 }));
 
 const mockTranslationService = vi.hoisted(() => ({
-  getWorkflowStepTranslations: vi.fn(),
+  getWorkflowStepTranslation: vi.fn(),
 }));
 
 vi.mock("@calcom/features/di/containers/TranslationService", () => ({
@@ -68,7 +68,7 @@ describe("EmailWorkflowService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockReset();
+    vi.mocked(mockTranslationService.getWorkflowStepTranslation).mockReset();
     emailWorkflowService = new EmailWorkflowService(
       mockWorkflowReminderRepository as WorkflowReminderRepository,
       mockBookingSeatRepository as BookingSeatRepository
@@ -630,11 +630,11 @@ describe("EmailWorkflowService", () => {
     };
 
     beforeEach(() => {
-      vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockReset();
+      vi.mocked(mockTranslationService.getWorkflowStepTranslation).mockReset();
     });
 
     test("should use translated content when autoTranslateEnabled is true and translation exists", async () => {
-      vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockResolvedValue({
+      vi.mocked(mockTranslationService.getWorkflowStepTranslation).mockResolvedValue({
         translatedBody: "Cuerpo traducido",
         translatedSubject: "Asunto traducido",
       });
@@ -655,7 +655,7 @@ describe("EmailWorkflowService", () => {
         sourceLocale: "en",
       });
 
-      expect(mockTranslationService.getWorkflowStepTranslations).toHaveBeenCalledTimes(1);
+      expect(mockTranslationService.getWorkflowStepTranslation).toHaveBeenCalledTimes(1);
       expect(result.subject).toBe("Asunto traducido");
       expect(result.html).toContain("Cuerpo traducido");
     });
@@ -676,12 +676,12 @@ describe("EmailWorkflowService", () => {
         autoTranslateEnabled: false,
       });
 
-      expect(mockTranslationService.getWorkflowStepTranslations).not.toHaveBeenCalled();
+      expect(mockTranslationService.getWorkflowStepTranslation).not.toHaveBeenCalled();
       expect(result.subject).toBe("Original Subject");
     });
 
     test("should fallback to original content when translation not found", async () => {
-      vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockResolvedValue({
+      vi.mocked(mockTranslationService.getWorkflowStepTranslation).mockResolvedValue({
         translatedBody: null,
         translatedSubject: null,
       });
@@ -702,7 +702,7 @@ describe("EmailWorkflowService", () => {
         sourceLocale: "en",
       });
 
-      expect(mockTranslationService.getWorkflowStepTranslations).toHaveBeenCalledTimes(1);
+      expect(mockTranslationService.getWorkflowStepTranslation).toHaveBeenCalledTimes(1);
       expect(result.subject).toBe("Original Subject");
     });
 
@@ -723,7 +723,7 @@ describe("EmailWorkflowService", () => {
         sourceLocale: "en",
       });
 
-      expect(mockTranslationService.getWorkflowStepTranslations).not.toHaveBeenCalled();
+      expect(mockTranslationService.getWorkflowStepTranslation).not.toHaveBeenCalled();
       expect(result.subject).toBe("Original Subject");
     });
   });

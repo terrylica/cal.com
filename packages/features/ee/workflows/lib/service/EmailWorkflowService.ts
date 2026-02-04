@@ -502,7 +502,7 @@ export class EmailWorkflowService {
 
       if (autoTranslateEnabled && isEmailAttendeeAction && workflowStepId) {
         const translationService = await getTranslationService();
-        const { translatedBody, translatedSubject } = await translationService.getWorkflowStepTranslations(
+        const { translatedBody, translatedSubject } = await translationService.getWorkflowStepTranslation(
           workflowStepId,
           locale,
           { includeBody: true, includeSubject: true }

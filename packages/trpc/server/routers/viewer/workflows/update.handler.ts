@@ -478,7 +478,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
           agentId: newStep.agentId || null,
           verifiedAt: !SCANNING_WORKFLOW_STEPS ? new Date() : didBodyChange ? null : oldStep.verifiedAt,
           autoTranslateEnabled: ctx.user.organization?.id ? (newStep.autoTranslateEnabled ?? false) : false,
-          sourceLocale: newStep.sourceLocale ?? ctx.user.locale,
+          sourceLocale: newStep.sourceLocale || ctx.user.locale,
         });
 
         const shouldTranslate =

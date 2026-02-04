@@ -70,7 +70,7 @@ export class TranslationService implements ITranslationService {
     }
   }
 
-  async getWorkflowStepTranslations(
+  async getWorkflowStepTranslation(
     workflowStepId: number,
     targetLocale: string,
     options: WorkflowStepTranslationLookupOptions = { includeBody: true, includeSubject: false }
@@ -106,7 +106,7 @@ export class TranslationService implements ITranslationService {
     return result;
   }
 
-  async getEventTypeTranslations(
+  async getEventTypeTranslation(
     eventTypeId: number,
     targetLocale: string,
     options: EventTypeTranslationLookupOptions = { includeTitle: false, includeDescription: true }

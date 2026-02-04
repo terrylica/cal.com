@@ -184,7 +184,7 @@ const scheduleSMSReminderForEvt = async (
     ) {
       const attendeeLocale = attendeeToBeUsedInSMS.language?.locale || "en";
       const translationService = await getTranslationService();
-      const { translatedBody } = await translationService.getWorkflowStepTranslations(
+      const { translatedBody } = await translationService.getWorkflowStepTranslation(
         workflowStepId,
         attendeeLocale,
         { includeBody: true }
