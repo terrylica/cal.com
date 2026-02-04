@@ -392,6 +392,9 @@ describe("BookingDataPreparationService", () => {
       vi.mocked(getEventType).mockResolvedValue(
         createMockEventType({ maxActiveBookingsPerBooker: 5 })
       );
+      vi.mocked(getBookingData).mockResolvedValue(
+        createMockBookingData({ rescheduleUid: "existing-uid" })
+      );
       const mockSchemaGetter = vi.fn().mockReturnValue({});
 
       const preparedData = await service.enrich(

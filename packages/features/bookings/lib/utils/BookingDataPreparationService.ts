@@ -7,124 +7,21 @@ import { ProfileRepository } from "@calcom/features/profile/repositories/Profile
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { shouldIgnoreContactOwner } from "@calcom/lib/bookings/routing/utils";
 import { HttpError } from "@calcom/lib/http-error";
-import type { AppsStatus } from "@calcom/types/Calendar";
 
-import type {
-  BookingDataSchemaGetter,
-  BookingFlowConfig,
-  CreateBookingMeta,
-  CreateRegularBookingData,
-} from "../dto/types";
+import type { BookingDataSchemaGetter, CreateBookingMeta, CreateRegularBookingData } from "../dto/types";
 import { checkActiveBookingsLimitForBooker } from "../handleNewBooking/checkActiveBookingsLimitForBooker";
 import { checkIfBookerEmailIsBlocked } from "../handleNewBooking/checkIfBookerEmailIsBlocked";
 import { getBookingData } from "../handleNewBooking/getBookingData";
 import { getEventType } from "../handleNewBooking/getEventType";
-import type { getEventTypeResponse } from "../handleNewBooking/getEventTypesFromDB";
 import { validateBookingTimeIsNotOutOfBounds } from "../handleNewBooking/validateBookingTimeIsNotOutOfBounds";
 import { validateEventLength } from "../handleNewBooking/validateEventLength";
-
-type BookingData = Awaited<ReturnType<typeof getBookingData>>;
-
-export type EnrichmentInput = {
-  eventTypeId: number;
-  eventTypeSlug: string;
-};
-
-type EnrichedEventType = getEventTypeResponse & {
-  isTeamEventType: boolean;
-  timeZone: string | null;
-};
-
-export type EnrichmentOutput = {
-  eventType: EnrichedEventType;
-};
-
-export type ValidationInputContext = EnrichmentInput & {
-  rawBookingData: CreateRegularBookingData;
-  userId?: number;
-  eventTimeZone?: string;
-};
-
-type BookingFormData = {
-  booker: {
-    name: string | { firstName: string; lastName?: string };
-    phoneNumber: string | null;
-    email: string;
-    timeZone: string;
-    smsReminderNumber: string | null;
-    language: string | null;
-  };
-  rawBookingLocation: string;
-  additionalNotes: string;
-  startTime: string;
-  endTime: string;
-  rawGuests: string[] | null;
-  responses: BookingData["responses"];
-  rescheduleData: {
-    reason: string | null;
-    rawUid: string | null;
-    rescheduledBy: string | null;
-  };
-  customInputs: CreateRegularBookingData["customInputs"];
-  calEventResponses: BookingData["calEventResponses"];
-  calEventUserFieldsResponses: BookingData["calEventUserFieldsResponses"];
-  metadata: CreateRegularBookingData["metadata"];
-  creationSource: CreateRegularBookingData["creationSource"];
-  tracking: CreateRegularBookingData["tracking"];
-};
-
-export type PreparedBookingData = {
-  eventType: EnrichedEventType;
-  bookingFormData: BookingFormData;
-  loggedInUser: {
-    id: number | null;
-  };
-  routingData: {
-    routedTeamMemberIds: number[] | null;
-    reroutingFormResponses: CreateRegularBookingData["reroutingFormResponses"] | null;
-    routingFormResponseId: number | null;
-    rawTeamMemberEmail: string | null;
-    crmRecordId: string | null;
-    crmOwnerRecordType: string | null;
-    crmAppSlug: string | null;
-    skipContactOwner: boolean | null;
-    contactOwnerEmail: string | null;
-  };
-  bookingMeta: {
-    areCalendarEventsEnabled: boolean;
-    skipAvailabilityCheck: boolean;
-    skipEventLimitsCheck: boolean;
-    skipCalendarSyncTaskCreation: boolean;
-    appsStatus: AppsStatus[] | undefined;
-    platform: {
-      clientId: string | null;
-      rescheduleUrl: string | null;
-      cancelUrl: string | null;
-      bookingUrl: string | null;
-      bookingLocation: string | null;
-    } | null;
-  };
-  config: BookingFlowConfig;
-  hashedBookingLinkData: {
-    hasHashedBookingLink: boolean;
-    hashedLink: string | null;
-  } | null;
-  recurringBookingData: {
-    luckyUsers: number[];
-    recurringCount: number;
-    allRecurringDates: { start: string; end?: string }[] | null;
-    isFirstRecurringSlot: boolean;
-    numSlotsToCheckForAvailability: number;
-    recurringEventId: string | null;
-    thirdPartyRecurringEventId: string | null;
-  };
-  teamOrUserSlug: string | string[] | null;
-  seatsData: {
-    bookingUid: string | null;
-  };
-  spamCheckService: ReturnType<typeof getSpamCheckService>;
-  eventOrganizationId: number | null;
-};
+import type {
+  BookingData,
+  BookingFormData,
+  EnrichedEventType,
+  IBookingDataPreparationServiceDependencies,
+  PreparedBookingData,
+} from "./BookingDataPreparationService.types";
 
 async function getEventOrganizationId({
   eventType,
@@ -160,11 +57,16 @@ async function getEventOrganizationId({
   return eventOrganizationId;
 }
 
-export interface IBookingDataPreparationServiceDependencies {
-  log: Logger<unknown>;
-  bookingRepository: BookingRepository;
-  userRepository: UserRepository;
-}
+export type {
+  BookingData,
+  BookingFormData,
+  EnrichedEventType,
+  EnrichmentInput,
+  EnrichmentOutput,
+  IBookingDataPreparationServiceDependencies,
+  PreparedBookingData,
+  ValidationInputContext,
+} from "./BookingDataPreparationService.types";
 
 export class BookingDataPreparationService {
   private readonly log: Logger<unknown>;
