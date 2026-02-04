@@ -33,7 +33,7 @@ describe("translateWorkflowStepData", () => {
       workflowStepId: 1,
       reminderBody: "Hello {ATTENDEE_NAME}",
       emailSubject: null,
-      userLocale: "en",
+      sourceLocale: "en",
     });
 
     await translateWorkflowStepData(payload);
@@ -57,7 +57,7 @@ describe("translateWorkflowStepData", () => {
       workflowStepId: 1,
       reminderBody: null,
       emailSubject: "Booking Reminder",
-      userLocale: "en",
+      sourceLocale: "en",
     });
 
     await translateWorkflowStepData(payload);
@@ -80,7 +80,7 @@ describe("translateWorkflowStepData", () => {
       workflowStepId: 1,
       reminderBody: "Body text",
       emailSubject: "Subject text",
-      userLocale: "en",
+      sourceLocale: "en",
     });
 
     await translateWorkflowStepData(payload);
@@ -98,7 +98,7 @@ describe("translateWorkflowStepData", () => {
       workflowStepId: 1,
       reminderBody: "Hello",
       emailSubject: null,
-      userLocale: "es",
+      sourceLocale: "es",
     });
 
     await translateWorkflowStepData(payload);
@@ -115,7 +115,7 @@ describe("translateWorkflowStepData", () => {
       workflowStepId: 1,
       reminderBody: "Hello",
       emailSubject: null,
-      userLocale: "en",
+      sourceLocale: "en",
     });
 
     await translateWorkflowStepData(payload);
