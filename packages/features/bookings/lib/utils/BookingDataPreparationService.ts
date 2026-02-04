@@ -1,5 +1,3 @@
-import type { Logger } from "tslog";
-
 import { verifyCodeUnAuthenticated } from "@calcom/features/auth/lib/verifyCodeUnAuthenticated";
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import { getSpamCheckService } from "@calcom/features/di/watchlist/containers/SpamCheckService.container";
@@ -7,7 +5,7 @@ import { ProfileRepository } from "@calcom/features/profile/repositories/Profile
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { shouldIgnoreContactOwner } from "@calcom/lib/bookings/routing/utils";
 import { HttpError } from "@calcom/lib/http-error";
-
+import type { Logger } from "tslog";
 import type { BookingDataSchemaGetter, CreateBookingMeta, CreateRegularBookingData } from "../dto/types";
 import { checkActiveBookingsLimitForBooker } from "../handleNewBooking/checkActiveBookingsLimitForBooker";
 import { checkIfBookerEmailIsBlocked } from "../handleNewBooking/checkIfBookerEmailIsBlocked";
@@ -184,6 +182,7 @@ export class BookingDataPreparationService {
     return {
       eventType,
       bookingFormData,
+      bookingData,
       loggedInUser: {
         id: loggedInUserId,
       },

@@ -60,6 +60,7 @@ export type BookingFormData = {
 export type PreparedBookingData = {
   eventType: EnrichedEventType;
   bookingFormData: BookingFormData;
+  bookingData: BookingData;
   loggedInUser: {
     id: number | null;
   };
