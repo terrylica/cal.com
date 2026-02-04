@@ -829,6 +829,7 @@ model BookingReference {
   @@index([bookingId])
   @@index([type])
   @@index([uid])
+  @@index([type, externalCalendarId, credentialId])
 }
 
 model Attendee {
