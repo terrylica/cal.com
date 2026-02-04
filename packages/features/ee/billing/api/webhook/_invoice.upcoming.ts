@@ -1,3 +1,4 @@
+import { getFeatureRepository } from "@calcom/features/di/containers/FeatureRepository";
 import { getBillingProviderService } from "@calcom/features/ee/billing/di/containers/Billing";
 import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
@@ -30,6 +31,7 @@ const handler = async (data: Data) => {
   const highWaterMarkService = new HighWaterMarkService({
     logger: log,
     billingService,
+    featureRepository: getFeatureRepository(),
   });
 
   try {

@@ -1,4 +1,5 @@
 import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
+import { getFeatureRepository } from "@calcom/features/di/containers/FeatureRepository";
 import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
 import type { Logger } from "tslog";
@@ -60,6 +61,7 @@ export async function handleHwmResetAfterRenewal(
   const highWaterMarkService = new HighWaterMarkService({
     logger: log,
     billingService: billingProviderService,
+    featureRepository: getFeatureRepository(),
   });
 
   try {
