@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextResponse } from "next/server";
+import { GET } from "../route";
 
 vi.mock("app/api/defaultResponderForAppDir", () => ({
   defaultResponderForAppDir:
@@ -13,11 +15,10 @@ vi.mock("next/headers", () => ({
   cookies: vi.fn().mockResolvedValue({ getAll: () => [] }),
 }));
 
-vi.mock("next/server", async () => {
-  const { vi: vitest } = await import("vitest");
+vi.mock("next/server", () => {
   return {
     NextResponse: {
-      redirect: vitest.fn((url: string | URL, init?: { status?: number; headers?: Record<string, string> }) => {
+      redirect: vi.fn((url: string | URL, init?: { status?: number; headers?: Record<string, string> }) => {
         const location = typeof url === "string" ? url : url.toString();
         const headers = new Map(Object.entries(init?.headers || {}));
         headers.set("location", location);
@@ -28,7 +29,7 @@ vi.mock("next/server", async () => {
           },
         } as unknown as Response;
       }),
-      json: vitest.fn((data: unknown, init?: { status?: number }) => {
+      json: vi.fn((data: unknown, init?: { status?: number }) => {
         return {
           status: init?.status ?? 200,
           json: async () => data,
@@ -87,9 +88,6 @@ vi.mock("@calcom/prisma", () => {
     },
   };
 });
-
-import { NextResponse } from "next/server";
-import { GET } from "../route";
 
 const createMockRequest = (url: string, host?: string): NextRequest => {
   const urlObj = new URL(url);
