@@ -406,7 +406,9 @@ class Office365CalendarService implements Calendar {
         // Process requests in chunks of 20
         for (let i = 0; i < requests.length; i += MS_GRAPH_BATCH_LIMIT) {
           const chunk = requests.slice(i, i + MS_GRAPH_BATCH_LIMIT);
-          const response = await this.apiGraphBatchCall(chunk);
+          // Use chunk-local ids so retry mapping matches this batch
+          const chunkWithLocalIds = chunk.map((request, index) => ({ ...request, id: index }));
+          const response = await this.apiGraphBatchCall(chunkWithLocalIds);
           const responseBody = await this.handleErrorJsonOffice365Calendar(response);
           let responseBatchApi: IBatchResponse = { responses: [] };
           if (typeof responseBody === "string") {
@@ -420,7 +422,11 @@ class Office365CalendarService implements Calendar {
             !!responseBatchApi?.responses && this.findRetryAfterResponse(responseBatchApi.responses);
 
           if (retryAfter && responseBatchApi.responses) {
-            responseBatchApi = await this.fetchRequestWithRetryAfter(chunk, responseBatchApi.responses, 2);
+            responseBatchApi = await this.fetchRequestWithRetryAfter(
+              chunkWithLocalIds,
+              responseBatchApi.responses,
+              2
+            );
           }
 
           // Recursively fetch nextLink responses for this chunk
