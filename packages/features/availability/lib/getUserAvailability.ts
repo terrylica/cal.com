@@ -115,8 +115,6 @@ export type GetUserAvailabilityInitialData = {
     id: number;
     email: string;
     bufferTime: number;
-    startTime: number;
-    endTime: number;
     timeZone: string;
     availability: Availability[];
     timeFormat: number | null;
