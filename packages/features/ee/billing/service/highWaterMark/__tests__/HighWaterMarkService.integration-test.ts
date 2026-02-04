@@ -1,4 +1,3 @@
-import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import prisma from "@calcom/prisma";
 import type { Team, User } from "@calcom/prisma/client";
 import { MembershipRole } from "@calcom/prisma/enums";
@@ -8,6 +7,17 @@ import { HighWaterMarkRepository } from "../../../repository/highWaterMark/HighW
 import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
 import { SeatChangeTrackingService } from "../../seatTracking/SeatChangeTrackingService";
 import { HighWaterMarkService } from "../HighWaterMarkService";
+
+// Mock feature repository to always return enabled
+const mockFeatureRepository = {
+  findBySlug: vi.fn().mockResolvedValue({ enabled: true }),
+  findAll: vi.fn().mockResolvedValue([]),
+  update: vi.fn(),
+};
+
+vi.mock("@calcom/features/di/containers/FeatureRepository", () => ({
+  getFeatureRepository: () => mockFeatureRepository,
+}));
 
 // Mock billing provider service
 const createMockBillingService = (): IBillingProviderService => ({
@@ -52,23 +62,6 @@ const createMockBillingService = (): IBillingProviderService => ({
   hasDefaultPaymentMethod: vi.fn().mockResolvedValue(true),
   createSubscriptionUsageRecord: vi.fn().mockResolvedValue(undefined),
 });
-
-const mockFeaturesRepository: IFeaturesRepository = {
-  checkIfFeatureIsEnabledGlobally: vi.fn().mockResolvedValue(true),
-  checkIfUserHasFeature: vi.fn().mockResolvedValue(false),
-  getUserFeaturesStatus: vi.fn().mockResolvedValue({}),
-  checkIfUserHasFeatureNonHierarchical: vi.fn().mockResolvedValue(false),
-  checkIfTeamHasFeature: vi.fn().mockResolvedValue(false),
-  getTeamsWithFeatureEnabled: vi.fn().mockResolvedValue([]),
-  setUserFeatureState: vi.fn().mockResolvedValue(undefined),
-  setTeamFeatureState: vi.fn().mockResolvedValue(undefined),
-  getUserFeatureStates: vi.fn().mockResolvedValue({}),
-  getTeamsFeatureStates: vi.fn().mockResolvedValue({}),
-  getUserAutoOptIn: vi.fn().mockResolvedValue(false),
-  getTeamsAutoOptIn: vi.fn().mockResolvedValue({}),
-  setUserAutoOptIn: vi.fn().mockResolvedValue(undefined),
-  setTeamAutoOptIn: vi.fn().mockResolvedValue(undefined),
-};
 
 const mockLogger = {
   info: vi.fn(),
