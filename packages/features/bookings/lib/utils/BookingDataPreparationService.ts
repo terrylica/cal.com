@@ -95,7 +95,7 @@ export class BookingDataPreparationService {
     });
 
     if (!eventType) {
-      throw new Error("Event type not found");
+      throw new HttpError({ statusCode: 404, message: "Event type not found" });
     }
 
     const user = eventType.users.find((user) => user.id === eventType.userId);
