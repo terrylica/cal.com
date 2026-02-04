@@ -7,20 +7,28 @@
 - [x] Database schema: Added `WorkflowStepAutoTranslatedField` enum
 - [x] Database schema: Added `WorkflowStepTranslation` model
 - [x] Database schema: Added `autoTranslateEnabled`, `sourceLocale`, `translations` to WorkflowStep
-- [x] Created WorkflowStepTranslationRepository
+- [x] Created WorkflowStepTranslationRepository (with DI/Prisma constructor injection)
 - [x] Created translateWorkflowStepData tasker task
 - [x] Integrated translation lookup in EmailWorkflowService
 - [x] Integrated translation lookup in smsReminderManager
+- [x] Integrated translation lookup in whatsappReminderManager
 - [x] Updated workflow update handler to trigger translation
 - [x] Added UI toggle in WorkflowStepContainer
 - [x] Added unit tests
+- [x] Created shared TranslationService with DI
 
 ## Files Changed
 
 ### New Files
 
+- `packages/features/translation/services/TranslationService.ts` - Shared translation service
+- `packages/features/translation/services/ITranslationService.ts` - Interface
+- `packages/features/translation/di/tokens.ts` - DI tokens
+- `packages/features/di/modules/TranslationService.ts` - DI module
+- `packages/features/di/containers/TranslationService.ts` - DI container
 - `packages/features/ee/workflows/repositories/WorkflowStepTranslationRepository.ts`
-- `packages/features/ee/workflows/repositories/WorkflowStepTranslationRepository.test.ts`
+- `packages/features/ee/workflows/di/WorkflowStepTranslationRepository.module.ts` - DI module
+- `packages/features/ee/workflows/di/WorkflowStepTranslationRepository.container.ts` - DI container
 - `packages/features/tasker/tasks/translateWorkflowStepData.ts`
 - `packages/features/tasker/tasks/translateWorkflowStepData.test.ts`
 

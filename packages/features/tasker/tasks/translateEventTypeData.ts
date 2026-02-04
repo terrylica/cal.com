@@ -1,13 +1,8 @@
-import { z } from "zod";
-
-import { EventTypeTranslationRepository } from "@calcom/features/eventTypeTranslation/repositories/EventTypeTranslationRepository";
-import { locales as i18nLocales } from "@calcom/lib/i18n";
+import { getTranslationService } from "@calcom/features/di/containers/TranslationService";
+import { getEventTypeTranslationRepository } from "@calcom/features/eventTypeTranslation/di/EventTypeTranslationRepository.container";
 import logger from "@calcom/lib/logger";
-import {
-  TRANSLATION_SUPPORTED_LOCALES,
-  type TranslationSupportedLocale,
-} from "@calcom/lib/translationConstants";
 import { EventTypeAutoTranslatedField } from "@calcom/prisma/enums";
+import { z } from "zod";
 
 export const ZTranslateEventDataPayloadSchema = z.object({
   eventTypeId: z.number(),
@@ -25,33 +20,17 @@ async function processTranslations({
   field,
 }: {
   text: string;
+  userLocale: string;
+  eventTypeId: number;
+  userId: number;
   field: EventTypeAutoTranslatedField;
-} & z.infer<typeof ZTranslateEventDataPayloadSchema>) {
-  const { LingoDotDevService } = await import("@calcom/lib/server/service/lingoDotDev");
-
+}): Promise<void> {
   try {
-    const targetLocales = TRANSLATION_SUPPORTED_LOCALES.filter(
-      (locale) => locale !== userLocale && i18nLocales.includes(locale)
-    );
+    const translationService = await getTranslationService();
+    const result = await translationService.translateText({ text, sourceLocale: userLocale });
 
-    const translations = await Promise.all(
-      targetLocales.map((targetLocale) => LingoDotDevService.localizeText(text, userLocale, targetLocale))
-    );
-
-    // Map translations with their locales first, then filter out null translations
-    // This maintains alignment between translations and their target locales
-    const translationsWithLocales = translations.map((trans, index) => ({
-      translatedText: trans,
-      targetLocale: targetLocales[index],
-    }));
-
-    const validTranslations = translationsWithLocales.filter(
-      (item): item is { translatedText: string; targetLocale: TranslationSupportedLocale } =>
-        item.translatedText !== null
-    );
-
-    if (validTranslations.length > 0) {
-      const translationData = validTranslations.map(({ translatedText, targetLocale }) => ({
+    if (result.translations.length > 0) {
+      const translationData = result.translations.map(({ translatedText, targetLocale }) => ({
         eventTypeId,
         sourceLocale: userLocale,
         targetLocale,
@@ -59,12 +38,16 @@ async function processTranslations({
         userId,
       }));
 
-      const upsertMany =
-        field === EventTypeAutoTranslatedField.DESCRIPTION
-          ? EventTypeTranslationRepository.upsertManyDescriptionTranslations
-          : EventTypeTranslationRepository.upsertManyTitleTranslations;
+      const eventTypeTranslationRepository = getEventTypeTranslationRepository();
+      if (field === EventTypeAutoTranslatedField.DESCRIPTION) {
+        await eventTypeTranslationRepository.upsertManyDescriptionTranslations(translationData);
+      } else {
+        await eventTypeTranslationRepository.upsertManyTitleTranslations(translationData);
+      }
+    }
 
-      await upsertMany(translationData);
+    if (result.failedLocales.length > 0) {
+      logger.warn(`Failed to translate event type ${field} to locales: ${result.failedLocales.join(", ")}`);
     }
   } catch (error) {
     logger.error(`Failed to process ${field} translations:`, error);

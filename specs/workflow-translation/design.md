@@ -54,17 +54,29 @@ Add to WorkflowStep:
 - Trigger `translateWorkflowStepData` tasker task when content changes
 
 **New tasker task** (`packages/features/tasker/tasks/translateWorkflowStepData.ts`):
-- Translate body/subject to 19 target locales using `LingoDotDevService`
-- Store translations in `WorkflowStepTranslation` table
+
+- Uses `TranslationService` to translate body/subject to 19 target locales
+- Store translations in `WorkflowStepTranslation` table via repository
+
+### TranslationService
+
+Shared service at `packages/features/translation/services/TranslationService.ts`:
+
+- `translateText()` - Translates text to all supported locales using LingoDotDevService
+- `getWorkflowStepTranslations()` - Looks up cached translations for workflow steps
+- `getEventTypeTranslations()` - Looks up cached translations for event types
+- Uses DI pattern with repositories injected via constructor
 
 ### Send-Time Integration
 
 **EmailWorkflowService** (`generateEmailPayloadForEvtWorkflow`):
-- Lookup translation for attendee's locale before `customTemplate()` call
+
+- Uses `TranslationService.getWorkflowStepTranslations()` to lookup translation
 - Fallback to original text if no translation found
 
 **smsReminderManager** / **whatsappReminderManager**:
-- Same pattern: lookup translation for attendee locale
+
+- Same pattern: uses TranslationService for attendee locale lookup
 
 ### UI Changes
 

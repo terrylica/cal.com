@@ -1,16 +1,15 @@
 import dayjs from "@calcom/dayjs";
+import { getTranslationService } from "@calcom/features/di/containers/TranslationService";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import prisma from "@calcom/prisma";
 import {
-  WorkflowTriggerEvents,
-  WorkflowTemplates,
   WorkflowActions,
   WorkflowMethods,
+  WorkflowTemplates,
+  WorkflowTriggerEvents,
 } from "@calcom/prisma/enums";
-
 import { isAttendeeAction } from "../actionHelperFunctions";
-import { getWorkflowStepTranslations } from "../translationLookup";
 import { IMMEDIATE_WORKFLOW_TRIGGER_EVENTS } from "../constants";
 import {
   getContentSidForTemplate,
@@ -183,11 +182,19 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs & 
         ) || message;
   }
 
-  if (textMessage && args.autoTranslateEnabled && action === WorkflowActions.WHATSAPP_ATTENDEE && workflowStepId) {
+  if (
+    textMessage &&
+    args.autoTranslateEnabled &&
+    action === WorkflowActions.WHATSAPP_ATTENDEE &&
+    workflowStepId
+  ) {
     const attendeeLocale = evt.attendees[0].language?.locale || "en";
-    const { translatedBody } = await getWorkflowStepTranslations(workflowStepId, attendeeLocale, {
-      includeBody: true,
-    });
+    const translationService = await getTranslationService();
+    const { translatedBody } = await translationService.getWorkflowStepTranslations(
+      workflowStepId,
+      attendeeLocale,
+      { includeBody: true }
+    );
     if (translatedBody) {
       textMessage = translatedBody;
     }

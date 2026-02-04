@@ -1,5 +1,4 @@
-import { prisma } from "@calcom/prisma";
-import type { WorkflowStepTranslation } from "@calcom/prisma/client";
+import type { PrismaClient, WorkflowStepTranslation } from "@calcom/prisma/client";
 import { WorkflowStepAutoTranslatedField } from "@calcom/prisma/enums";
 
 export type CreateWorkflowStepTranslation = Omit<
@@ -8,10 +7,12 @@ export type CreateWorkflowStepTranslation = Omit<
 >;
 
 export class WorkflowStepTranslationRepository {
-  static async upsertManyBodyTranslations(translations: Array<CreateWorkflowStepTranslation>) {
+  constructor(private readonly prismaClient: PrismaClient) {}
+
+  async upsertManyBodyTranslations(translations: Array<CreateWorkflowStepTranslation>) {
     return await Promise.all(
       translations.map((translation) => {
-        return prisma.workflowStepTranslation.upsert({
+        return this.prismaClient.workflowStepTranslation.upsert({
           where: {
             workflowStepId_field_targetLocale: {
               workflowStepId: translation.workflowStepId,
@@ -31,10 +32,10 @@ export class WorkflowStepTranslationRepository {
     );
   }
 
-  static async upsertManySubjectTranslations(translations: Array<CreateWorkflowStepTranslation>) {
+  async upsertManySubjectTranslations(translations: Array<CreateWorkflowStepTranslation>) {
     return await Promise.all(
       translations.map((translation) => {
-        return prisma.workflowStepTranslation.upsert({
+        return this.prismaClient.workflowStepTranslation.upsert({
           where: {
             workflowStepId_field_targetLocale: {
               workflowStepId: translation.workflowStepId,
@@ -54,12 +55,12 @@ export class WorkflowStepTranslationRepository {
     );
   }
 
-  static async findByLocale(
+  async findByLocale(
     workflowStepId: number,
     field: WorkflowStepAutoTranslatedField,
     targetLocale: string
   ): Promise<WorkflowStepTranslation | null> {
-    return prisma.workflowStepTranslation.findUnique({
+    return this.prismaClient.workflowStepTranslation.findUnique({
       where: {
         workflowStepId_field_targetLocale: {
           workflowStepId,
@@ -70,8 +71,8 @@ export class WorkflowStepTranslationRepository {
     });
   }
 
-  static async deleteByWorkflowStepId(workflowStepId: number) {
-    return prisma.workflowStepTranslation.deleteMany({
+  async deleteByWorkflowStepId(workflowStepId: number) {
+    return this.prismaClient.workflowStepTranslation.deleteMany({
       where: { workflowStepId },
     });
   }

@@ -1,24 +1,30 @@
+import type { ITranslationService } from "@calcom/features/translation/services/ITranslationService";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@calcom/features/ee/workflows/repositories/WorkflowStepTranslationRepository", () => ({
-  WorkflowStepTranslationRepository: {
-    upsertManyBodyTranslations: vi.fn(),
-    upsertManySubjectTranslations: vi.fn(),
-  },
+const mockTranslationService: ITranslationService = {
+  translateText: vi.fn(),
+  getTargetLocales: vi.fn(),
+};
+
+const mockWorkflowStepTranslationRepository = {
+  upsertManyBodyTranslations: vi.fn(),
+  upsertManySubjectTranslations: vi.fn(),
+  findByLocale: vi.fn(),
+  deleteByWorkflowStepId: vi.fn(),
+};
+
+vi.mock("@calcom/features/di/containers/TranslationService", () => ({
+  getTranslationService: vi.fn(() => Promise.resolve(mockTranslationService)),
 }));
 
-vi.mock("@calcom/lib/server/service/lingoDotDev", () => ({
-  LingoDotDevService: {
-    localizeText: vi.fn(),
-  },
+vi.mock("@calcom/features/ee/workflows/di/WorkflowStepTranslationRepository.container", () => ({
+  getWorkflowStepTranslationRepository: vi.fn(() => mockWorkflowStepTranslationRepository),
 }));
 
 vi.mock("@calcom/lib/logger", () => ({
-  default: { error: vi.fn() },
+  default: { error: vi.fn(), warn: vi.fn() },
 }));
 
-import { WorkflowStepTranslationRepository } from "@calcom/features/ee/workflows/repositories/WorkflowStepTranslationRepository";
-import { LingoDotDevService } from "@calcom/lib/server/service/lingoDotDev";
 import { translateWorkflowStepData } from "./translateWorkflowStepData";
 
 describe("translateWorkflowStepData", () => {
@@ -27,7 +33,13 @@ describe("translateWorkflowStepData", () => {
   });
 
   it("should translate reminderBody to all supported locales", async () => {
-    vi.mocked(LingoDotDevService.localizeText).mockResolvedValue("Translated text");
+    vi.mocked(mockTranslationService.translateText).mockResolvedValue({
+      translations: [
+        { translatedText: "Translated text", targetLocale: "es" },
+        { translatedText: "Translated text", targetLocale: "de" },
+      ],
+      failedLocales: [],
+    });
 
     const payload = JSON.stringify({
       workflowStepId: 1,
@@ -38,8 +50,11 @@ describe("translateWorkflowStepData", () => {
 
     await translateWorkflowStepData(payload);
 
-    expect(LingoDotDevService.localizeText).toHaveBeenCalled();
-    expect(WorkflowStepTranslationRepository.upsertManyBodyTranslations).toHaveBeenCalledWith(
+    expect(mockTranslationService.translateText).toHaveBeenCalledWith({
+      text: "Hello {ATTENDEE_NAME}",
+      sourceLocale: "en",
+    });
+    expect(mockWorkflowStepTranslationRepository.upsertManyBodyTranslations).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
           workflowStepId: 1,
@@ -51,7 +66,10 @@ describe("translateWorkflowStepData", () => {
   });
 
   it("should translate emailSubject when provided", async () => {
-    vi.mocked(LingoDotDevService.localizeText).mockResolvedValue("Translated subject");
+    vi.mocked(mockTranslationService.translateText).mockResolvedValue({
+      translations: [{ translatedText: "Translated subject", targetLocale: "es" }],
+      failedLocales: [],
+    });
 
     const payload = JSON.stringify({
       workflowStepId: 1,
@@ -62,7 +80,7 @@ describe("translateWorkflowStepData", () => {
 
     await translateWorkflowStepData(payload);
 
-    expect(WorkflowStepTranslationRepository.upsertManySubjectTranslations).toHaveBeenCalledWith(
+    expect(mockWorkflowStepTranslationRepository.upsertManySubjectTranslations).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
           workflowStepId: 1,
@@ -74,7 +92,10 @@ describe("translateWorkflowStepData", () => {
   });
 
   it("should translate both body and subject when provided", async () => {
-    vi.mocked(LingoDotDevService.localizeText).mockResolvedValue("Translated");
+    vi.mocked(mockTranslationService.translateText).mockResolvedValue({
+      translations: [{ translatedText: "Translated", targetLocale: "es" }],
+      failedLocales: [],
+    });
 
     const payload = JSON.stringify({
       workflowStepId: 1,
@@ -85,31 +106,16 @@ describe("translateWorkflowStepData", () => {
 
     await translateWorkflowStepData(payload);
 
-    // localizeText should be called multiple times for both body and subject
-    // (some locales may be filtered by i18nLocales check)
-    expect(vi.mocked(LingoDotDevService.localizeText).mock.calls.length).toBeGreaterThan(0);
-    expect(WorkflowStepTranslationRepository.upsertManyBodyTranslations).toHaveBeenCalled();
+    expect(mockTranslationService.translateText).toHaveBeenCalledTimes(2);
+    expect(mockWorkflowStepTranslationRepository.upsertManyBodyTranslations).toHaveBeenCalled();
+    expect(mockWorkflowStepTranslationRepository.upsertManySubjectTranslations).toHaveBeenCalled();
   });
 
-  it("should skip source locale when translating", async () => {
-    vi.mocked(LingoDotDevService.localizeText).mockResolvedValue("Hola");
-
-    const payload = JSON.stringify({
-      workflowStepId: 1,
-      reminderBody: "Hello",
-      emailSubject: null,
-      sourceLocale: "es",
+  it("should not call repository when no translations are returned", async () => {
+    vi.mocked(mockTranslationService.translateText).mockResolvedValue({
+      translations: [],
+      failedLocales: ["es", "de"],
     });
-
-    await translateWorkflowStepData(payload);
-
-    const calls = vi.mocked(LingoDotDevService.localizeText).mock.calls;
-    const targetLocales = calls.map((call) => call[2]);
-    expect(targetLocales).not.toContain("es");
-  });
-
-  it("should handle null translations gracefully", async () => {
-    vi.mocked(LingoDotDevService.localizeText).mockResolvedValue(null as unknown as string);
 
     const payload = JSON.stringify({
       workflowStepId: 1,
@@ -120,10 +126,34 @@ describe("translateWorkflowStepData", () => {
 
     await translateWorkflowStepData(payload);
 
-    expect(WorkflowStepTranslationRepository.upsertManyBodyTranslations).not.toHaveBeenCalled();
+    expect(mockWorkflowStepTranslationRepository.upsertManyBodyTranslations).not.toHaveBeenCalled();
   });
 
   it("should throw on invalid payload", async () => {
     await expect(translateWorkflowStepData("invalid-json")).rejects.toThrow();
+  });
+
+  it("should preserve targetLocale in translation data", async () => {
+    vi.mocked(mockTranslationService.translateText).mockResolvedValue({
+      translations: [
+        { translatedText: "Hola", targetLocale: "es" },
+        { translatedText: "Bonjour", targetLocale: "fr" },
+      ],
+      failedLocales: [],
+    });
+
+    const payload = JSON.stringify({
+      workflowStepId: 1,
+      reminderBody: "Hello",
+      emailSubject: null,
+      sourceLocale: "en",
+    });
+
+    await translateWorkflowStepData(payload);
+
+    expect(mockWorkflowStepTranslationRepository.upsertManyBodyTranslations).toHaveBeenCalledWith([
+      expect.objectContaining({ targetLocale: "es", translatedText: "Hola" }),
+      expect.objectContaining({ targetLocale: "fr", translatedText: "Bonjour" }),
+    ]);
   });
 });

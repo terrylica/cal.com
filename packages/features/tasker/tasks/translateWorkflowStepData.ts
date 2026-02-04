@@ -1,13 +1,8 @@
-import { z } from "zod";
-
-import { WorkflowStepTranslationRepository } from "@calcom/features/ee/workflows/repositories/WorkflowStepTranslationRepository";
-import { locales as i18nLocales } from "@calcom/lib/i18n";
+import { getTranslationService } from "@calcom/features/di/containers/TranslationService";
+import { getWorkflowStepTranslationRepository } from "@calcom/features/ee/workflows/di/WorkflowStepTranslationRepository.container";
 import logger from "@calcom/lib/logger";
-import {
-  TRANSLATION_SUPPORTED_LOCALES,
-  type TranslationSupportedLocale,
-} from "@calcom/lib/translationConstants";
 import { WorkflowStepAutoTranslatedField } from "@calcom/prisma/enums";
+import { z } from "zod";
 
 const ZTranslateWorkflowStepDataPayloadSchema = z.object({
   workflowStepId: z.number(),
@@ -23,42 +18,34 @@ async function processTranslations({
   field,
 }: {
   text: string;
+  sourceLocale: string;
+  workflowStepId: number;
   field: WorkflowStepAutoTranslatedField;
-} & Pick<z.infer<typeof ZTranslateWorkflowStepDataPayloadSchema>, "sourceLocale" | "workflowStepId">): Promise<void> {
-  const { LingoDotDevService } = await import("@calcom/lib/server/service/lingoDotDev");
-
+}): Promise<void> {
   try {
-    const targetLocales = TRANSLATION_SUPPORTED_LOCALES.filter(
-      (locale) => locale !== sourceLocale && i18nLocales.includes(locale)
-    );
+    const translationService = await getTranslationService();
+    const result = await translationService.translateText({ text, sourceLocale });
 
-    const translations = await Promise.all(
-      targetLocales.map((targetLocale) => LingoDotDevService.localizeText(text, sourceLocale, targetLocale))
-    );
-
-    const translationsWithLocales = translations.map((trans, index) => ({
-      translatedText: trans,
-      targetLocale: targetLocales[index],
-    }));
-
-    const validTranslations = translationsWithLocales.filter(
-      (item): item is { translatedText: string; targetLocale: TranslationSupportedLocale } =>
-        item.translatedText !== null
-    );
-
-    if (validTranslations.length > 0) {
-      const translationData = validTranslations.map(({ translatedText, targetLocale }) => ({
+    if (result.translations.length > 0) {
+      const translationData = result.translations.map(({ translatedText, targetLocale }) => ({
         workflowStepId,
         sourceLocale,
         targetLocale,
         translatedText,
       }));
 
+      const workflowStepTranslationRepository = getWorkflowStepTranslationRepository();
       if (field === WorkflowStepAutoTranslatedField.REMINDER_BODY) {
-        await WorkflowStepTranslationRepository.upsertManyBodyTranslations(translationData);
+        await workflowStepTranslationRepository.upsertManyBodyTranslations(translationData);
       } else {
-        await WorkflowStepTranslationRepository.upsertManySubjectTranslations(translationData);
+        await workflowStepTranslationRepository.upsertManySubjectTranslations(translationData);
       }
+    }
+
+    if (result.failedLocales.length > 0) {
+      logger.warn(
+        `Failed to translate workflow step ${field} to locales: ${result.failedLocales.join(", ")}`
+      );
     }
   } catch (error) {
     logger.error(`Failed to process workflow step ${field} translations:`, error);
