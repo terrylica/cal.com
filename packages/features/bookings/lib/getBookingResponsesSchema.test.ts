@@ -269,9 +269,11 @@ describe("getBookingResponsesSchema", () => {
         if (!parsedResponses.success) {
           throw new Error("Should not reach here");
         }
+        // preprocessing normalizes name to always include lastName (empty string if not provided)
         expect(parsedResponses.data).toEqual({
           name: {
             firstName: "John",
+            lastName: "",
           },
           email: "john@example.com",
         });
@@ -1309,6 +1311,151 @@ describe("validate url type field", () => {
 });
 
 describe("getBookingResponsesPartialSchema - Prefill validation", () => {
+  describe("name field validation in preprocessing", () => {
+    test(`should accept object response with additional fields beyond firstName and lastName`, async ({}) => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+            variant: "firstAndLastName",
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+      // Additional fields like middleName, suffix, etc. should not cause errors
+      const parsedResponses = await schema.parseAsync({
+        name: {
+          firstName: "John",
+          lastName: "Doe",
+          middleName: "William",
+          suffix: "Jr.",
+        },
+      });
+      // The additional fields are stripped/ignored, but the parsing should succeed
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          name: {
+            firstName: "John",
+            lastName: "Doe",
+          },
+        })
+      );
+    });
+
+    test(`should skip name field with invalid array response during partial prefill`, async ({}) => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "testField",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+      // Array response is invalid for name field - should be skipped during partial prefill
+      const parsedResponses = await schema.parseAsync({
+        name: ["John", "Doe"],
+        testField: "test value",
+      });
+      // Name field should be skipped (not included), but testField should still be prefilled
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          testField: "test value",
+        })
+      );
+      expect(parsedResponses).not.toHaveProperty("name");
+    });
+
+    test(`should skip name field with invalid number response during partial prefill`, async ({}) => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "testField",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+      // Number response is invalid for name field - should be skipped during partial prefill
+      const parsedResponses = await schema.parseAsync({
+        name: 12345,
+        testField: "test value",
+      });
+      // Name field should be skipped (not included), but testField should still be prefilled
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          testField: "test value",
+        })
+      );
+      expect(parsedResponses).not.toHaveProperty("name");
+    });
+
+    test(`should skip name field with object missing firstName during partial prefill`, async ({}) => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+            variant: "firstAndLastName",
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "testField",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+      // Object missing firstName is invalid - should be skipped during partial prefill
+      const parsedResponses = await schema.parseAsync({
+        name: { lastName: "Doe" },
+        testField: "test value",
+      });
+      // Name field should be skipped (not included), but testField should still be prefilled
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          testField: "test value",
+        })
+      );
+      expect(parsedResponses).not.toHaveProperty("name");
+    });
+  });
+
   test(`should be able to get fields prefilled even when name is empty string`, async ({}) => {
     const schema = getBookingResponsesPartialSchema({
       bookingFields: [
@@ -1577,6 +1724,138 @@ describe("getBookingResponsesPartialSchema - Prefill validation", () => {
         testTextarea: "multi\nline\ntext",
       })
     );
+  });
+
+  describe("superRefine error handling in partial prefill", () => {
+    test(`should skip name field gracefully when superRefine throws due to invalid variant config`, async () => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+            variant: "invalidVariant", // Invalid variant that will cause superRefine to throw
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "testField",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+
+      // This should NOT throw - should gracefully skip the invalid field
+      const parsedResponses = await schema.parseAsync({
+        name: "John Doe",
+        testField: "test value",
+      });
+
+      // Name field should be skipped due to superRefine error, but testField should still work
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          testField: "test value",
+        })
+      );
+    });
+
+    test(`should skip field and still prefill other valid fields when superRefine throws`, async () => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+            variant: "invalidVariant", // Will cause superRefine to throw
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "validPhone",
+            type: "phone",
+            required: false,
+          },
+          {
+            name: "validText",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+
+      const parsedResponses = await schema.parseAsync({
+        name: "John",
+        validPhone: "+919999999999",
+        validText: "some text",
+      });
+
+      // Should have the valid fields prefilled
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          validPhone: "+919999999999",
+          validText: "some text",
+        })
+      );
+    });
+
+    test(`should skip textarea field when text exceeds maxLength during partial prefill`, async () => {
+      // This test verifies that when textarea value exceeds maxLength, the validation error is handled
+      // gracefully during partial prefill and other fields are still prefilled
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "notes",
+            type: "textarea",
+            required: false,
+            maxLength: 5, // Set maxLength to 5 characters
+          },
+          {
+            name: "validText",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+
+      // Provide text that exceeds maxLength (more than 5 chars)
+      const parsedResponses = await schema.parseAsync({
+        name: "John Doe",
+        notes: "This text is way too long for maxLength of 5",
+        validText: "test value",
+      });
+
+      // Parsing should succeed - partial prefill should handle validation errors gracefully
+      expect(parsedResponses).toBeDefined();
+      // Other valid fields should still be prefilled
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          name: "John Doe",
+          validText: "test value",
+        })
+      );
+      // The invalid textarea field should NOT be included in the response
+      expect(parsedResponses.notes).toBeUndefined();
+    });
   });
 });
 

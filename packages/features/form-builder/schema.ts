@@ -6,7 +6,40 @@ import { fieldTypesConfigMap } from "./fieldTypes";
 import { preprocessNameFieldDataWithVariant } from "./utils";
 import { getConfig as getVariantsConfig } from "./utils/variantsConfig";
 
+// Schema for validating name field response - can be a string or firstName/lastName object
+// Note: We extend nameObjectSchema to add .default("") for lastName to ensure it's always a string (not undefined)
+const nameResponseSchema = z
+  .union([
+    z.string(),
+    z.object({
+      firstName: z.string(),
+      lastName: z.string().default(""),
+    }),
+  ])
+  .optional();
+
 const nonEmptyString = () => z.string().refine((value: string) => value.trim().length > 0);
+
+type FieldTypeSchemaConfig<TInput = unknown, TOutput = unknown> = {
+  preprocess: (data: {
+    field: z.infer<typeof fieldSchema>;
+    response: TInput;
+    isPartialSchema: boolean;
+  }) => TOutput;
+  superRefine: (data: {
+    field: z.infer<typeof fieldSchema>;
+    response: TOutput;
+    isPartialSchema: boolean;
+    ctx: z.RefinementCtx;
+    m: (key: string, options?: Record<string, unknown>) => string;
+  }) => void;
+};
+
+function defineFieldSchema<TInput, TOutput>(
+  config: FieldTypeSchemaConfig<TInput, TOutput>
+): FieldTypeSchemaConfig<TInput, TOutput> {
+  return config;
+}
 
 export type ALL_VIEWS = "ALL_VIEWS";
 
@@ -92,37 +125,24 @@ export const fieldTypeConfigSchema = z
 
 export const fieldsSchema = z.array(fieldSchema);
 
-export const fieldTypesSchemaMap: Partial<
-  Record<
-    FieldType,
-    {
-      /**
-       * - preprocess the responses received through prefill query params
-       * - preprocess the values being filled in the booking form.
-       * - does not run for the responses received from DB
-       */
-      preprocess: (data: {
-        field: z.infer<typeof fieldSchema>;
-        response: string;
-        isPartialSchema: boolean;
-      }) => unknown;
-      /**
-       * - Validates the response received through prefill query params
-       * - Validates the values being filled in the booking form.
-       * - does not run for the responses received from DB
-       */
-      superRefine: (data: {
-        field: z.infer<typeof fieldSchema>;
-        response: string;
-        isPartialSchema: boolean;
-        ctx: z.RefinementCtx;
-        m: (key: string, options?: Record<string, unknown>) => string;
-      }) => void;
-    }
-  >
-> = {
-  name: {
+function stringifyResponse(response: unknown): string {
+  if (typeof response !== "string") {
+    return String(response);
+  } else {
+    return response;
+  }
+}
+
+export const fieldTypesSchemaMap = {
+  name: defineFieldSchema<
+    unknown,
+    string | Record<"firstName" | "lastName", string>
+  >({
     preprocess: ({ response, field }) => {
+      const validResponse = nameResponseSchema.safeParse(response);
+      if (!validResponse.success) {
+        throw new Error("Invalid response for name field");
+      }
       const fieldTypeConfig = fieldTypesConfigMap[field.type];
 
       const variantInResponse = field.variant || fieldTypeConfig?.variantsConfig?.defaultVariant;
@@ -138,7 +158,10 @@ export const fieldTypesSchemaMap: Partial<
         correctedVariant = variantInResponse;
       }
 
-      return preprocessNameFieldDataWithVariant(correctedVariant, response);
+      return preprocessNameFieldDataWithVariant(
+        correctedVariant,
+        validResponse.data
+      );
     },
     superRefine: ({ field, response, isPartialSchema, ctx, m }) => {
       const stringSchema = z.string();
@@ -176,7 +199,7 @@ export const fieldTypesSchemaMap: Partial<
         if (!variantSupportedFields.includes(subField.type)) {
           throw new Error(`Unsupported field.type with variants: ${subField.type}`);
         }
-        const valueIdentified = response as unknown as Record<string, string>;
+        const valueIdentified = response as Record<string, string>;
         if (subField.required) {
           if (!isPartialSchema && !valueIdentified[subField.name])
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: m(`error_required_field`) });
@@ -187,10 +210,10 @@ export const fieldTypesSchemaMap: Partial<
         }
       });
     },
-  },
-  textarea: {
+  }),
+  textarea: defineFieldSchema<unknown, string>({
     preprocess: ({ response }) => {
-      return response.trim();
+      return stringifyResponse(response).trim();
     },
     superRefine: ({ field, response, ctx, m }) => {
       const fieldTypeConfig = fieldTypesConfigMap[field.type];
@@ -219,10 +242,10 @@ export const fieldTypesSchemaMap: Partial<
         return;
       }
     },
-  },
-  url: {
+  }),
+  url: defineFieldSchema<unknown, string>({
     preprocess: ({ response }) => {
-      return response.trim();
+      return stringifyResponse(response).trim();
     },
     superRefine: ({ response, ctx, m }) => {
       const value = response ?? "";
@@ -257,5 +280,5 @@ export const fieldTypesSchemaMap: Partial<
         message: m("url_validation_error"),
       });
     },
-  },
+  }),
 };
