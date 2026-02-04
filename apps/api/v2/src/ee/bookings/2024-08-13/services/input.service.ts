@@ -12,6 +12,7 @@ import { EventTypesRepository_2024_06_14 } from "@/ee/event-types/event-types_20
 import { OutputEventTypesService_2024_06_14 } from "@/ee/event-types/event-types_2024_06_14/services/output-event-types.service";
 import { apiToInternalintegrationsMapping } from "@/ee/event-types/event-types_2024_06_14/transformers";
 import { sha256Hash, isApiKey, stripApiKey } from "@/lib/api-key";
+import { getEffectiveHost } from "@/lib/get-effective-host";
 import { defaultBookingResponses } from "@/lib/safe-parse/default-responses-booking";
 import { safeParse } from "@/lib/safe-parse/safe-parse";
 import { ApiKeysRepository } from "@/modules/api-keys/api-keys-repository";
@@ -297,7 +298,7 @@ export class InputBookingsService_2024_08_13 {
     return {
       ...newRequest,
       headers: {
-        hostname: request.headers["host"] || "",
+        hostname: getEffectiveHost(request),
         forcedSlug: request.headers["x-cal-force-slug"] as string | undefined,
       },
     } as unknown as BookingRequest;

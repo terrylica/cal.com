@@ -43,6 +43,11 @@ export type Environment = {
   USE_POOL: string;
   VERCEL: string;
   ENABLE_ASYNC_TASKER: string;
+  // Comma-separated list of trusted hosts that can appear in X-Forwarded-Host header.
+  // When a request's X-Forwarded-Host matches one of these hosts, it will be used
+  // as the effective host instead of the Host header. This is useful when the API
+  // is behind a proxy (like Cloudflare) that needs to override the Host header.
+  API_TRUSTED_FORWARDED_HOSTS: string;
 };
 
 export const getEnv = <K extends keyof Environment>(key: K, fallback?: Environment[K]): Environment[K] => {
