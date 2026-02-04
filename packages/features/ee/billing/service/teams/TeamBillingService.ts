@@ -1,5 +1,4 @@
 import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-billing";
-import { getFeatureRepository } from "@calcom/features/di/containers/FeatureRepository";
 import { purchaseTeamOrOrgSubscription } from "@calcom/features/ee/teams/lib/payments";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getMetadataHelpers } from "@calcom/lib/getMetadataHelpers";
@@ -167,7 +166,7 @@ export class TeamBillingService implements ITeamBillingService {
       if (!subscriptionId) throw Error("missing subscriptionId");
       if (!subscriptionItemId) throw Error("missing subscriptionItemId");
 
-      const billingPeriodService = new BillingPeriodService({ featureRepository: getFeatureRepository() });
+      const billingPeriodService = new BillingPeriodService();
       const shouldApplyMonthlyProration = await billingPeriodService.shouldApplyMonthlyProration(teamId);
       if (shouldApplyMonthlyProration) {
         log.info(`Skipping subscription update for team ${teamId} because monthly proration is enabled.`);
