@@ -95,7 +95,7 @@ export class ActiveUsersBillingTaskService {
 
     logger.info("Using Stripe customer for active users invoice", {
       stripeCustomerId,
-      billingEmail,
+      hasBillingEmail: Boolean(billingEmail),
       wasCreated: !existingCustomerId,
     });
 
