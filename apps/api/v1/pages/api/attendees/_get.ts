@@ -61,7 +61,7 @@ const MAX_TAKE = 250;
  *       404:
  *         description: No attendees were found
  */
-async function handler(req: NextApiRequest): Promise<{ attendees: AttendeeResponse[] }> {
+export async function handler(req: NextApiRequest): Promise<{ attendees: AttendeeResponse[] }> {
   const { userId, isSystemWideAdmin, pagination } = req;
   const take = Math.min(pagination.take, MAX_TAKE);
   const skip = pagination.skip;
