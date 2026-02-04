@@ -115,7 +115,3 @@ ALTER TABLE "public"."MonthlyProration" ADD CONSTRAINT "MonthlyProration_organiz
 INSERT INTO "public"."Feature" ("slug", "enabled", "description", "type", "stale", "lastUsedAt", "createdAt", "updatedAt")
 VALUES ('monthly-proration', false, 'Monthly aggregated seat proration for annual plans', 'RELEASE', false, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("slug") DO NOTHING;
-
-INSERT INTO "public"."Feature" ("slug", "enabled", "description", "type", "stale", "lastUsedAt", "createdAt", "updatedAt")
-VALUES ('hwm-seating', false, 'High water mark seating for monthly billing - charges for peak seats used during billing period', 'RELEASE', false, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT ("slug") DO NOTHING;
