@@ -1,23 +1,34 @@
-import { type Container, createModule, type ModuleLoader } from "@calcom/features/di/di";
+import { bindModuleToClassOnToken, createModule, type ModuleLoader } from "@calcom/features/di/di";
+import { moduleLoader as featuresRepositoryModuleLoader } from "@calcom/features/di/modules/FeaturesRepository";
 import { moduleLoader as triggerDevLoggerServiceModule } from "@calcom/features/di/shared/services/triggerDevLogger.service";
 import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 
 import { DI_TOKENS } from "../tokens";
 import { billingProviderServiceModuleLoader } from "./BillingProviderService";
+import { highWaterMarkRepositoryModuleLoader } from "./HighWaterMarkRepository";
+import { monthlyProrationTeamRepositoryModuleLoader } from "./MonthlyProrationTeamRepository";
 
-const highWaterMarkServiceModule = createModule();
+const thisModule = createModule();
 const token = DI_TOKENS.HIGH_WATER_MARK_SERVICE;
+const moduleToken = DI_TOKENS.HIGH_WATER_MARK_SERVICE_MODULE;
 
-highWaterMarkServiceModule.bind(token).toClass(HighWaterMarkService, []);
+const loadModule = bindModuleToClassOnToken({
+  module: thisModule,
+  moduleToken,
+  token,
+  classs: HighWaterMarkService,
+  depsMap: {
+    logger: triggerDevLoggerServiceModule,
+    repository: highWaterMarkRepositoryModuleLoader,
+    teamRepository: monthlyProrationTeamRepositoryModuleLoader,
+    billingService: billingProviderServiceModuleLoader,
+    featuresRepository: featuresRepositoryModuleLoader,
+  },
+});
 
 export const highWaterMarkServiceModuleLoader: ModuleLoader = {
   token,
-  loadModule: (container: Container) => {
-    // Load dependencies first
-    triggerDevLoggerServiceModule.loadModule(container);
-    billingProviderServiceModuleLoader.loadModule(container);
-
-    // Then load this module
-    container.load(DI_TOKENS.HIGH_WATER_MARK_SERVICE_MODULE, highWaterMarkServiceModule);
-  },
+  loadModule,
 };
+
+export type { HighWaterMarkService };
