@@ -75,13 +75,11 @@ describe("GET /api/attendees", () => {
 
   describe("Regular user", () => {
     test("should only return attendees from user's own bookings", async () => {
-      const userBookings = [{ id: 1 }, { id: 2 }];
       const mockAttendees = [
         { id: 1, bookingId: 1, name: "Attendee 1", email: "att1@example.com", timeZone: "UTC" },
         { id: 2, bookingId: 2, name: "Attendee 2", email: "att2@example.com", timeZone: "UTC" },
       ];
 
-      prismaMock.booking.findMany.mockResolvedValue(userBookings as any);
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
 
       const req = createMockRequest({
@@ -94,16 +92,8 @@ describe("GET /api/attendees", () => {
 
       expect(result.attendees).toHaveLength(2);
 
-      expect(prismaMock.booking.findMany).toHaveBeenCalledWith({
-        where: { userId },
-        select: { id: true },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-        skip: 0,
-      });
-
       expect(prismaMock.attendee.findMany).toHaveBeenCalledWith({
-        where: { bookingId: { in: [1, 2] } },
+        where: { booking: { userId } },
         select: {
           id: true,
           bookingId: true,
@@ -111,31 +101,13 @@ describe("GET /api/attendees", () => {
           email: true,
           timeZone: true,
         },
+        take: 10,
+        skip: 0,
         orderBy: { id: "desc" },
       });
     });
 
-    test("should throw 404 when user has no bookings with attendees", async () => {
-      prismaMock.booking.findMany.mockResolvedValue([]);
-      prismaMock.attendee.findMany.mockResolvedValue([]);
-
-      const req = createMockRequest({
-        pagination: { take: 10, skip: 0 },
-      });
-      req.userId = userId;
-      req.isSystemWideAdmin = false;
-
-      await expect(handler(req)).rejects.toThrow(HttpError);
-      await expect(handler(req)).rejects.toMatchObject({
-        statusCode: 404,
-        message: "No attendees were found",
-      });
-    });
-
-    test("should throw 404 when user has bookings but no attendees", async () => {
-      const userBookings = [{ id: 1 }];
-
-      prismaMock.booking.findMany.mockResolvedValue(userBookings as any);
+    test("should throw 404 when user has no attendees", async () => {
       prismaMock.attendee.findMany.mockResolvedValue([]);
 
       const req = createMockRequest({
@@ -194,11 +166,9 @@ describe("GET /api/attendees", () => {
       );
     });
 
-    test("should apply pagination to booking query for regular users", async () => {
-      const userBookings = [{ id: 1 }];
+    test("should apply pagination to attendee query for regular users", async () => {
       const mockAttendees = [{ id: 1, bookingId: 1, name: "Test", email: "test@example.com", timeZone: "UTC" }];
 
-      prismaMock.booking.findMany.mockResolvedValue(userBookings as any);
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
 
       const req = createMockRequest({
@@ -209,8 +179,9 @@ describe("GET /api/attendees", () => {
 
       await handler(req);
 
-      expect(prismaMock.booking.findMany).toHaveBeenCalledWith(
+      expect(prismaMock.attendee.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { booking: { userId } },
           take: 5,
           skip: 10,
         })

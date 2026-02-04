@@ -77,19 +77,11 @@ export async function handler(req: NextApiRequest): Promise<{ attendees: Attende
     return { attendees };
   }
 
-  const bookingIds = await prisma.booking
-    .findMany({
-      where: { userId },
-      select: { id: true },
-      orderBy: { createdAt: "desc" },
-      take,
-      skip,
-    })
-    .then((bookings) => bookings.map((b) => b.id));
-
   const attendees = await prisma.attendee.findMany({
-    where: { bookingId: { in: bookingIds } },
+    where: { booking: { userId } },
     select: attendeeSelect,
+    take,
+    skip,
     orderBy: { id: "desc" },
   });
 
