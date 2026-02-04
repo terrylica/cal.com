@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkflowStepTranslationRepository } from "./WorkflowStepTranslationRepository";
 
 describe("WorkflowStepTranslationRepository", () => {
+  const repository = new WorkflowStepTranslationRepository(prismaMock);
+
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -17,7 +19,7 @@ describe("WorkflowStepTranslationRepository", () => {
         { workflowStepId: 1, sourceLocale: "en", targetLocale: "fr", translatedText: "Bonjour" },
       ];
 
-      await WorkflowStepTranslationRepository.upsertManyBodyTranslations(translations);
+      await repository.upsertManyBodyTranslations(translations);
 
       expect(prismaMock.workflowStepTranslation.upsert).toHaveBeenCalledTimes(2);
       expect(prismaMock.workflowStepTranslation.upsert).toHaveBeenCalledWith(
@@ -45,7 +47,7 @@ describe("WorkflowStepTranslationRepository", () => {
         { workflowStepId: 1, sourceLocale: "en", targetLocale: "de", translatedText: "Betreff" },
       ];
 
-      await WorkflowStepTranslationRepository.upsertManySubjectTranslations(translations);
+      await repository.upsertManySubjectTranslations(translations);
 
       expect(prismaMock.workflowStepTranslation.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -78,11 +80,7 @@ describe("WorkflowStepTranslationRepository", () => {
       };
       prismaMock.workflowStepTranslation.findUnique.mockResolvedValue(mockTranslation);
 
-      const result = await WorkflowStepTranslationRepository.findByLocale(
-        1,
-        WorkflowStepAutoTranslatedField.REMINDER_BODY,
-        "es"
-      );
+      const result = await repository.findByLocale(1, WorkflowStepAutoTranslatedField.REMINDER_BODY, "es");
 
       expect(result).toEqual(mockTranslation);
       expect(prismaMock.workflowStepTranslation.findUnique).toHaveBeenCalledWith({
@@ -99,11 +97,7 @@ describe("WorkflowStepTranslationRepository", () => {
     it("should return null when translation not found", async () => {
       prismaMock.workflowStepTranslation.findUnique.mockResolvedValue(null);
 
-      const result = await WorkflowStepTranslationRepository.findByLocale(
-        1,
-        WorkflowStepAutoTranslatedField.REMINDER_BODY,
-        "xx"
-      );
+      const result = await repository.findByLocale(1, WorkflowStepAutoTranslatedField.REMINDER_BODY, "xx");
 
       expect(result).toBeNull();
     });
@@ -113,7 +107,7 @@ describe("WorkflowStepTranslationRepository", () => {
     it("should delete all translations for a workflow step", async () => {
       prismaMock.workflowStepTranslation.deleteMany.mockResolvedValue({ count: 18 });
 
-      await WorkflowStepTranslationRepository.deleteByWorkflowStepId(1);
+      await repository.deleteByWorkflowStepId(1);
 
       expect(prismaMock.workflowStepTranslation.deleteMany).toHaveBeenCalledWith({
         where: { workflowStepId: 1 },

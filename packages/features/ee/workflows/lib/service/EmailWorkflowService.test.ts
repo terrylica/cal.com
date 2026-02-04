@@ -1,7 +1,6 @@
-import { describe, expect, vi, beforeEach, test } from "vitest";
-
 import type { BookingSeatRepository } from "@calcom/features/bookings/repositories/BookingSeatRepository";
 import type { WorkflowReminderRepository } from "@calcom/features/ee/workflows/repositories/WorkflowReminderRepository";
+import { TimeFormat } from "@calcom/lib/timeFormat";
 import {
   SchedulingType,
   TimeUnit,
@@ -9,9 +8,8 @@ import {
   WorkflowTemplates,
   WorkflowTriggerEvents,
 } from "@calcom/prisma/enums";
-import { TimeFormat } from "@calcom/lib/timeFormat";
 import type { CalendarEvent } from "@calcom/types/Calendar";
-
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { EmailWorkflowService } from "./EmailWorkflowService";
 
 vi.mock("@calcom/emails/workflow-email-service", () => ({
@@ -35,10 +33,12 @@ vi.mock("@calcom/emails/lib/generateIcsString", () => ({
   default: vi.fn().mockReturnValue("mock-ics-content"),
 }));
 
-vi.mock("../../repositories/WorkflowStepTranslationRepository", () => ({
-  WorkflowStepTranslationRepository: {
-    findByLocale: vi.fn(),
-  },
+const mockTranslationService = vi.hoisted(() => ({
+  getWorkflowStepTranslations: vi.fn(),
+}));
+
+vi.mock("@calcom/features/di/containers/TranslationService", () => ({
+  getTranslationService: vi.fn().mockResolvedValue(mockTranslationService),
 }));
 
 vi.mock("@calcom/lib/constants", async () => {
@@ -55,10 +55,6 @@ vi.mock("short-uuid", () => ({
   default: () => ({ fromUUID: (uid: string) => uid }),
 }));
 
-import { WorkflowStepTranslationRepository } from "../../repositories/WorkflowStepTranslationRepository";
-
-const mockWorkflowStepTranslationRepository = vi.mocked(WorkflowStepTranslationRepository);
-
 const mockWorkflowReminderRepository: Pick<WorkflowReminderRepository, "findByIdIncludeStepAndWorkflow"> = {
   findByIdIncludeStepAndWorkflow: vi.fn(),
 };
@@ -72,6 +68,7 @@ describe("EmailWorkflowService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockReset();
     emailWorkflowService = new EmailWorkflowService(
       mockWorkflowReminderRepository as WorkflowReminderRepository,
       mockBookingSeatRepository as BookingSeatRepository
@@ -633,13 +630,14 @@ describe("EmailWorkflowService", () => {
     };
 
     beforeEach(() => {
-      vi.mocked(mockWorkflowStepTranslationRepository.findByLocale).mockReset();
+      vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockReset();
     });
 
     test("should use translated content when autoTranslateEnabled is true and translation exists", async () => {
-      vi.mocked(mockWorkflowStepTranslationRepository.findByLocale)
-        .mockResolvedValueOnce({ translatedText: "Cuerpo traducido" })
-        .mockResolvedValueOnce({ translatedText: "Asunto traducido" });
+      vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockResolvedValue({
+        translatedBody: "Cuerpo traducido",
+        translatedSubject: "Asunto traducido",
+      });
 
       const result = await emailWorkflowService.generateEmailPayloadForEvtWorkflow({
         evt: mockBookingInfo,
@@ -657,7 +655,7 @@ describe("EmailWorkflowService", () => {
         sourceLocale: "en",
       });
 
-      expect(mockWorkflowStepTranslationRepository.findByLocale).toHaveBeenCalledTimes(2);
+      expect(mockTranslationService.getWorkflowStepTranslations).toHaveBeenCalledTimes(1);
       expect(result.subject).toBe("Asunto traducido");
       expect(result.html).toContain("Cuerpo traducido");
     });
@@ -678,12 +676,15 @@ describe("EmailWorkflowService", () => {
         autoTranslateEnabled: false,
       });
 
-      expect(mockWorkflowStepTranslationRepository.findByLocale).not.toHaveBeenCalled();
+      expect(mockTranslationService.getWorkflowStepTranslations).not.toHaveBeenCalled();
       expect(result.subject).toBe("Original Subject");
     });
 
     test("should fallback to original content when translation not found", async () => {
-      vi.mocked(mockWorkflowStepTranslationRepository.findByLocale).mockResolvedValue(null);
+      vi.mocked(mockTranslationService.getWorkflowStepTranslations).mockResolvedValue({
+        translatedBody: null,
+        translatedSubject: null,
+      });
 
       const result = await emailWorkflowService.generateEmailPayloadForEvtWorkflow({
         evt: mockBookingInfo,
@@ -701,6 +702,7 @@ describe("EmailWorkflowService", () => {
         sourceLocale: "en",
       });
 
+      expect(mockTranslationService.getWorkflowStepTranslations).toHaveBeenCalledTimes(1);
       expect(result.subject).toBe("Original Subject");
     });
 
@@ -721,7 +723,7 @@ describe("EmailWorkflowService", () => {
         sourceLocale: "en",
       });
 
-      expect(mockWorkflowStepTranslationRepository.findByLocale).not.toHaveBeenCalled();
+      expect(mockTranslationService.getWorkflowStepTranslations).not.toHaveBeenCalled();
       expect(result.subject).toBe("Original Subject");
     });
   });

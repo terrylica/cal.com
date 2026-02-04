@@ -1,6 +1,8 @@
 import { getTranslationService } from "@calcom/features/di/containers/TranslationService";
 import { getWorkflowStepTranslationRepository } from "@calcom/features/ee/workflows/di/WorkflowStepTranslationRepository.container";
+import { WorkflowStepRepository } from "@calcom/features/ee/workflows/repositories/WorkflowStepRepository";
 import logger from "@calcom/lib/logger";
+import prisma from "@calcom/prisma";
 import { WorkflowStepAutoTranslatedField } from "@calcom/prisma/enums";
 import { z } from "zod";
 
@@ -56,17 +58,36 @@ async function translateWorkflowStepData(payload: string): Promise<void> {
   const { workflowStepId, reminderBody, emailSubject, sourceLocale } =
     ZTranslateWorkflowStepDataPayloadSchema.parse(JSON.parse(payload));
 
+  const workflowStepRepository = new WorkflowStepRepository(prisma);
+  const workflowStep = await workflowStepRepository.findTranslationDataById(workflowStepId);
+
+  if (!workflowStep) {
+    logger.warn(`Workflow step ${workflowStepId} not found for translation task`);
+    return;
+  }
+
+  const sourceLocaleMatches = workflowStep.sourceLocale === sourceLocale;
+  const shouldTranslateBody =
+    Boolean(reminderBody) && sourceLocaleMatches && workflowStep.reminderBody === reminderBody;
+  const shouldTranslateSubject =
+    Boolean(emailSubject) && sourceLocaleMatches && workflowStep.emailSubject === emailSubject;
+
+  if (!shouldTranslateBody && !shouldTranslateSubject) {
+    logger.info(`Skipping stale translation task for workflow step ${workflowStepId}`);
+    return;
+  }
+
   await Promise.all([
-    reminderBody &&
+    shouldTranslateBody &&
       processTranslations({
-        text: reminderBody,
+        text: reminderBody as string,
         sourceLocale,
         workflowStepId,
         field: WorkflowStepAutoTranslatedField.REMINDER_BODY,
       }),
-    emailSubject &&
+    shouldTranslateSubject &&
       processTranslations({
-        text: emailSubject,
+        text: emailSubject as string,
         sourceLocale,
         workflowStepId,
         field: WorkflowStepAutoTranslatedField.EMAIL_SUBJECT,
