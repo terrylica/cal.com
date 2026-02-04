@@ -1,6 +1,7 @@
-import process from "node:process";
-
 import { notFound } from "next/navigation";
+
+import { NEXT_PUBLIC_IS_E2E } from "@calcom/lib/public-env";
+import { isENVDev } from "@calcom/lib/env";
 
 /**
  * E2E-only page for warming up the NextAuth session.
@@ -12,10 +13,7 @@ import { notFound } from "next/navigation";
  */
 const Page = (): JSX.Element => {
   // Gate this page to E2E test mode or dev only
-  if (
-    process.env.NEXT_PUBLIC_IS_E2E !== "1" &&
-    process.env.NODE_ENV !== "development"
-  ) {
+  if (NEXT_PUBLIC_IS_E2E !== "1" && !isENVDev) {
     notFound();
   }
 

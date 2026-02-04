@@ -1,4 +1,3 @@
-import process from "node:process";
 import BookingPageTagManager from "@calcom/app-store/BookingPageTagManager";
 import { useIsPlatformBookerEmbed } from "@calcom/atoms/hooks/useIsPlatformBookerEmbed";
 import dayjs from "@calcom/dayjs";
@@ -28,6 +27,7 @@ import {
   PUBLIC_INVALIDATE_AVAILABLE_SLOTS_ON_BOOKING_FORM,
 } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
+import { NEXT_PUBLIC_IS_E2E } from "@calcom/lib/public-env";
 import { BookerLayouts } from "@calcom/prisma/zod-utils";
 import classNames from "@calcom/ui/classNames";
 import { DialogContent } from "@calcom/ui/components/dialog";
@@ -213,8 +213,7 @@ const BookerComponent = ({
   );
 
   // Cloudflare Turnstile Captcha
-  // Note: process.env may be undefined in embed contexts, so we safely check it
-  const isE2E = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_IS_E2E;
+  const isE2E = NEXT_PUBLIC_IS_E2E;
   const shouldRenderCaptcha = !!(
     !isE2E &&
     renderCaptcha &&
