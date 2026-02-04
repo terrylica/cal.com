@@ -1,7 +1,8 @@
+import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import { BillingPeriodRepository } from "@calcom/features/ee/billing/repository/billingPeriod/BillingPeriodRepository";
 import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
 import stripe from "@calcom/features/ee/payments/server/stripe";
-import type { IFeatureRepository } from "@calcom/features/flags/repositories/PrismaFeatureRepository";
+import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
 import type { BillingPeriod } from "@calcom/prisma/enums";
@@ -22,18 +23,18 @@ export interface BillingPeriodInfo {
 export interface BillingPeriodServiceDeps {
   logger?: Logger<unknown>;
   repository?: BillingPeriodRepository;
-  featureRepository: IFeatureRepository;
+  featuresRepository?: IFeaturesRepository;
 }
 
 export class BillingPeriodService {
   private logger: Logger<unknown>;
   private repository: BillingPeriodRepository;
-  private featureRepository: IFeatureRepository;
+  private featuresRepository: IFeaturesRepository;
 
-  constructor(deps: BillingPeriodServiceDeps) {
-    this.logger = deps.logger || log;
-    this.repository = deps.repository || new BillingPeriodRepository();
-    this.featureRepository = deps.featureRepository;
+  constructor(deps?: BillingPeriodServiceDeps) {
+    this.logger = deps?.logger || log;
+    this.repository = deps?.repository || new BillingPeriodRepository();
+    this.featuresRepository = deps?.featuresRepository || getFeaturesRepository();
   }
 
   async isAnnualPlan(teamId: number): Promise<boolean> {
@@ -48,8 +49,8 @@ export class BillingPeriodService {
 
   async shouldApplyMonthlyProration(teamId: number): Promise<boolean> {
     try {
-      const feature = await this.featureRepository.findBySlug("monthly-proration");
-      if (!feature?.enabled) {
+      const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+      if (!isEnabled) {
         return false;
       }
 
@@ -64,8 +65,8 @@ export class BillingPeriodService {
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const feature = await this.featureRepository.findBySlug("hwm-seating");
-      if (!feature?.enabled) {
+      const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+      if (!isEnabled) {
         return false;
       }
 

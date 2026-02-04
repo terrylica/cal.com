@@ -1,6 +1,7 @@
+import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
 import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
-import type { IFeatureRepository } from "@calcom/features/flags/repositories/PrismaFeatureRepository";
+import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
 import type { Logger } from "tslog";
 
@@ -19,7 +20,7 @@ export interface HighWaterMarkServiceDeps {
   repository?: HighWaterMarkRepository;
   teamRepository?: MonthlyProrationTeamRepository;
   billingService?: IBillingProviderService;
-  featureRepository: IFeatureRepository;
+  featuresRepository?: IFeaturesRepository;
 }
 
 export class HighWaterMarkService {
@@ -27,20 +28,20 @@ export class HighWaterMarkService {
   private repository: HighWaterMarkRepository;
   private teamRepository: MonthlyProrationTeamRepository;
   private billingService?: IBillingProviderService;
-  private featureRepository: IFeatureRepository;
+  private featuresRepository: IFeaturesRepository;
 
-  constructor(deps: HighWaterMarkServiceDeps) {
-    this.logger = deps.logger || log;
-    this.repository = deps.repository || new HighWaterMarkRepository();
-    this.teamRepository = deps.teamRepository || new MonthlyProrationTeamRepository();
-    this.billingService = deps.billingService;
-    this.featureRepository = deps.featureRepository;
+  constructor(deps?: HighWaterMarkServiceDeps) {
+    this.logger = deps?.logger || log;
+    this.repository = deps?.repository || new HighWaterMarkRepository();
+    this.teamRepository = deps?.teamRepository || new MonthlyProrationTeamRepository();
+    this.billingService = deps?.billingService;
+    this.featuresRepository = deps?.featuresRepository || getFeaturesRepository();
   }
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const feature = await this.featureRepository.findBySlug("hwm-seating");
-      if (!feature?.enabled) {
+      const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+      if (!isEnabled) {
         return false;
       }
 
@@ -135,8 +136,8 @@ export class HighWaterMarkService {
 
   async applyHighWaterMarkToSubscription(subscriptionId: string): Promise<boolean> {
     // Check feature flag first
-    const feature = await this.featureRepository.findBySlug("hwm-seating");
-    if (!feature?.enabled) {
+    const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+    if (!isEnabled) {
       this.logger.debug(
         `HWM feature flag disabled, skipping applyHighWaterMarkToSubscription for ${subscriptionId}`
       );
@@ -275,8 +276,8 @@ export class HighWaterMarkService {
     const { subscriptionId, newPeriodStart } = params;
 
     // Check feature flag first
-    const feature = await this.featureRepository.findBySlug("hwm-seating");
-    if (!feature?.enabled) {
+    const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+    if (!isEnabled) {
       this.logger.debug(
         `HWM feature flag disabled, skipping resetSubscriptionAfterRenewal for ${subscriptionId}`
       );

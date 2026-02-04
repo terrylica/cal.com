@@ -28,14 +28,12 @@ vi.mock("@calcom/lib/logger", () => ({
   },
 }));
 
-const mockFeatureRepository = {
-  findBySlug: vi.fn(),
-  findAll: vi.fn(),
-  update: vi.fn(),
+const mockFeaturesRepository = {
+  checkIfFeatureIsEnabledGlobally: vi.fn(),
 };
 
-vi.mock("@calcom/features/di/containers/FeatureRepository", () => ({
-  getFeatureRepository: () => mockFeatureRepository,
+vi.mock("@calcom/features/di/containers/FeaturesRepository", () => ({
+  getFeaturesRepository: () => mockFeaturesRepository,
 }));
 
 describe("BillingPeriodService", () => {
@@ -43,9 +41,9 @@ describe("BillingPeriodService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
+    mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
     service = new BillingPeriodService({
-      featureRepository: mockFeatureRepository as any,
+      featuresRepository: mockFeaturesRepository as any,
     });
   });
 
