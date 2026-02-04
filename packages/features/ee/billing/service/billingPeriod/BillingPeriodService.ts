@@ -1,6 +1,5 @@
 import { BillingPeriodRepository } from "@calcom/features/ee/billing/repository/billingPeriod/BillingPeriodRepository";
 import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
-import { getFeatureRepository } from "@calcom/features/di/containers/FeatureRepository";
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import type { IFeatureRepository } from "@calcom/features/flags/repositories/PrismaFeatureRepository";
 import logger from "@calcom/lib/logger";
@@ -23,7 +22,7 @@ export interface BillingPeriodInfo {
 export interface BillingPeriodServiceDeps {
   logger?: Logger<unknown>;
   repository?: BillingPeriodRepository;
-  featureRepository?: IFeatureRepository;
+  featureRepository: IFeatureRepository;
 }
 
 export class BillingPeriodService {
@@ -31,22 +30,10 @@ export class BillingPeriodService {
   private repository: BillingPeriodRepository;
   private featureRepository: IFeatureRepository;
 
-  constructor(
-    loggerOrDeps?: Logger<unknown> | BillingPeriodServiceDeps,
-    repository?: BillingPeriodRepository
-  ) {
-    // Support both old positional args and new deps object for backwards compatibility
-    if (loggerOrDeps && typeof loggerOrDeps === "object" && "featureRepository" in loggerOrDeps) {
-      const deps = loggerOrDeps as BillingPeriodServiceDeps;
-      this.logger = deps.logger || log;
-      this.repository = deps.repository || new BillingPeriodRepository();
-      this.featureRepository = deps.featureRepository || getFeatureRepository();
-    } else {
-      // Legacy constructor signature
-      this.logger = (loggerOrDeps as Logger<unknown>) || log;
-      this.repository = repository || new BillingPeriodRepository();
-      this.featureRepository = getFeatureRepository();
-    }
+  constructor(deps: BillingPeriodServiceDeps) {
+    this.logger = deps.logger || log;
+    this.repository = deps.repository || new BillingPeriodRepository();
+    this.featureRepository = deps.featureRepository;
   }
 
   async isAnnualPlan(teamId: number): Promise<boolean> {

@@ -44,7 +44,9 @@ describe("BillingPeriodService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFeatureRepository.findBySlug.mockResolvedValue({ enabled: true });
-    service = new BillingPeriodService();
+    service = new BillingPeriodService({
+      featureRepository: mockFeatureRepository as any,
+    });
   });
 
   describe("isAnnualPlan", () => {

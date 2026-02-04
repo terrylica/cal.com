@@ -352,12 +352,11 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const applied = await hwmService.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -389,12 +388,11 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const applied = await hwmService.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -415,12 +413,11 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const applied = await hwmService.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -491,7 +488,10 @@ describe("HighWaterMarkService Integration Tests", () => {
       }
 
       // Now we have 2 members (1 owner + 1 member), but HWM is still 4
-      const hwmService = new HighWaterMarkService(mockLogger as any);
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        featureRepository: mockFeatureRepository as any,
+      });
       const newPeriodStart = new Date();
       newPeriodStart.setMonth(newPeriodStart.getMonth() + 1);
 
@@ -629,12 +629,12 @@ describe("HighWaterMarkService Integration Tests", () => {
       expect(billing?.highWaterMark).toBe(5);
 
       // Simulate invoice.upcoming webhook (before renewal)
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        hwmRepo,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        repository: hwmRepo,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const applied = await hwmService.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -768,7 +768,10 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(mockLogger as any);
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       // shouldApplyHighWaterMark should return false for annual plans
       const shouldApply = await hwmService.shouldApplyHighWaterMark(testTeam.id);
@@ -786,7 +789,10 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(mockLogger as any);
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       // shouldApplyHighWaterMark should return true for monthly plans when feature is enabled
       const shouldApply = await hwmService.shouldApplyHighWaterMark(testTeam.id);
@@ -822,12 +828,11 @@ describe("HighWaterMarkService Integration Tests", () => {
       });
 
       const mockBillingService = createMockBillingService();
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       // Should not throw, just return null
       const result = await hwmService.updateHighWaterMarkOnSeatAddition({
@@ -840,12 +845,11 @@ describe("HighWaterMarkService Integration Tests", () => {
 
     it("should handle subscription not found gracefully", async () => {
       const mockBillingService = createMockBillingService();
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const result = await hwmService.applyHighWaterMarkToSubscription("sub_nonexistent");
 
@@ -885,12 +889,11 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const result = await hwmService.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -925,12 +928,11 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const result = await hwmService.applyHighWaterMarkToSubscription(subscriptionId);
 
@@ -974,12 +976,11 @@ describe("HighWaterMarkService Integration Tests", () => {
         },
       });
 
-      const hwmService = new HighWaterMarkService(
-        mockLogger as any,
-        undefined,
-        undefined,
-        mockBillingService
-      );
+      const hwmService = new HighWaterMarkService({
+        logger: mockLogger as any,
+        billingService: mockBillingService,
+        featureRepository: mockFeatureRepository as any,
+      });
 
       const result = await hwmService.applyHighWaterMarkToSubscription(subscriptionId);
 

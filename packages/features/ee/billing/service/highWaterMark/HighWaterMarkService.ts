@@ -1,4 +1,3 @@
-import { getFeatureRepository } from "@calcom/features/di/containers/FeatureRepository";
 import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
 import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
 import type { IFeatureRepository } from "@calcom/features/flags/repositories/PrismaFeatureRepository";
@@ -20,7 +19,7 @@ export interface HighWaterMarkServiceDeps {
   repository?: HighWaterMarkRepository;
   teamRepository?: MonthlyProrationTeamRepository;
   billingService?: IBillingProviderService;
-  featureRepository?: IFeatureRepository;
+  featureRepository: IFeatureRepository;
 }
 
 export class HighWaterMarkService {
@@ -30,28 +29,12 @@ export class HighWaterMarkService {
   private billingService?: IBillingProviderService;
   private featureRepository: IFeatureRepository;
 
-  constructor(
-    loggerOrDeps?: Logger<unknown> | HighWaterMarkServiceDeps,
-    repository?: HighWaterMarkRepository,
-    teamRepository?: MonthlyProrationTeamRepository,
-    billingService?: IBillingProviderService
-  ) {
-    // Support both old positional args and new deps object for backwards compatibility
-    if (loggerOrDeps && typeof loggerOrDeps === "object" && "logger" in loggerOrDeps) {
-      const deps = loggerOrDeps as HighWaterMarkServiceDeps;
-      this.logger = deps.logger || log;
-      this.repository = deps.repository || new HighWaterMarkRepository();
-      this.teamRepository = deps.teamRepository || new MonthlyProrationTeamRepository();
-      this.billingService = deps.billingService;
-      this.featureRepository = deps.featureRepository || getFeatureRepository();
-    } else {
-      // Legacy constructor signature
-      this.logger = (loggerOrDeps as Logger<unknown>) || log;
-      this.repository = repository || new HighWaterMarkRepository();
-      this.teamRepository = teamRepository || new MonthlyProrationTeamRepository();
-      this.billingService = billingService;
-      this.featureRepository = getFeatureRepository();
-    }
+  constructor(deps: HighWaterMarkServiceDeps) {
+    this.logger = deps.logger || log;
+    this.repository = deps.repository || new HighWaterMarkRepository();
+    this.teamRepository = deps.teamRepository || new MonthlyProrationTeamRepository();
+    this.billingService = deps.billingService;
+    this.featureRepository = deps.featureRepository;
   }
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
