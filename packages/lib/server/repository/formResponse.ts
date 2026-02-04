@@ -178,10 +178,7 @@ export class RoutingFormResponseRepository {
     return await this.prismaClient.app_RoutingForms_FormResponse.findFirst({
       where: {
         formId,
-        submitterEmail: {
-          equals: submitterEmail,
-          mode: "insensitive",
-        },
+        submitterEmail,
         createdAt: {
           gte: createdAfter,
           lt: createdBefore,

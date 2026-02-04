@@ -56,7 +56,7 @@ export function getSubmitterEmail(responses: ResponseWithValue): string | undefi
     return typeof value === "string" && value.includes("@");
   })?.value;
   if (typeof submitterEmail !== "string") return undefined;
-  return submitterEmail;
+  return submitterEmail.toLowerCase();
 }
 
 /**

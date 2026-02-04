@@ -3,19 +3,19 @@ import { describe, expect, it } from "vitest";
 import { getSubmitterEmail, getSubmitterName } from "./formSubmissionValidation";
 
 describe("getSubmitterEmail", () => {
-  it("should extract email from response with string value containing @", () => {
+  it("should extract email from response with string value containing @ and return lowercase", () => {
     const responses = {
-      email: { value: "test@example.com", label: "Email" },
+      email: { value: "Test@Example.COM", label: "Email" },
       name: { value: "John Doe", label: "Name" },
     };
 
     expect(getSubmitterEmail(responses)).toBe("test@example.com");
   });
 
-  it("should return first email found when multiple fields contain @", () => {
+  it("should return first email found when multiple fields contain @ in lowercase", () => {
     const responses = {
-      email: { value: "first@example.com", label: "Email" },
-      secondEmail: { value: "second@example.com", label: "Secondary Email" },
+      email: { value: "First@Example.com", label: "Email" },
+      secondEmail: { value: "Second@Example.com", label: "Secondary Email" },
     };
 
     expect(getSubmitterEmail(responses)).toBe("first@example.com");
@@ -36,19 +36,19 @@ describe("getSubmitterEmail", () => {
     expect(getSubmitterEmail(responses)).toBeUndefined();
   });
 
-  it("should handle numeric values without crashing", () => {
+  it("should handle numeric values without crashing and return lowercase email", () => {
     const responses = {
       age: { value: 25, label: "Age" },
-      email: { value: "test@example.com", label: "Email" },
+      email: { value: "Test@Example.com", label: "Email" },
     };
 
     expect(getSubmitterEmail(responses)).toBe("test@example.com");
   });
 
-  it("should handle array values without crashing", () => {
+  it("should handle array values without crashing and return lowercase email", () => {
     const responses = {
       options: { value: ["option1", "option2"], label: "Options" },
-      email: { value: "test@example.com", label: "Email" },
+      email: { value: "Test@Example.com", label: "Email" },
     };
 
     expect(getSubmitterEmail(responses)).toBe("test@example.com");
@@ -70,12 +70,12 @@ describe("getSubmitterEmail", () => {
     expect(getSubmitterEmail(responses)).toBeUndefined();
   });
 
-  it("should handle response format with additional properties", () => {
+  it("should handle response format with additional properties and return lowercase", () => {
     const responses = {
       email: {
-        value: "test@example.com",
+        value: "Test@Example.COM",
         label: "Email",
-        response: "test@example.com",
+        response: "Test@Example.COM",
         identifier: "email",
       },
     };
@@ -83,9 +83,9 @@ describe("getSubmitterEmail", () => {
     expect(getSubmitterEmail(responses)).toBe("test@example.com");
   });
 
-  it("should work with handleResponse.ts response format (value + label)", () => {
+  it("should work with handleResponse.ts response format and return lowercase", () => {
     const responses = {
-      email: { value: "user@domain.com", label: "Email" },
+      email: { value: "User@Domain.COM", label: "Email" },
       name: { value: "Jane Smith", label: "Name" },
     };
 
