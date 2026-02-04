@@ -2,6 +2,11 @@ import formbricks from "@formbricks/js/app";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 
+import { isENVDev } from "@calcom/lib/env";
+import {
+  NEXT_PUBLIC_FORMBRICKS_HOST_URL,
+  NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID,
+} from "@calcom/lib/public-env";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 
 const initFormbricks = ({
@@ -18,11 +23,11 @@ const initFormbricks = ({
     }
   });
 
-  if (process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL && process.env.NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID) {
+  if (NEXT_PUBLIC_FORMBRICKS_HOST_URL && NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID) {
     formbricks.init({
-      environmentId: process.env.NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID,
-      apiHost: process.env.NEXT_PUBLIC_FORMBRICKS_HOST_URL,
-      debug: process.env.NODE_ENV === "development",
+      environmentId: NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID,
+      apiHost: NEXT_PUBLIC_FORMBRICKS_HOST_URL,
+      debug: isENVDev,
       userId,
       attributes: filteredAttributes,
     });

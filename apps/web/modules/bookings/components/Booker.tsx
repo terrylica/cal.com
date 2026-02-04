@@ -213,7 +213,7 @@ const BookerComponent = ({
   );
 
   // Cloudflare Turnstile Captcha
-  const isE2E = NEXT_PUBLIC_IS_E2E;
+  const isE2E = typeof process !== "undefined" && NEXT_PUBLIC_IS_E2E;
   const shouldRenderCaptcha = !!(
     !isE2E &&
     renderCaptcha &&
