@@ -8,6 +8,9 @@ export { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getB
 export { getOrgFullOrigin, subdomainSuffix } from "@calcom/features/ee/organizations/lib/orgDomains";
 export type { IOrganizationRepository } from "@calcom/features/ee/organizations/lib/repository/IOrganizationRepository";
 export { OrganizationMembershipService } from "@calcom/features/ee/organizations/lib/service/OrganizationMembershipService";
+export { ActiveUsersBillingTaskService } from "@calcom/features/ee/organizations/lib/billing/tasker/ActiveUsersBillingTaskService";
+export { OrganizationBillingTaskService } from "@calcom/features/ee/organizations/lib/billing/tasker/OrganizationBillingTaskService";
 export { ManagedUsersBillingRepository } from "@calcom/features/ee/organizations/repositories/ManagedUsersBillingRepository";
+export { OrgUsersBillingRepository } from "@calcom/features/ee/organizations/repositories/OrgUsersBillingRepository";
 export { OrganizationRepository } from "@calcom/features/ee/organizations/repositories/OrganizationRepository";
 export { PlatformBillingRepository } from "@calcom/features/ee/organizations/repositories/PlatformBillingRepository";
