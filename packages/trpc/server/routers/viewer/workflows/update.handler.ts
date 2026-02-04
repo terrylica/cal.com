@@ -35,7 +35,10 @@ import {
 
 type UpdateOptions = {
   ctx: {
-    user: Pick<NonNullable<TrpcSessionUser>, "id" | "metadata" | "locale" | "timeFormat" | "timeZone" | "organization">;
+    user: Pick<
+      NonNullable<TrpcSessionUser>,
+      "id" | "metadata" | "locale" | "timeFormat" | "timeZone" | "organization"
+    >;
     prisma: PrismaClient;
   };
   input: TUpdateInputSchema;
@@ -459,6 +462,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
         const didBodyChange = newStep.reminderBody !== oldStep.reminderBody;
         const didSubjectChange = newStep.emailSubject !== oldStep.emailSubject;
         const didSourceLocaleChange = newStep.sourceLocale !== oldStep.sourceLocale;
+        const didAutoTranslateEnable = !oldStep.autoTranslateEnabled && Boolean(newStep.autoTranslateEnabled);
 
         await workflowStepRepository.updateWorkflowStep(oldStep.id, {
           action: newStep.action,
@@ -481,7 +485,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
           ctx.user.organization?.id &&
           newStep.autoTranslateEnabled &&
           (newStep.reminderBody || newStep.emailSubject) &&
-          (didBodyChange || didSubjectChange || didSourceLocaleChange);
+          (didBodyChange || didSubjectChange || didSourceLocaleChange || didAutoTranslateEnable);
 
         if (shouldTranslate) {
           await tasker.create("translateWorkflowStepData", {
