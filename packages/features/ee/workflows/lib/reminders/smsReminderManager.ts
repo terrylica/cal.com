@@ -13,11 +13,11 @@ import { getTranslation } from "@calcom/lib/server/i18n";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import type { PrismaClient } from "@calcom/prisma";
 import prisma from "@calcom/prisma";
-import { WorkflowTemplates, WorkflowActions, WorkflowMethods, WorkflowStepAutoTranslatedField } from "@calcom/prisma/enums";
+import { WorkflowTemplates, WorkflowActions, WorkflowMethods } from "@calcom/prisma/enums";
 import { WorkflowTriggerEvents } from "@calcom/prisma/enums";
 
 import { isAttendeeAction } from "../actionHelperFunctions";
-import { WorkflowStepTranslationRepository } from "../../repositories/WorkflowStepTranslationRepository";
+import { getWorkflowStepTranslations } from "../translationLookup";
 import { getSenderId } from "../alphanumericSenderIdSupport";
 import { IMMEDIATE_WORKFLOW_TRIGGER_EVENTS } from "../constants";
 import { WorkflowOptOutContactRepository } from "../repository/workflowOptOutContact";
@@ -175,13 +175,11 @@ const scheduleSMSReminderForEvt = async (
 
     if (smsMessage && args.autoTranslateEnabled && action === WorkflowActions.SMS_ATTENDEE && workflowStepId) {
       const attendeeLocale = attendeeToBeUsedInSMS.language?.locale || "en";
-      const bodyTranslation = await WorkflowStepTranslationRepository.findByLocale(
-        workflowStepId,
-        WorkflowStepAutoTranslatedField.REMINDER_BODY,
-        attendeeLocale
-      );
-      if (bodyTranslation?.translatedText) {
-        smsMessage = bodyTranslation.translatedText;
+      const { translatedBody } = await getWorkflowStepTranslations(workflowStepId, attendeeLocale, {
+        includeBody: true,
+      });
+      if (translatedBody) {
+        smsMessage = translatedBody;
       }
     }
 

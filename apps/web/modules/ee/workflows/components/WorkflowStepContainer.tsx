@@ -1422,32 +1422,44 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
               {(step.action === WorkflowActions.EMAIL_ATTENDEE ||
                 step.action === WorkflowActions.SMS_ATTENDEE ||
                 step.action === WorkflowActions.WHATSAPP_ATTENDEE) && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Controller
-                    name={`steps.${step.stepNumber - 1}.autoTranslateEnabled`}
-                    control={form.control}
-                    render={() => (
-                      <CheckboxField
-                        disabled={props.readOnly || !props.user.organizationId}
-                        defaultChecked={
-                          form.getValues(`steps.${step.stepNumber - 1}.autoTranslateEnabled`) || false
-                        }
-                        description={t("auto_translate_for_attendees")}
-                        descriptionClassName="ml-0"
-                        onChange={(e) =>
-                          form.setValue(
-                            `steps.${step.stepNumber - 1}.autoTranslateEnabled`,
-                            e.target.checked
-                          )
-                        }
-                      />
+                <div className="mt-2">
+                  <div className="flex items-center gap-2">
+                    <Controller
+                      name={`steps.${step.stepNumber - 1}.autoTranslateEnabled`}
+                      control={form.control}
+                      render={() => (
+                        <CheckboxField
+                          disabled={props.readOnly || !props.user.organizationId}
+                          defaultChecked={
+                            form.getValues(`steps.${step.stepNumber - 1}.autoTranslateEnabled`) || false
+                          }
+                          description={t("auto_translate_for_attendees")}
+                          descriptionClassName="ml-0"
+                          onChange={(e) =>
+                            form.setValue(
+                              `steps.${step.stepNumber - 1}.autoTranslateEnabled`,
+                              e.target.checked
+                            )
+                          }
+                        />
+                      )}
+                    />
+                    {!props.user.organizationId && (
+                      <Badge variant="gray" size="sm">
+                        {t("upgrade_to_organizations")}
+                      </Badge>
                     )}
-                  />
-                  {!props.user.organizationId && (
-                    <Badge variant="gray" size="sm">
-                      {t("upgrade_to_organizations")}
-                    </Badge>
-                  )}
+                  </div>
+                  {props.user.organizationId &&
+                    form.watch(`steps.${step.stepNumber - 1}.autoTranslateEnabled`) && (
+                      <p className="text-subtle ml-6 mt-1 text-xs">
+                        {t("auto_translate_source_language_hint", {
+                          language: new Intl.DisplayNames([i18n.language], { type: "language" }).of(
+                            props.user.locale || "en"
+                          ),
+                        })}
+                      </p>
+                    )}
                 </div>
               )}
               {!props.readOnly && (

@@ -3,6 +3,10 @@ import { z } from "zod";
 import { EventTypeTranslationRepository } from "@calcom/features/eventTypeTranslation/repositories/EventTypeTranslationRepository";
 import { locales as i18nLocales } from "@calcom/lib/i18n";
 import logger from "@calcom/lib/logger";
+import {
+  TRANSLATION_SUPPORTED_LOCALES,
+  type TranslationSupportedLocale,
+} from "@calcom/lib/translationConstants";
 import { EventTypeAutoTranslatedField } from "@calcom/prisma/enums";
 
 export const ZTranslateEventDataPayloadSchema = z.object({
@@ -12,28 +16,6 @@ export const ZTranslateEventDataPayloadSchema = z.object({
   title: z.string().optional(),
   userLocale: z.string(),
 });
-
-const SUPPORTED_LOCALES = [
-  "en", // English
-  "es", // Spanish
-  "de", // German
-  "pt", // Portuguese
-  "pt-BR", // Portuguese Brazilian
-  "fr", // French
-  "it", // Italian
-  "ar", // Arabic
-  "ru", // Russian
-  "zh-CN", // Simplified Chinese
-  "nl", // Dutch
-  "zh-TW", // Traditional Chinese
-  "ko", // Korean
-  "ja", // Japanese
-  "sv", // Swedish
-  "da", // Danish
-  "is", // Icelandic
-  "lt", // Lithuanian
-  "nb", // Norwegian Bokmål
-] as const;
 
 async function processTranslations({
   text,
@@ -48,7 +30,7 @@ async function processTranslations({
   const { LingoDotDevService } = await import("@calcom/lib/server/service/lingoDotDev");
 
   try {
-    const targetLocales = SUPPORTED_LOCALES.filter(
+    const targetLocales = TRANSLATION_SUPPORTED_LOCALES.filter(
       (locale) => locale !== userLocale && i18nLocales.includes(locale)
     );
 
@@ -56,13 +38,17 @@ async function processTranslations({
       targetLocales.map((targetLocale) => LingoDotDevService.localizeText(text, userLocale, targetLocale))
     );
 
-    // Filter out null translations and their corresponding locales
-    const validTranslations = translations
-      .filter((trans): trans is string => trans !== null)
-      .map((trans, index) => ({
-        translatedText: trans,
-        targetLocale: targetLocales[index],
-      }));
+    // Map translations with their locales first, then filter out null translations
+    // This maintains alignment between translations and their target locales
+    const translationsWithLocales = translations.map((trans, index) => ({
+      translatedText: trans,
+      targetLocale: targetLocales[index],
+    }));
+
+    const validTranslations = translationsWithLocales.filter(
+      (item): item is { translatedText: string; targetLocale: TranslationSupportedLocale } =>
+        item.translatedText !== null
+    );
 
     if (validTranslations.length > 0) {
       const translationData = validTranslations.map(({ translatedText, targetLocale }) => ({

@@ -457,6 +457,8 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
         }
 
         const didBodyChange = newStep.reminderBody !== oldStep.reminderBody;
+        const didSubjectChange = newStep.emailSubject !== oldStep.emailSubject;
+        const didSourceLocaleChange = newStep.sourceLocale !== oldStep.sourceLocale;
 
         await workflowStepRepository.updateWorkflowStep(oldStep.id, {
           action: newStep.action,
@@ -475,16 +477,18 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
           sourceLocale: newStep.sourceLocale ?? ctx.user.locale,
         });
 
-        if (
+        const shouldTranslate =
           ctx.user.organization?.id &&
           newStep.autoTranslateEnabled &&
-          (newStep.reminderBody || newStep.emailSubject)
-        ) {
+          (newStep.reminderBody || newStep.emailSubject) &&
+          (didBodyChange || didSubjectChange || didSourceLocaleChange);
+
+        if (shouldTranslate) {
           await tasker.create("translateWorkflowStepData", {
             workflowStepId: oldStep.id,
             reminderBody: newStep.reminderBody,
             emailSubject: newStep.emailSubject,
-            userLocale: newStep.sourceLocale || ctx.user.locale,
+            sourceLocale: newStep.sourceLocale || ctx.user.locale,
           });
         }
 
@@ -494,7 +498,9 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
             userId: ctx.user.id,
             createdAt: new Date().toISOString(),
           });
-        } else if (!isFormTrigger(trigger)) {
+        }
+
+        if (!SCANNING_WORKFLOW_STEPS && !isFormTrigger(trigger)) {
           // schedule notifications for edited steps (only for event-based triggers)
           await scheduleWorkflowNotifications({
             activeOn: activeOnEventTypeIds,
@@ -585,7 +591,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
               workflowStepId: step.id,
               reminderBody: step.reminderBody,
               emailSubject: step.emailSubject,
-              userLocale: step.sourceLocale || ctx.user.locale,
+              sourceLocale: step.sourceLocale || ctx.user.locale,
             })
           )
       );

@@ -3,57 +3,37 @@ import { z } from "zod";
 import { WorkflowStepTranslationRepository } from "@calcom/features/ee/workflows/repositories/WorkflowStepTranslationRepository";
 import { locales as i18nLocales } from "@calcom/lib/i18n";
 import logger from "@calcom/lib/logger";
+import {
+  TRANSLATION_SUPPORTED_LOCALES,
+  type TranslationSupportedLocale,
+} from "@calcom/lib/translationConstants";
 import { WorkflowStepAutoTranslatedField } from "@calcom/prisma/enums";
 
 const ZTranslateWorkflowStepDataPayloadSchema = z.object({
   workflowStepId: z.number(),
   reminderBody: z.string().nullable().optional(),
   emailSubject: z.string().nullable().optional(),
-  userLocale: z.string(),
+  sourceLocale: z.string(),
 });
-
-const SUPPORTED_LOCALES = [
-  "en",
-  "es",
-  "de",
-  "pt",
-  "pt-BR",
-  "fr",
-  "it",
-  "ar",
-  "ru",
-  "zh-CN",
-  "nl",
-  "zh-TW",
-  "ko",
-  "ja",
-  "sv",
-  "da",
-  "is",
-  "lt",
-  "nb",
-] as const;
-
-type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 async function processTranslations({
   text,
-  userLocale,
+  sourceLocale,
   workflowStepId,
   field,
 }: {
   text: string;
   field: WorkflowStepAutoTranslatedField;
-} & Pick<z.infer<typeof ZTranslateWorkflowStepDataPayloadSchema>, "userLocale" | "workflowStepId">): Promise<void> {
+} & Pick<z.infer<typeof ZTranslateWorkflowStepDataPayloadSchema>, "sourceLocale" | "workflowStepId">): Promise<void> {
   const { LingoDotDevService } = await import("@calcom/lib/server/service/lingoDotDev");
 
   try {
-    const targetLocales = SUPPORTED_LOCALES.filter(
-      (locale) => locale !== userLocale && i18nLocales.includes(locale)
+    const targetLocales = TRANSLATION_SUPPORTED_LOCALES.filter(
+      (locale) => locale !== sourceLocale && i18nLocales.includes(locale)
     );
 
     const translations = await Promise.all(
-      targetLocales.map((targetLocale) => LingoDotDevService.localizeText(text, userLocale, targetLocale))
+      targetLocales.map((targetLocale) => LingoDotDevService.localizeText(text, sourceLocale, targetLocale))
     );
 
     const translationsWithLocales = translations.map((trans, index) => ({
@@ -62,13 +42,14 @@ async function processTranslations({
     }));
 
     const validTranslations = translationsWithLocales.filter(
-      (item): item is { translatedText: string; targetLocale: SupportedLocale } => item.translatedText !== null
+      (item): item is { translatedText: string; targetLocale: TranslationSupportedLocale } =>
+        item.translatedText !== null
     );
 
     if (validTranslations.length > 0) {
       const translationData = validTranslations.map(({ translatedText, targetLocale }) => ({
         workflowStepId,
-        sourceLocale: userLocale,
+        sourceLocale,
         targetLocale,
         translatedText,
       }));
@@ -85,21 +66,21 @@ async function processTranslations({
 }
 
 async function translateWorkflowStepData(payload: string): Promise<void> {
-  const { workflowStepId, reminderBody, emailSubject, userLocale } =
+  const { workflowStepId, reminderBody, emailSubject, sourceLocale } =
     ZTranslateWorkflowStepDataPayloadSchema.parse(JSON.parse(payload));
 
   await Promise.all([
     reminderBody &&
       processTranslations({
         text: reminderBody,
-        userLocale,
+        sourceLocale,
         workflowStepId,
         field: WorkflowStepAutoTranslatedField.REMINDER_BODY,
       }),
     emailSubject &&
       processTranslations({
         text: emailSubject,
-        userLocale,
+        sourceLocale,
         workflowStepId,
         field: WorkflowStepAutoTranslatedField.EMAIL_SUBJECT,
       }),

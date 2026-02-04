@@ -10,6 +10,7 @@ import {
 } from "@calcom/prisma/enums";
 
 import { isAttendeeAction } from "../actionHelperFunctions";
+import { getWorkflowStepTranslations } from "../translationLookup";
 import { IMMEDIATE_WORKFLOW_TRIGGER_EVENTS } from "../constants";
 import {
   getContentSidForTemplate,
@@ -180,6 +181,16 @@ export const scheduleWhatsappReminder = async (args: ScheduleTextReminderArgs & 
           attendeeName,
           name
         ) || message;
+  }
+
+  if (textMessage && args.autoTranslateEnabled && action === WorkflowActions.WHATSAPP_ATTENDEE && workflowStepId) {
+    const attendeeLocale = evt.attendees[0].language?.locale || "en";
+    const { translatedBody } = await getWorkflowStepTranslations(workflowStepId, attendeeLocale, {
+      includeBody: true,
+    });
+    if (translatedBody) {
+      textMessage = translatedBody;
+    }
   }
 
   // Allows debugging generated whatsapp content without waiting for twilio to send whatsapp messages

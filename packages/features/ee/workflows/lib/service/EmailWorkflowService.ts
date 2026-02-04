@@ -15,13 +15,13 @@ import logger from "@calcom/lib/logger";
 import { TimeFormat } from "@calcom/lib/timeFormat";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { prisma } from "@calcom/prisma";
-import { WorkflowActions, WorkflowTemplates, WorkflowStepAutoTranslatedField } from "@calcom/prisma/enums";
+import { WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
 import { SchedulingType, WorkflowTriggerEvents } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import { CalendarEvent } from "@calcom/types/Calendar";
 
 import type { WorkflowReminderRepository } from "../../repositories/WorkflowReminderRepository";
-import { WorkflowStepTranslationRepository } from "../../repositories/WorkflowStepTranslationRepository";
+import { getWorkflowStepTranslations } from "../translationLookup";
 import { isEmailAction, getTemplateBodyForAction, getTemplateSubjectForAction } from "../actionHelperFunctions";
 import { detectMatchedTemplate } from "../detectMatchedTemplate";
 import { getWorkflowRecipientEmail } from "../getWorkflowReminders";
@@ -495,23 +495,16 @@ export class EmailWorkflowService {
       let translatedEmailSubject = emailSubject;
 
       if (autoTranslateEnabled && isEmailAttendeeAction && workflowStepId) {
-        const [bodyTranslation, subjectTranslation] = await Promise.all([
-          WorkflowStepTranslationRepository.findByLocale(
-            workflowStepId,
-            WorkflowStepAutoTranslatedField.REMINDER_BODY,
-            locale
-          ),
-          WorkflowStepTranslationRepository.findByLocale(
-            workflowStepId,
-            WorkflowStepAutoTranslatedField.EMAIL_SUBJECT,
-            locale
-          ),
-        ]);
-        if (bodyTranslation?.translatedText) {
-          translatedEmailBody = bodyTranslation.translatedText;
+        const { translatedBody, translatedSubject } = await getWorkflowStepTranslations(
+          workflowStepId,
+          locale,
+          { includeBody: true, includeSubject: true }
+        );
+        if (translatedBody) {
+          translatedEmailBody = translatedBody;
         }
-        if (subjectTranslation?.translatedText) {
-          translatedEmailSubject = subjectTranslation.translatedText;
+        if (translatedSubject) {
+          translatedEmailSubject = translatedSubject;
         }
       }
 
