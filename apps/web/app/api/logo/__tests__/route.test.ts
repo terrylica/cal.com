@@ -172,8 +172,8 @@ describe("logo route", () => {
 
       const mockCalls = vi.mocked(NextResponse.redirect).mock.calls;
       const callArgs = mockCalls[0];
-      const headers = callArgs[1]?.headers as Record<string, string> | undefined;
-      expect(headers?.["Cache-Control"]).toContain("stale-while-revalidate=604800");
+      const init = callArgs[1] as { headers?: Record<string, string> } | undefined;
+      expect(init?.headers?.["Cache-Control"]).toContain("stale-while-revalidate=604800");
     });
 
     it("should include public directive for CDN caching", async () => {
@@ -183,8 +183,8 @@ describe("logo route", () => {
 
       const mockCalls = vi.mocked(NextResponse.redirect).mock.calls;
       const callArgs = mockCalls[0];
-      const headers = callArgs[1]?.headers as Record<string, string> | undefined;
-      expect(headers?.["Cache-Control"]).toContain("public");
+      const init = callArgs[1] as { headers?: Record<string, string> } | undefined;
+      expect(init?.headers?.["Cache-Control"]).toContain("public");
     });
 
     it("should include max-age for client-side caching", async () => {
@@ -194,8 +194,8 @@ describe("logo route", () => {
 
       const mockCalls = vi.mocked(NextResponse.redirect).mock.calls;
       const callArgs = mockCalls[0];
-      const headers = callArgs[1]?.headers as Record<string, string> | undefined;
-      expect(headers?.["Cache-Control"]).toContain("max-age=86400");
+      const init = callArgs[1] as { headers?: Record<string, string> } | undefined;
+      expect(init?.headers?.["Cache-Control"]).toContain("max-age=86400");
     });
   });
 
