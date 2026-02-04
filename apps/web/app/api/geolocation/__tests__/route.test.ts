@@ -1,7 +1,11 @@
+import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("app/api/defaultResponderForAppDir", () => ({
-  defaultResponderForAppDir: (handler: () => Promise<Response>) => handler,
+  defaultResponderForAppDir:
+    (handler: () => Promise<Response>) =>
+    (_req: NextRequest, _context: { params: Promise<Record<string, string>> }) =>
+      handler(),
 }));
 
 const mockHeadersGet = vi.fn();
@@ -14,6 +18,9 @@ vi.mock("next/headers", () => ({
 
 import { GET } from "../route";
 
+const mockRequest = {} as NextRequest;
+const mockContext = { params: Promise.resolve({}) };
+
 describe("geolocation route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,7 +30,7 @@ describe("geolocation route", () => {
     it("should include public directive for CDN caching", async () => {
       mockHeadersGet.mockReturnValue("US");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
 
       expect(response.headers.get("Cache-Control")).toContain("public");
     });
@@ -31,7 +38,7 @@ describe("geolocation route", () => {
     it("should include s-maxage for CDN edge caching", async () => {
       mockHeadersGet.mockReturnValue("US");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
 
       expect(response.headers.get("Cache-Control")).toContain("s-maxage=3600");
     });
@@ -39,7 +46,7 @@ describe("geolocation route", () => {
     it("should include stale-while-revalidate for better cache hit rates", async () => {
       mockHeadersGet.mockReturnValue("US");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
 
       expect(response.headers.get("Cache-Control")).toContain("stale-while-revalidate=86400");
     });
@@ -47,7 +54,7 @@ describe("geolocation route", () => {
     it("should include max-age for client-side caching", async () => {
       mockHeadersGet.mockReturnValue("US");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
 
       expect(response.headers.get("Cache-Control")).toContain("max-age=3600");
     });
@@ -55,7 +62,7 @@ describe("geolocation route", () => {
     it("should have complete Cache-Control header with all directives", async () => {
       mockHeadersGet.mockReturnValue("US");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
 
       expect(response.headers.get("Cache-Control")).toBe(
         "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400"
@@ -70,7 +77,7 @@ describe("geolocation route", () => {
         return null;
       });
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
       const body = await response.json();
 
       expect(body.country).toBe("US");
@@ -79,7 +86,7 @@ describe("geolocation route", () => {
     it("should return Unknown when x-vercel-ip-country header is missing", async () => {
       mockHeadersGet.mockReturnValue(null);
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
       const body = await response.json();
 
       expect(body.country).toBe("Unknown");
@@ -94,7 +101,7 @@ describe("geolocation route", () => {
           return null;
         });
 
-        const response = await GET();
+        const response = await GET(mockRequest, mockContext);
         const body = await response.json();
 
         expect(body.country).toBe(code);
@@ -106,7 +113,7 @@ describe("geolocation route", () => {
     it("should return JSON response", async () => {
       mockHeadersGet.mockReturnValue("US");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
 
       expect(response.headers.get("content-type")).toContain("application/json");
     });
@@ -114,7 +121,7 @@ describe("geolocation route", () => {
     it("should return 200 status code", async () => {
       mockHeadersGet.mockReturnValue("US");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
 
       expect(response.status).toBe(200);
     });
@@ -122,7 +129,7 @@ describe("geolocation route", () => {
     it("should return object with country property", async () => {
       mockHeadersGet.mockReturnValue("CA");
 
-      const response = await GET();
+      const response = await GET(mockRequest, mockContext);
       const body = await response.json();
 
       expect(body).toHaveProperty("country");
