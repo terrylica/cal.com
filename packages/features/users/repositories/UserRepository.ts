@@ -1331,10 +1331,22 @@ export class UserRepository {
         locale: true,
         timeFormat: true,
         metadata: true,
+        hideBranding: true,
         credentials: {
           select: credentialForCalendarServiceSelect,
         },
         destinationCalendar: true,
+      },
+    });
+  }
+
+  async findForPasswordReset({ id }: { id: number }) {
+    return this.prismaClient.user.findUnique({
+      where: { id },
+      select: {
+        email: true,
+        name: true,
+        locale: true,
       },
     });
   }
