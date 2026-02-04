@@ -600,6 +600,7 @@ export class EmailWorkflowService {
       uid: evt.uid,
       cancelledBy: recipientEmail,
       seatReferenceUid: seatUidToUse,
+      isRecurring: !!evt.eventType?.recurringEvent,
     });
   }
 

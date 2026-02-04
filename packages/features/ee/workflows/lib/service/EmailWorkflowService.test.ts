@@ -879,6 +879,66 @@ describe("EmailWorkflowService", () => {
 
       expect(result.html).toContain("allRemainingBookings=false");
     });
+
+    test("should include allRemainingBookings=true for recurring events in standard cancel URL", async () => {
+      const mockBookingInfoWithRecurring = {
+        ...baseBookingInfo,
+        platformClientId: null,
+        platformCancelUrl: null,
+        platformRescheduleUrl: null,
+        eventType: {
+          slug: "test-event",
+          recurringEvent: { freq: 2, count: 5, interval: 1 },
+        },
+      };
+
+      const result = await emailWorkflowService.generateEmailPayloadForEvtWorkflow({
+        evt: mockBookingInfoWithRecurring,
+        sendTo: ["attendee@example.com"],
+        hideBranding: false,
+        emailSubject: "Test Subject",
+        emailBody: "Cancel here: {CANCEL_URL}",
+        sender: "Cal.com",
+        action: WorkflowActions.EMAIL_ATTENDEE,
+        template: WorkflowTemplates.CUSTOM,
+        includeCalendarEvent: false,
+        triggerEvent: WorkflowTriggerEvents.BEFORE_EVENT,
+      });
+
+      // Standard cancel URL should include allRemainingBookings=true for recurring events
+      expect(result.html).toContain("https://cal.com/booking/booking-123");
+      expect(result.html).toContain("allRemainingBookings=true");
+    });
+
+    test("should include allRemainingBookings=false for non-recurring events in standard cancel URL", async () => {
+      const mockBookingInfoNonRecurring = {
+        ...baseBookingInfo,
+        platformClientId: null,
+        platformCancelUrl: null,
+        platformRescheduleUrl: null,
+        eventType: {
+          slug: "test-event",
+          recurringEvent: null,
+        },
+      };
+
+      const result = await emailWorkflowService.generateEmailPayloadForEvtWorkflow({
+        evt: mockBookingInfoNonRecurring,
+        sendTo: ["attendee@example.com"],
+        hideBranding: false,
+        emailSubject: "Test Subject",
+        emailBody: "Cancel here: {CANCEL_URL}",
+        sender: "Cal.com",
+        action: WorkflowActions.EMAIL_ATTENDEE,
+        template: WorkflowTemplates.CUSTOM,
+        includeCalendarEvent: false,
+        triggerEvent: WorkflowTriggerEvents.BEFORE_EVENT,
+      });
+
+      // Standard cancel URL should include allRemainingBookings=false for non-recurring events
+      expect(result.html).toContain("https://cal.com/booking/booking-123");
+      expect(result.html).toContain("allRemainingBookings=false");
+    });
   });
 
   describe("generateEmailPayloadForEvtWorkflow - Cal Video meeting URL", () => {
