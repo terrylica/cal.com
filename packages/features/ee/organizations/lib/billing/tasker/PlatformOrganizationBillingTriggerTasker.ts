@@ -32,19 +32,19 @@ export class PlatformOrganizationBillingTriggerTasker implements IPlatformOrgani
     return { runId: handle.id };
   }
 
-  async countActiveManagedUsers(
-    payload: Parameters<IPlatformOrganizationBillingTasker["countActiveManagedUsers"]>[0]
+  async countActiveUsers(
+    payload: Parameters<IPlatformOrganizationBillingTasker["countActiveUsers"]>[0]
   ): Promise<{ runId: string }> {
-    const { countActiveManagedUsers } = await import("./trigger/count-active-managed-users");
-    const handle = await countActiveManagedUsers.trigger(payload);
+    const { countActiveUsers } = await import("./trigger/count-active-managed-users");
+    const handle = await countActiveUsers.trigger(payload);
     return { runId: handle.id };
   }
 
-  async invoiceActiveManagedUsers(
-    payload: Parameters<IPlatformOrganizationBillingTasker["invoiceActiveManagedUsers"]>[0]
+  async invoiceActiveUsers(
+    payload: Parameters<IPlatformOrganizationBillingTasker["invoiceActiveUsers"]>[0]
   ): Promise<{ runId: string }> {
-    const { invoiceActiveManagedUsers } = await import("./trigger/invoice-active-managed-users");
-    const handle = await invoiceActiveManagedUsers.trigger(payload);
+    const { invoiceActiveUsers } = await import("./trigger/invoice-active-managed-users");
+    const handle = await invoiceActiveUsers.trigger(payload);
     return { runId: handle.id };
   }
 }

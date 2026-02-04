@@ -4,8 +4,8 @@ import type { TriggerOptions } from "@trigger.dev/sdk";
 import type { PlatformOrganizationBillingSyncTasker } from "./PlatformOrganizationBillingSyncTasker";
 import type { PlatformOrganizationBillingTriggerTasker } from "./PlatformOrganizationBillingTriggerTasker";
 import type {
-  CountActiveManagedUsersPayload,
-  InvoiceActiveManagedUsersPayload,
+  CountActiveUsersPayload,
+  InvoiceActiveUsersPayload,
   IPlatformOrganizationBillingTasker,
   PlatformOrganizationBillingTaskPayload,
 } from "./types";
@@ -95,8 +95,8 @@ export class PlatformOrganizationBillingTasker extends Tasker<IPlatformOrganizat
     return taskResponse;
   }
 
-  public async countActiveManagedUsers(data: {
-    payload: CountActiveManagedUsersPayload;
+  public async countActiveUsers(data: {
+    payload: CountActiveUsersPayload;
   }): Promise<{ runId: string }> {
     const { payload } = data;
     let taskResponse: {
@@ -104,13 +104,13 @@ export class PlatformOrganizationBillingTasker extends Tasker<IPlatformOrganizat
     } = { runId: "task-not-found" };
 
     try {
-      taskResponse = await this.dispatch("countActiveManagedUsers", payload);
-      this.logger.info(`PlatformOrganizationBillingTasker countActiveManagedUsers success:`, taskResponse, {
+      taskResponse = await this.dispatch("countActiveUsers", payload);
+      this.logger.info(`PlatformOrganizationBillingTasker countActiveUsers success:`, taskResponse, {
         organizationId: payload.organizationId,
       });
     } catch {
       taskResponse = { runId: "task-failed" };
-      this.logger.error(`PlatformOrganizationBillingTasker countActiveManagedUsers failed`, taskResponse, {
+      this.logger.error(`PlatformOrganizationBillingTasker countActiveUsers failed`, taskResponse, {
         organizationId: payload.organizationId,
       });
     }
@@ -118,8 +118,8 @@ export class PlatformOrganizationBillingTasker extends Tasker<IPlatformOrganizat
     return taskResponse;
   }
 
-  public async invoiceActiveManagedUsers(data: {
-    payload: InvoiceActiveManagedUsersPayload;
+  public async invoiceActiveUsers(data: {
+    payload: InvoiceActiveUsersPayload;
   }): Promise<{ runId: string }> {
     const { payload } = data;
     let taskResponse: {
@@ -127,13 +127,13 @@ export class PlatformOrganizationBillingTasker extends Tasker<IPlatformOrganizat
     } = { runId: "task-not-found" };
 
     try {
-      taskResponse = await this.dispatch("invoiceActiveManagedUsers", payload);
-      this.logger.info(`PlatformOrganizationBillingTasker invoiceActiveManagedUsers success:`, taskResponse, {
+      taskResponse = await this.dispatch("invoiceActiveUsers", payload);
+      this.logger.info(`PlatformOrganizationBillingTasker invoiceActiveUsers success:`, taskResponse, {
         organizationIds: payload.organizationIds,
       });
     } catch {
       taskResponse = { runId: "task-failed" };
-      this.logger.error(`PlatformOrganizationBillingTasker invoiceActiveManagedUsers failed`, taskResponse, {
+      this.logger.error(`PlatformOrganizationBillingTasker invoiceActiveUsers failed`, taskResponse, {
         organizationIds: payload.organizationIds,
       });
     }

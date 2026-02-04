@@ -2,6 +2,7 @@ import { bindModuleToClassOnToken, createModule, type ModuleLoader } from "@calc
 import { moduleLoader as loggerServiceModule } from "@calcom/features/di/shared/services/logger.service";
 import { PlatformOrganizationBillingSyncTasker } from "@calcom/features/ee/organizations/lib/billing/tasker/PlatformOrganizationBillingSyncTasker";
 
+import { moduleLoader as activeUsersBillingTaskServiceModuleLoader } from "./ActiveUsersBillingTaskService.module";
 import { moduleLoader as taskServiceModuleLoader } from "./PlatformOrganizationBillingTaskService.module";
 import { PLATFORM_BILLING_TASKER_DI_TOKENS } from "./tokens";
 
@@ -17,6 +18,7 @@ const loadModule = bindModuleToClassOnToken({
   depsMap: {
     logger: loggerServiceModule,
     billingTaskService: taskServiceModuleLoader,
+    activeUsersBillingTaskService: activeUsersBillingTaskServiceModuleLoader,
   },
 });
 

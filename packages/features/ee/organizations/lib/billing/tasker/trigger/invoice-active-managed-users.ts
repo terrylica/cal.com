@@ -3,26 +3,26 @@ import { logger, schemaTask, type TaskWithSchema } from "@trigger.dev/sdk";
 import type { z } from "zod";
 import { INVOICE_ACTIVE_MANAGED_USERS_JOB_ID } from "../constants";
 import { platformBillingTaskConfig } from "./config";
-import { invoiceActiveManagedUsersTaskSchema } from "./schema";
+import { invoiceActiveUsersTaskSchema } from "./schema";
 
-export const invoiceActiveManagedUsers: TaskWithSchema<
+export const invoiceActiveUsers: TaskWithSchema<
   typeof INVOICE_ACTIVE_MANAGED_USERS_JOB_ID,
-  typeof invoiceActiveManagedUsersTaskSchema
+  typeof invoiceActiveUsersTaskSchema
 > = schemaTask({
   id: INVOICE_ACTIVE_MANAGED_USERS_JOB_ID,
   ...platformBillingTaskConfig,
-  schema: invoiceActiveManagedUsersTaskSchema,
-  run: async (payload: z.infer<typeof invoiceActiveManagedUsersTaskSchema>) => {
-    const { getPlatformOrganizationBillingTaskService } = await import(
-      "@calcom/features/ee/organizations/di/tasker/PlatformOrganizationBillingTaskService.container"
+  schema: invoiceActiveUsersTaskSchema,
+  run: async (payload: z.infer<typeof invoiceActiveUsersTaskSchema>) => {
+    const { getActiveUsersBillingTaskService } = await import(
+      "@calcom/features/ee/organizations/di/tasker/ActiveUsersBillingTaskService.container"
     );
 
-    const billingTaskService = getPlatformOrganizationBillingTaskService();
+    const activeUsersBillingTaskService = getActiveUsersBillingTaskService();
     try {
-      await billingTaskService.invoiceActiveManagedUsers(payload);
+      await activeUsersBillingTaskService.invoiceActiveUsers(payload);
     } catch (error) {
       if (error instanceof Error || error instanceof ErrorWithCode) logger.error(error.message);
-      else logger.error("Unknown error in invoiceActiveManagedUsers", { error });
+      else logger.error("Unknown error in invoiceActiveUsers", { error });
       throw error;
     }
   },

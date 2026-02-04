@@ -1,10 +1,12 @@
 import type { ITaskerDependencies } from "@calcom/lib/tasker/types";
 import { nanoid } from "nanoid";
+import type { ActiveUsersBillingTaskService } from "./ActiveUsersBillingTaskService";
 import type { PlatformOrganizationBillingTaskService } from "./PlatformOrganizationBillingTaskService";
 import type { IPlatformOrganizationBillingTasker } from "./types";
 
 export interface IPlatformOrganizationBillingSyncTaskerDependencies {
   billingTaskService: PlatformOrganizationBillingTaskService;
+  activeUsersBillingTaskService: ActiveUsersBillingTaskService;
 }
 
 export class PlatformOrganizationBillingSyncTasker implements IPlatformOrganizationBillingTasker {
@@ -48,21 +50,21 @@ export class PlatformOrganizationBillingSyncTasker implements IPlatformOrganizat
     return { runId };
   }
 
-  async countActiveManagedUsers(
-    payload: Parameters<IPlatformOrganizationBillingTasker["countActiveManagedUsers"]>[0]
+  async countActiveUsers(
+    payload: Parameters<IPlatformOrganizationBillingTasker["countActiveUsers"]>[0]
   ): Promise<{ runId: string }> {
     const runId = `sync_${nanoid(10)}`;
-    await this.dependencies.billingTaskService.countActiveManagedUsers(payload);
-    this.dependencies.logger.info("Counted active managed users in sync mode", runId, payload);
+    await this.dependencies.activeUsersBillingTaskService.countActiveUsers(payload);
+    this.dependencies.logger.info("Counted active users in sync mode", runId, payload);
     return { runId };
   }
 
-  async invoiceActiveManagedUsers(
-    payload: Parameters<IPlatformOrganizationBillingTasker["invoiceActiveManagedUsers"]>[0]
+  async invoiceActiveUsers(
+    payload: Parameters<IPlatformOrganizationBillingTasker["invoiceActiveUsers"]>[0]
   ): Promise<{ runId: string }> {
     const runId = `sync_${nanoid(10)}`;
-    await this.dependencies.billingTaskService.invoiceActiveManagedUsers(payload);
-    this.dependencies.logger.info("Invoiced active managed users in sync mode", runId);
+    await this.dependencies.activeUsersBillingTaskService.invoiceActiveUsers(payload);
+    this.dependencies.logger.info("Invoiced active users in sync mode", runId);
     return { runId };
   }
 }

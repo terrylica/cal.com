@@ -1,7 +1,7 @@
 import process from "node:process";
 import { logger, schedules } from "@trigger.dev/sdk";
 import { CRON_COUNT_ACTIVE_MANAGED_USERS_JOB_ID } from "../constants";
-import { invoiceActiveManagedUsers } from "./invoice-active-managed-users";
+import { invoiceActiveUsers } from "./invoice-active-managed-users";
 
 function parseOrgIdsFromEnv(): number[] {
   const raw = process.env.ORG_IDS_FOR_ACTIVE_USER_BILLING;
@@ -74,7 +74,7 @@ export const cronCountActiveManagedUsers = schedules.task({
       hasExistingCustomer: Boolean(stripeCustomerId),
     });
 
-    await invoiceActiveManagedUsers.trigger({
+    await invoiceActiveUsers.trigger({
       organizationIds: orgIds,
       periodStart,
       periodEnd,
@@ -84,6 +84,6 @@ export const cronCountActiveManagedUsers = schedules.task({
       stripeCustomerId,
     });
 
-    logger.info("Dispatched invoiceActiveManagedUsers task");
+    logger.info("Dispatched invoiceActiveUsers task");
   },
 });

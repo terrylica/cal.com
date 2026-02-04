@@ -52,7 +52,7 @@ export const platformBillingRescheduleUsageIncrementTaskSchema: z.ZodObject<
   rescheduledTime: z.coerce.date(),
 });
 
-export const countActiveManagedUsersTaskSchema: z.ZodObject<
+export const countActiveUsersTaskSchema: z.ZodObject<
   {
     organizationId: z.ZodNumber;
     periodStart: z.ZodNumber;
@@ -76,7 +76,7 @@ export const countActiveManagedUsersTaskSchema: z.ZodObject<
   periodEnd: z.number(),
 });
 
-export const invoiceActiveManagedUsersTaskSchema: z.ZodObject<{
+export const invoiceActiveUsersTaskSchema: z.ZodObject<{
   organizationIds: z.ZodArray<z.ZodNumber>;
   periodStart: z.ZodNumber;
   periodEnd: z.ZodNumber;

@@ -1,8 +1,8 @@
 import type { TriggerOptions } from "@trigger.dev/sdk";
 import type { z } from "zod";
 import type {
-  countActiveManagedUsersTaskSchema,
-  invoiceActiveManagedUsersTaskSchema,
+  countActiveUsersTaskSchema,
+  invoiceActiveUsersTaskSchema,
   platformBillingTaskSchema,
 } from "./trigger/schema";
 
@@ -12,9 +12,9 @@ type WithVoidReturns<T> = {
 
 export type PlatformOrganizationBillingTaskPayload = z.infer<typeof platformBillingTaskSchema>;
 
-export type CountActiveManagedUsersPayload = z.infer<typeof countActiveManagedUsersTaskSchema>;
+export type CountActiveUsersPayload = z.infer<typeof countActiveUsersTaskSchema>;
 
-export type InvoiceActiveManagedUsersPayload = z.infer<typeof invoiceActiveManagedUsersTaskSchema>;
+export type InvoiceActiveUsersPayload = z.infer<typeof invoiceActiveUsersTaskSchema>;
 
 export interface IPlatformOrganizationBillingTasker {
   incrementUsage(
@@ -32,14 +32,11 @@ export interface IPlatformOrganizationBillingTasker {
     options?: TriggerOptions
   ): Promise<{ runId: string }>;
 
-  countActiveManagedUsers(payload: CountActiveManagedUsersPayload): Promise<{ runId: string }>;
+  countActiveUsers(payload: CountActiveUsersPayload): Promise<{ runId: string }>;
 
-  invoiceActiveManagedUsers(payload: InvoiceActiveManagedUsersPayload): Promise<{ runId: string }>;
+  invoiceActiveUsers(payload: InvoiceActiveUsersPayload): Promise<{ runId: string }>;
 }
 
 export type PlatformOrganizationBillingTasks = WithVoidReturns<
-  Pick<
-    IPlatformOrganizationBillingTasker,
-    "incrementUsage" | "countActiveManagedUsers" | "invoiceActiveManagedUsers"
-  >
+  Pick<IPlatformOrganizationBillingTasker, "incrementUsage">
 >;

@@ -3,26 +3,26 @@ import { logger, schemaTask, type TaskWithSchema } from "@trigger.dev/sdk";
 import type { z } from "zod";
 import { COUNT_ACTIVE_MANAGED_USERS_JOB_ID } from "../constants";
 import { platformBillingTaskConfig } from "./config";
-import { countActiveManagedUsersTaskSchema } from "./schema";
+import { countActiveUsersTaskSchema } from "./schema";
 
-export const countActiveManagedUsers: TaskWithSchema<
+export const countActiveUsers: TaskWithSchema<
   typeof COUNT_ACTIVE_MANAGED_USERS_JOB_ID,
-  typeof countActiveManagedUsersTaskSchema
+  typeof countActiveUsersTaskSchema
 > = schemaTask({
   id: COUNT_ACTIVE_MANAGED_USERS_JOB_ID,
   ...platformBillingTaskConfig,
-  schema: countActiveManagedUsersTaskSchema,
-  run: async (payload: z.infer<typeof countActiveManagedUsersTaskSchema>) => {
-    const { getPlatformOrganizationBillingTaskService } = await import(
-      "@calcom/features/ee/organizations/di/tasker/PlatformOrganizationBillingTaskService.container"
+  schema: countActiveUsersTaskSchema,
+  run: async (payload: z.infer<typeof countActiveUsersTaskSchema>) => {
+    const { getActiveUsersBillingTaskService } = await import(
+      "@calcom/features/ee/organizations/di/tasker/ActiveUsersBillingTaskService.container"
     );
 
-    const billingTaskService = getPlatformOrganizationBillingTaskService();
+    const activeUsersBillingTaskService = getActiveUsersBillingTaskService();
     try {
-      await billingTaskService.countActiveManagedUsers(payload);
+      await activeUsersBillingTaskService.countActiveUsers(payload);
     } catch (error) {
       if (error instanceof Error || error instanceof ErrorWithCode) logger.error(error.message);
-      else logger.error("Unknown error in countActiveManagedUsers", { error });
+      else logger.error("Unknown error in countActiveUsers", { error });
       throw error;
     }
   },

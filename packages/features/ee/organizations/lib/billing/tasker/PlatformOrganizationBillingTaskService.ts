@@ -9,14 +9,7 @@ export interface IPlatformOrganizationBillingTaskServiceDependencies {
   organizationRepository: OrganizationRepository;
   platformBillingRepository: PlatformBillingRepository;
   managedUsersBillingRepository: ManagedUsersBillingRepository;
-  billingProviderService: Pick<
-    IBillingProviderService,
-    | "createSubscriptionUsageRecord"
-    | "createCustomer"
-    | "createInvoiceItem"
-    | "createInvoice"
-    | "finalizeInvoice"
-  >;
+  billingProviderService: Pick<IBillingProviderService, "createSubscriptionUsageRecord">;
 }
 
 export class PlatformOrganizationBillingTaskService implements PlatformOrganizationBillingTasks {
@@ -64,112 +57,7 @@ export class PlatformOrganizationBillingTaskService implements PlatformOrganizat
     });
   }
 
-  async countActiveManagedUsers(
-    payload: Parameters<PlatformOrganizationBillingTasks["countActiveManagedUsers"]>[0]
-  ): Promise<void> {
-    const { organizationId, periodStart, periodEnd } = payload;
-    const { logger } = this.dependencies;
-
-    const activeCount = await this.getActiveManagedUsersCount(organizationId, periodStart, periodEnd);
-
-    logger.info("Counted active managed users for organization", {
-      organizationId,
-      periodStart: new Date(periodStart * 1000).toISOString(),
-      periodEnd: new Date(periodEnd * 1000).toISOString(),
-      activeManagedUsers: activeCount,
-    });
-  }
-
-  async invoiceActiveManagedUsers(
-    payload: Parameters<PlatformOrganizationBillingTasks["invoiceActiveManagedUsers"]>[0]
-  ): Promise<void> {
-    const {
-      organizationIds,
-      periodStart,
-      periodEnd,
-      billingEmail,
-      pricePerUserInCents,
-      currency,
-      stripeCustomerId: existingCustomerId,
-    } = payload;
-    const { billingProviderService, logger } = this.dependencies;
-
-    let totalActiveUsers = 0;
-    for (const organizationId of organizationIds) {
-      const count = await this.getActiveManagedUsersCount(organizationId, periodStart, periodEnd);
-      logger.info("Counted active managed users for org", { organizationId, activeCount: count });
-      totalActiveUsers += count;
-    }
-
-    if (totalActiveUsers === 0) {
-      logger.info("No active managed users found across all organizations, skipping invoice creation", {
-        organizationIds,
-      });
-      return;
-    }
-
-    const stripeCustomerId =
-      existingCustomerId ??
-      (
-        await billingProviderService.createCustomer({
-          email: billingEmail,
-          metadata: {
-            source: "active-managed-users-billing",
-            organizationIds: organizationIds.join(","),
-          },
-        })
-      ).stripeCustomerId;
-
-    logger.info("Using Stripe customer for active managed users invoice", {
-      stripeCustomerId,
-      billingEmail,
-      wasCreated: !existingCustomerId,
-    });
-
-    const totalAmount = totalActiveUsers * pricePerUserInCents;
-    const periodStartISO = new Date(periodStart * 1000).toISOString();
-    const periodEndISO = new Date(periodEnd * 1000).toISOString();
-
-    const { invoiceId } = await billingProviderService.createInvoice({
-      customerId: stripeCustomerId,
-      autoAdvance: false,
-      collectionMethod: "send_invoice",
-      daysUntilDue: 30,
-      pendingInvoiceItemsBehavior: "exclude",
-      metadata: {
-        source: "active-managed-users-billing",
-        periodStart: periodStartISO,
-        periodEnd: periodEndISO,
-        organizationIds: organizationIds.join(","),
-      },
-    });
-
-    await billingProviderService.createInvoiceItem({
-      customerId: stripeCustomerId,
-      amount: totalAmount,
-      currency,
-      description: `Active managed users billing (${periodStartISO} - ${periodEndISO}): ${totalActiveUsers} users`,
-      invoiceId,
-      metadata: {
-        activeUsers: String(totalActiveUsers),
-        pricePerUser: String(pricePerUserInCents),
-      },
-    });
-
-    const { invoiceUrl } = await billingProviderService.finalizeInvoice(invoiceId);
-
-    logger.info("Created and finalized active managed users invoice", {
-      invoiceId,
-      invoiceUrl,
-      stripeCustomerId,
-      totalActiveUsers,
-      totalAmount,
-      currency,
-      organizationIds,
-    });
-  }
-
-  private async getActiveManagedUsersCount(
+  async getActiveManagedUsersCount(
     organizationId: number,
     periodStart: number,
     periodEnd: number

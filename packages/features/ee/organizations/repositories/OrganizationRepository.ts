@@ -190,6 +190,19 @@ export class OrganizationRepository {
     });
   }
 
+  async findByOrgId(id: number) {
+    return this.prismaClient.team.findUnique({
+      where: {
+        id,
+        isOrganization: true,
+      },
+      select: {
+        isPlatform: true,
+        isOrganization: true,
+      },
+    });
+  }
+
   async findBySlug({ slug }: { slug: string }) {
     // Slug is unique but could be null as well, so we can't use findUnique
     return this.prismaClient.team.findFirst({
