@@ -106,17 +106,21 @@ export class HighWaterMarkService {
       periodStart: currentPeriodStart,
     });
 
+    // When updated=false, the actual HWM is the existing higher value (previousHighWaterMark),
+    // not memberCount. Return the correct current HWM state.
+    const actualHighWaterMark = result.updated ? memberCount : (result.previousHighWaterMark ?? memberCount);
+
     this.logger.info(`High water mark update for team ${teamId}`, {
       updated: result.updated,
       previousHighWaterMark: result.previousHighWaterMark,
-      newHighWaterMark: memberCount,
+      newHighWaterMark: actualHighWaterMark,
       memberCount,
     });
 
     return {
       updated: result.updated,
       previousHighWaterMark: result.previousHighWaterMark,
-      newHighWaterMark: memberCount,
+      newHighWaterMark: actualHighWaterMark,
     };
   }
 
