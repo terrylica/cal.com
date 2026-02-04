@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { Fragment, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { Button as CossButton } from "@coss/ui/components/button";
+import { Button } from "@coss/ui/components/button";
 import {
   Combobox,
   ComboboxEmpty,
@@ -21,9 +21,9 @@ import { Field, FieldDescription, FieldLabel } from "@coss/ui/components/field";
 import { Fieldset, FieldsetLegend } from "@coss/ui/components/fieldset";
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "@coss/ui/components/frame";
 import { Separator } from "@coss/ui/components/separator";
-import { Label as CossLabel } from "@coss/ui/components/label";
+import { Label } from "@coss/ui/components/label";
 import {
-  Select as CossSelect,
+  Select,
   SelectItem,
   SelectPopup,
   SelectTrigger,
@@ -47,9 +47,7 @@ import { nameOfDay } from "@calcom/lib/weekday";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import classNames from "@calcom/ui/classNames";
-import { Button } from "@calcom/ui/components/button";
 import { Form } from "@calcom/ui/components/form";
-import { Label } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { revalidateTravelSchedules } from "@calcom/web/app/cache/travelSchedule";
 
@@ -249,7 +247,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                         items={localeOptions}>
                         <ComboboxTrigger
                           render={
-                            <CossButton
+                            <Button
                               className="w-full justify-between font-normal capitalize"
                               variant="outline"
                             />
@@ -288,7 +286,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                       const currentTimezone = formattedTimezones.find((tz) => tz.value === value);
                       return (
                         <Fieldset className="max-w-none gap-2">
-                          <CossLabel render={<FieldsetLegend />}>{t("timezone")}</CossLabel>
+                          <Label render={<FieldsetLegend />}>{t("timezone")}</Label>
                           <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
                             <Field className="contents">
                               <Combobox
@@ -304,7 +302,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                                 items={formattedTimezones}>
                                 <ComboboxTrigger
                                   render={
-                                    <CossButton
+                                    <Button
                                       className="w-full justify-between font-normal"
                                       variant="outline"
                                     />
@@ -334,10 +332,10 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                             </Field>
                             {!watchedTzSchedules.length && (
                               <div>
-                                <CossButton variant="outline" onClick={() => setIsTZScheduleOpen(true)}>
+                                <Button variant="outline" onClick={() => setIsTZScheduleOpen(true)}>
                                   <CalendarIcon />
                                   {t("schedule_timezone_change")}
-                                </CossButton>
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -354,7 +352,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                     render={({ field: { value } }) => (
                       <Field>
                         <FieldLabel>{t("time_format")}</FieldLabel>
-                        <CossSelect
+                        <Select
                           aria-label={t("time_format")}
                           value={String(value.value)}
                           onValueChange={(newValue) => {
@@ -377,7 +375,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                               </SelectItem>
                             ))}
                           </SelectPopup>
-                        </CossSelect>
+                        </Select>
                         <FieldDescription>{t("timeformat_profile_hint")}</FieldDescription>
                       </Field>
                     )}
@@ -388,7 +386,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                     render={({ field: { value } }) => (
                       <Field>
                         <FieldLabel>{t("start_of_week")}</FieldLabel>
-                        <CossSelect
+                        <Select
                           aria-label={t("start_of_week")}
                           value={value.value}
                           onValueChange={(newValue) => {
@@ -409,7 +407,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                               </SelectItem>
                             ))}
                           </SelectPopup>
-                        </CossSelect>
+                        </Select>
                       </Field>
                     )}
                   />
@@ -419,13 +417,13 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                 <Frame>
                   <FrameHeader className="flex-row items-center justify-between">
                     <FrameTitle>{t("travel_schedule")}</FrameTitle>
-                    <CossButton
+                    <Button
                       className="-my-1"
                       variant="outline"
                       onClick={() => setIsTZScheduleOpen(true)}>
                       <PlusIcon />
                       {t("add")}
-                    </CossButton>                    
+                    </Button>                    
                   </FrameHeader>
                   <FramePanel className="p-0">
                     {watchedTzSchedules.map((schedule, index) => (
@@ -449,7 +447,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                               {schedule.timeZone.replace(/_/g, " ")}
                             </div>
                           </div>
-                          <CossButton
+                          <Button
                             variant="destructive-outline"
                             size="icon"
                             onClick={() => {
@@ -463,7 +461,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                             aria-label={t("delete")}
                           >
                             <TrashIcon />
-                          </CossButton>
+                          </Button>
                         </div>
                         {index < watchedTzSchedules.length - 1 && <Separator />}
                       </Fragment>
@@ -475,12 +473,12 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
           </Card>
 
           <CardFrameFooter className="flex justify-end">
-            <CossButton
+            <Button
               type="submit"
               disabled={isDisabled || isUpdateBtnLoading}
               data-testid="general-submit-button">
               {t("update")}
-            </CossButton>
+            </Button>
           </CardFrameFooter>
         </CardFrame>
       </Form>
