@@ -487,6 +487,9 @@ export class CalendarEventBuilder {
   }
 
   withTeam(team?: { name: string; members: Person[]; id: number }) {
+    if (!team) {
+      return this;
+    }
     this.event = {
       ...this.event,
       team,
@@ -518,7 +521,10 @@ export class CalendarEventBuilder {
     return this;
   }
 
-  withRecurringEventId(recurringEventId: string) {
+  withRecurringEventId(recurringEventId?: string | null) {
+    if (!recurringEventId) {
+      return this;
+    }
     this.event = {
       ...this.event,
       existingRecurringEvent: {
@@ -573,17 +579,6 @@ export class CalendarEventBuilder {
           url: videoCallReference.meetingUrl,
         },
       };
-    }
-    return this;
-  }
-
-  withConditional<T>(
-    condition: boolean,
-    data: T,
-    apply: (builder: this, data: NonNullable<T>) => this
-  ): this {
-    if (condition && !!data) {
-      return apply(this, data as NonNullable<T>);
     }
     return this;
   }

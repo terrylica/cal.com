@@ -1559,17 +1559,15 @@ async function handler(
     .withOrganization(organizerOrganizationId)
     .withHashedLink(hasHashedBookingLink ? (reqBody.hashedLink ?? null) : null)
     .withRecurring(computedRecurringEvent ?? undefined)
-    .withConditional(
-      !!input.bookingData.thirdPartyRecurringEventId,
-      input.bookingData.thirdPartyRecurringEventId,
-      (b, eventId) => b.withRecurringEventId(eventId)
-    )
-    .withConditional(isTeamEventType, true, (b) =>
-      b.withTeam({
-        members: teamMembers,
-        name: teamInfo?.name || "Nameless",
-        id: teamInfo?.id ?? 0,
-      })
+    .withRecurringEventId(input.bookingData.thirdPartyRecurringEventId)
+    .withTeam(
+      isTeamEventType
+        ? {
+            members: teamMembers,
+            name: teamInfo?.name || "Nameless",
+            id: teamInfo?.id ?? 0,
+          }
+        : undefined
     )
     .build();
 
