@@ -2,8 +2,8 @@ import { cookies, headers } from "next/headers";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
+import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { MembershipRole } from "@calcom/prisma/enums";
-import SettingsHeader from "@calcom/web/modules/settings/components/SettingsHeader";
 
 import { _generateMetadata, getTranslate } from "app/_utils";
 
