@@ -77,19 +77,6 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>Availability</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="(ooo)">
-        {Platform.select({
-          ios: <NativeTabs.Trigger.Icon sf={{ default: "airplane", selected: "airplane" }} />,
-          android: (
-            <NativeTabs.Trigger.Icon
-              src={<VectorIcon family={Ionicons as VectorIconFamily} name="airplane-outline" />}
-              selectedColor={colors.selected}
-            />
-          ),
-        })}
-        <NativeTabs.Trigger.Label>OOO</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
       <NativeTabs.Trigger name="(more)">
         {Platform.select({
           ios: <NativeTabs.Trigger.Icon sf={{ default: "ellipsis", selected: "ellipsis" }} />,
@@ -171,10 +158,7 @@ function WebTabs({ colors }: { colors: TabColors }) {
       <Tabs.Screen
         name="(ooo)"
         options={{
-          title: "OOO",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "airplane" : "airplane-outline"} size={24} color={color} />
-          ),
+          href: null, // Hide from tab bar but keep route accessible
         }}
       />
 

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -26,6 +27,7 @@ interface MoreMenuItem {
 }
 
 export default function More() {
+  const router = useRouter();
   const { logout } = useAuth();
   const { clearCache } = useQueryContext();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -67,6 +69,12 @@ export default function More() {
   };
 
   const menuItems: MoreMenuItem[] = [
+    {
+      name: "Out of Office",
+      icon: "airplane-outline",
+      isExternal: false,
+      onPress: () => router.push("/(tabs)/(ooo)"),
+    },
     {
       name: "Apps",
       icon: "grid-outline",

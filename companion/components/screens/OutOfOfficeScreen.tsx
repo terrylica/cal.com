@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -31,7 +32,6 @@ import { showErrorAlert, showSuccessAlert } from "@/utils/alerts";
 import { offlineAwareRefresh } from "@/utils/network";
 import { OutOfOfficeListItem } from "@/components/out-of-office/OutOfOfficeListItem";
 import { OutOfOfficeListSkeleton } from "@/components/out-of-office/OutOfOfficeListSkeleton";
-import { CreateOutOfOfficeModal } from "@/components/out-of-office/CreateOutOfOfficeModal";
 
 export interface OutOfOfficeScreenProps {
   searchQuery?: string;
@@ -39,10 +39,9 @@ export interface OutOfOfficeScreenProps {
 }
 
 export function OutOfOfficeScreen({ searchQuery = "" }: OutOfOfficeScreenProps) {
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<OutOfOfficeEntry | null>(null);
-  const [editingEntry, setEditingEntry] = useState<OutOfOfficeEntry | null>(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   const colorScheme = useColorScheme();
@@ -88,13 +87,20 @@ export function OutOfOfficeScreen({ searchQuery = "" }: OutOfOfficeScreenProps) 
   };
 
   const handleCreateNew = () => {
-    setEditingEntry(null);
-    setShowCreateModal(true);
+    router.push("/(tabs)/(ooo)/create-entry");
   };
 
   const handleEdit = (entry: OutOfOfficeEntry) => {
-    setEditingEntry(entry);
-    setShowCreateModal(true);
+    router.push({
+      pathname: "/(tabs)/(ooo)/create-entry",
+      params: {
+        id: entry.id.toString(),
+        start: entry.start,
+        end: entry.end,
+        reason: entry.reason || "unspecified",
+        notes: entry.notes || "",
+      },
+    });
   };
 
   const handleDelete = (entry: OutOfOfficeEntry) => {
@@ -135,11 +141,6 @@ export function OutOfOfficeScreen({ searchQuery = "" }: OutOfOfficeScreenProps) 
         showErrorAlert("Error", "Failed to delete entry. Please try again.");
       },
     });
-  };
-
-  const handleCloseCreateModal = () => {
-    setShowCreateModal(false);
-    setEditingEntry(null);
   };
 
   const getReasonEmoji = (reason?: string): string => {
@@ -306,17 +307,6 @@ export function OutOfOfficeScreen({ searchQuery = "" }: OutOfOfficeScreenProps) 
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         />
       )}
-
-      {/* Create/Edit Modal */}
-      <CreateOutOfOfficeModal
-        visible={showCreateModal}
-        onClose={handleCloseCreateModal}
-        editingEntry={editingEntry}
-        onSuccess={() => {
-          handleCloseCreateModal();
-          refetch();
-        }}
-      />
 
       {/* Delete Confirmation Modal for Web */}
       <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
