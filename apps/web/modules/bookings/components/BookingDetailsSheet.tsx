@@ -1,6 +1,7 @@
 "use client";
 
 import dayjs from "@calcom/dayjs";
+import { useBookingLocation } from "@calcom/features/bookings/hooks";
 import { shouldShowFieldInCustomResponses } from "@calcom/lib/bookings/SystemField";
 import { formatPrice } from "@calcom/lib/currencyConversions";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
@@ -30,7 +31,6 @@ import {
   SheetTitle,
 } from "@calcom/ui/components/sheet";
 import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
-import { useBookingLocation } from "@calcom/web/modules/bookings/hooks/useBookingLocation";
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
 import Link from "next/link";
 import { Trans } from "next-i18next";
