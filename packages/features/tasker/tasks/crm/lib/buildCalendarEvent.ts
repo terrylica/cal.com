@@ -1,5 +1,7 @@
-import { CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
+import { CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
+import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
+import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import prisma from "@calcom/prisma";
 import type { CalendarEvent } from "@calcom/types/Calendar";
@@ -12,6 +14,7 @@ const buildCalendarEvent: (bookingUid: string) => Promise<CalendarEvent> = async
     include: {
       user: {
         select: {
+          id: true,
           name: true,
           email: true,
           locale: true,
@@ -24,6 +27,11 @@ const buildCalendarEvent: (bookingUid: string) => Promise<CalendarEvent> = async
         select: {
           slug: true,
           bookingFields: true,
+          team: {
+            select: {
+              parentId: true,
+            },
+          },
         },
       },
       attendees: {
@@ -51,6 +59,12 @@ const buildCalendarEvent: (bookingUid: string) => Promise<CalendarEvent> = async
     throw new Error(`event type not found for booking ${bookingUid}`);
   }
 
+  const organizerOrganizationId = booking.eventType.team?.parentId
+    ? booking.eventType.team.parentId
+    : await ProfileRepository.findFirstOrganizationIdForUser({
+        userId: booking.userId ?? booking.user.id,
+      });
+  const bookerUrl = await getBookerBaseUrl(organizerOrganizationId ?? null);
   const organizerT = await getTranslation(booking.user?.locale ?? "en", "common");
 
   const attendeePromises = [];
@@ -68,12 +82,13 @@ const buildCalendarEvent: (bookingUid: string) => Promise<CalendarEvent> = async
 
   const attendeeList = await Promise.all(attendeePromises);
 
-  let calendarEvent: CalendarEvent = {
+  let calendarEvent: Omit<CalendarEvent, "bookerUrl"> & { bookerUrl: string } = {
     uid: bookingUid,
     type: booking.eventType.slug,
     title: booking.title,
     startTime: booking.startTime.toISOString(),
     endTime: booking.endTime.toISOString(),
+    bookerUrl,
     organizer: {
       email: booking.user.email,
       name: booking.user.name || "Nameless",

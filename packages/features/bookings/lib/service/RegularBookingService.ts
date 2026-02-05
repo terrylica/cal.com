@@ -40,7 +40,6 @@ import { CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import { getSpamCheckService } from "@calcom/features/di/watchlist/containers/SpamCheckService.container";
 import { CreditService } from "@calcom/features/ee/billing/credit-service";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
-import { getRoutingTraceService } from "@calcom/features/routing-trace/di/RoutingTraceService.container";
 import AssignmentReasonRecorder from "@calcom/features/ee/round-robin/assignmentReason/AssignmentReasonRecorder";
 import { BookingLocationService } from "@calcom/features/ee/round-robin/lib/bookingLocationService";
 import { getAllWorkflowsFromEventType } from "@calcom/features/ee/workflows/lib/getAllWorkflowsFromEventType";
@@ -52,6 +51,7 @@ import type { FeaturesRepository } from "@calcom/features/flags/features.reposit
 import { getFullName } from "@calcom/features/form-builder/utils";
 import type { HashedLinkService } from "@calcom/features/hashedLink/lib/service/HashedLinkService";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
+import { getRoutingTraceService } from "@calcom/features/routing-trace/di/RoutingTraceService.container";
 import { handleAnalyticsEvents } from "@calcom/features/tasker/tasks/analytics/handleAnalyticsEvents";
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { UsersRepository } from "@calcom/features/users/users.repository";
@@ -1495,14 +1495,14 @@ async function handler(
 
   let evt: Omit<CalendarEvent, "bookerUrl"> & {
     bookerUrl: string;
-  } = new CalendarEventBuilder()
-    .withBasicDetails({
-      bookerUrl,
-      title: eventName,
-      startTime: dayjs(reqBody.start).utc().format(),
-      endTime: dayjs(reqBody.end).utc().format(),
-      additionalNotes,
-    })
+  } = new CalendarEventBuilder({
+    bookerUrl,
+    title: eventName,
+    startTime: dayjs(reqBody.start).utc().format(),
+    endTime: dayjs(reqBody.end).utc().format(),
+    type: eventType.slug,
+    additionalNotes,
+  })
     .withEventType({
       slug: eventType.slug,
       description: eventType.description,

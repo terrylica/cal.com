@@ -8,38 +8,35 @@ import {
 import EventManager from "@calcom/features/bookings/lib/EventManager";
 import { getAllCredentialsIncludeServiceAccountKey } from "@calcom/features/bookings/lib/getAllCredentialsForUsersOnEvent/getAllCredentials";
 import { getEventTypesFromDB } from "@calcom/features/bookings/lib/handleNewBooking/getEventTypesFromDB";
-import {
+import type {
   BookingRepository,
-  type ManagedEventReassignmentCreatedBooking,
-  type ManagedEventCancellationResult,
+  ManagedEventCancellationResult,
+  ManagedEventReassignmentCreatedBooking,
 } from "@calcom/features/bookings/repositories/BookingRepository";
-import { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
 import { CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
-import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
+import { CreditService } from "@calcom/features/ee/billing/credit-service";
+import {
+  type ManagedEventAssignmentReasonService,
+  ManagedEventReassignmentType,
+} from "@calcom/features/ee/managed-event-types/reassignment/services/ManagedEventAssignmentReasonRecorder";
+import {
+  buildNewBookingPlan,
+  findTargetChildEventType,
+  validateManagedEventReassignment,
+} from "@calcom/features/ee/managed-event-types/reassignment/utils";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
 import { BookingLocationService } from "@calcom/features/ee/round-robin/lib/bookingLocationService";
 import { WorkflowService } from "@calcom/features/ee/workflows/lib/service/WorkflowService";
 import { WorkflowRepository } from "@calcom/features/ee/workflows/repositories/WorkflowRepository";
-import { CreditService } from "@calcom/features/ee/billing/credit-service";
-import type { AdditionalInformation, CalendarEvent } from "@calcom/types/Calendar";
-import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
+import type { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
+import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
-import logger from "@calcom/lib/logger";
 import type loggerType from "@calcom/lib/logger";
+import logger from "@calcom/lib/logger";
+import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import type { PrismaClient } from "@calcom/prisma";
-
-
 import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
-
-import {
-  ManagedEventAssignmentReasonService,
-  ManagedEventReassignmentType,
-} from "@calcom/features/ee/managed-event-types/reassignment/services/ManagedEventAssignmentReasonRecorder";
-import {
-  findTargetChildEventType,
-  validateManagedEventReassignment,
-  buildNewBookingPlan,
-} from "@calcom/features/ee/managed-event-types/reassignment/utils";
+import type { AdditionalInformation, CalendarEvent } from "@calcom/types/Calendar";
 
 interface ManagedEventManualReassignmentServiceDeps {
   prisma: PrismaClient;
@@ -110,7 +107,6 @@ export class ManagedEventManualReassignmentService {
       newUserT,
       reassignedById,
     });
-
 
     const { newBooking, cancelledBooking } = await this.executeBookingReassignmentTransaction({
       originalBookingFull,
@@ -241,17 +237,13 @@ export class ManagedEventManualReassignmentService {
    * Resolves and validates all entities needed for reassignment
    */
   private async resolveTargetEntities(bookingId: number, newUserId: number, reassignLogger: typeof logger) {
-    const {
-      currentChildEventType,
-      parentEventType,
-      targetChildEventType,
-      originalBooking,
-    } = await findTargetChildEventType({
-      bookingId,
-      newUserId,
-      bookingRepository: this.bookingRepository,
-      eventTypeRepository: this.eventTypeRepository,
-    });
+    const { currentChildEventType, parentEventType, targetChildEventType, originalBooking } =
+      await findTargetChildEventType({
+        bookingId,
+        newUserId,
+        bookingRepository: this.bookingRepository,
+        eventTypeRepository: this.eventTypeRepository,
+      });
 
     reassignLogger.info("Found target child event type", {
       currentChildId: currentChildEventType.id,
@@ -284,9 +276,8 @@ export class ManagedEventManualReassignmentService {
       throw new Error("Original booking user not found");
     }
 
-    const originalBookingFull = await this.bookingRepository.findByIdWithAttendeesPaymentAndReferences(
-      bookingId
-    );
+    const originalBookingFull =
+      await this.bookingRepository.findByIdWithAttendeesPaymentAndReferences(bookingId);
 
     if (!originalBookingFull) {
       throw new Error("Original booking not found");
@@ -458,7 +449,7 @@ export class ManagedEventManualReassignmentService {
     }
 
     let videoCallUrl: string | null = null;
-    let videoCallData: CalendarEvent["videoCallData"] = undefined;
+    let videoCallData: CalendarEvent["videoCallData"];
     const additionalInformation: AdditionalInformation = {};
 
     try {
@@ -473,14 +464,14 @@ export class ManagedEventManualReassignmentService {
         })
       );
 
-      const builder = new CalendarEventBuilder()
-        .withBasicDetails({
-          bookerUrl,
-          title: newBooking.title,
-          startTime: dayjs(newBooking.startTime).utc().format(),
-          endTime: dayjs(newBooking.endTime).utc().format(),
-          additionalNotes: newBooking.description || undefined,
-        })
+      const builder = new CalendarEventBuilder({
+        bookerUrl,
+        title: newBooking.title,
+        startTime: dayjs(newBooking.startTime).utc().format(),
+        endTime: dayjs(newBooking.endTime).utc().format(),
+        type: targetEventTypeDetails.slug,
+        additionalNotes: newBooking.description || undefined,
+      })
         .withEventType({
           id: targetEventTypeDetails.id,
           slug: targetEventTypeDetails.slug,
@@ -612,9 +603,7 @@ export class ManagedEventManualReassignmentService {
           data: {
             location: bookingLocation,
             metadata: {
-              ...(typeof newBooking.metadata === "object" && newBooking.metadata
-                ? newBooking.metadata
-                : {}),
+              ...(typeof newBooking.metadata === "object" && newBooking.metadata ? newBooking.metadata : {}),
               ...bookingMetadataUpdate,
             },
             referencesToCreate: referencesToCreateForDb,
@@ -643,7 +632,6 @@ export class ManagedEventManualReassignmentService {
       additionalInformation,
     };
   }
-
 
   /**
    * Sends reassignment notification emails to all parties
@@ -689,14 +677,14 @@ export class ManagedEventManualReassignmentService {
         })
       );
 
-      const emailBuilder = new CalendarEventBuilder()
-        .withBasicDetails({
-          bookerUrl: bookerUrlForEmail,
-          title: newBooking.title,
-          startTime: dayjs(newBooking.startTime).utc().format(),
-          endTime: dayjs(newBooking.endTime).utc().format(),
-          additionalNotes: newBooking.description || undefined,
-        })
+      const emailBuilder = new CalendarEventBuilder({
+        bookerUrl: bookerUrlForEmail,
+        title: newBooking.title,
+        startTime: dayjs(newBooking.startTime).utc().format(),
+        endTime: dayjs(newBooking.endTime).utc().format(),
+        type: targetEventTypeDetails.slug,
+        additionalNotes: newBooking.description || undefined,
+      })
         .withEventType({
           id: targetEventTypeDetails.id,
           slug: targetEventTypeDetails.slug,

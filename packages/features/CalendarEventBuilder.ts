@@ -1,5 +1,4 @@
 import { ALL_APPS } from "@calcom/app-store/utils";
-import { ErrorWithCode } from "@calcom/lib/errors";
 import { getAssignmentReasonCategory } from "@calcom/features/bookings/lib/getAssignmentReasonCategory";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
@@ -7,25 +6,25 @@ import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBooke
 import { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { getTimeFormatStringFromUserTimeFormat, type TimeFormat } from "@calcom/lib/timeFormat";
-import type { Attendee, BookingReference, BookingSeat, DestinationCalendar, Prisma, User } from "@calcom/prisma/client";
+import type {
+  Attendee,
+  BookingReference,
+  BookingSeat,
+  DestinationCalendar,
+  Prisma,
+  User,
+} from "@calcom/prisma/client";
 import type { SchedulingType } from "@calcom/prisma/enums";
 import { bookingResponses as bookingResponsesSchema } from "@calcom/prisma/zod-utils";
 import type { AppsStatus, CalEventResponses, CalendarEvent, Person } from "@calcom/types/Calendar";
 import type { VideoCallData } from "@calcom/types/VideoApiAdapter";
 import type { TFunction } from "i18next";
 
-const APP_TYPE_TO_NAME_MAP = new Map<string, string>(ALL_APPS.map((app) => [app.type, app.name]));
-
-export type BookingForCalEventBuilder = NonNullable<
-  Awaited<ReturnType<BookingRepository["getBookingForCalEventBuilder"]>>
+type CalendarEventRequiredFields = Required<
+  Pick<CalendarEvent, "startTime" | "endTime" | "type" | "bookerUrl" | "title">
 >;
-export type BookingMetaOptions = {
-  conferenceCredentialId?: number;
-  platformClientId?: string;
-  platformRescheduleUrl?: string;
-  platformCancelUrl?: string;
-  platformBookingUrl?: string;
-};
+type CalendarEventBuilderInit = CalendarEventRequiredFields & Partial<CalendarEvent>;
+const APP_TYPE_TO_NAME_MAP = new Map<string, string>(ALL_APPS.map((app) => [app.type, app.name]));
 
 async function _buildPersonFromUser(
   user: Pick<User, "id" | "name" | "locale" | "username" | "email" | "timeFormat" | "timeZone">
@@ -62,14 +61,25 @@ async function _buildPersonFromAttendee(
   } satisfies Person;
 }
 
+export type BookingForCalEventBuilder = NonNullable<
+  Awaited<ReturnType<BookingRepository["getBookingForCalEventBuilder"]>>
+>;
+export type BookingMetaOptions = {
+  conferenceCredentialId?: number;
+  platformClientId?: string;
+  platformRescheduleUrl?: string;
+  platformCancelUrl?: string;
+  platformBookingUrl?: string;
+};
+
 export class CalendarEventBuilder {
   private event: Partial<CalendarEvent>;
 
-  constructor(existingEvent?: Partial<CalendarEvent>) {
-    this.event = existingEvent || {};
+  constructor(existingEvent: CalendarEventBuilderInit) {
+    this.event = existingEvent;
   }
 
-  static fromEvent(event: Partial<CalendarEvent>) {
+  static fromEvent(event: CalendarEventBuilderInit) {
     return new CalendarEventBuilder(event);
   }
 
@@ -85,7 +95,6 @@ export class CalendarEventBuilder {
     if (!user) throw new Error(`Booking ${uid} is missing an organizer — user may have been deleted.`);
     if (!eventType) throw new Error(`Booking ${uid} is missing eventType — it may have been deleted.`);
 
-    const builder = new CalendarEventBuilder();
     const {
       description,
       attendees,
@@ -143,15 +152,17 @@ export class CalendarEventBuilder {
 
     const recurring = parseRecurringEvent(eventType.recurringEvent) ?? undefined;
 
+    const builder = new CalendarEventBuilder({
+      bookerUrl,
+      title,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      type: eventType.slug,
+      additionalNotes,
+    });
+
     // Base builder setup
     builder
-      .withBasicDetails({
-        bookerUrl,
-        title,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        additionalNotes,
-      })
       .withEventType({
         id: eventType.id,
         slug: eventType.slug,
@@ -212,7 +223,7 @@ export class CalendarEventBuilder {
     }
 
     // Video
-    if (videoCallData && videoCallData.url) {
+    if (videoCallData?.url) {
       builder.withVideoCallData({
         ...videoCallData,
         id: videoCallData.id ?? "",
@@ -222,7 +233,7 @@ export class CalendarEventBuilder {
     }
 
     references
-      .filter((r) => r && r.type)
+      .filter((r) => r?.type)
       .forEach((ref) => {
         const appName = APP_TYPE_TO_NAME_MAP.get(ref.type) || ref.type.replace("_", "-");
         appsStatus.push({
@@ -578,18 +589,6 @@ export class CalendarEventBuilder {
   }
 
   build(): Omit<CalendarEvent, "bookerUrl"> & { bookerUrl: string } {
-    if (
-      !this.event.startTime ||
-      !this.event.endTime ||
-      !this.event.type ||
-      !this.event.bookerUrl ||
-      !this.event.title
-    ) {
-      throw ErrorWithCode.Factory.BadRequest(
-        "Failed to build calendar event: missing required fields (startTime, endTime, type, bookerUrl, or title)"
-      );
-    }
-
     return this.event as Omit<CalendarEvent, "bookerUrl"> & { bookerUrl: string };
   }
 }
