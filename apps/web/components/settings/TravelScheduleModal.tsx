@@ -1,14 +1,20 @@
-import { ChevronsUpDownIcon, SearchIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarIcon, ChevronsUpDownIcon, SearchIcon } from "lucide-react";
+import { useMemo, useState, useId } from "react";
 import type { UseFormSetValue } from "react-hook-form";
+import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
 
 import dayjs from "@calcom/dayjs";
 import { useTimePreferences } from "@calcom/features/bookings/lib/timePreferences";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { DatePicker } from "@calcom/ui/components/form";
-import { DatePickerWithRange as DateRangePicker } from "@calcom/ui/components/form/date-range-picker/DateRangePicker";
 
 import { Button } from "@coss/ui/components/button";
+import { Calendar } from "@coss/ui/components/calendar";
+import {
+  Popover,
+  PopoverPopup,
+  PopoverTrigger,
+} from "@coss/ui/components/popover";
 import {
   Combobox,
   ComboboxEmpty,
@@ -29,10 +35,8 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@coss/ui/components/dialog";
-import { Field, FieldLabel } from "@coss/ui/components/field";
-import { Label } from "@coss/ui/components/label";
+import { Field, FieldLabel, FieldError } from "@coss/ui/components/field";
 import { Switch } from "@coss/ui/components/switch";
-import { useIsMobile } from "@coss/ui/hooks/use-mobile";
 
 import type { FormValues } from "~/settings/my-account/general-view";
 
@@ -51,12 +55,13 @@ const TravelScheduleModal = ({
   setValue,
   existingSchedules,
 }: TravelScheduleModalProps) => {
+  const datePitckerId = useId();
+  const timezoneId = useId();
   const { t } = useLocale();
   const { timezone: preferredTimezone } = useTimePreferences();
-  const isMobile = useIsMobile();
-
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const [selectedTimeZone, setSelectedTimeZone] = useState(preferredTimezone);
 
@@ -88,8 +93,33 @@ const TravelScheduleModal = ({
 
   const currentTimezone = formattedTimezones.find((tz) => tz.value === selectedTimeZone);
   const [isNoEndDate, setIsNoEndDate] = useState(false);
-  const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const isDateInExistingSchedule = (date: Date): boolean => {
+    const checkDate = dayjs(date).startOf("day");
+
+    for (const schedule of existingSchedules) {
+      const start = dayjs(schedule.startDate).startOf("day");
+      const end = schedule.endDate ? dayjs(schedule.endDate).startOf("day") : null;
+
+      if (!end) {
+        // Schedule without end date: disable if date is on or after start date
+        if (checkDate.isSame(start) || checkDate.isAfter(start)) {
+          return true;
+        }
+      } else {
+        // Schedule with end date: disable if date falls within the range (inclusive)
+        if (
+          (checkDate.isSame(start) || checkDate.isAfter(start)) &&
+          (checkDate.isSame(end) || checkDate.isBefore(end))
+        ) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
 
   const isOverlapping = (newSchedule: { startDate: Date; endDate?: Date }) => {
     const newStart = dayjs(newSchedule.startDate);
@@ -116,14 +146,16 @@ const TravelScheduleModal = ({
   };
 
   const resetValues = () => {
-    setStartDate(new Date());
-    setEndDate(new Date());
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setDateRange(undefined);
     setSelectedTimeZone(preferredTimezone);
     setIsNoEndDate(false);
-    setIsDateRangeOpen(false);
   };
 
   const createNewSchedule = () => {
+    if (!startDate) return;
+
     const newSchedule = {
       startDate,
       endDate,
@@ -140,65 +172,111 @@ const TravelScheduleModal = ({
   };
 
   return (
-    <Dialog
-      open={open}
-      disablePointerDismissal={isDateRangeOpen}
-      onOpenChange={(nextOpen) => {
-        onOpenChange(nextOpen);
-        if (!nextOpen) {
-          setIsDateRangeOpen(false);
-        }
-      }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPopup>
         <DialogHeader>
           <DialogTitle>{t("travel_schedule")}</DialogTitle>
           <DialogDescription>{t("travel_schedule_description")}</DialogDescription>
         </DialogHeader>
-        <DialogPanel>
-          <div>
-            {!isNoEndDate ? (
-              <>
-                <Label className="mt-2">{t("time_range")}</Label>
-                <DateRangePicker
-                  dates={{
-                    startDate,
-                    endDate,
-                  }}
-                  popoverModal={isMobile}
-                  onPopoverOpenChange={setIsDateRangeOpen}
-                  onDatesChange={({ startDate: newStartDate, endDate: newEndDate }) => {
-                    // If newStartDate does become undefined - we resort back to to-todays date
-                    setStartDate(newStartDate ?? new Date());
-                    setEndDate(newEndDate);
-                    setErrorMessage("");
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <Label className="mt-2">{t("date")}</Label>
-                <DatePicker
-                  minDate={new Date()}
-                  date={startDate}
-                  className="w-56"
-                  onDatesChange={(newDate) => {
-                    setStartDate(newDate);
-                    setErrorMessage("");
-                  }}
-                />
-              </>
-            )}
-            <div className="text-error mt-1 text-sm">{errorMessage}</div>
-
-            <Field className="mt-3">
+        <DialogPanel className="grid gap-4">
+          <div className="flex flex-col gap-3">
+            <div>
+              {!isNoEndDate ? (
+                <Field>
+                  <FieldLabel htmlFor={datePitckerId}>{t("time_range")}</FieldLabel>
+                  <Popover>
+                    <PopoverTrigger
+                      render={
+                        <Button className="w-full justify-start font-normal" variant="outline" id={datePitckerId} />
+                      }>
+                      <CalendarIcon aria-hidden="true" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>{t("select_date_range")}</span>
+                      )}
+                    </PopoverTrigger>
+                    <PopoverPopup align="start">
+                      <Calendar
+                        defaultMonth={dateRange?.from}
+                        mode="range"
+                        onSelect={(range) => {
+                          if (range) {
+                            setDateRange(range);
+                            setStartDate(range.from);
+                            setEndDate(range.to);
+                            setErrorMessage("");
+                          }
+                        }}
+                        selected={dateRange}
+                        disabled={(date) => {
+                          const today = new Date(new Date().setHours(0, 0, 0, 0));
+                          return date < today || isDateInExistingSchedule(date);
+                        }}
+                      />
+                    </PopoverPopup>
+                  </Popover>
+                  {errorMessage && <FieldError match={true}>{errorMessage}</FieldError>}
+                </Field>
+              ) : (
+                <Field>
+                  <FieldLabel>{t("date")}</FieldLabel>
+                  <Popover>
+                    <PopoverTrigger
+                      render={
+                        <Button className="w-full justify-start font-normal" variant="outline" />
+                      }>
+                      <CalendarIcon aria-hidden="true" />
+                      {startDate ? format(startDate, "LLL dd, y") : <span>{t("select_date")}</span>}
+                    </PopoverTrigger>
+                    <PopoverPopup>
+                      <Calendar
+                        defaultMonth={startDate}
+                        mode="single"
+                        onSelect={(date) => {
+                          if (date) {
+                            setStartDate(date);
+                            setDateRange({ from: date, to: undefined });
+                            setErrorMessage("");
+                          }
+                        }}
+                        selected={startDate}
+                        disabled={(date) => {
+                          const today = new Date(new Date().setHours(0, 0, 0, 0));
+                          return date < today || isDateInExistingSchedule(date);
+                        }}
+                      />
+                    </PopoverPopup>
+                  </Popover>
+                  {errorMessage && <FieldError match={true}>{errorMessage}</FieldError>}
+                </Field>
+              )}
+            </div>
+            <Field>
               <FieldLabel>
                 <Switch
                   checked={isNoEndDate}
                   onCheckedChange={(checked) => {
-                    setEndDate(!checked ? startDate : undefined);
                     setIsNoEndDate(checked);
                     if (checked) {
-                      setIsDateRangeOpen(false);
+                      // Switching to single date mode
+                      setEndDate(undefined);
+                      setDateRange(startDate ? { from: startDate, to: undefined } : undefined);
+                    } else {
+                      // Switching to range mode
+                      if (startDate) {
+                        setEndDate(startDate);
+                        setDateRange({ from: startDate, to: startDate });
+                      } else {
+                        setEndDate(undefined);
+                        setDateRange(undefined);
+                      }
                     }
                     setErrorMessage("");
                   }}
@@ -206,8 +284,10 @@ const TravelScheduleModal = ({
                 {t("schedule_tz_without_end_date")}
               </FieldLabel>
             </Field>
+          </div>
 
-            <Label className="mt-6">{t("timezone")}</Label>
+          <Field>
+            <FieldLabel htmlFor={timezoneId}>{t("timezone")}</FieldLabel>
             <Combobox
               autoHighlight
               value={currentTimezone}
@@ -218,7 +298,7 @@ const TravelScheduleModal = ({
               }}
               items={formattedTimezones}>
               <ComboboxTrigger
-                render={<Button className="mt-2 w-full justify-between font-normal" variant="outline" />}>
+                render={<Button className="w-full justify-between font-normal" variant="outline" id={timezoneId} />}>
                 <ComboboxValue />
                 <ChevronsUpDownIcon className="-me-1!" />
               </ComboboxTrigger>
@@ -241,7 +321,7 @@ const TravelScheduleModal = ({
                 </ComboboxList>
               </ComboboxPopup>
             </Combobox>
-          </div>
+          </Field>
         </DialogPanel>
         <DialogFooter>
           <DialogClose render={<Button variant="ghost" />}>{t("cancel")}</DialogClose>
