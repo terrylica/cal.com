@@ -4,10 +4,6 @@ import { fieldTypesConfigMap } from "./fieldTypes";
 import { preprocessNameFieldDataWithVariant } from "./utils";
 import { getConfig as getVariantsConfig } from "./utils/variantsConfig";
 
-type FieldZodCtx = {
-  addIssue: (issue: z.IssueData) => void;
-};
-
 const nonEmptyString = () => z.string().refine((value: string) => value.trim().length > 0);
 
 type FieldTypeSchemaConfig<TInput = unknown, TOutput = unknown> = {
@@ -274,4 +270,8 @@ export const fieldTypesSchemaMap = {
       });
     },
   }),
+};
+
+export type FieldZodCtx = {
+  addIssue: (issue: z.IssueData) => void;
 };
