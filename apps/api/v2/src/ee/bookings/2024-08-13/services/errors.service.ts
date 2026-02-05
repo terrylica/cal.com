@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
+import { ZodError } from "zod";
 
 import { CreateBookingInput } from "@calcom/platform-types";
 
@@ -62,6 +63,10 @@ export class ErrorsBookingsService_2024_08_13 {
         }
         throw new BadRequestException(message);
       }
+    }
+    if (error instanceof ZodError) {
+      const messages = error.issues.map((issue) => issue.message).join(", ");
+      throw new BadRequestException(messages);
     }
     throw error;
   }
