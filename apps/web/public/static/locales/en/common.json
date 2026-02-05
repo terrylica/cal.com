@@ -4563,7 +4563,6 @@
   "last_6_months": "Last 6 months",
   "last_12_months": "Last 12 months",
   "calendar_events_disabled_video_limitation": "When calendar events are disabled, meeting links cannot be generated for apps whose link generation is tied to calendar event creation, for example, Google Meet and Microsoft Teams. Other video apps like Cal Video will continue to work.",
-  "try_free_for_14_days": "Try free for 14 days",
   "upgrade_plan": "Upgrade plan",
   "per_month_user": "per month/user",
   "everything_in_team": "Everything in Team",
@@ -4585,5 +4584,9 @@
   "upgrade_to_teams": "Upgrade to Teams",
   "upgrade_to_orgs": "Upgrade to Orgs",
   "get_in_touch": "Get in touch",
+  "upgrade_team_insights_title": "Get insights on the Teams plan",
+  "upgrade_team_insights_description": "Upgrade to surface all activity across your bookings pages",
+  "available_team_plans": "Available now on team plans",
+  "available_org_plans": "Available now on org plans",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }

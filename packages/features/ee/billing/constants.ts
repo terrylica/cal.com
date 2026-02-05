@@ -33,3 +33,8 @@ export const PLATFORM_PLANS_MAP: Record<string, BillingPlan> = {
 
 export const PLATFORM_ENTERPRISE_SLUGS = process.env.PLATFORM_ENTERPRISE_SLUGS?.split(",") ?? [];
 export const ENTERPRISE_SLUGS = process.env.ENTERPRISE_SLUGS?.split(",") ?? [];
+
+export const BILLING_PRICING = {
+  [BILLING_PLANS.TEAMS]: { monthly: 15, annual: 12 },
+  [BILLING_PLANS.ORGANIZATIONS]: { monthly: 37, annual: 30 },
+} as const;

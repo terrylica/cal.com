@@ -6,6 +6,8 @@ import { useBanners } from "@calcom/web/modules/shell/banners/useBanners";
 import { Button } from "@coss/ui/components/button";
 import useMediaQuery from "@calcom/lib/hooks/useMediaQuery";
 import Link from "next/link";
+import { Badge } from "@coss/ui/components/badge";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 
 const SHELL_FIXED_OFFSET_MOBILE = 174;
 const SHELL_FIXED_OFFSET_TABLET = 174;
@@ -17,15 +19,13 @@ export type FullScreenUpgradeBannerProps = {
   title: string;
   subtitle: string;
   features: string[];
-  upgradeButton: {
-    text: string;
-    target: UpgradeTarget;
-  };
+  target: UpgradeTarget;
   learnMoreButton?: {
     text: string;
     href?: string;
     onClick?: () => void;
   };
+  children: React.ReactNode;
 };
 
 function useDeviceSpecificOffset() {
@@ -45,11 +45,13 @@ export function FullScreenUpgradeBanner({
   title,
   subtitle,
   features,
-  upgradeButton,
+  target,
   learnMoreButton,
+  children,
 }: FullScreenUpgradeBannerProps): JSX.Element {
   const { bannersHeight } = useBanners();
   const deviceSpecificOffset = useDeviceSpecificOffset();
+  const { t } = useLocale();
 
   return (
     <div
@@ -71,23 +73,26 @@ export function FullScreenUpgradeBanner({
             ))}
           </ul>
 
+
+          <div className="mt-10">
+            <Badge variant="outline" className="text-sm text-default font-medium bg-subtle px-2 py-1 h-fit! border-0">
+              <Icon name="sparkles" />
+              {target === "team" ? t("available_team_plans") : t("available_org_plans")}
+            </Badge>
+          </div>
           {/* Buttons */}
-          <div className="mt-10 flex items-center gap-2">
-            <UpgradePlanDialog target={upgradeButton.target}>
-              <Button>
-                <Icon name="circle-arrow-up" />
-                {upgradeButton.text}
-              </Button>
-            </UpgradePlanDialog>
+          <div className="mt-2 flex items-center gap-2">
+            {children}
             {learnMoreButton &&
               (learnMoreButton.href ? (
                 <Button
                   variant="ghost"
+                  className="text-subtle"
                   render={<Link href={learnMoreButton.href} target="_blank" rel="noopener noreferrer" />}>
                   {learnMoreButton.text}
                 </Button>
               ) : (
-                <Button variant="ghost" onClick={learnMoreButton.onClick}>
+                <Button variant="ghost" className="text-subtle" onClick={learnMoreButton.onClick}>
                   {learnMoreButton.text}
                 </Button>
               ))}

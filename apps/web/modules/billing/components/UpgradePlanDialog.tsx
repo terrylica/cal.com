@@ -1,7 +1,13 @@
 "use client";
 
+import { BILLING_PLANS, BILLING_PRICING } from "@calcom/features/ee/billing/constants";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@coss/ui/components/alert";
 import { Icon } from "@calcom/ui/components/icon";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
@@ -71,7 +77,7 @@ function PlanColumn({
         <ul className="mt-3 space-y-2">
           {features.map((feature) => (
             <li key={feature.text} className="flex items-start gap-2 text-sm">
-              <Icon name="check" className="relative top-0.5 h-4 w-4 shrink-0 text-default" />
+              <Icon name="dot" className="relative top-0.5 h-4 w-4 shrink-0 text-default" />
               <span className="text-default">{feature.text}</span>
             </li>
           ))}
@@ -82,17 +88,23 @@ function PlanColumn({
 }
 
 export type UpgradePlanDialogProps = {
-  children: React.ReactNode;
   target: "team" | "organization";
+  info?: {
+    title: string;
+    description: string;
+  }
+  children: React.ReactNode;
 };
 
-export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps): JSX.Element {
+export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogProps): JSX.Element {
   const { t } = useLocale();
   const flags = useFlagMap();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("annual");
 
-  const teamPrice = billingPeriod === "annual" ? "$12" : "$15";
-  const orgPrice = billingPeriod === "annual" ? "$30" : "$37";
+  const teamPrice = `$${BILLING_PRICING[BILLING_PLANS.TEAMS][billingPeriod]}`;
+  const orgPrice = `$${BILLING_PRICING[BILLING_PLANS.ORGANIZATIONS][billingPeriod]}`;
+
+  const teamHref = "/settings/teams/new";
 
   const organizationHref = flags["onboarding-v3"]
     ? "/onboarding/organization/details?migrate=true"
@@ -155,6 +167,12 @@ export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps):
               </Toggle>
             </ToggleGroup>
           </div>
+          {info && (
+            <Alert variant="info">
+              <AlertTitle>{info.title}</AlertTitle>
+              <AlertDescription>{info.description}</AlertDescription>
+            </Alert>
+          )}
         </DialogHeader>
 
         <DialogPanel>
@@ -168,7 +186,7 @@ export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps):
                 description={t("upgrade_plan_team_description")}
                 features={teamFeatures}
                 buttonText={t("upgrade_to_teams")}
-                buttonHref="/settings/teams/new"
+                buttonHref={teamHref}
                 primaryButton={target === "team"}
               />
             )}
@@ -196,10 +214,17 @@ export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps):
           </div>
 
           <Card className="mt-2 p-4 flex-row justify-between items-center">
-            <div>
-              <p className="font-medium text-sm text-black">{t("individual")}</p>
-              <p className="font-semibold text-black text-2xl">{t("free")}</p>
-            </div>
+            {target === "team" && (
+              <div>
+                <p className="font-medium text-sm text-black">{t("individual")}</p>
+                <p className="font-semibold text-black text-2xl">{t("free")}</p>
+              </div>
+            )}
+            {target === "organization" && (
+              <div>
+                <p className="font-semibold text-black text-2xl">{t("team")}</p>
+              </div>
+            )}
             <Badge variant="outline" size="lg" className="opacity-50">{t("current_plan")}</Badge>
           </Card>
         </DialogPanel>
