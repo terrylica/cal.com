@@ -79,11 +79,6 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
       }
     },
     onError: (error) => {
-      setConnectionStatus({
-        tested: true,
-        success: false,
-        error: error.message,
-      });
       showToast(error.message, "error");
     },
     onSettled: () => {
