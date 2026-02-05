@@ -1,16 +1,8 @@
 "use client";
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible";
-import { useSession } from "next-auth/react";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import type { ComponentProps } from "react";
-import React, { useEffect, useState, useMemo } from "react";
-
 import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
-import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import type { OrganizationBranding } from "@calcom/features/ee/organizations/context/provider";
+import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import {
   HAS_ORG_OPT_IN_FEATURES,
   HAS_TEAM_OPT_IN_FEATURES,
@@ -34,7 +26,13 @@ import { Icon } from "@calcom/ui/components/icon";
 import type { VerticalTabItemProps } from "@calcom/ui/components/navigation";
 import { VerticalTabItem } from "@calcom/ui/components/navigation";
 import { Skeleton } from "@calcom/ui/components/skeleton";
-
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@radix-ui/react-collapsible";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import type { ComponentProps } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Shell from "~/shell/Shell";
 
 const getTabs = (orgBranding: OrganizationBranding | null) => {
@@ -81,12 +79,12 @@ const getTabs = (orgBranding: OrganizationBranding | null) => {
         },
         ...(HAS_USER_OPT_IN_FEATURES
           ? [
-              {
-                name: "features",
-                href: "/settings/my-account/features",
-                trackingMetadata: { section: "my_account", page: "features" },
-              },
-            ]
+            {
+              name: "features",
+              href: "/settings/my-account/features",
+              trackingMetadata: { section: "my_account", page: "features" },
+            },
+          ]
           : []),
         // TODO
         // { name: "referrals", href: "/settings/my-account/referrals" },
@@ -181,13 +179,13 @@ const getTabs = (orgBranding: OrganizationBranding | null) => {
         },
         ...(orgBranding
           ? [
-              {
-                name: "members",
-                href: `${WEBAPP_URL}/settings/organizations/${orgBranding.slug}/members`,
-                isExternalLink: true,
-                trackingMetadata: { section: "organization", page: "members" },
-              },
-            ]
+            {
+              name: "members",
+              href: `${WEBAPP_URL}/settings/organizations/${orgBranding.slug}/members`,
+              isExternalLink: true,
+              trackingMetadata: { section: "organization", page: "members" },
+            },
+          ]
           : []),
         {
           name: "privacy_and_security",
@@ -212,12 +210,12 @@ const getTabs = (orgBranding: OrganizationBranding | null) => {
         },
         ...(HAS_ORG_OPT_IN_FEATURES
           ? [
-              {
-                name: "features",
-                href: "/settings/organizations/features",
-                trackingMetadata: { section: "organization", page: "features" },
-              },
-            ]
+            {
+              name: "features",
+              href: "/settings/organizations/features",
+              trackingMetadata: { section: "organization", page: "features" },
+            },
+          ]
           : []),
       ],
     },
@@ -273,6 +271,11 @@ const getTabs = (orgBranding: OrganizationBranding | null) => {
           name: "organizations",
           href: "/settings/admin/organizations",
           trackingMetadata: { section: "admin", page: "organizations" },
+        },
+        {
+          name: "migrations",
+          href: "/settings/admin/migrations/move-team-to-org",
+          trackingMetadata: { section: "admin", page: "migrations" },
         },
         {
           name: "lockedSMS",
@@ -597,9 +600,8 @@ const TeamListCollapsible = ({ teamFeatures }: { teamFeatures?: Record<number, T
                         setTeamMenuState(newTeamMenuState);
                       }
                     }}
-                    aria-label={`${team.name} ${
-                      teamMenuState[index].teamMenuOpen ? t("collapse_menu") : t("expand_menu")
-                    }`}>
+                    aria-label={`${team.name} ${teamMenuState[index].teamMenuOpen ? t("collapse_menu") : t("expand_menu")
+                      }`}>
                     <div className="me-3">
                       {teamMenuState[index].teamMenuOpen ? (
                         <Icon name="chevron-down" className="h-4 w-4" />
@@ -607,7 +609,7 @@ const TeamListCollapsible = ({ teamFeatures }: { teamFeatures?: Record<number, T
                         <Icon name="chevron-right" className="h-4 w-4" />
                       )}
                     </div>
-                    {}
+                    { }
                     {!team.parentId && (
                       <Image
                         src={getPlaceholderAvatar(team.logoUrl, team.name)}
@@ -648,57 +650,57 @@ const TeamListCollapsible = ({ teamFeatures }: { teamFeatures?: Record<number, T
                   <TeamRolesNavItem team={team} teamFeatures={teamFeatures} />
                   {(checkAdminOrOwner(team.role) ||
                     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore this exists wtf?
+                    // @ts-expect-error this exists wtf?
                     (team.isOrgAdmin && team.isOrgAdmin)) && (
-                    <>
-                      {/* TODO */}
-                      {/* <VerticalTabItem
+                      <>
+                        {/* TODO */}
+                        {/* <VerticalTabItem
                 name={t("general")}
                 href={`${WEBAPP_URL}/settings/my-account/appearance`}
                 textClassNames="px-3 text-emphasis font-medium text-sm"
                 disableChevron
               /> */}
-                      <VerticalTabItem
-                        name={t("appearance")}
-                        href={`/settings/teams/${team.id}/appearance`}
-                        textClassNames="px-3 text-emphasis font-medium text-sm"
-                        trackingMetadata={{ section: "team", page: "appearance", teamId: team.id }}
-                        className="px-2! me-5 h-7 w-auto"
-                        disableChevron
-                      />
-                      {HAS_TEAM_OPT_IN_FEATURES && (
                         <VerticalTabItem
-                          name={t("features")}
-                          href={`/settings/teams/${team.id}/features`}
+                          name={t("appearance")}
+                          href={`/settings/teams/${team.id}/appearance`}
                           textClassNames="px-3 text-emphasis font-medium text-sm"
-                          trackingMetadata={{ section: "team", page: "features", teamId: team.id }}
+                          trackingMetadata={{ section: "team", page: "appearance", teamId: team.id }}
                           className="px-2! me-5 h-7 w-auto"
                           disableChevron
                         />
-                      )}
-                      {/* Hide if there is a parent ID */}
-                      {!team.parentId ? (
-                        <>
+                        {HAS_TEAM_OPT_IN_FEATURES && (
                           <VerticalTabItem
-                            name={t("billing")}
-                            href={`/settings/teams/${team.id}/billing`}
+                            name={t("features")}
+                            href={`/settings/teams/${team.id}/features`}
                             textClassNames="px-3 text-emphasis font-medium text-sm"
-                            trackingMetadata={{ section: "team", page: "billing", teamId: team.id }}
+                            trackingMetadata={{ section: "team", page: "features", teamId: team.id }}
                             className="px-2! me-5 h-7 w-auto"
                             disableChevron
                           />
-                        </>
-                      ) : null}
-                      <VerticalTabItem
-                        name={t("settings")}
-                        href={`/settings/teams/${team.id}/settings`}
-                        textClassNames="px-3 text-emphasis font-medium text-sm"
-                        trackingMetadata={{ section: "team", page: "settings", teamId: team.id }}
-                        className="px-2! me-5 h-7 w-auto"
-                        disableChevron
-                      />
-                    </>
-                  )}
+                        )}
+                        {/* Hide if there is a parent ID */}
+                        {!team.parentId ? (
+                          <>
+                            <VerticalTabItem
+                              name={t("billing")}
+                              href={`/settings/teams/${team.id}/billing`}
+                              textClassNames="px-3 text-emphasis font-medium text-sm"
+                              trackingMetadata={{ section: "team", page: "billing", teamId: team.id }}
+                              className="px-2! me-5 h-7 w-auto"
+                              disableChevron
+                            />
+                          </>
+                        ) : null}
+                        <VerticalTabItem
+                          name={t("settings")}
+                          href={`/settings/teams/${team.id}/settings`}
+                          textClassNames="px-3 text-emphasis font-medium text-sm"
+                          trackingMetadata={{ section: "team", page: "settings", teamId: team.id }}
+                          className="px-2! me-5 h-7 w-auto"
+                          disableChevron
+                        />
+                      </>
+                    )}
                 </CollapsibleContent>
               </Collapsible>
             );
@@ -798,7 +800,7 @@ const SettingsSidebarContainer = ({
                           className="text-subtle h-[16px] w-[16px] stroke-[2px] ltr:mr-3 rtl:ml-3 md:mt-0"
                         />
                       )}
-                      {}
+                      { }
                       {!tab.icon && tab?.avatar && (
                         <Image
                           width={16}
@@ -826,9 +828,8 @@ const SettingsSidebarContainer = ({
                           href={child.href || "/"}
                           trackingMetadata={child.trackingMetadata}
                           textClassNames="text-emphasis font-medium text-sm"
-                          className={`px-2! py-1! min-h-7 h-auto w-fit ${
-                            tab.children && index === tab.children?.length - 1 && "mb-3!"
-                          }`}
+                          className={`px-2! py-1! min-h-7 h-auto w-fit ${tab.children && index === tab.children?.length - 1 && "mb-3!"
+                            }`}
                           disableChevron
                         />
                         {child.isBadged && (
@@ -942,11 +943,10 @@ const SettingsSidebarContainer = ({
                                       setOtherTeamMenuState(newOtherTeamMenuState);
                                     }
                                   }}
-                                  aria-label={`${otherTeam.name} ${
-                                    otherTeamMenuState[index].teamMenuOpen
-                                      ? t("collapse_menu")
-                                      : t("expand_menu")
-                                  }`}>
+                                  aria-label={`${otherTeam.name} ${otherTeamMenuState[index].teamMenuOpen
+                                    ? t("collapse_menu")
+                                    : t("expand_menu")
+                                    }`}>
                                   <div className="me-3">
                                     {otherTeamMenuState[index].teamMenuOpen ? (
                                       <Icon name="chevron-down" className="h-4 w-4" />
@@ -954,7 +954,7 @@ const SettingsSidebarContainer = ({
                                       <Icon name="chevron-right" className="h-4 w-4" />
                                     )}
                                   </div>
-                                  {}
+                                  { }
                                   {!otherTeam.parentId && (
                                     <Image
                                       src={getPlaceholderAvatar(otherTeam.logoUrl, otherTeam.name)}
@@ -1052,12 +1052,7 @@ type SettingsLayoutProps = {
   permissions?: SettingsPermissions;
 } & ComponentProps<typeof Shell>;
 
-function SettingsLayoutAppDirClient({
-  children,
-  teamFeatures,
-  permissions,
-  ...rest
-}: SettingsLayoutProps) {
+function SettingsLayoutAppDirClient({ children, teamFeatures, permissions, ...rest }: SettingsLayoutProps) {
   const pathname = usePathname();
   const state = useState(false);
   const [sideContainerOpen, setSideContainerOpen] = state;

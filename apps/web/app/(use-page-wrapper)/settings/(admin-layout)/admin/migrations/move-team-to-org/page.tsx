@@ -1,8 +1,5 @@
-import { _generateMetadata } from "app/_utils";
-import { getTranslate } from "app/_utils";
-
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
-
+import { _generateMetadata, getTranslate } from "app/_utils";
 import MoveTeamToOrgView from "~/settings/admin/org-migrations/move-team-to-org-view";
 
 export const generateMetadata = async () =>
@@ -11,7 +8,7 @@ export const generateMetadata = async () =>
     () => "Migrates a team to an organization",
     undefined,
     undefined,
-    "/settings/admin/orgMigrations/moveTeamToOrg"
+    "/settings/admin/migrations/move-team-to-org"
   );
 
 const Page = async () => {
