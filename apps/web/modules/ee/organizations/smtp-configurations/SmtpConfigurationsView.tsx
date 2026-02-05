@@ -30,7 +30,6 @@ interface SmtpConfiguration {
   fromName: string;
   smtpHost: string;
   smtpPort: number;
-  smtpUser: string;
   smtpSecure: boolean;
   isEnabled: boolean;
   lastTestedAt: Date | null;
@@ -157,10 +156,6 @@ const SmtpConfigurationItem = ({
               <div>
                 <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("smtp_port")}</span>
                 <p className="text-emphasis mt-1 text-sm font-medium">{config.smtpPort}</p>
-              </div>
-              <div>
-                <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("smtp_username")}</span>
-                <p className="text-emphasis mt-1 text-sm font-medium">{config.smtpUser || "-"}</p>
               </div>
               <div>
                 <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("connection")}</span>

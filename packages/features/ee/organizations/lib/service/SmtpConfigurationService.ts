@@ -128,14 +128,7 @@ export class SmtpConfigurationService {
   }
 
   async listByOrganization(organizationId: number): Promise<SmtpConfigurationPublic[]> {
-    const configs = await this.repository.findByOrgId(organizationId);
-    return configs.map((config) => ({
-      ...config,
-      smtpUser: decryptSecret({
-        envelope: JSON.parse(config.smtpUser) as SecretEnvelopeV1,
-        aad: { organizationId: config.organizationId },
-      }),
-    }));
+    return this.repository.findByOrgId(organizationId);
   }
 
   async getById(id: number, organizationId: number): Promise<SmtpConfigurationPublic | null> {
@@ -143,13 +136,7 @@ export class SmtpConfigurationService {
     if (!config || config.organizationId !== organizationId) {
       return null;
     }
-    return {
-      ...config,
-      smtpUser: decryptSecret({
-        envelope: JSON.parse(config.smtpUser) as SecretEnvelopeV1,
-        aad: { organizationId: config.organizationId },
-      }),
-    };
+    return config;
   }
 
   async getActiveConfigForOrg(organizationId: number): Promise<SmtpEmailConfig | null> {

@@ -39,7 +39,6 @@ const smtpConfigurationSelectPublic = {
   fromName: true,
   smtpHost: true,
   smtpPort: true,
-  smtpUser: true,
   smtpSecure: true,
   lastTestedAt: true,
   lastError: true,
