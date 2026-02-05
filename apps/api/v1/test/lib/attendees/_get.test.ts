@@ -27,8 +27,8 @@ describe("GET /api/attendees", () => {
   describe("System-wide admin", () => {
     test("should return all attendees for system-wide admin", async () => {
       const mockAttendees = [
-        { id: 1, bookingId: 1, name: "John Doe", email: "john@example.com", timeZone: "UTC" },
-        { id: 2, bookingId: 2, name: "Jane Smith", email: "jane@example.com", timeZone: "America/New_York" },
+        { id: 1, bookingId: 1, name: "John Doe", email: "john@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
+        { id: 2, bookingId: 2, name: "Jane Smith", email: "jane@example.com", timeZone: "America/New_York", locale: null, phoneNumber: null, noShow: null },
       ];
 
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
@@ -76,8 +76,8 @@ describe("GET /api/attendees", () => {
   describe("Regular user", () => {
     test("should only return attendees from user's own bookings", async () => {
       const mockAttendees = [
-        { id: 1, bookingId: 1, name: "Attendee 1", email: "att1@example.com", timeZone: "UTC" },
-        { id: 2, bookingId: 2, name: "Attendee 2", email: "att2@example.com", timeZone: "UTC" },
+        { id: 1, bookingId: 1, name: "Attendee 1", email: "att1@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
+        { id: 2, bookingId: 2, name: "Attendee 2", email: "att2@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
       ];
 
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
@@ -126,7 +126,7 @@ describe("GET /api/attendees", () => {
 
   describe("Pagination", () => {
     test("should respect MAX_TAKE limit of 250", async () => {
-      const mockAttendees = [{ id: 1, bookingId: 1, name: "Test", email: "test@example.com", timeZone: "UTC" }];
+      const mockAttendees = [{ id: 1, bookingId: 1, name: "Test", email: "test@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null }];
 
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
 
@@ -146,7 +146,7 @@ describe("GET /api/attendees", () => {
     });
 
     test("should apply skip correctly for pagination", async () => {
-      const mockAttendees = [{ id: 11, bookingId: 5, name: "Test", email: "test@example.com", timeZone: "UTC" }];
+      const mockAttendees = [{ id: 11, bookingId: 5, name: "Test", email: "test@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null }];
 
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
 
@@ -167,7 +167,7 @@ describe("GET /api/attendees", () => {
     });
 
     test("should apply pagination to attendee query for regular users", async () => {
-      const mockAttendees = [{ id: 1, bookingId: 1, name: "Test", email: "test@example.com", timeZone: "UTC" }];
+      const mockAttendees = [{ id: 1, bookingId: 1, name: "Test", email: "test@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null }];
 
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
 
@@ -191,6 +191,7 @@ describe("GET /api/attendees", () => {
 
   describe("Response format", () => {
     test("should return attendees with correct fields", async () => {
+      // Mock returns only the selected fields (simulating Prisma's select behavior)
       const mockAttendees = [
         {
           id: 1,
@@ -201,7 +202,7 @@ describe("GET /api/attendees", () => {
         },
       ];
 
-      prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
+      prismaMock.attendee.findMany.mockResolvedValue(mockAttendees as never);
 
       const req = createMockRequest({
         pagination: { take: 10, skip: 0 },
@@ -222,9 +223,9 @@ describe("GET /api/attendees", () => {
 
     test("should order attendees by id descending", async () => {
       const mockAttendees = [
-        { id: 3, bookingId: 1, name: "C", email: "c@example.com", timeZone: "UTC" },
-        { id: 2, bookingId: 1, name: "B", email: "b@example.com", timeZone: "UTC" },
-        { id: 1, bookingId: 1, name: "A", email: "a@example.com", timeZone: "UTC" },
+        { id: 3, bookingId: 1, name: "C", email: "c@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
+        { id: 2, bookingId: 1, name: "B", email: "b@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
+        { id: 1, bookingId: 1, name: "A", email: "a@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
       ];
 
       prismaMock.attendee.findMany.mockResolvedValue(mockAttendees);
