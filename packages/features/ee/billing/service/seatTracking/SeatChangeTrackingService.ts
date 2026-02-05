@@ -125,27 +125,34 @@ export class SeatChangeTrackingService {
         return;
       }
 
-      // Use the billing period start as the HWM period start
-      // Prefer subscription start date over arbitrary new Date()
+      // Determine if update is needed: new period resets, null initializes, higher value wins
       const periodStart = billing.highWaterMarkPeriodStart || billing.subscriptionStart;
       if (!periodStart) {
         log.warn(`Could not determine period start for team ${teamId} - no subscriptionStart available`);
         return;
       }
 
-      const result = await this.highWaterMarkRepo.updateIfHigher({
+      const currentHwm = billing.highWaterMark;
+      const isNewPeriod =
+        !billing.highWaterMarkPeriodStart ||
+        periodStart.getTime() !== billing.highWaterMarkPeriodStart.getTime();
+      const shouldUpdate = isNewPeriod || currentHwm === null || memberCount > currentHwm;
+
+      if (!shouldUpdate) {
+        return;
+      }
+
+      await this.highWaterMarkRepo.setHighWaterMark({
         teamId,
         isOrganization: billing.isOrganization,
-        newSeatCount: memberCount,
+        highWaterMark: memberCount,
         periodStart,
       });
 
-      if (result.updated) {
-        log.info(`High water mark updated for team ${teamId}`, {
-          previousHighWaterMark: result.previousHighWaterMark,
-          newHighWaterMark: memberCount,
-        });
-      }
+      log.info(`High water mark updated for team ${teamId}`, {
+        previousHighWaterMark: currentHwm,
+        newHighWaterMark: memberCount,
+      });
     } catch (error) {
       // Log but don't fail the main operation
       log.error(`Failed to update high water mark for team ${teamId}`, { error });

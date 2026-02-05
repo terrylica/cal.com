@@ -15,7 +15,6 @@ const createMockPrisma = () => ({
     findUnique: vi.fn(),
     update: vi.fn(),
   },
-  $transaction: vi.fn(),
 });
 
 describe("HighWaterMarkRepository", () => {
@@ -165,120 +164,18 @@ describe("HighWaterMarkRepository", () => {
     });
   });
 
-  describe("updateIfHigher", () => {
-    it("throws error when team not found", async () => {
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          team: { findUnique: vi.fn().mockResolvedValue(null) },
-          teamBilling: { update: vi.fn() },
-          organizationBilling: { update: vi.fn() },
-        };
-        return callback(mockTx);
-      });
-
-      await expect(
-        repository.updateIfHigher({
-          teamId: 123,
-          isOrganization: false,
-          newSeatCount: 5,
-          periodStart: new Date(),
-        })
-      ).rejects.toThrow("No team found for teamId 123");
-    });
-
-    it("throws error when billing record not found", async () => {
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          team: {
-            findUnique: vi.fn().mockResolvedValue({
-              isOrganization: false,
-              teamBilling: null,
-              organizationBilling: null,
-            }),
-          },
-          teamBilling: { update: vi.fn() },
-          organizationBilling: { update: vi.fn() },
-        };
-        return callback(mockTx);
-      });
-
-      await expect(
-        repository.updateIfHigher({
-          teamId: 123,
-          isOrganization: false,
-          newSeatCount: 5,
-          periodStart: new Date(),
-        })
-      ).rejects.toThrow("No billing record found for team 123");
-    });
-
-    it("does not update when newSeatCount is not higher than current HWM in same period", async () => {
+  describe("setHighWaterMark", () => {
+    it("updates team billing for non-organization", async () => {
       const periodStart = new Date("2024-01-01");
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          team: {
-            findUnique: vi.fn().mockResolvedValue({
-              isOrganization: false,
-              teamBilling: {
-                highWaterMark: 10,
-                highWaterMarkPeriodStart: periodStart,
-              },
-              organizationBilling: null,
-            }),
-          },
-          teamBilling: { update: vi.fn() },
-          organizationBilling: { update: vi.fn() },
-        };
-        return callback(mockTx);
-      });
 
-      const result = await repository.updateIfHigher({
+      await repository.setHighWaterMark({
         teamId: 123,
         isOrganization: false,
-        newSeatCount: 8, // Lower than current HWM of 10
+        highWaterMark: 8,
         periodStart,
       });
 
-      expect(result).toEqual({
-        updated: false,
-        previousHighWaterMark: 10,
-      });
-    });
-
-    it("updates when newSeatCount is higher than current HWM", async () => {
-      const periodStart = new Date("2024-01-01");
-      const mockUpdate = vi.fn();
-
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          team: {
-            findUnique: vi.fn().mockResolvedValue({
-              isOrganization: false,
-              teamBilling: {
-                highWaterMark: 5,
-                highWaterMarkPeriodStart: periodStart,
-              },
-              organizationBilling: null,
-            }),
-          },
-          teamBilling: { update: mockUpdate },
-          organizationBilling: { update: vi.fn() },
-        };
-        return callback(mockTx);
-      });
-
-      const result = await repository.updateIfHigher({
-        teamId: 123,
-        isOrganization: false,
-        newSeatCount: 8, // Higher than current HWM of 5
-        periodStart,
-      });
-
-      expect(result).toEqual({
-        updated: true,
-        previousHighWaterMark: 5,
-      });
-      expect(mockUpdate).toHaveBeenCalledWith({
+      expect(mockPrisma.teamBilling.update).toHaveBeenCalledWith({
         where: { teamId: 123 },
         data: {
           highWaterMark: 8,
@@ -287,119 +184,22 @@ describe("HighWaterMarkRepository", () => {
       });
     });
 
-    it("always updates when in a new period", async () => {
-      const oldPeriodStart = new Date("2024-01-01");
-      const newPeriodStart = new Date("2024-02-01");
-      const mockUpdate = vi.fn();
-
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          team: {
-            findUnique: vi.fn().mockResolvedValue({
-              isOrganization: false,
-              teamBilling: {
-                highWaterMark: 10,
-                highWaterMarkPeriodStart: oldPeriodStart,
-              },
-              organizationBilling: null,
-            }),
-          },
-          teamBilling: { update: mockUpdate },
-          organizationBilling: { update: vi.fn() },
-        };
-        return callback(mockTx);
-      });
-
-      const result = await repository.updateIfHigher({
-        teamId: 123,
-        isOrganization: false,
-        newSeatCount: 5, // Lower than current HWM, but new period
-        periodStart: newPeriodStart,
-      });
-
-      expect(result).toEqual({
-        updated: true,
-        previousHighWaterMark: 10,
-      });
-      expect(mockUpdate).toHaveBeenCalledWith({
-        where: { teamId: 123 },
-        data: {
-          highWaterMark: 5,
-          highWaterMarkPeriodStart: newPeriodStart,
-        },
-      });
-    });
-
     it("updates organization billing for organizations", async () => {
       const periodStart = new Date("2024-01-01");
-      const mockOrgUpdate = vi.fn();
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          team: {
-            findUnique: vi.fn().mockResolvedValue({
-              isOrganization: true,
-              teamBilling: null,
-              organizationBilling: {
-                highWaterMark: 5,
-                highWaterMarkPeriodStart: periodStart,
-              },
-            }),
-          },
-          teamBilling: { update: vi.fn() },
-          organizationBilling: { update: mockOrgUpdate },
-        };
-        return callback(mockTx);
-      });
-
-      await repository.updateIfHigher({
+      await repository.setHighWaterMark({
         teamId: 456,
         isOrganization: true,
-        newSeatCount: 10,
+        highWaterMark: 10,
         periodStart,
       });
 
-      expect(mockOrgUpdate).toHaveBeenCalledWith({
+      expect(mockPrisma.organizationBilling.update).toHaveBeenCalledWith({
         where: { teamId: 456 },
         data: {
           highWaterMark: 10,
           highWaterMarkPeriodStart: periodStart,
         },
-      });
-    });
-
-    it("updates when current HWM is null", async () => {
-      const periodStart = new Date("2024-01-01");
-      const mockUpdate = vi.fn();
-
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          team: {
-            findUnique: vi.fn().mockResolvedValue({
-              isOrganization: false,
-              teamBilling: {
-                highWaterMark: null,
-                highWaterMarkPeriodStart: null,
-              },
-              organizationBilling: null,
-            }),
-          },
-          teamBilling: { update: mockUpdate },
-          organizationBilling: { update: vi.fn() },
-        };
-        return callback(mockTx);
-      });
-
-      const result = await repository.updateIfHigher({
-        teamId: 123,
-        isOrganization: false,
-        newSeatCount: 5,
-        periodStart,
-      });
-
-      expect(result).toEqual({
-        updated: true,
-        previousHighWaterMark: null,
       });
     });
   });
