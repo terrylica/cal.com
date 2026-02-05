@@ -1,10 +1,9 @@
-import type { TFunction } from "i18next";
-import { describe, expect, it, vi } from "vitest";
-
 import dayjs from "@calcom/dayjs";
-import { BookingForCalEventBuilder, CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
+import { type BookingForCalEventBuilder, CalendarEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import { TimeFormat } from "@calcom/lib/timeFormat";
 import type { Person } from "@calcom/types/Calendar";
+import type { TFunction } from "i18next";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@calcom/features/ee/organizations/lib/getBookerUrlServer", () => ({
   getBookerBaseUrl: vi.fn(async () => "https://cal.com"),
@@ -318,6 +317,32 @@ describe("CalendarEventBuilder", () => {
       expect(event.iCalUID).toBe("ical-123");
       expect(event.iCalSequence).toBe(2);
     }
+  });
+
+  it("should allow clearing iCalUID explicitly", () => {
+    const event = new CalendarEventBuilder()
+      .withBasicDetails({
+        bookerUrl: "https://cal.com/user/test-slug",
+        title: "Test Event",
+        startTime: mockStartTime,
+        endTime: mockEndTime,
+      })
+      .withEventType({
+        slug: "test-slug",
+        id: 123,
+      })
+      .withIdentifiers({
+        iCalUID: "ical-123",
+        iCalSequence: 2,
+      })
+      .build();
+
+    const clearedEvent = CalendarEventBuilder.fromEvent(event)
+      .withIdentifiers({ iCalUID: undefined })
+      .build();
+
+    expect(clearedEvent.iCalUID).toBeUndefined();
+    expect(clearedEvent.iCalSequence).toBe(2);
   });
 
   it("should create an event with confirmation settings", () => {

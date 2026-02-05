@@ -1,13 +1,20 @@
 import { ALL_APPS } from "@calcom/app-store/utils";
-import { ErrorWithCode } from "@calcom/lib/errors";
 import { getAssignmentReasonCategory } from "@calcom/features/bookings/lib/getAssignmentReasonCategory";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { getTimeFormatStringFromUserTimeFormat, type TimeFormat } from "@calcom/lib/timeFormat";
-import type { Attendee, BookingReference, BookingSeat, DestinationCalendar, Prisma, User } from "@calcom/prisma/client";
+import type {
+  Attendee,
+  BookingReference,
+  BookingSeat,
+  DestinationCalendar,
+  Prisma,
+  User,
+} from "@calcom/prisma/client";
 import type { SchedulingType } from "@calcom/prisma/enums";
 import { bookingResponses as bookingResponsesSchema } from "@calcom/prisma/zod-utils";
 import type { AppsStatus, CalEventResponses, CalendarEvent, Person } from "@calcom/types/Calendar";
@@ -414,11 +421,14 @@ export class CalendarEventBuilder {
     return this;
   }
 
-  withIdentifiers({ iCalUID, iCalSequence }: { iCalUID?: string; iCalSequence?: number }) {
+  withIdentifiers(identifiers: { iCalUID?: string | null; iCalSequence?: number | null }) {
+    const hasICalUID = Object.hasOwn(identifiers, "iCalUID");
+    const hasICalSequence = Object.hasOwn(identifiers, "iCalSequence");
+
     this.event = {
       ...this.event,
-      iCalUID: iCalUID ?? this.event.iCalUID,
-      iCalSequence: iCalSequence ?? this.event.iCalSequence,
+      iCalUID: hasICalUID ? identifiers.iCalUID : this.event.iCalUID,
+      iCalSequence: hasICalSequence ? identifiers.iCalSequence : this.event.iCalSequence,
     };
     return this;
   }

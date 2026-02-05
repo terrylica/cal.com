@@ -2208,7 +2208,9 @@ async function handler(
       const updatedICalUID = Array.isArray(calendarResult?.updatedEvent)
         ? calendarResult?.updatedEvent[0]?.iCalUID
         : calendarResult?.updatedEvent?.iCalUID || undefined;
-      evt = CalendarEventBuilder.fromEvent(evt).withIdentifiers({ iCalUID: updatedICalUID }).build();
+      if (updatedICalUID !== undefined) {
+        evt = CalendarEventBuilder.fromEvent(evt).withIdentifiers({ iCalUID: updatedICalUID }).build();
+      }
     }
 
     evt = CalendarEventBuilder.fromEvent(evt)
