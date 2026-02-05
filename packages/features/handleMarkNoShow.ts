@@ -5,6 +5,7 @@ import { BookingAccessService } from "@calcom/features/bookings/services/Booking
 import { CreditService } from "@calcom/features/ee/billing/credit-service";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
 import { workflowSelect } from "@calcom/features/ee/workflows/lib/getAllWorkflows";
+import { shouldHideBrandingForEventUsingProfile } from "@calcom/features/profile/lib/hideBranding";
 import { getAllWorkflowsFromEventType } from "@calcom/features/ee/workflows/lib/getAllWorkflowsFromEventType";
 import type { ExtendedCalendarEvent } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import { WorkflowService } from "@calcom/features/ee/workflows/lib/service/WorkflowService";
@@ -174,11 +175,18 @@ const handleMarkNoShow = async ({
               },
               owner: {
                 select: {
+                  id: true,
                   hideBranding: true,
                   email: true,
                   name: true,
                   timeZone: true,
                   locale: true,
+                  profiles: {
+                    select: {
+                      organizationId: true,
+                      organization: { select: { hideBranding: true } },
+                    },
+                  },
                 },
               },
               team: {
@@ -186,6 +194,8 @@ const handleMarkNoShow = async ({
                   parentId: true,
                   name: true,
                   id: true,
+                  hideBranding: true,
+                  parent: { select: { hideBranding: true } },
                 },
               },
             },
@@ -261,6 +271,25 @@ const handleMarkNoShow = async ({
                 }
               : undefined;
 
+            const hideBranding = shouldHideBrandingForEventUsingProfile({
+              eventTypeId: booking.eventType.id,
+              team: booking.eventType.team
+                ? {
+                    hideBranding: booking.eventType.team.hideBranding,
+                    parent: booking.eventType.team.parent,
+                  }
+                : null,
+              owner: booking.eventType.owner
+                ? {
+                    id: booking.eventType.owner.id,
+                    hideBranding: booking.eventType.owner.hideBranding,
+                    profile: booking.eventType.owner.profiles?.[0]
+                      ? { organization: booking.eventType.owner.profiles[0].organization }
+                      : null,
+                  }
+                : null,
+            });
+
             const calendarEvent: ExtendedCalendarEvent = {
               type: booking.eventType.slug,
               title: booking.title,
@@ -295,6 +324,7 @@ const handleMarkNoShow = async ({
               eventTypeId: booking.eventType?.id,
               customReplyToEmail: booking.eventType?.customReplyToEmail,
               team,
+              hideBranding,
             };
 
             const creditService = new CreditService();
@@ -302,7 +332,7 @@ const handleMarkNoShow = async ({
             await WorkflowService.scheduleWorkflowsFilteredByTriggerEvent({
               workflows,
               smsReminderNumber: booking.smsReminderNumber,
-              hideBranding: booking.eventType.owner?.hideBranding,
+              hideBranding: calendarEvent.hideBranding,
               calendarEvent,
               triggers: [WorkflowTriggerEvents.BOOKING_NO_SHOW_UPDATED],
               creditCheckFn: creditService.hasAvailableCredits.bind(creditService),

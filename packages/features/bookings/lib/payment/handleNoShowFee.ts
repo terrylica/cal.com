@@ -5,6 +5,7 @@ import { sendNoShowFeeChargedEmail } from "@calcom/emails/billing-email-service"
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
 import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
+import { shouldHideBrandingForEventUsingProfile } from "@calcom/features/profile/lib/hideBranding";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
@@ -25,14 +26,18 @@ export const handleNoShowFee = async ({
     startTime: Date;
     endTime: Date;
     userPrimaryEmail: string | null;
+    eventTypeId: number | null;
     userId: number | null;
     user?: {
+      id: number;
       email: string;
       name?: string | null;
       locale: string | null;
       timeZone: string;
+      hideBranding: boolean | null;
       profiles: {
         organizationId: number | null;
+        organization: { hideBranding: boolean | null } | null;
       }[];
     } | null;
     eventType: {
@@ -40,6 +45,11 @@ export const handleNoShowFee = async ({
       hideOrganizerEmail: boolean;
       teamId: number | null;
       metadata?: Prisma.JsonValue;
+      team?: {
+        id: number;
+        hideBranding: boolean | null;
+        parent: { hideBranding: boolean | null } | null;
+      } | null;
     } | null;
     attendees: {
       name: string;
@@ -101,6 +111,20 @@ export const handleNoShowFee = async ({
       paymentOption: payment.paymentOption,
     },
     organizationId: booking.user?.profiles?.[0]?.organizationId ?? null,
+    hideBranding: shouldHideBrandingForEventUsingProfile({
+      eventTypeId: booking.eventTypeId as number,
+      team: booking.eventType?.team
+        ? {
+            hideBranding: booking.eventType.team.hideBranding,
+            parent: booking.eventType.team.parent,
+          }
+        : null,
+      owner: {
+        id: booking.user?.id ?? 0,
+        hideBranding: booking.user?.hideBranding ?? null,
+        profile: booking.user?.profiles?.[0] ? { organization: booking.user.profiles[0].organization } : null,
+      },
+    }),
   };
 
   if (teamId) {

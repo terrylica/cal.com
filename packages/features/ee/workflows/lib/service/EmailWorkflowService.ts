@@ -1,5 +1,3 @@
-import type { EventStatus } from "ics";
-
 import dayjs from "@calcom/dayjs";
 import generateIcsString from "@calcom/emails/lib/generateIcsString";
 import { sendCustomWorkflowEmail } from "@calcom/emails/workflow-email-service";
@@ -12,16 +10,24 @@ import { UserRepository } from "@calcom/features/users/repositories/UserReposito
 import { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 import { SENDER_NAME, WEBSITE_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
-import { TimeFormat } from "@calcom/lib/timeFormat";
 import { getTranslation } from "@calcom/lib/server/i18n";
+import { TimeFormat } from "@calcom/lib/timeFormat";
 import { prisma } from "@calcom/prisma";
-import { WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
-import { SchedulingType, WorkflowTriggerEvents } from "@calcom/prisma/enums";
+import {
+  SchedulingType,
+  WorkflowActions,
+  WorkflowTemplates,
+  WorkflowTriggerEvents,
+} from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
-import { CalendarEvent } from "@calcom/types/Calendar";
-
+import type { CalendarEvent } from "@calcom/types/Calendar";
+import type { EventStatus } from "ics";
 import type { WorkflowReminderRepository } from "../../repositories/WorkflowReminderRepository";
-import { isEmailAction, getTemplateBodyForAction, getTemplateSubjectForAction } from "../actionHelperFunctions";
+import {
+  getTemplateBodyForAction,
+  getTemplateSubjectForAction,
+  isEmailAction,
+} from "../actionHelperFunctions";
 import { detectMatchedTemplate } from "../detectMatchedTemplate";
 import { getWorkflowRecipientEmail } from "../getWorkflowReminders";
 import type { VariablesType } from "../reminders/templates/customTemplate";
@@ -31,11 +37,11 @@ import customTemplate, {
 import emailRatingTemplate from "../reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "../reminders/templates/emailReminderTemplate";
 import type {
-  FormSubmissionData,
-  WorkflowContextData,
   AttendeeInBookingInfo,
   BookingInfo,
+  FormSubmissionData,
   ScheduleEmailReminderAction,
+  WorkflowContextData,
 } from "../types";
 import { WorkflowService } from "./WorkflowService";
 
@@ -87,10 +93,14 @@ export class EmailWorkflowService {
       creditCheckFn,
     });
 
-    const hideBranding = await getHideBranding({
-      userId: workflow.userId ?? undefined,
-      teamId: workflow.teamId ?? undefined,
-    });
+    // Use hideBranding from the CalendarEvent if set (calculated in CalendarEventBuilder.fromBooking),
+    // otherwise fall back to fetching it based on event's team or workflow's team/user
+    const hideBranding =
+      evt.hideBranding ??
+      (await getHideBranding({
+        userId: workflow.userId ?? undefined,
+        teamId: evt.team?.id ?? workflow.teamId ?? undefined,
+      }));
 
     const emailWorkflowContentParams = await this.generateParametersToBuildEmailWorkflowContent({
       evt,
@@ -392,7 +402,7 @@ export class EmailWorkflowService {
 
     if (matchedTemplate === WorkflowTemplates.REMINDER) {
       const t = await getTranslation(locale, "common");
-      const meetingUrl =  
+      const meetingUrl =
         getVideoCallUrlFromCalEvent({
           videoCallData: evt.videoCallData,
           uid: evt.uid,
@@ -412,6 +422,7 @@ export class EmailWorkflowService {
         meetingUrl,
         otherPerson: attendeeName,
         name,
+        isBrandingDisabled: hideBranding,
       });
     } else if (matchedTemplate === WorkflowTemplates.RATING) {
       emailContent = emailRatingTemplate({
@@ -426,6 +437,7 @@ export class EmailWorkflowService {
         timeZone,
         organizer: evt.organizer.name,
         name,
+        isBrandingDisabled: hideBranding,
         ratingUrl: `${bookerUrl}/booking/${evt.uid}?rating`,
         noShowUrl: `${bookerUrl}/booking/${evt.uid}?noShow=true`,
       });
@@ -523,10 +535,9 @@ export class EmailWorkflowService {
     };
 
     const shouldIncludeCalendarEvent =
-    includeCalendarEvent &&
-    triggerEvent !== WorkflowTriggerEvents.BOOKING_REQUESTED;
+      includeCalendarEvent && triggerEvent !== WorkflowTriggerEvents.BOOKING_REQUESTED;
 
-  const attachments = shouldIncludeCalendarEvent
+    const attachments = shouldIncludeCalendarEvent
       ? [
           {
             content:

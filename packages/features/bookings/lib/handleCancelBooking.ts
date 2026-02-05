@@ -23,6 +23,7 @@ import { getAllWorkflowsFromEventType } from "@calcom/features/ee/workflows/lib/
 import { sendCancelledReminders } from "@calcom/features/ee/workflows/lib/reminders/reminderScheduler";
 import { WorkflowRepository } from "@calcom/features/ee/workflows/repositories/WorkflowRepository";
 import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
+import { shouldHideBrandingForEventUsingProfile } from "@calcom/features/profile/lib/hideBranding";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import type { GetSubscriberOptions } from "@calcom/features/webhooks/lib/getWebhooks";
@@ -400,6 +401,22 @@ async function handler(input: CancelBookingInput, dependencies?: Dependencies) {
     customReplyToEmail: bookingToDelete.eventType?.customReplyToEmail,
     organizationId: ownerProfile?.organizationId ?? null,
     schedulingType: bookingToDelete.eventType?.schedulingType,
+    hideBranding: shouldHideBrandingForEventUsingProfile({
+      eventTypeId: bookingToDelete.eventTypeId as number,
+      team: bookingToDelete.eventType?.team
+        ? {
+            hideBranding: bookingToDelete.eventType.team.hideBranding,
+            parent: bookingToDelete.eventType.team.parent,
+          }
+        : null,
+      owner: {
+        id: bookingToDelete.user?.id ?? 0,
+        hideBranding: bookingToDelete.user?.hideBranding ?? null,
+        profile: bookingToDelete.user?.profiles?.[0]
+          ? { organization: bookingToDelete.user.profiles[0].organization }
+          : null,
+      },
+    }),
   };
 
   const dataForWebhooks = { evt, webhooks, eventTypeInfo };

@@ -2,6 +2,7 @@ import { enrichUserWithDelegationCredentials } from "@calcom/app-store/delegatio
 import { workflowSelect } from "@calcom/ee/workflows/lib/getAllWorkflows";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
+import { shouldHideBrandingForEventUsingProfile } from "@calcom/features/profile/lib/hideBranding";
 import { HttpError as HttpCode } from "@calcom/lib/http-error";
 import { isPrismaObjOrUndefined } from "@calcom/lib/isPrismaObj";
 import { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
@@ -86,6 +87,8 @@ export async function getBooking(bookingId: number) {
               id: true,
               name: true,
               parentId: true,
+              hideBranding: true,
+              parent: { select: { hideBranding: true } },
             },
           },
           seatsPerTimeSlot: true,
@@ -113,6 +116,14 @@ export async function getBooking(bookingId: number) {
           locale: true,
           destinationCalendar: true,
           isPlatformManaged: true,
+          hideBranding: true,
+          profiles: {
+            select: {
+              organizationId: true,
+              username: true,
+              organization: { select: { hideBranding: true } },
+            },
+          },
         },
       },
     },
@@ -200,6 +211,22 @@ export async function getBooking(bookingId: number) {
     customReplyToEmail: booking.eventType?.customReplyToEmail,
     seatsPerTimeSlot: booking.eventType?.seatsPerTimeSlot,
     seatsShowAttendees: booking.eventType?.seatsShowAttendees,
+    hideBranding: shouldHideBrandingForEventUsingProfile({
+      eventTypeId: booking.eventTypeId as number,
+      team: booking.eventType?.team
+        ? {
+            hideBranding: booking.eventType.team.hideBranding,
+            parent: booking.eventType.team.parent,
+          }
+        : null,
+      owner: {
+        id: user.id,
+        hideBranding: userWithoutDelegationCredentials.hideBranding,
+        profile: userWithoutDelegationCredentials.profiles?.[0]
+          ? { organization: userWithoutDelegationCredentials.profiles[0].organization }
+          : null,
+      },
+    }),
   };
 
   return {

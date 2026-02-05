@@ -1,3 +1,4 @@
+import process from "node:process";
 import { getUsersCredentialsIncludeServiceAccountKey } from "@calcom/app-store/delegationCredential";
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
 import dayjs from "@calcom/dayjs";
@@ -8,6 +9,7 @@ import { BookingEmailSmsHandler } from "@calcom/features/bookings/lib/BookingEma
 import EventManager from "@calcom/features/bookings/lib/EventManager";
 import { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
+import { shouldHideBrandingForEventUsingProfile } from "@calcom/features/profile/lib/hideBranding";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { extractBaseEmail } from "@calcom/lib/extract-base-email";
 import { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
@@ -18,9 +20,7 @@ import { MembershipRole } from "@calcom/prisma/enums";
 import type { BookingResponses } from "@calcom/prisma/zod-utils";
 import { eventTypeBookingFields } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
-
 import { TRPCError } from "@trpc/server";
-
 import type { TrpcSessionUser } from "../../../types";
 import type { TAddGuestsInputSchema } from "./addGuests.schema";
 
@@ -156,10 +156,18 @@ async function getOrganizerData(userId: number | null) {
       id: userId,
     },
     select: {
+      id: true,
       name: true,
       email: true,
       timeZone: true,
       locale: true,
+      hideBranding: true,
+      profiles: {
+        select: {
+          organizationId: true,
+          organization: { select: { hideBranding: true } },
+        },
+      },
     },
   });
 }
@@ -315,6 +323,20 @@ async function buildCalendarEvent(
     seatsShowAttendees: booking.eventType?.seatsShowAttendees,
     customReplyToEmail: booking.eventType?.customReplyToEmail,
     organizationId: booking.user?.profiles?.[0]?.organizationId ?? null,
+    hideBranding: shouldHideBrandingForEventUsingProfile({
+      eventTypeId: booking.eventTypeId as number,
+      team: booking.eventType?.team
+        ? {
+            hideBranding: booking.eventType.team.hideBranding,
+            parent: booking.eventType.team.parent,
+          }
+        : null,
+      owner: {
+        id: organizer.id,
+        hideBranding: organizer.hideBranding,
+        profile: organizer.profiles?.[0] ? { organization: organizer.profiles[0].organization } : null,
+      },
+    }),
   };
 
   if (videoCallReference) {

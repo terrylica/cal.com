@@ -1,21 +1,19 @@
 import { withReporting } from "@calcom/lib/sentryWrapper";
+import type {
+  BookingUpdateData,
+  BookingWhereInput,
+  BookingWhereUniqueInput,
+  IBookingRepository,
+} from "@calcom/lib/server/repository/dto/IBookingRepository";
 import type { PrismaClient } from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
-import type { Booking } from "@calcom/prisma/client";
-import { RRTimestampBasis, BookingStatus } from "@calcom/prisma/enums";
+import type { Booking, Prisma } from "@calcom/prisma/client";
+import { BookingStatus, RRTimestampBasis } from "@calcom/prisma/enums";
 import {
-  bookingMinimalSelect,
   bookingAuthorizationCheckSelect,
   bookingDetailsSelect,
+  bookingMinimalSelect,
 } from "@calcom/prisma/selects/booking";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
-
-import type {
-  BookingWhereInput,
-  IBookingRepository,
-  BookingUpdateData,
-  BookingWhereUniqueInput,
-} from "@calcom/lib/server/repository/dto/IBookingRepository";
 
 const workflowReminderSelect = {
   id: true,
@@ -242,8 +240,14 @@ const selectStatementToGetBookingForCalEventBuilder = {
       timeZone: true,
       locale: true,
       timeFormat: true,
+      hideBranding: true,
       destinationCalendar: true,
-      profiles: { select: { organizationId: true } },
+      profiles: {
+        select: {
+          organizationId: true,
+          organization: { select: { hideBranding: true } },
+        },
+      },
     },
   },
   // destination calendar of the Organizer
@@ -274,6 +278,8 @@ const selectStatementToGetBookingForCalEventBuilder = {
           id: true,
           name: true,
           parentId: true,
+          hideBranding: true,
+          parent: { select: { hideBranding: true } },
           members: {
             select: {
               user: {
@@ -1479,17 +1485,27 @@ export class BookingRepository implements IBookingRepository {
             hideOrganizerEmail: true,
             teamId: true,
             metadata: true,
+            team: {
+              select: {
+                id: true,
+                hideBranding: true,
+                parent: { select: { hideBranding: true } },
+              },
+            },
           },
         },
         user: {
           select: {
+            id: true,
             email: true,
             name: true,
             timeZone: true,
             locale: true,
+            hideBranding: true,
             profiles: {
               select: {
                 organizationId: true,
+                organization: { select: { hideBranding: true } },
               },
             },
           },
@@ -1509,7 +1525,7 @@ export class BookingRepository implements IBookingRepository {
     });
   }
 
-async updateMany({ where, data }: { where: BookingWhereInput; data: BookingUpdateData }) {
+  async updateMany({ where, data }: { where: BookingWhereInput; data: BookingUpdateData }) {
     return await this.prismaClient.booking.updateMany({
       where: where,
       data,
@@ -1595,7 +1611,18 @@ async updateMany({ where, data }: { where: BookingWhereInput; data: BookingUpdat
       },
       include: {
         attendees: true,
-        eventType: true,
+        eventType: {
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+                hideBranding: true,
+                parent: { select: { hideBranding: true } },
+              },
+            },
+          },
+        },
         destinationCalendar: true,
         references: true,
         user: {
@@ -1605,6 +1632,7 @@ async updateMany({ where, data }: { where: BookingWhereInput; data: BookingUpdat
             profiles: {
               select: {
                 organizationId: true,
+                organization: { select: { hideBranding: true } },
               },
             },
           },

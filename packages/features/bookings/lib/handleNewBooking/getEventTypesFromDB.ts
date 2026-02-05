@@ -48,6 +48,8 @@ const getEventTypesFromDBSelect = {
       includeManagedEventsInLimits: true,
       rrResetInterval: true,
       rrTimestampBasis: true,
+      hideBranding: true,
+      parent: { select: { hideBranding: true } },
     },
   },
   bookingFields: true,
@@ -108,7 +110,14 @@ const getEventTypesFromDBSelect = {
   useEventTypeDestinationCalendarEmail: true,
   owner: {
     select: {
+      id: true,
       hideBranding: true,
+      profiles: {
+        select: {
+          organizationId: true,
+          organization: { select: { hideBranding: true } },
+        },
+      },
     },
   },
   workflows: {
