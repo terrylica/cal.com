@@ -264,21 +264,13 @@ function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
   return reqWithCSP;
 }
 
-/**
- * API routes that should be completely excluded from middleware processing.
- * These routes bypass all middleware logic including rate limiting, CSP, etc.
- */
-const MIDDLEWARE_EXCLUDED_API_ROUTES: string[] = ["/api/avatar"];
-
-const excludedRoutes: string = MIDDLEWARE_EXCLUDED_API_ROUTES.map((route) =>
-  route.replace(/\//g, "\\/").replace(/\./g, "\\.")
-).join("|");
-
-const baseExclusions: string =
-  "_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$";
-const apiExclusions: string = excludedRoutes.length > 0 ? `|${excludedRoutes}(?:/|$|\\?)` : "";
+// NOTE: Next.js requires config.matcher to be static string literals (no template literals or variables)
+// because Turbopack analyzes the config at build time.
+// Excluded routes: _next, static, public, favicon.ico, robots.txt, sitemap.xml, /api/avatar
 export const config = {
-  matcher: [`/((?!${baseExclusions}${apiExclusions}).*)`],
+  matcher: [
+    "/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|api/avatar(?:/|$|\\?)).*)",
+  ],
 };
 
 export default proxy;
