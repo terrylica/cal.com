@@ -21,7 +21,7 @@ import type { VideoCallData } from "@calcom/types/VideoApiAdapter";
 import type { TFunction } from "i18next";
 
 type CalendarEventRequiredFields = Required<
-  Pick<CalendarEvent, "startTime" | "endTime" | "type" | "bookerUrl" | "title">
+  Pick<CalendarEvent, "startTime" | "endTime" | "type" | "bookerUrl" | "title" | "organizer" | "attendees">
 >;
 type CalendarEventBuilderInit = CalendarEventRequiredFields & Partial<CalendarEvent>;
 const APP_TYPE_TO_NAME_MAP = new Map<string, string>(ALL_APPS.map((app) => [app.type, app.name]));
@@ -73,7 +73,7 @@ export type BookingMetaOptions = {
 };
 
 export class CalendarEventBuilder {
-  private event: Partial<CalendarEvent>;
+  private event: CalendarEventBuilderInit;
 
   constructor(existingEvent: CalendarEventBuilderInit) {
     this.event = existingEvent;
@@ -158,6 +158,8 @@ export class CalendarEventBuilder {
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString(),
       type: eventType.slug,
+      organizer: organizerPerson,
+      attendees: attendeesList,
       additionalNotes,
     });
 
@@ -584,6 +586,6 @@ export class CalendarEventBuilder {
   }
 
   build(): Omit<CalendarEvent, "bookerUrl"> & { bookerUrl: string } {
-    return this.event as Omit<CalendarEvent, "bookerUrl"> & { bookerUrl: string };
+    return this.event;
   }
 }

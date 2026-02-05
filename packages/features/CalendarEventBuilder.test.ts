@@ -28,6 +28,27 @@ describe("CalendarEventBuilder", () => {
   const mockTranslate = vi.fn(() => "foo") as TFunction;
   const mockStartTime = dayjs().add(1, "day").format();
   const mockEndTime = dayjs().add(1, "day").add(30, "minutes").format();
+  const defaultOrganizer = {
+    id: 123,
+    name: "Organizer",
+    email: "organizer@example.com",
+    timeZone: "America/New_York",
+    language: {
+      translate: mockTranslate,
+      locale: "en",
+    },
+  };
+  const defaultAttendees = [
+    {
+      name: "Attendee",
+      email: "attendee@example.com",
+      timeZone: "Europe/London",
+      language: {
+        translate: mockTranslate,
+        locale: "en",
+      },
+    },
+  ];
   const createBuilder = (overrides: Partial<CalendarEvent> = {}) =>
     new CalendarEventBuilder({
       bookerUrl: "https://cal.com/user/test-slug",
@@ -35,6 +56,8 @@ describe("CalendarEventBuilder", () => {
       startTime: mockStartTime,
       endTime: mockEndTime,
       type: "test-slug",
+      organizer: defaultOrganizer,
+      attendees: defaultAttendees,
       ...overrides,
     });
 
@@ -838,6 +861,8 @@ describe("CalendarEventBuilder", () => {
       endTime: mockEndTime,
       type: "existing-type",
       bookerUrl: "https://cal.com/user/test-slug",
+      organizer: defaultOrganizer,
+      attendees: defaultAttendees,
     };
 
     const event = CalendarEventBuilder.fromEvent(existingEvent)

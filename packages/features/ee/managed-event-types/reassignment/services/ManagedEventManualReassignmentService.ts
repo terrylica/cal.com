@@ -470,6 +470,14 @@ export class ManagedEventManualReassignmentService {
         startTime: dayjs(newBooking.startTime).utc().format(),
         endTime: dayjs(newBooking.endTime).utc().format(),
         type: targetEventTypeDetails.slug,
+        organizer: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          timeZone: newUser.timeZone,
+          language: { translate: newUserT, locale: newUser.locale ?? "en" },
+        },
+        attendees,
         additionalNotes: newBooking.description || undefined,
       })
         .withEventType({
@@ -683,6 +691,15 @@ export class ManagedEventManualReassignmentService {
         startTime: dayjs(newBooking.startTime).utc().format(),
         endTime: dayjs(newBooking.endTime).utc().format(),
         type: targetEventTypeDetails.slug,
+        organizer: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          timeZone: newUser.timeZone,
+          timeFormat: getTimeFormatStringFromUserTimeFormat(newUser.timeFormat),
+          language: { translate: newUserT, locale: newUser.locale ?? "en" },
+        },
+        attendees: attendeesForEmail,
         additionalNotes: newBooking.description || undefined,
       })
         .withEventType({

@@ -1501,6 +1501,17 @@ async function handler(
     startTime: dayjs(reqBody.start).utc().format(),
     endTime: dayjs(reqBody.end).utc().format(),
     type: eventType.slug,
+    organizer: {
+      id: organizerUser.id,
+      name: organizerUser.name || "Nameless",
+      email: organizerEmail,
+      username: organizerUser.username || undefined,
+      usernameInOrg: organizerOrganizationProfile?.username || undefined,
+      timeZone: organizerUser.timeZone,
+      language: { translate: tOrganizer, locale: organizerUser.locale ?? "en" },
+      timeFormat: getTimeFormatStringFromUserTimeFormat(organizerUser.timeFormat),
+    },
+    attendees: attendeesList,
     additionalNotes,
   })
     .withEventType({
