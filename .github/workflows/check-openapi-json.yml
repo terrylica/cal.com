@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 env:
   API_KEY_PREFIX: ${{ secrets.CI_API_KEY_PREFIX }}
@@ -62,11 +63,14 @@ jobs:
           yarn generate-swagger
 
       - name: Check and commit OpenAPI JSON changes
+        id: check-openapi
         run: |
           if git diff --exit-code docs/api-reference/v2/openapi.json; then
             echo "OpenAPI JSON is up-to-date"
+            echo "needs_update=false" >> $GITHUB_OUTPUT
           else
             echo "OpenAPI JSON has changed"
+            echo "needs_update=true" >> $GITHUB_OUTPUT
             
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -75,13 +79,44 @@ jobs:
             
             if git push; then
               echo "OpenAPI JSON has been automatically updated and committed"
+              echo "push_failed=false" >> $GITHUB_OUTPUT
             else
-              echo "::error::OpenAPI JSON is out of date and automatic commit failed (likely a fork PR)."
-              echo ""
-              echo "To fix this:"
-              echo "1. cd apps/api/v2"
-              echo "2. yarn generate-swagger"
-              echo "3. Commit the updated docs/api-reference/v2/openapi.json"
-              exit 1
+              echo "Push failed - will post comment to PR"
+              echo "push_failed=true" >> $GITHUB_OUTPUT
             fi
           fi
+
+      - name: Post comment on push failure
+        if: steps.check-openapi.outputs.push_failed == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            
+            const commentBody = [
+              '### OpenAPI JSON Update Required',
+              '',
+              'The `openapi.json` file is out of date, but automatic commit failed (this usually happens for fork PRs without maintainer access).',
+              '',
+              '**To fix this, please run locally:**',
+              '```bash',
+              'cd apps/api/v2',
+              'yarn generate-swagger',
+              'git add ../../docs/api-reference/v2/openapi.json',
+              'git commit -m "chore: update openapi.json"',
+              'git push',
+              '```',
+              '',
+              'Alternatively, if this is a fork PR, you can enable "Allow edits from maintainers" to let us push the update automatically.'
+            ].join('\n');
+            
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body: commentBody
+            });
+            
+            core.setFailed('OpenAPI JSON is out of date and automatic commit failed. See PR comment for instructions.');
