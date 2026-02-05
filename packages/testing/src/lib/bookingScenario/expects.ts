@@ -1,8 +1,6 @@
 // biome-ignore lint/nursery/noImportCycles: Mock imports must come first for vitest mocking to work
 import prismaMock from "../__mocks__/prisma";
-
-import type { InputEventType, getOrganizer, CalendarServiceMethodMock } from "./bookingScenario";
-
+import type { CalendarServiceMethodMock, getOrganizer, InputEventType } from "./bookingScenario";
 import { parse } from "node-html-parser";
 import type { VEvent } from "node-ical";
 import ical from "node-ical";
@@ -10,22 +8,20 @@ import { expect, vi } from "vitest";
 import "vitest-fetch-mock";
 
 import dayjs from "@calcom/dayjs";
-import type { Tracking } from "../types";
 import { WEBSITE_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import type {
-  WebhookTriggerEvents,
   Booking,
   BookingReference,
   DestinationCalendar,
+  WebhookTriggerEvents,
 } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
-import type { AppsStatus } from "@calcom/types/Calendar";
-import type { CalendarEvent } from "@calcom/types/Calendar";
+import type { AppsStatus, CalendarEvent } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService } from "@calcom/types/Credential";
 import type { Fixtures } from "../fixtures/fixtures";
-
+import type { Tracking } from "../types";
 import { DEFAULT_TIMEZONE_BOOKER } from "./getMockRequestDataForBooking";
 import { TestEmailSmtpConfig } from "@calcom/lib/testEmails";
 
@@ -125,10 +121,9 @@ expect.extend({
 
     let isToAddressExpected = true;
     const isIcsFilenameExpected = expectedEmail.ics ? ics?.filename === expectedEmail.ics.filename : true;
-    const isIcsUIDExpected =
-      expectedEmail.ics && expectedEmail.ics.iCalUID
-        ? !!(icsObject ? icsObject[expectedEmail.ics.iCalUID] : null)
-        : true;
+    const isIcsUIDExpected = expectedEmail.ics?.iCalUID
+      ? !!(icsObject ? icsObject[expectedEmail.ics.iCalUID] : null)
+      : true;
     const emailDom = parse(testEmail.html);
 
     const actualEmailContent = {
@@ -1244,7 +1239,7 @@ export function expectSuccessfulCalendarEventCreationInCalendar(
     | ExpectedForSuccessfulCalendarEventCreationInCalendar
     | ExpectedForSuccessfulCalendarEventCreationInCalendar[]
 ) {
-  const expecteds = expected instanceof Array ? expected : [expected];
+  const expecteds = Array.isArray(expected) ? expected : [expected];
   expect(calendarMock.createEventCalls.length).toBe(expecteds.length);
 
   for (let i = 0; i < calendarMock.createEventCalls.length; i++) {
