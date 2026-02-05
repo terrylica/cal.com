@@ -1,5 +1,5 @@
 import type { ALL_VIEWS } from "@calcom/features/form-builder/schema";
-import { fieldTypesSchemaMap } from "@calcom/features/form-builder/schema";
+import { type FieldZodCtx, fieldTypesSchemaMap } from "@calcom/features/form-builder/schema";
 import { dbReadResponseSchema } from "@calcom/lib/dbReadResponseSchema";
 import logger from "@calcom/lib/logger";
 import type { eventTypeBookingFields } from "@calcom/prisma/zod-utils";
@@ -91,7 +91,7 @@ async function superRefineField({
   isPartialSchema,
   isRequired,
   checkOptional,
-  ctx,
+  zodCtx,
   translateFn,
   responses,
 }: {
@@ -100,23 +100,10 @@ async function superRefineField({
   isPartialSchema: boolean;
   isRequired: boolean;
   checkOptional: boolean;
-  ctx: z.RefinementCtx;
+  zodCtx: FieldZodCtx;
   translateFn?: TranslationFunction;
   responses: Record<string, unknown>;
 }): Promise<void> {
-  // Create message formatter
-  const m = (message: string, options?: Record<string, unknown>) => {
-    const translatedMessage = translateFn ? translateFn(message, options) : message;
-    return `{${field.name}}${translatedMessage}`;
-  };
-
-  // Check for required field first
-  if (isRequired && !isPartialSchema && !value) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: m(`error_required_field`) });
-    return;
-  }
-
-  // Create schemas
   const stringSchema = z.string();
   const emailSchema = isPartialSchema ? z.string() : z.string().refine(emailSchemaRefinement);
   const phoneSchema = isPartialSchema
@@ -124,20 +111,14 @@ async function superRefineField({
     : z.string().refine(async (val) => {
         return isValidPhoneNumber(val);
       });
+  // Tag the message with the input name so that the message can be shown at appropriate place
+  const m = (message: string, options?: Record<string, unknown>) => {
+    const translatedMessage = translateFn ? translateFn(message, options) : message;
+    return `{${field.name}}${translatedMessage}`;
+  };
 
-  // Check for fieldTypesSchemaMap first (name, textarea, url)
-  const fieldTypeSchema = fieldTypesSchemaMap[field.type as keyof typeof fieldTypesSchemaMap];
-  if (fieldTypeSchema) {
-    // Type assertion needed because fieldTypesSchemaMap has heterogeneous schemas with different TOutput types.
-    // When indexed dynamically, TypeScript can't determine the exact response type at compile time.
-    // Runtime dispatch ensures the correct type is passed based on field.type.
-    fieldTypeSchema.superRefine({
-      response: value as unknown as string,
-      ctx,
-      m,
-      field,
-      isPartialSchema,
-    });
+  if (isRequired && !isPartialSchema && !value) {
+    zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m(`error_required_field`) });
     return;
   }
 
@@ -145,19 +126,19 @@ async function superRefineField({
     if (!field.hidden && (checkOptional || field.required)) {
       // Email RegExp to validate if the input is a valid email
       if (!emailSchema.safeParse(value).success) {
-        ctx.addIssue({
+        zodCtx.addIssue({
           code: z.ZodIssueCode.custom,
           message: m("email_validation_error"),
         });
       }
 
       // validate the excluded emails
-      const bookerEmail = value as string;
+      const bookerEmail = String(value);
       const excludedEmails = field.excludeEmails?.split(",").map((domain) => domain.trim()) || [];
 
       const match = excludedEmails.find((excludedEntry) => doesEmailMatchEntry(bookerEmail, excludedEntry));
       if (match) {
-        ctx.addIssue({
+        zodCtx.addIssue({
           code: z.ZodIssueCode.custom,
           message: m("exclude_emails_match_found_error_message"),
         });
@@ -171,7 +152,7 @@ async function superRefineField({
         doesEmailMatchEntry(bookerEmail, requiredEntry)
       );
       if (requiredEmails.length > 0 && !requiredEmailsMatch) {
-        ctx.addIssue({
+        zodCtx.addIssue({
           code: z.ZodIssueCode.custom,
           message: m("require_emails_no_match_found_error_message"),
         });
@@ -180,11 +161,26 @@ async function superRefineField({
     return;
   }
 
+  const fieldTypeSchema = fieldTypesSchemaMap[field.type as keyof typeof fieldTypesSchemaMap];
+  if (fieldTypeSchema) {
+    fieldTypeSchema.superRefine({
+      // We use `unknown` here because the response type is not trivial to know here
+      // We know for sure that the value here is preprocessed(considering how we have called z.preprocess())
+      // and thus the fieldTypeSchema implementation could rely on having the correct type as per its preprocess fn return value
+      response: value as unknown as any,
+      ctx: zodCtx,
+      m,
+      field,
+      isPartialSchema,
+    });
+    return;
+  }
+
   if (field.type === "multiemail") {
     const emailsParsed = emailSchema.array().safeParse(value);
 
     if (isRequired && (!value || (value as unknown[]).length === 0)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: m(`error_required_field`) });
+      zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m(`error_required_field`) });
       return;
     }
 
@@ -195,7 +191,7 @@ async function superRefineField({
         responses[field.name] = [];
         return;
       }
-      ctx.addIssue({
+      zodCtx.addIssue({
         code: z.ZodIssueCode.custom,
         message: m("email_validation_error"),
       });
@@ -205,7 +201,7 @@ async function superRefineField({
     const emails = emailsParsed.data;
     emails.sort().some((item, i) => {
       if (item === emails[i + 1]) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("duplicate_email") });
+        zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("duplicate_email") });
         return true;
       }
     });
@@ -214,18 +210,18 @@ async function superRefineField({
 
   if (field.type === "multiselect") {
     if (isRequired && (!value || (value as unknown[]).length === 0)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: m(`error_required_field`) });
+      zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m(`error_required_field`) });
       return;
     }
     if (!stringSchema.array().safeParse(value).success) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid array of strings") });
+      zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid array of strings") });
     }
     return;
   }
 
   if (field.type === "checkbox") {
     if (!stringSchema.array().safeParse(value).success) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid array of strings") });
+      zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid array of strings") });
     }
     return;
   }
@@ -237,7 +233,7 @@ async function superRefineField({
     // Validate phone number if the field is not hidden and requires validation
     if (!field.hidden && needsValidation) {
       if (!(await phoneSchema.safeParseAsync(value)).success) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("invalid_number") });
+        zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("invalid_number") });
       }
     }
     return;
@@ -246,7 +242,7 @@ async function superRefineField({
   if (field.type === "boolean") {
     const schema = z.boolean();
     if (!schema.safeParse(value).success) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid Boolean") });
+      zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid Boolean") });
     }
     return;
   }
@@ -261,7 +257,7 @@ async function superRefineField({
         // Either the field is required or there is a radio selected, we need to check if the optionInput is required or not.
         (isRequired || typedValue?.value) && checkOptional ? true : optionField?.required && !optionValue
       ) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("error_required_field") });
+        zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("error_required_field") });
         return;
       }
 
@@ -269,7 +265,7 @@ async function superRefineField({
         // `typeOfOptionInput` can be any of the main types. So, the same validations should run for `optionValue`
         if (typeOfOptionInput === "phone") {
           if (!(await phoneSchema.safeParseAsync(optionValue)).success) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("invalid_number") });
+            zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("invalid_number") });
           }
         }
       }
@@ -282,12 +278,12 @@ async function superRefineField({
   if (["address", "text", "select", "number", "radio", "textarea"].includes(field.type)) {
     const schema = stringSchema;
     if (!schema.safeParse(value).success) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid string") });
+      zodCtx.addIssue({ code: z.ZodIssueCode.custom, message: m("Invalid string") });
     }
     return;
   }
 
-  ctx.addIssue({
+  zodCtx.addIssue({
     code: z.ZodIssueCode.custom,
     message: `Can't parse unknown booking field type: ${field.type}`,
   });
@@ -344,6 +340,39 @@ export function getBookingResponsesSchemaWithOptionalChecks({
   });
 }
 
+type FieldZodCtxState = {
+  issuesCount: number;
+} | null;
+
+const buildFieldZodCtx = ({
+  zodCtx,
+  isPartialSchema,
+}: {
+  zodCtx: z.RefinementCtx;
+  isPartialSchema: boolean;
+}): {
+  fieldZodCtx: FieldZodCtx;
+  state: FieldZodCtxState;
+} => {
+  if (isPartialSchema) {
+    const state = {
+      issuesCount: 0,
+    };
+    return {
+      fieldZodCtx: {
+        addIssue: (_issue: z.IssueData) => {
+          state.issuesCount++;
+        },
+      },
+      state,
+    };
+  }
+  return {
+    fieldZodCtx: zodCtx,
+    state: null,
+  };
+};
+
 // TODO: Move preprocess of `booking.responses` to FormBuilder schema as that is going to parse the fields supported by FormBuilder
 // It allows anyone using FormBuilder to get the same preprocessing automatically
 function preprocess<T extends z.ZodType>({
@@ -366,7 +395,6 @@ function preprocess<T extends z.ZodType>({
     (responses) => {
       const parsedResponses = z.record(z.any()).nullable().parse(responses) || {};
       const newResponses = {} as typeof parsedResponses;
-      const skippedFields: Array<{ field: string; reason: string }> = [];
       // if eventType has been deleted, we won't have bookingFields and thus we can't preprocess or validate them.
       if (!bookingFields) return parsedResponses;
       bookingFields.forEach((field) => {
@@ -391,19 +419,11 @@ function preprocess<T extends z.ZodType>({
           }
           const errorMessage = e instanceof Error ? e.message : "preprocessing failed";
           const invalidFieldName = field.name;
-          skippedFields.push({ field: invalidFieldName, reason: errorMessage });
           // Remove invalid field like it never existed in the first place
           delete parsedResponses[invalidFieldName];
+          console.warn(`Skipped invalid field during preprocessing: ${invalidFieldName} (${errorMessage})`);
         }
       });
-
-      if (skippedFields.length > 0) {
-        console.warn(
-          `Skipped ${skippedFields.length} invalid field(s) during preprocessing: ${skippedFields
-            .map((f) => `${f.field} (${f.reason})`)
-            .join(", ")}`
-        );
-      }
 
       return {
         ...parsedResponses,
@@ -448,17 +468,12 @@ function preprocess<T extends z.ZodType>({
         }
 
         // For partial schemas, use a proxy ctx to capture issues
-        let fieldHasErrors = false;
-        const fieldCtx = isPartialSchema
-          ? {
-              ...ctx,
-              addIssue: (issue: z.IssueData) => {
-                fieldHasErrors = true;
-                // Don't add to real ctx for partial schemas
-              },
-            }
-          : ctx;
+        const { fieldZodCtx, state } = buildFieldZodCtx({
+          zodCtx: ctx,
+          isPartialSchema,
+        });
 
+        let superRefineError = false;
         try {
           await superRefineField({
             field: bookingField,
@@ -466,7 +481,7 @@ function preprocess<T extends z.ZodType>({
             isPartialSchema,
             isRequired,
             checkOptional,
-            ctx: fieldCtx,
+            zodCtx: fieldZodCtx,
             translateFn,
             responses,
           });
@@ -474,11 +489,11 @@ function preprocess<T extends z.ZodType>({
           if (!isPartialSchema) {
             throw e;
           }
-          fieldHasErrors = true;
+          superRefineError = true;
         }
 
         // For partial schemas, remove invalid fields from responses
-        if (isPartialSchema && fieldHasErrors) {
+        if (isPartialSchema && (superRefineError || (state?.issuesCount ?? 0) > 0)) {
           delete responses[bookingField.name];
           console.warn(`Partial prefill: skipped field '${bookingField.name}' due to validation errors`);
         }

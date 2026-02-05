@@ -1,10 +1,12 @@
+import { fieldSchema, fieldTypeEnum, variantsConfigSchema } from "@calcom/prisma/zod-utils";
 import { z } from "zod";
-
-import { fieldSchema, fieldTypeEnum, variantsConfigSchema, type FieldType } from "@calcom/prisma/zod-utils";
-
 import { fieldTypesConfigMap } from "./fieldTypes";
 import { preprocessNameFieldDataWithVariant } from "./utils";
 import { getConfig as getVariantsConfig } from "./utils/variantsConfig";
+
+type FieldZodCtx = {
+  addIssue: (issue: z.IssueData) => void;
+};
 
 // Schema for validating name field response - can be a string or firstName/lastName object
 // Note: We extend nameObjectSchema to add .default("") for lastName to ensure it's always a string (not undefined)
@@ -30,7 +32,7 @@ type FieldTypeSchemaConfig<TInput = unknown, TOutput = unknown> = {
     field: z.infer<typeof fieldSchema>;
     response: TOutput;
     isPartialSchema: boolean;
-    ctx: z.RefinementCtx;
+    ctx: FieldZodCtx;
     m: (key: string, options?: Record<string, unknown>) => string;
   }) => void;
 };
@@ -134,10 +136,7 @@ function stringifyResponse(response: unknown): string {
 }
 
 export const fieldTypesSchemaMap = {
-  name: defineFieldSchema<
-    unknown,
-    string | Record<"firstName" | "lastName", string>
-  >({
+  name: defineFieldSchema<unknown, string | Record<"firstName" | "lastName", string>>({
     preprocess: ({ response, field }) => {
       const validResponse = nameResponseSchema.safeParse(response);
       if (!validResponse.success) {
@@ -158,10 +157,7 @@ export const fieldTypesSchemaMap = {
         correctedVariant = variantInResponse;
       }
 
-      return preprocessNameFieldDataWithVariant(
-        correctedVariant,
-        validResponse.data
-      );
+      return preprocessNameFieldDataWithVariant(correctedVariant, validResponse.data);
     },
     superRefine: ({ field, response, isPartialSchema, ctx, m }) => {
       const stringSchema = z.string();
@@ -252,7 +248,7 @@ export const fieldTypesSchemaMap = {
       const urlSchema = z.string().url();
 
       // Check for malformed protocols (missing second slash test case)
-      if (value.match(/^https?:\/[^\/]/)) {
+      if (value.match(/^https?:\/[^/]/)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: m("url_validation_error"),
