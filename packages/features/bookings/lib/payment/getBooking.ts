@@ -119,8 +119,6 @@ export async function getBooking(bookingId: number) {
           hideBranding: true,
           profiles: {
             select: {
-              organizationId: true,
-              username: true,
               organization: { select: { hideBranding: true } },
             },
           },
