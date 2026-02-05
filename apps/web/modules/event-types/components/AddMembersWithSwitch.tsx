@@ -303,7 +303,6 @@ export function AddMembersWithSwitch({
                 setAssignRRMembersUsingSegment={setAssignRRMembersUsingSegment}
                 rrSegmentQueryValue={rrSegmentQueryValue}
                 setRrSegmentQueryValue={setRrSegmentQueryValue}
-                filterMemberIds={value.filter((host) => !host.isFixed).map((host) => host.userId)}
               />
             </div>
           )}
