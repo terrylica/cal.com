@@ -1,3 +1,4 @@
+
 import { getBookingForReschedule } from "@calcom/features/bookings/lib/get-booking";
 import getAllUserBookings from "@calcom/features/bookings/lib/getAllUserBookings";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
@@ -40,7 +41,7 @@ export {
   WorkflowTemplates,
   WorkflowTriggerEvents,
 } from "@calcom/prisma/enums";
-export type { CalendarEvent, EventBusyDate } from "@calcom/types/Calendar";
+export type { EventBusyDate } from "@calcom/types/Calendar";
 
 export { handleMarkNoShow };
 export { handleCreatePhoneCall };
@@ -49,15 +50,12 @@ export type {
   BookingCreateBody,
   BookingResponse,
 } from "@calcom/features/bookings/types";
-
-export { getBusyCalendarTimes, updateEvent } from "@calcom/features/calendars/lib/CalendarManager";
 export type { ConnectedCalendar } from "@calcom/features/calendars/lib/CalendarManager";
-export { getConnectedDestinationCalendarsAndEnsureDefaultsInDb } from "@calcom/features/calendars/lib/getConnectedDestinationCalendars";
+export { getBusyCalendarTimes } from "@calcom/features/calendars/lib/CalendarManager";
 export type { ConnectedDestinationCalendars } from "@calcom/features/calendars/lib/getConnectedDestinationCalendars";
+export { getConnectedDestinationCalendarsAndEnsureDefaultsInDb } from "@calcom/features/calendars/lib/getConnectedDestinationCalendars";
 export type { CityTimezones } from "@calcom/features/cityTimezones/cityTimezonesHandler";
 export { cityTimezonesHandler } from "@calcom/features/cityTimezones/cityTimezonesHandler";
-export { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
-export { buildCalEventFromBooking } from "@calcom/lib/buildCalEventFromBooking";
 export { ENABLE_ASYNC_TASKER, MINUTES_TO_BOOK } from "@calcom/lib/constants";
 export { TRPCError } from "@trpc/server";
 export { createNewUsersConnectToOrgIfExists };
@@ -120,20 +118,17 @@ export { verifyPhoneNumber, sendVerificationCode };
 
 export { verifyCodeUnAuthenticated } from "@calcom/features/auth/lib/verifyCodeUnAuthenticated";
 export { sendEmailVerificationByCode } from "@calcom/features/auth/lib/verifyEmail";
-export { BookingReferenceRepository } from "@calcom/features/bookingReference/repositories/BookingReferenceRepository";
 export { BookingAccessService } from "@calcom/features/bookings/services/BookingAccessService";
 export { StripeBillingService } from "@calcom/features/ee/billing/service/billingProvider/StripeBillingService";
 export { TeamService } from "@calcom/features/ee/teams/services/teamService";
+export type { OAuth2Tokens } from "@calcom/features/oauth/services/OAuthService";
 export { OAuthService } from "@calcom/features/oauth/services/OAuthService";
 export { generateSecret } from "@calcom/features/oauth/utils/generateSecret";
 export { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 export type { Tasker } from "@calcom/features/tasker/tasker";
 export { getTasker } from "@calcom/features/tasker/tasker-factory";
-export { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
 export { verifyCodeChallenge } from "@calcom/lib/pkce";
 export { validateUrlForSSRFSync } from "@calcom/lib/ssrfProtection";
 export { checkEmailVerificationRequired } from "@calcom/trpc/server/routers/publicViewer/checkIfUserEmailVerificationRequired.handler";
 export { verifyCode as verifyCodeAuthenticated } from "@calcom/trpc/server/routers/viewer/organizations/verifyCode.handler";
 export type { OrgMembershipLookup } from "@calcom/trpc/server/routers/viewer/slots/util";
-export type { CredentialForCalendarService } from "@calcom/types/Credential";
-export { sendLocationChangeEmailsAndSMS } from "@calcom/emails/email-manager";
