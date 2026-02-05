@@ -71,7 +71,7 @@ export default function MoveTeamToOrgView() {
             Note: Team members will automatically be invited to the organization when the team is moved.
           </div>
         </div>
-        <Button type="submit" loading={moveTeamMutation.isLoading}>
+        <Button type="submit" loading={moveTeamMutation.isPending}>
           Move Team to Org
         </Button>
       </Form>
