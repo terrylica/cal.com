@@ -74,7 +74,9 @@ export class HighWaterMarkRepository {
 
     if (!team) return null;
 
-    const billing = team.isOrganization ? team.organizationBilling : team.teamBilling;
+    const billing = team.isOrganization
+      ? team.organizationBilling
+      : team.teamBilling;
     if (!billing) return null;
 
     return {
@@ -83,7 +85,9 @@ export class HighWaterMarkRepository {
     };
   }
 
-  async getBySubscriptionId(subscriptionId: string): Promise<HighWaterMarkBySubscriptionData | null> {
+  async getBySubscriptionId(
+    subscriptionId: string
+  ): Promise<HighWaterMarkBySubscriptionData | null> {
     // Try team billing first
     const teamBilling = await this.prisma.teamBilling.findUnique({
       where: { subscriptionId },
@@ -133,36 +137,16 @@ export class HighWaterMarkRepository {
     return null;
   }
 
-  async updateIfHigher(params: {
+  async setHighWaterMark(params: {
     teamId: number;
     isOrganization: boolean;
-    newSeatCount: number;
+    highWaterMark: number;
     periodStart: Date;
-  }): Promise<{ updated: boolean; previousHighWaterMark: number | null }> {
-    const { teamId, isOrganization, newSeatCount, periodStart } = params;
-
-    // Get current high water mark
-    const current = await this.getByTeamId(teamId);
-    if (!current) {
-      throw new Error(`No billing record found for team ${teamId}`);
-    }
-
-    const currentHwm = current.highWaterMark;
-    const currentPeriodStart = current.highWaterMarkPeriodStart;
-
-    // Check if we're in a new period (period start changed)
-    const isNewPeriod =
-      !currentPeriodStart || periodStart.getTime() !== currentPeriodStart.getTime();
-
-    // If new period, always update. Otherwise, only update if higher.
-    const shouldUpdate = isNewPeriod || currentHwm === null || newSeatCount > currentHwm;
-
-    if (!shouldUpdate) {
-      return { updated: false, previousHighWaterMark: currentHwm };
-    }
+  }): Promise<void> {
+    const { teamId, isOrganization, highWaterMark, periodStart } = params;
 
     const updateData = {
-      highWaterMark: newSeatCount,
+      highWaterMark,
       highWaterMarkPeriodStart: periodStart,
     };
 
@@ -177,8 +161,6 @@ export class HighWaterMarkRepository {
         data: updateData,
       });
     }
-
-    return { updated: true, previousHighWaterMark: currentHwm };
   }
 
   async reset(params: {

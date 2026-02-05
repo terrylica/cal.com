@@ -22,9 +22,8 @@
 
 // IMPORTANT: Load environment variables BEFORE any other imports
 // The @calcom/prisma module initializes at import time and needs DATABASE_URL
-import { config } from "dotenv";
-import { resolve } from "node:path";
-config({ path: resolve(process.cwd(), ".env") });
+// Using side-effect import ensures dotenv runs before other imports are evaluated
+import "dotenv/config";
 
 // Now import other modules
 import bcrypt from "bcryptjs";
@@ -844,10 +843,8 @@ async function main() {
 
     // Test users
     console.log("\n=== Test Users ===");
-    console.log(`Password for all users: ${TEST_PASSWORD}`);
-    result.testUsers.forEach((u) => {
-      console.log(`  - ${u.name} (${u.email}) - ${u.team}`);
-    });
+    console.log(`Total test users created: ${result.testUsers.length}`);
+    console.log("User credentials are defined in the seed script constants.");
 
     console.log("\n=== Testing Instructions ===\n");
     console.log("1. ADVANCE TEST CLOCK to trigger invoice.upcoming:");

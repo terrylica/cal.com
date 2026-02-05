@@ -1,8 +1,8 @@
+import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import { BillingPeriodRepository } from "@calcom/features/ee/billing/repository/billingPeriod/BillingPeriodRepository";
 import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
-import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
 import type { BillingPeriod } from "@calcom/prisma/enums";
@@ -31,22 +31,10 @@ export class BillingPeriodService {
   private repository: BillingPeriodRepository;
   private featuresRepository: IFeaturesRepository;
 
-  constructor(
-    loggerOrDeps?: Logger<unknown> | BillingPeriodServiceDeps,
-    repository?: BillingPeriodRepository
-  ) {
-    // Support both old positional args and new deps object for backwards compatibility
-    if (loggerOrDeps && typeof loggerOrDeps === "object" && "featuresRepository" in loggerOrDeps) {
-      const deps = loggerOrDeps as BillingPeriodServiceDeps;
-      this.logger = deps.logger || log;
-      this.repository = deps.repository || new BillingPeriodRepository();
-      this.featuresRepository = deps.featuresRepository || new FeaturesRepository(prisma);
-    } else {
-      // Legacy constructor signature
-      this.logger = (loggerOrDeps as Logger<unknown>) || log;
-      this.repository = repository || new BillingPeriodRepository();
-      this.featuresRepository = new FeaturesRepository(prisma);
-    }
+  constructor(deps?: BillingPeriodServiceDeps) {
+    this.logger = deps?.logger || log;
+    this.repository = deps?.repository || new BillingPeriodRepository();
+    this.featuresRepository = deps?.featuresRepository || getFeaturesRepository();
   }
 
   async isAnnualPlan(teamId: number): Promise<boolean> {
@@ -61,9 +49,8 @@ export class BillingPeriodService {
 
   async shouldApplyMonthlyProration(teamId: number): Promise<boolean> {
     try {
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
-
-      if (!isFeatureEnabled) {
+      const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+      if (!isEnabled) {
         return false;
       }
 
@@ -78,9 +65,8 @@ export class BillingPeriodService {
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
-
-      if (!isFeatureEnabled) {
+      const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+      if (!isEnabled) {
         return false;
       }
 

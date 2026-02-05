@@ -1,8 +1,7 @@
-import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
-import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
 import { z } from "zod";
 import type { SWHMap } from "./__handler";
+import { handleHwmResetAfterRenewal, validateInvoiceLinesForHwm } from "./hwm-webhook-utils";
 
 const log = logger.getSubLogger({ prefix: ["invoice-paid-team"] });
 
@@ -27,42 +26,6 @@ const invoicePaidSchema = z.object({
   }),
 });
 
-async function handleHwmResetAfterRenewal(
-  subscriptionId: string,
-  periodStartTimestamp: number | undefined
-): Promise<boolean> {
-  if (!periodStartTimestamp) {
-    log.warn(`No period start timestamp for subscription ${subscriptionId}, skipping HWM reset`);
-    return false;
-  }
-
-  const newPeriodStart = new Date(periodStartTimestamp * 1000);
-  const billingProviderService = getBillingProviderService();
-  const highWaterMarkService = new HighWaterMarkService({
-    logger: log,
-    billingService: billingProviderService,
-  });
-
-  try {
-    const updated = await highWaterMarkService.resetSubscriptionAfterRenewal({
-      subscriptionId,
-      newPeriodStart,
-    });
-    log.info("HWM reset after invoice paid", {
-      subscriptionId,
-      newPeriodStart,
-      updated,
-    });
-    return updated;
-  } catch (error) {
-    log.error("Failed to reset HWM after invoice paid", {
-      subscriptionId,
-      error,
-    });
-    return false;
-  }
-}
-
 const handler = async (data: SWHMap["invoice.paid"]["data"]) => {
   const { object: invoice } = invoicePaidSchema.parse(data);
   const subscriptionId = invoice.subscription;
@@ -75,8 +38,10 @@ const handler = async (data: SWHMap["invoice.paid"]["data"]) => {
   // Only handle renewal invoices for HWM reset
   if (invoice.billing_reason === "subscription_cycle") {
     log.info(`Processing renewal invoice for team subscription ${subscriptionId}`);
-    const periodStart = invoice.lines.data[0]?.period?.start;
-    await handleHwmResetAfterRenewal(subscriptionId, periodStart);
+    const validation = validateInvoiceLinesForHwm(invoice.lines.data, subscriptionId, log);
+    if (validation.isValid) {
+      await handleHwmResetAfterRenewal(subscriptionId, validation.periodStart, log);
+    }
   }
 
   return { success: true };

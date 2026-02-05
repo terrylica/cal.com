@@ -1,7 +1,6 @@
 import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
 import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";
 import { Plan, SubscriptionStatus } from "@calcom/features/ee/billing/repository/billing/IBillingRepository";
-import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import { BillingEnabledOrgOnboardingService } from "@calcom/features/ee/organizations/lib/service/onboarding/BillingEnabledOrgOnboardingService";
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import { OrganizationOnboardingRepository } from "@calcom/features/organizations/repositories/OrganizationOnboardingRepository";
@@ -12,6 +11,7 @@ import { prisma } from "@calcom/prisma";
 import { z } from "zod";
 import { getTeamBillingServiceFactory } from "../../di/containers/Billing";
 import type { SWHMap } from "./__handler";
+import { handleHwmResetAfterRenewal, validateInvoiceLinesForHwm } from "./hwm-webhook-utils";
 
 const invoicePaidSchema = z.object({
   object: z.object({
@@ -33,40 +33,6 @@ const invoicePaidSchema = z.object({
     }),
   }),
 });
-
-async function handleHwmResetAfterRenewal(
-  subscriptionId: string,
-  periodStartTimestamp: number | undefined
-): Promise<void> {
-  if (!periodStartTimestamp) {
-    logger.warn(`No period start timestamp for subscription ${subscriptionId}, skipping HWM reset`);
-    return;
-  }
-
-  const newPeriodStart = new Date(periodStartTimestamp * 1000);
-  const billingProviderService = getBillingProviderService();
-  const highWaterMarkService = new HighWaterMarkService({
-    logger,
-    billingService: billingProviderService,
-  });
-
-  try {
-    const updated = await highWaterMarkService.resetSubscriptionAfterRenewal({
-      subscriptionId,
-      newPeriodStart,
-    });
-    logger.info("HWM reset after invoice paid", {
-      subscriptionId,
-      newPeriodStart,
-      updated,
-    });
-  } catch (error) {
-    logger.error("Failed to reset HWM after invoice paid", {
-      subscriptionId,
-      error,
-    });
-  }
-}
 
 async function handlePaymentReceivedForOnboarding({
   organizationOnboarding,
@@ -100,7 +66,10 @@ const handler = async (data: SWHMap["invoice.paid"]["data"]) => {
     // For renewals, we still need to reset the HWM
     if (invoice.billing_reason === "subscription_cycle") {
       logger.info(`Processing renewal invoice for subscription ${subscriptionId}`);
-      await handleHwmResetAfterRenewal(subscriptionId, invoice.lines.data[0]?.period?.start);
+      const validation = validateInvoiceLinesForHwm(invoice.lines.data, subscriptionId, logger);
+      if (validation.isValid) {
+        await handleHwmResetAfterRenewal(subscriptionId, validation.periodStart, logger);
+      }
     } else {
       logger.info(
         `No onboarding record found for stripe customer id: ${invoice.customer}, Organization created before Organization Onboarding was introduced, so ignoring the webhook`
@@ -136,7 +105,10 @@ const handler = async (data: SWHMap["invoice.paid"]["data"]) => {
       // If the organization is already complete, handle renewal HWM reset
       if (invoice.billing_reason === "subscription_cycle") {
         logger.info(`Processing renewal invoice for completed org, subscription ${subscriptionId}`);
-        await handleHwmResetAfterRenewal(subscriptionId, invoice.lines.data[0]?.period?.start);
+        const validation = validateInvoiceLinesForHwm(invoice.lines.data, subscriptionId, logger);
+        if (validation.isValid) {
+          await handleHwmResetAfterRenewal(subscriptionId, validation.periodStart, logger);
+        }
       }
       return {
         success: true,

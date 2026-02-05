@@ -1,10 +1,10 @@
+import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
 import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
-import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
-import { prisma } from "@calcom/prisma";
 import type { Logger } from "tslog";
+
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
 
 const log = logger.getSubLogger({ prefix: ["HighWaterMarkService"] });
@@ -30,35 +30,18 @@ export class HighWaterMarkService {
   private billingService?: IBillingProviderService;
   private featuresRepository: IFeaturesRepository;
 
-  constructor(
-    loggerOrDeps?: Logger<unknown> | HighWaterMarkServiceDeps,
-    repository?: HighWaterMarkRepository,
-    teamRepository?: MonthlyProrationTeamRepository,
-    billingService?: IBillingProviderService
-  ) {
-    // Support both old positional args and new deps object for backwards compatibility
-    if (loggerOrDeps && typeof loggerOrDeps === "object" && "logger" in loggerOrDeps) {
-      const deps = loggerOrDeps as HighWaterMarkServiceDeps;
-      this.logger = deps.logger || log;
-      this.repository = deps.repository || new HighWaterMarkRepository();
-      this.teamRepository = deps.teamRepository || new MonthlyProrationTeamRepository();
-      this.billingService = deps.billingService;
-      this.featuresRepository = deps.featuresRepository || new FeaturesRepository(prisma);
-    } else {
-      // Legacy constructor signature
-      this.logger = (loggerOrDeps as Logger<unknown>) || log;
-      this.repository = repository || new HighWaterMarkRepository();
-      this.teamRepository = teamRepository || new MonthlyProrationTeamRepository();
-      this.billingService = billingService;
-      this.featuresRepository = new FeaturesRepository(prisma);
-    }
+  constructor(deps?: HighWaterMarkServiceDeps) {
+    this.logger = deps?.logger || log;
+    this.repository = deps?.repository || new HighWaterMarkRepository();
+    this.teamRepository = deps?.teamRepository || new MonthlyProrationTeamRepository();
+    this.billingService = deps?.billingService;
+    this.featuresRepository = deps?.featuresRepository || getFeaturesRepository();
   }
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {
     try {
-      const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
-
-      if (!isFeatureEnabled) {
+      const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+      if (!isEnabled) {
         return false;
       }
 
@@ -99,23 +82,44 @@ export class HighWaterMarkService {
       return null;
     }
 
-    const result = await this.repository.updateIfHigher({
+    const previousHighWaterMark = billing.highWaterMark;
+
+    // Determine if update is needed: new period resets, null initializes, higher value wins
+    const isNewPeriod =
+      !billing.highWaterMarkPeriodStart ||
+      currentPeriodStart.getTime() !== billing.highWaterMarkPeriodStart.getTime();
+    const shouldUpdate = isNewPeriod || previousHighWaterMark === null || memberCount > previousHighWaterMark;
+
+    if (!shouldUpdate) {
+      this.logger.info(`High water mark unchanged for team ${teamId}`, {
+        updated: false,
+        previousHighWaterMark,
+        memberCount,
+      });
+      return {
+        updated: false,
+        previousHighWaterMark,
+        newHighWaterMark: previousHighWaterMark ?? memberCount,
+      };
+    }
+
+    await this.repository.setHighWaterMark({
       teamId,
       isOrganization: billing.isOrganization,
-      newSeatCount: memberCount,
+      highWaterMark: memberCount,
       periodStart: currentPeriodStart,
     });
 
-    this.logger.info(`High water mark update for team ${teamId}`, {
-      updated: result.updated,
-      previousHighWaterMark: result.previousHighWaterMark,
+    this.logger.info(`High water mark updated for team ${teamId}`, {
+      updated: true,
+      previousHighWaterMark,
       newHighWaterMark: memberCount,
       memberCount,
     });
 
     return {
-      updated: result.updated,
-      previousHighWaterMark: result.previousHighWaterMark,
+      updated: true,
+      previousHighWaterMark,
       newHighWaterMark: memberCount,
     };
   }
@@ -149,8 +153,8 @@ export class HighWaterMarkService {
 
   async applyHighWaterMarkToSubscription(subscriptionId: string): Promise<boolean> {
     // Check feature flag first
-    const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
-    if (!isFeatureEnabled) {
+    const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+    if (!isEnabled) {
       this.logger.debug(
         `HWM feature flag disabled, skipping applyHighWaterMarkToSubscription for ${subscriptionId}`
       );
@@ -177,56 +181,20 @@ export class HighWaterMarkService {
     const { teamId, subscriptionItemId, isOrganization } = billing;
     let { highWaterMark, paidSeats } = billing;
 
-    // Lazy initialization: If HWM is not tracked yet, initialize it
     if (highWaterMark === null) {
-      const memberCount = await this.teamRepository.getTeamMemberCount(teamId);
-      if (memberCount === null) {
-        this.logger.warn(`Could not get member count for team ${teamId} during lazy init`);
+      const initialized = await this.lazyInitializeHighWaterMark(billing);
+      if (initialized === null) {
         return false;
       }
-
-      // Initialize HWM to current member count
-      // Prefer subscription start date over arbitrary new Date()
-      const periodStart = billing.highWaterMarkPeriodStart || billing.subscriptionStart;
-      if (!periodStart) {
-        this.logger.warn(
-          `Could not determine period start for team ${teamId} during lazy init - no subscriptionStart available`
-        );
-        return false;
-      }
-
-      await this.repository.reset({
-        teamId,
-        isOrganization,
-        currentSeatCount: memberCount,
-        newPeriodStart: periodStart,
-      });
-
-      this.logger.info(`Lazy initialized high water mark for team ${teamId}`, {
-        initialHighWaterMark: memberCount,
-        periodStart,
-      });
-
-      // Use the initialized value
-      highWaterMark = memberCount;
+      highWaterMark = initialized;
     }
 
-    // If paidSeats is null, try to get it from Stripe subscription
     if (paidSeats === null) {
-      const subscription = await this.billingService.getSubscription(subscriptionId);
-      if (subscription?.items?.[0]) {
-        paidSeats = subscription.items[0].quantity;
-        // Update local record
-        await this.repository.updateQuantityAfterStripeSync({
-          teamId,
-          isOrganization,
-          paidSeats,
-        });
-        this.logger.info(`Synced paidSeats from Stripe for team ${teamId}`, { paidSeats });
-      } else {
-        this.logger.warn(`Could not get subscription details for ${subscriptionId}`);
+      const synced = await this.syncPaidSeatsFromStripe({ subscriptionId, teamId, isOrganization });
+      if (synced === null) {
         return false;
       }
+      paidSeats = synced;
     }
 
     // If HWM equals paid seats, no update needed
@@ -269,6 +237,80 @@ export class HighWaterMarkService {
     return true;
   }
 
+  /**
+   * Lazily initialize HWM when it hasn't been tracked yet.
+   * Returns the initialized member count, or null if initialization failed.
+   */
+  private async lazyInitializeHighWaterMark(billing: {
+    teamId: number;
+    isOrganization: boolean;
+    highWaterMarkPeriodStart: Date | null;
+    subscriptionStart: Date | null;
+  }): Promise<number | null> {
+    const { teamId, isOrganization } = billing;
+
+    const memberCount = await this.teamRepository.getTeamMemberCount(teamId);
+    if (memberCount === null) {
+      this.logger.warn(`Could not get member count for team ${teamId} during lazy init`);
+      return null;
+    }
+
+    const periodStart = billing.highWaterMarkPeriodStart || billing.subscriptionStart;
+    if (!periodStart) {
+      this.logger.warn(
+        `Could not determine period start for team ${teamId} during lazy init - no subscriptionStart available`
+      );
+      return null;
+    }
+
+    await this.repository.reset({
+      teamId,
+      isOrganization,
+      currentSeatCount: memberCount,
+      newPeriodStart: periodStart,
+    });
+
+    this.logger.info(`Lazy initialized high water mark for team ${teamId}`, {
+      initialHighWaterMark: memberCount,
+      periodStart,
+    });
+
+    return memberCount;
+  }
+
+  /**
+   * Sync paidSeats from Stripe when our local record is missing.
+   * Returns the synced quantity, or null if the sync failed.
+   */
+  private async syncPaidSeatsFromStripe(params: {
+    subscriptionId: string;
+    teamId: number;
+    isOrganization: boolean;
+  }): Promise<number | null> {
+    const { subscriptionId, teamId, isOrganization } = params;
+
+    if (!this.billingService) {
+      this.logger.error("BillingService not configured for paidSeats sync");
+      return null;
+    }
+
+    const subscription = await this.billingService.getSubscription(subscriptionId);
+    if (!subscription?.items?.[0]) {
+      this.logger.warn(`Could not get subscription details for ${subscriptionId}`);
+      return null;
+    }
+
+    const paidSeats = subscription.items[0].quantity;
+    await this.repository.updateQuantityAfterStripeSync({
+      teamId,
+      isOrganization,
+      paidSeats,
+    });
+
+    this.logger.info(`Synced paidSeats from Stripe for team ${teamId}`, { paidSeats });
+    return paidSeats;
+  }
+
   async getHighWaterMarkData(teamId: number) {
     return this.repository.getByTeamId(teamId);
   }
@@ -289,8 +331,8 @@ export class HighWaterMarkService {
     const { subscriptionId, newPeriodStart } = params;
 
     // Check feature flag first
-    const isFeatureEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
-    if (!isFeatureEnabled) {
+    const isEnabled = await this.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+    if (!isEnabled) {
       this.logger.debug(
         `HWM feature flag disabled, skipping resetSubscriptionAfterRenewal for ${subscriptionId}`
       );

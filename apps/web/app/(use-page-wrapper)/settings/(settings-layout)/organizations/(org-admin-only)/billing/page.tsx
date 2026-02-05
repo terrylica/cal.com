@@ -23,7 +23,9 @@ export const generateMetadata = async () =>
 
 const Page = async () => {
   const t = await getTranslate();
-  const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
+  const session = await getServerSession({
+    req: buildLegacyRequest(await headers(), await cookies()),
+  });
   const orgId = session?.user?.org?.id;
 
   await validateUserHasOrgPerms({
@@ -35,7 +37,8 @@ const Page = async () => {
     <SettingsHeader
       title={t("billing")}
       description={t("manage_billing_description")}
-      borderInShellHeader={false}>
+      borderInShellHeader={false}
+    >
       <BillingView />
       {orgId && <SeatBillingDebug teamId={orgId} />}
     </SettingsHeader>
