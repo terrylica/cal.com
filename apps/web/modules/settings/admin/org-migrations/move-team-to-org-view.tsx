@@ -8,7 +8,9 @@ import { z } from "zod";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { getStringAsNumberRequiredSchema } from "@calcom/prisma/zod-utils";
-import { Button, Form, TextField, showToast } from "@calcom/ui";
+import { Button } from "@calcom/ui/components/button";
+import { Form, TextField } from "@calcom/ui/components/form";
+import { showToast } from "@calcom/ui/components/toast";
 
 export const getFormSchema = (t: TFunction) => {
   return z.object({
