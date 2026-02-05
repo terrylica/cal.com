@@ -11,9 +11,6 @@ import type { getPublicEvent } from "@calcom/features/eventtypes/lib/getPublicEv
 import { EventRepository } from "@calcom/features/eventtypes/repositories/EventRepository";
 import { shouldHideBrandingForUserEvent } from "@calcom/features/profile/lib/hideBranding";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
-import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
-import getIP from "@calcom/lib/getIP";
-import { piiHasher } from "@calcom/lib/server/PiiHasher";
 import slugify from "@calcom/lib/slugify";
 import { prisma } from "@calcom/prisma";
 import { BookingStatus, RedirectType } from "@calcom/prisma/enums";
@@ -66,7 +63,6 @@ async function processReschedule({
     (booking?.eventTypeId === props.eventData?.id &&
       (booking.status !== BookingStatus.CANCELLED ||
         allowRescheduleForCancelledBooking ||
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         !!(props.eventData as any)?.allowReschedulingCancelledBookings))
   ) {
     props.booking = booking;
@@ -172,6 +168,19 @@ async function getDynamicGroupPageProps(context: GetServerSidePropsContext) {
     } as const;
   }
 
+  // Redirect if no routing form response and redirect URL is configured
+  // Don't redirect if this is a reschedule or seated booking flow
+  const hasRoutingFormResponse =
+    context.query["cal.routingFormResponseId"] || context.query["cal.queuedFormResponseId"];
+  if (!hasRoutingFormResponse && !rescheduleUid && !bookingUid && "redirectUrlOnNoRoutingFormResponse" in eventData && eventData.redirectUrlOnNoRoutingFormResponse) {
+    return {
+      redirect: {
+        destination: eventData.redirectUrlOnNoRoutingFormResponse,
+        permanent: false,
+      },
+    };
+  }
+
   const props: Props = {
     eventData: {
       ...eventData,
@@ -258,13 +267,26 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
     session?.user?.id
   );
 
-  if (!eventData) {
-    return {
-      notFound: true,
-    } as const;
-  }
+    if (!eventData) {
+      return {
+        notFound: true,
+      } as const;
+    }
 
-  const allowSEOIndexing = org
+    // Redirect if no routing form response and redirect URL is configured
+    // Don't redirect if this is a reschedule or seated booking flow
+    const hasRoutingFormResponse =
+      context.query["cal.routingFormResponseId"] || context.query["cal.queuedFormResponseId"];
+    if (!hasRoutingFormResponse && !rescheduleUid && !bookingUid && "redirectUrlOnNoRoutingFormResponse" in eventData && eventData.redirectUrlOnNoRoutingFormResponse) {
+      return {
+        redirect: {
+          destination: eventData.redirectUrlOnNoRoutingFormResponse,
+          permanent: false,
+        },
+      };
+    }
+
+    const allowSEOIndexing= org
     ? user?.profile?.organization?.organizationSettings?.allowSEOIndexing
       ? user?.allowSEOIndexing
       : false
@@ -318,12 +340,6 @@ const paramsSchema = z.object({
 // Booker page fetches a tiny bit of data server side, to determine early
 // whether the page should show an away state or dynamic booking not allowed.
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
-  const requestorIp = getIP(context.req as unknown as Request);
-  await checkRateLimitAndThrowError({
-    rateLimitingType: "core",
-    identifier: `[user]/[type]-${piiHasher.hash(requestorIp)}`,
-  });
-
   const { user } = paramsSchema.parse(context.params);
   const isDynamicGroup = user.length > 1;
 
