@@ -5,7 +5,6 @@ import { OrganizationsRepository } from "@/modules/organizations/index/organizat
 import { PrismaModule } from "@/modules/prisma/prisma.module";
 import { RedisModule } from "@/modules/redis/redis.module";
 import { StripeModule } from "@/modules/stripe/stripe.module";
-import { TeamsMembershipsService } from "@/modules/teams/memberships/services/teams-memberships.service";
 import { TeamsMembershipsRepository } from "@/modules/teams/memberships/teams-memberships.repository";
 import { TeamsController } from "@/modules/teams/teams/controllers/teams.controller";
 import { TeamsService } from "@/modules/teams/teams/services/teams.service";
@@ -19,7 +18,6 @@ import { Module } from "@nestjs/common";
     TeamsRepository,
     TeamsService,
     TeamsMembershipsRepository,
-    TeamsMembershipsService,
     OAuthClientRepository,
     UsersRepository,
     OrganizationsRepository,
