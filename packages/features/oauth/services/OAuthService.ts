@@ -11,6 +11,7 @@ import { verifyCodeChallenge } from "@calcom/lib/pkce";
 import type { AccessScope, OAuthClientType } from "@calcom/prisma/enums";
 import { OAuthClientStatus } from "@calcom/prisma/enums";
 import jwt from "jsonwebtoken";
+import logger from "@calcom/lib/logger";
 
 export interface OAuth2Client {
   clientId: string;
@@ -302,7 +303,7 @@ export class OAuthService {
       throw new ErrorWithCode(ErrorCode.BadRequest, pkceError.error, { reason: pkceError.reason });
     }
 
-    const tokens = this.createTokens({
+    const tokens = this.mintTokens({
       clientId,
       userId: accessCode.userId,
       teamId: accessCode.teamId,
@@ -362,20 +363,30 @@ export class OAuthService {
       }
     }
 
-    const tokens = this.createTokens({
+    const tokens = this.mintTokens({
       clientId,
       userId: decodedToken.userId,
       teamId: decodedToken.teamId,
       scopes: decodedToken.scope,
     });
 
-    await this.oAuthRefreshTokenRepository.rotateToken({
-      clientId,
-      userId: decodedToken.userId,
-      teamId: decodedToken.teamId,
-      newSecret: tokens.refreshTokenSecret,
-      expiresInSeconds: tokens.refreshTokenExpiresIn,
-    });
+    if (decodedToken.userId) {
+      await this.oAuthRefreshTokenRepository.rotateTokenForUser({
+        clientId,
+        userId: decodedToken.userId,
+        newSecret: tokens.refreshTokenSecret,
+        expiresInSeconds: tokens.refreshTokenExpiresIn,
+      });
+    } else if (decodedToken.teamId) {
+      await this.oAuthRefreshTokenRepository.rotateTokenForTeam({
+        clientId,
+        teamId: decodedToken.teamId,
+        newSecret: tokens.refreshTokenSecret,
+        expiresInSeconds: tokens.refreshTokenExpiresIn,
+      });
+    } else {
+      logger.error("OAuthService - refresh token has neither userId nor teamId", { clientId });
+    }
 
     return tokens;
   }
@@ -426,7 +437,7 @@ export class OAuthService {
     return randomBytesValue.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
   }
 
-  private createTokens(input: {
+  private mintTokens(input: {
     clientId: string;
     userId?: number | null;
     teamId?: number | null;

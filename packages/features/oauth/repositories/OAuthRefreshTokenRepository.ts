@@ -33,42 +33,39 @@ export class OAuthRefreshTokenRepository {
     });
   }
 
-  async rotateToken(input: {
+  async rotateTokenForUser(input: {
     clientId: string;
-    userId?: number | null;
-    teamId?: number | null;
+    userId: number;
     newSecret: string;
     expiresInSeconds: number;
   }): Promise<void> {
-    const { clientId, userId, teamId, newSecret, expiresInSeconds } = input;
+    const { clientId, userId, newSecret, expiresInSeconds } = input;
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
     await this.prisma.$transaction([
       this.prisma.oAuthRefreshToken.deleteMany({
-        where: {
-          clientId,
-          ...(userId !== undefined ? { userId } : {}),
-          ...(teamId !== undefined ? { teamId } : {}),
-        },
+        where: { clientId, userId },
       }),
       this.prisma.oAuthRefreshToken.create({
-        data: {
-          secret: newSecret,
-          clientId,
-          userId,
-          teamId,
-          expiresAt,
-        },
+        data: { secret: newSecret, clientId, userId, expiresAt },
       }),
     ]);
   }
 
-  async deleteExpired(): Promise<void> {
-    await this.prisma.oAuthRefreshToken.deleteMany({
-      where: {
-        expiresAt: {
-          lt: new Date(),
-        },
-      },
-    });
+  async rotateTokenForTeam(input: {
+    clientId: string;
+    teamId: number;
+    newSecret: string;
+    expiresInSeconds: number;
+  }): Promise<void> {
+    const { clientId, teamId, newSecret, expiresInSeconds } = input;
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+    await this.prisma.$transaction([
+      this.prisma.oAuthRefreshToken.deleteMany({
+        where: { clientId, teamId },
+      }),
+      this.prisma.oAuthRefreshToken.create({
+        data: { secret: newSecret, clientId, teamId, expiresAt },
+      }),
+    ]);
   }
 }
