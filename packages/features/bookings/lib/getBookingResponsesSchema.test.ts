@@ -1988,7 +1988,7 @@ describe("getBookingResponsesPartialSchema - Prefill validation", () => {
     );
   });
 
-  test(`should prefill valid fields and skip invalid fields when mixed valid/invalid values are provided`, async ({}) => {
+  test(`should prefill all valid fields`, async ({}) => {
     const schema = getBookingResponsesPartialSchema({
       bookingFields: [
         {
