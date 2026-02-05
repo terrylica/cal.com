@@ -1,4 +1,3 @@
-
 import { getBookingForReschedule } from "@calcom/features/bookings/lib/get-booking";
 import getAllUserBookings from "@calcom/features/bookings/lib/getAllUserBookings";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
@@ -41,7 +40,7 @@ export {
   WorkflowTemplates,
   WorkflowTriggerEvents,
 } from "@calcom/prisma/enums";
-export type { EventBusyDate } from "@calcom/types/Calendar";
+export type { CalendarEvent, EventBusyDate } from "@calcom/types/Calendar";
 
 export { handleMarkNoShow };
 export { handleCreatePhoneCall };
@@ -51,7 +50,10 @@ export type {
   BookingResponse,
 } from "@calcom/features/bookings/types";
 export type { ConnectedCalendar } from "@calcom/features/calendars/lib/CalendarManager";
-export { getBusyCalendarTimes } from "@calcom/features/calendars/lib/CalendarManager";
+export {
+  getBusyCalendarTimes,
+  updateEvent,
+} from "@calcom/features/calendars/lib/CalendarManager";
 export type { ConnectedDestinationCalendars } from "@calcom/features/calendars/lib/getConnectedDestinationCalendars";
 export { getConnectedDestinationCalendarsAndEnsureDefaultsInDb } from "@calcom/features/calendars/lib/getConnectedDestinationCalendars";
 export type { CityTimezones } from "@calcom/features/cityTimezones/cityTimezonesHandler";
@@ -67,7 +69,11 @@ export { handleCancelBooking };
 export { dynamicEvent } from "@calcom/features/eventtypes/lib/defaultEvents";
 export { parseBookingLimit } from "@calcom/lib/intervalLimits/isBookingLimits";
 export { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
-export { bookingMetadataSchema, teamMetadataSchema, userMetadata } from "@calcom/prisma/zod-utils";
+export {
+  bookingMetadataSchema,
+  teamMetadataSchema,
+  userMetadata,
+} from "@calcom/prisma/zod-utils";
 
 export { symmetricEncrypt, symmetricDecrypt };
 
@@ -132,3 +138,12 @@ export { validateUrlForSSRFSync } from "@calcom/lib/ssrfProtection";
 export { checkEmailVerificationRequired } from "@calcom/trpc/server/routers/publicViewer/checkIfUserEmailVerificationRequired.handler";
 export { verifyCode as verifyCodeAuthenticated } from "@calcom/trpc/server/routers/viewer/organizations/verifyCode.handler";
 export type { OrgMembershipLookup } from "@calcom/trpc/server/routers/viewer/slots/util";
+
+export { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
+export { BookingReferenceRepository } from "@calcom/features/bookingReference/repositories/BookingReferenceRepository";
+
+export type { CredentialForCalendarService } from "@calcom/types/Credential";
+
+export { buildCalEventFromBooking } from "@calcom/lib/buildCalEventFromBooking";
+export { getVideoCallUrlFromCalEvent } from "@calcom/lib/CalEventParser";
+export { sendLocationChangeEmailsAndSMS } from "@calcom/emails/email-manager";
