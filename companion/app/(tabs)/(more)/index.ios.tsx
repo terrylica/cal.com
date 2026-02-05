@@ -81,9 +81,8 @@ export default function More() {
     {
       name: "Out of Office",
       icon: "airplane-outline",
-      isExternal: true,
-      onPress: () =>
-        openInAppBrowser("https://app.cal.com/settings/my-account/out-of-office", "Out of Office"),
+      isExternal: false,
+      onPress: () => router.push("/(tabs)/(more)/out-of-office"),
     },
     {
       name: "Apps",

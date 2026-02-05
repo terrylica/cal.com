@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -26,6 +27,7 @@ interface MoreMenuItem {
 }
 
 export default function More() {
+  const router = useRouter();
   const { logout } = useAuth();
   const { clearCache } = useQueryContext();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -70,9 +72,8 @@ export default function More() {
     {
       name: "Out of Office",
       icon: "airplane-outline",
-      isExternal: true,
-      onPress: () =>
-        openInAppBrowser("https://app.cal.com/settings/my-account/out-of-office", "Out of Office"),
+      isExternal: false,
+      onPress: () => router.push("/(tabs)/(more)/out-of-office"),
     },
     {
       name: "Apps",

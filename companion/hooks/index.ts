@@ -75,3 +75,10 @@ export {
   useUsername,
   useUserProfile,
 } from "./useUserProfile";
+// Out of Office hooks
+export {
+  useOutOfOfficeEntries,
+  useCreateOutOfOfficeEntry,
+  useUpdateOutOfOfficeEntry,
+  useDeleteOutOfOfficeEntry,
+} from "./useOutOfOffice";
