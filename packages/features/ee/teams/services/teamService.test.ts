@@ -425,7 +425,15 @@ describe("TeamService", () => {
     it("should create memberships and update event types", async () => {
       const { addNewMembersToEventTypes } = await import("@calcom/features/ee/teams/lib/queries");
       vi.mocked(addNewMembersToEventTypes).mockResolvedValue(undefined);
-      prismaMock.membership.createMany.mockResolvedValue({ count: 2 });
+
+      const mockTx = {
+        membership: {
+          createMany: vi.fn().mockResolvedValue({ count: 2 }),
+        },
+      };
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof mockTx) => Promise<void>) => {
+        await callback(mockTx);
+      });
 
       const teamService = new TeamService();
       const membershipData = [
@@ -447,19 +455,28 @@ describe("TeamService", () => {
 
       await teamService.addMemberships({ membershipData });
 
-      expect(prismaMock.membership.createMany).toHaveBeenCalledWith({
+      expect(mockTx.membership.createMany).toHaveBeenCalledWith({
         data: membershipData,
       });
       expect(addNewMembersToEventTypes).toHaveBeenCalledWith({
         userIds: [1, 2],
         teamId: 10,
+        db: mockTx,
       });
     });
 
     it("should handle multiple teams correctly", async () => {
       const { addNewMembersToEventTypes } = await import("@calcom/features/ee/teams/lib/queries");
       vi.mocked(addNewMembersToEventTypes).mockResolvedValue(undefined);
-      prismaMock.membership.createMany.mockResolvedValue({ count: 4 });
+
+      const mockTx = {
+        membership: {
+          createMany: vi.fn().mockResolvedValue({ count: 4 }),
+        },
+      };
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof mockTx) => Promise<void>) => {
+        await callback(mockTx);
+      });
 
       const teamService = new TeamService();
       const membershipData = [
@@ -495,17 +512,19 @@ describe("TeamService", () => {
 
       await teamService.addMemberships({ membershipData });
 
-      expect(prismaMock.membership.createMany).toHaveBeenCalledWith({
+      expect(mockTx.membership.createMany).toHaveBeenCalledWith({
         data: membershipData,
       });
       expect(addNewMembersToEventTypes).toHaveBeenCalledTimes(2);
       expect(addNewMembersToEventTypes).toHaveBeenCalledWith({
         userIds: [1, 2],
         teamId: 10,
+        db: mockTx,
       });
       expect(addNewMembersToEventTypes).toHaveBeenCalledWith({
         userIds: [1, 2],
         teamId: 20,
+        db: mockTx,
       });
     });
   });

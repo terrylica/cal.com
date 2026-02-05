@@ -108,7 +108,7 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
   const translation = await getTranslation("en", "common");
 
   const newUserEmails = userEmails.filter((email) => !users.find((user) => user.email === email));
-  let newUsers;
+  let newUsers: Awaited<ReturnType<typeof createUsersAndConnectToOrg>> | undefined;
 
   log.info(`Event processing ${newUserEmails.length} new users and ${users.length} existing users`);
 
