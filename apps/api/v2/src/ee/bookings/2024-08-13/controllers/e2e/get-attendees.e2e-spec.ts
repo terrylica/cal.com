@@ -250,6 +250,28 @@ describe("Bookings Endpoints 2024-08-13 get attendees", () => {
       });
     });
 
+    describe("Rate limiting", () => {
+      it("should return 429 after exceeding the rate limit", async () => {
+        const responses = [];
+        for (let i = 0; i < 10; i++) {
+          const response = await request(app.getHttpServer())
+            .get(`/v2/bookings/${testSetup.bookingUid}/attendees`)
+            .set(CAL_API_VERSION_HEADER, VERSION_2024_08_13)
+            .set("Authorization", `Bearer ${testSetup.organizer.accessToken}`);
+          responses.push(response.status);
+        }
+
+        expect(responses).toContain(429);
+
+        const firstThrottledIndex = responses.indexOf(429);
+        expect(firstThrottledIndex).toBeLessThanOrEqual(5);
+
+        for (let i = firstThrottledIndex; i < responses.length; i++) {
+          expect(responses[i]).toBe(429);
+        }
+      });
+    });
+
     describe("Response format", () => {
       it("should return attendees with correct structure", async () => {
         const getAttendeesResponse = await request(app.getHttpServer())
