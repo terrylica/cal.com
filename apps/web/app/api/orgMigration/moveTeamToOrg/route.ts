@@ -1,8 +1,10 @@
 import { defaultResponderForAppDir } from "app/api/defaultResponderForAppDir";
 import type { TFunction } from "i18next";
-import type { NextRequest } from "next/server";
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
+import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getOrganizationRepository } from "@calcom/features/ee/organizations/di/OrganizationRepository.container";
@@ -25,7 +27,7 @@ const getFormSchema = (t: TFunction) => {
   });
 };
 
-async function postHandler(req: NextRequest) {
+async function postHandler(req: Request) {
   const rawBody = await req.json();
 
   log.debug(
@@ -40,7 +42,8 @@ async function postHandler(req: NextRequest) {
 
   const parsedBody = moveTeamToOrgSchema.safeParse(rawBody);
 
-  const session = await getServerSession({ req });
+  const legacyReq = buildLegacyRequest(await headers(), await cookies());
+  const session = await getServerSession({ req: legacyReq });
 
   if (!session) {
     throw new HttpError({ statusCode: 403, message: "No session found" });
