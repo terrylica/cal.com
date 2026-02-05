@@ -1,13 +1,13 @@
-import process from "node:process";
+import { get } from "@vercel/edge-config";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import getIP from "@calcom/lib/getIP";
 import { HttpError } from "@calcom/lib/http-error";
 import { piiHasher } from "@calcom/lib/server/PiiHasher";
+
 import { getCspHeader, getCspNonce } from "@lib/csp";
-import { get } from "@vercel/edge-config";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { C } from "nuqs/dist/parsers-U3P6hK0x";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
@@ -266,20 +266,17 @@ function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
 
 
 /**
- * API routes that should be completely excluded from middleware processing.
- * These routes bypass all middleware logic including rate limiting, CSP, etc.
+ * Middleware matcher configuration.
+ * Routes matching the negative lookahead patterns are excluded from middleware processing.
+ * Excluded routes: _next, static, public, favicon.ico, robots.txt, sitemap.xml, /api/logo
+ *
+ * NOTE: Next.js requires config.matcher to be static string literals (no template literals or variables)
+ * because Turbopack analyzes the config at build time.
  */
-const MIDDLEWARE_EXCLUDED_API_ROUTES: string[] = ["/api/logo"];
-
-const excludedRoutes: string = MIDDLEWARE_EXCLUDED_API_ROUTES.map((route) =>
-  route.replace(/\//g, "\\/").replace(/\./g, "\\.")
-).join("|");
-
-const baseExclusions: string =
-  "_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$";
-const apiExclusions: string = excludedRoutes.length > 0 ? `|${excludedRoutes}(?:/|$|\\?)` : "";
 export const config = {
-  matcher: [`/((?!${baseExclusions}${apiExclusions}).*)`],
+  matcher: [
+    "/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|api/logo(?:/|$|\\?)).*)",
+  ],
 };
 
 export default proxy;
