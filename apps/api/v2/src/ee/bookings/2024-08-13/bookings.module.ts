@@ -1,9 +1,11 @@
+import { BookingAttendeesController_2024_08_13 } from "@/ee/bookings/2024-08-13/controllers/booking-attendees.controller";
 import { BookingGuestsController_2024_08_13 } from "@/ee/bookings/2024-08-13/controllers/booking-guests.controller";
 import { BookingLocationController_2024_08_13 } from "@/ee/bookings/2024-08-13/controllers/booking-location.controller";
 import { BookingsController_2024_08_13 } from "@/ee/bookings/2024-08-13/controllers/bookings.controller";
 import { BookingPbacGuard } from "@/ee/bookings/2024-08-13/guards/booking-pbac.guard";
 import { BookingReferencesRepository_2024_08_13 } from "@/ee/bookings/2024-08-13/repositories/booking-references.repository";
 import { BookingsRepository_2024_08_13 } from "@/ee/bookings/2024-08-13/repositories/bookings.repository";
+import { BookingAttendeesService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-attendees.service";
 import { BookingGuestsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-guests.service";
 import { BookingLocationService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-location.service";
 import { BookingReferencesService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-references.service";
@@ -80,6 +82,7 @@ import { BookingEventHandlerModule } from "@/lib/modules/booking-event-handler.m
     OAuthClientRepository,
     OAuthClientUsersService,
     BookingsService_2024_08_13,
+    BookingAttendeesService_2024_08_13,
     BookingGuestsService_2024_08_13,
     InputBookingsService_2024_08_13,
     OutputBookingsService_2024_08_13,
@@ -108,6 +111,7 @@ import { BookingEventHandlerModule } from "@/lib/modules/booking-event-handler.m
   ],
   controllers: [
     BookingsController_2024_08_13,
+    BookingAttendeesController_2024_08_13,
     BookingGuestsController_2024_08_13,
     BookingLocationController_2024_08_13,
   ],
