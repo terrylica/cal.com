@@ -19,8 +19,8 @@ describe("getSchedule duration limits (integration)", () => {
   beforeAll(async () => {
     const timestamp = Date.now();
 
-    delete process.env.UPSTASH_REDIS_REST_URL;
-    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", undefined);
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", undefined);
 
     [user1, user2] = await Promise.all([
       prisma.user.create({
