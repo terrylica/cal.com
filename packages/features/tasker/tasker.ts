@@ -42,8 +42,8 @@ type TaskPayloads = {
   sendAwaitingPaymentEmail: z.infer<
     typeof import("./tasks/sendAwaitingPaymentEmail").sendAwaitingPaymentEmailPayloadSchema
   >;
-  cancelAbandonedPaymentBooking: z.infer<
-    typeof import("./tasks/cancelAbandonedPaymentBooking").cancelAbandonedPaymentBookingPayloadSchema
+  cancelAbandonedStripePayment: z.infer<
+    typeof import("./tasks/cancelAbandonedStripePayment").cancelAbandonedStripePaymentPayloadSchema
   >;
 };
 export type TaskTypes = keyof TaskPayloads;

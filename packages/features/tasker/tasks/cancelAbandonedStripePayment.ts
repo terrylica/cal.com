@@ -6,19 +6,19 @@ import prisma from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { z } from "zod";
 
-const log: Logger = logger.getSubLogger({ prefix: ["cancelAbandonedPaymentBooking"] });
+const log: Logger = logger.getSubLogger({ prefix: ["cancelAbandonedStripePayment"] });
 
-export const cancelAbandonedPaymentBookingPayloadSchema = z.object({
+export const cancelAbandonedStripePaymentPayloadSchema = z.object({
   bookingId: z.number(),
   paymentId: z.number(),
 });
 
-export async function cancelAbandonedPaymentBooking(payload: string): Promise<void> {
+export async function cancelAbandonedStripePayment(payload: string): Promise<void> {
   try {
-    const { bookingId, paymentId } = cancelAbandonedPaymentBookingPayloadSchema.parse(JSON.parse(payload));
+    const { bookingId, paymentId } = cancelAbandonedStripePaymentPayloadSchema.parse(JSON.parse(payload));
 
     log.debug(
-      `Processing cancelAbandonedPaymentBooking task for bookingId ${bookingId}, paymentId ${paymentId}`
+      `Processing cancelAbandonedStripePayment task for bookingId ${bookingId}, paymentId ${paymentId}`
     );
 
     const payment = await prisma.payment.findFirst({

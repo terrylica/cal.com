@@ -408,7 +408,7 @@ export class PaymentService implements IAbstractPaymentService {
     const scheduledCancelAt = dayjs().add(cancelDelayHours, "hours").toDate();
 
     await tasker.create(
-      "cancelAbandonedPaymentBooking",
+      "cancelAbandonedStripePayment",
       {
         bookingId: booking.id,
         paymentId: paymentData.id,
