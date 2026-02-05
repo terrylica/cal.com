@@ -41,7 +41,7 @@ export const getHostsForAssignmentHandler = async ({
   const { items, nextCursor, hasMore, hasFixedHosts } =
     await hostRepository.findHostsForAssignmentPaginated({
       eventTypeId,
-      cursor,
+      cursor: cursor ?? undefined,
       limit,
       search,
     });

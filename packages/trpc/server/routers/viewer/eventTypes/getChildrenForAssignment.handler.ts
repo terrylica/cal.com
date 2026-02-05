@@ -40,7 +40,7 @@ export const getChildrenForAssignmentHandler = async ({
   const hostRepository = new HostRepository(ctx.prisma);
   const { items, nextCursor, hasMore } = await hostRepository.findChildrenForAssignmentPaginated({
     eventTypeId,
-    cursor,
+    cursor: cursor ?? undefined,
     limit,
     search,
   });
