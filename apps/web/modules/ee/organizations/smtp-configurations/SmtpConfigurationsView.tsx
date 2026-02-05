@@ -164,7 +164,7 @@ const SmtpConfigurationItem = ({
               </div>
               <div>
                 <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("connection")}</span>
-                <p className="text-emphasis mt-1 text-sm font-medium">{config.smtpSecure ? "SSL/TLS" : "STARTTLS"}</p>
+                <p className="text-emphasis mt-1 text-sm font-medium">{config.smtpSecure ? t("connection_ssl_tls") : t("connection_starttls")}</p>
               </div>
             </div>
           </div>

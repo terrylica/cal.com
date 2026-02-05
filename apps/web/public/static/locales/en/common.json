@@ -2921,6 +2921,8 @@
   "smtp_password": "Password",
   "smtp_secure": "Use SSL/TLS",
   "smtp_secure_description": "Enable for port 465, disable for ports 25 or 587 with STARTTLS",
+  "connection_ssl_tls": "SSL/TLS",
+  "connection_starttls": "STARTTLS",
   "test_connection": "Test Connection",
   "smtp_connection_success": "SMTP connection successful",
   "smtp_connection_failed": "SMTP connection failed",

@@ -47,10 +47,10 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
       fromEmail: "",
       fromName: "",
       smtpHost: "",
-      smtpPort: 587,
+      smtpPort: 465,
       smtpUser: "",
       smtpPassword: "",
-      smtpSecure: false,
+      smtpSecure: true,
     },
   });
 

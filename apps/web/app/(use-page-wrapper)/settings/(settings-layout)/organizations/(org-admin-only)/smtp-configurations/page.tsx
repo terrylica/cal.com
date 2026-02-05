@@ -21,7 +21,7 @@ const Page = async () => {
   const t = await getTranslate();
 
   if (!session?.user.id || !session?.user.profile?.organizationId || !session?.user.org) {
-    return redirect("/settings/profile");
+    redirect("/settings/profile");
   }
 
   const { canRead, canEdit } = await getResourcePermissions({
@@ -40,7 +40,7 @@ const Page = async () => {
   });
 
   if (!canRead) {
-    return redirect("/settings/organizations/profile");
+    redirect("/settings/organizations/profile");
   }
 
   return (
