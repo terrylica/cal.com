@@ -1,12 +1,12 @@
+import { z } from "zod";
+
 import stripe from "@calcom/features/ee/payments/server/stripe";
-import type { Logger } from "@calcom/lib/logger";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import { BookingStatus } from "@calcom/prisma/enums";
-import { z } from "zod";
 
-const log: Logger = logger.getSubLogger({ prefix: ["cancelAbandonedStripePayment"] });
+const log = logger.getSubLogger({ prefix: ["cancelAbandonedStripePayment"] });
 
 export const cancelAbandonedStripePaymentPayloadSchema = z.object({
   bookingId: z.number(),
