@@ -10,18 +10,18 @@ export function TeamsFullScreenUpgradeBanner() {
   const { t } = useLocale();
 
   const teamsFeatures = [
-    t("round_robin_fixed_round_robin"),
-    t("collective_events"),
+    t("upgrade_feature_round_robin"),
+    t("upgrade_feature_collective_events"),
     t("routing_forms"),
-    t("teams_workflows"),
-    t("insights_analyze_booking_data"),
-    t("remove_branding"),
+    t("upgrade_feature_workflows"),
+    t("upgrade_feature_insights"),
+    t("upgrade_feature_remove_branding"),
   ];
 
   return (
     <FullScreenUpgradeBanner
       title={t("teams")}
-      subtitle={t("teams_upgrade_banner_subtitle")}
+      subtitle={t("upgrade_banner_teams_subtitle")}
       features={teamsFeatures}
       target="team"
       learnMoreButton={{
@@ -31,8 +31,8 @@ export function TeamsFullScreenUpgradeBanner() {
     >
       <UpgradePlanDialog
         info={{
-          title: t("upgrade_team_insights_title"),
-          description: t("upgrade_team_insights_description"),
+          title: t("upgrade_info_team_insights_title"),
+          description: t("upgrade_info_team_insights_description"),
         }}
         target="organization"
       >

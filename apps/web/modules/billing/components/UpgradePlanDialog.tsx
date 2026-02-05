@@ -111,29 +111,29 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
     : "/settings/organizations/new";
 
   const teamFeatures: PlanFeature[] = [
-    { text: t("round_robin_fixed_round_robin") },
-    { text: t("collective_events") },
+    { text: t("upgrade_feature_round_robin") },
+    { text: t("upgrade_feature_collective_events") },
     { text: t("routing_forms") },
-    { text: t("teams_workflows") },
-    { text: t("insights_analyze_booking_data") },
-    { text: t("remove_branding") },
+    { text: t("upgrade_feature_workflows") },
+    { text: t("upgrade_feature_insights") },
+    { text: t("upgrade_feature_remove_branding") },
   ];
 
   const orgFeatures: PlanFeature[] = [
-    { text: t("everything_in_team") },
+    { text: t("upgrade_feature_everything_in_team") },
     { text: t("unlimited_teams") },
-    { text: t("org_verified_domain") },
-    { text: t("org_directory_sync") },
-    { text: t("org_sso") },
-    { text: t("org_admin_panel") },
+    { text: t("upgrade_feature_verified_domain") },
+    { text: t("upgrade_feature_directory_sync") },
+    { text: t("upgrade_feature_sso") },
+    { text: t("upgrade_feature_admin_panel") },
   ];
 
   const enterpriseFeatures: PlanFeature[] = [
-    { text: t("everything_in_org") },
-    { text: t("enterprise_dedicated_support") },
-    { text: t("enterprise_custom_sla") },
-    { text: t("enterprise_custom_integrations") },
-    { text: t("enterprise_compliance") },
+    { text: t("upgrade_feature_everything_in_org") },
+    { text: t("upgrade_feature_dedicated_support") },
+    { text: t("upgrade_feature_custom_sla") },
+    { text: t("upgrade_feature_custom_integrations") },
+    { text: t("upgrade_feature_compliance") },
   ];
 
   return (
@@ -142,7 +142,7 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
       <DialogPopup className="max-w-3xl" showCloseButton={false} bottomStickOnMobile={false}>
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>{t("upgrade_plan")}</DialogTitle>
+            <DialogTitle>{t("upgrade_dialog_title")}</DialogTitle>
             <ToggleGroup
               value={[billingPeriod]}
               onValueChange={(value): void => {
@@ -155,7 +155,7 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
               <Toggle
                 value="annual"
                 className="gap-1 rounded-md data-pressed:bg-default data-pressed:shadow-sm">
-                {t("annual")}
+                {t("upgrade_billing_annual")}
                 <Badge variant="info" size="sm">
                   -20%
                 </Badge>
@@ -180,12 +180,12 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
             {target === "team" && (
               <PlanColumn
                 name={t("team")}
-                badge={t("14_day_free_trial")}
+                badge={t("upgrade_badge_free_trial")}
                 price={teamPrice}
-                priceSubtext={t("per_month_user")}
-                description={t("upgrade_plan_team_description")}
+                priceSubtext={t("upgrade_price_per_month_user")}
+                description={t("upgrade_plan_team_tagline")}
                 features={teamFeatures}
-                buttonText={t("upgrade_to_teams")}
+                buttonText={t("upgrade_cta_teams")}
                 buttonHref={teamHref}
                 primaryButton={target === "team"}
               />
@@ -194,10 +194,10 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
             <PlanColumn
               name={t("organization")}
               price={orgPrice}
-              priceSubtext={t("per_month_user")}
-              description={t("upgrade_plan_org_description")}
+              priceSubtext={t("upgrade_price_per_month_user")}
+              description={t("upgrade_plan_org_tagline")}
               features={orgFeatures}
-              buttonText={t("upgrade_to_orgs")}
+              buttonText={t("upgrade_cta_orgs")}
               buttonHref={organizationHref}
               primaryButton={target === "organization"}
             />
@@ -206,9 +206,9 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
               name={t("enterprise")}
               price={t("custom")}
               priceSubtext=""
-              description={t("upgrade_plan_enterprise_description")}
+              description={t("upgrade_plan_enterprise_tagline")}
               features={enterpriseFeatures}
-              buttonText={t("get_in_touch")}
+              buttonText={t("upgrade_cta_enterprise")}
               buttonHref="https://cal.com/sales"
             />
           </div>
@@ -225,7 +225,7 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
                 <p className="font-semibold text-black text-2xl">{t("team")}</p>
               </div>
             )}
-            <Badge variant="outline" size="lg" className="opacity-50">{t("current_plan")}</Badge>
+            <Badge variant="outline" size="lg" className="opacity-50">{t("upgrade_badge_current_plan")}</Badge>
           </Card>
         </DialogPanel>
       </DialogPopup>

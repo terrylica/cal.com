@@ -77,7 +77,7 @@ export function FullScreenUpgradeBanner({
           <div className="mt-10">
             <Badge variant="outline" className="text-sm text-default font-medium bg-subtle px-2 py-1 h-fit! border-0">
               <Icon name="sparkles" />
-              {target === "team" ? t("available_team_plans") : t("available_org_plans")}
+              {target === "team" ? t("upgrade_badge_available_team") : t("upgrade_badge_available_org")}
             </Badge>
           </div>
           {/* Buttons */}
