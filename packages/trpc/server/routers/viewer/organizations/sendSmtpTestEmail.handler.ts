@@ -3,29 +3,32 @@ import { getTranslation } from "@calcom/lib/server/i18n";
 
 import { TRPCError } from "@trpc/server";
 
-import type { TrpcSessionUser } from "../../../types";
 import type { TSendSmtpTestEmailInputSchema } from "./sendSmtpTestEmail.schema";
+
+type SendSmtpTestEmailUser = {
+  email: string | null;
+  locale: string | null;
+  organizationId: number | null;
+  profile?: {
+    organizationId: number | null;
+  } | null;
+};
 
 type SendSmtpTestEmailOptions = {
   ctx: {
-    user: NonNullable<TrpcSessionUser>;
+    user: SendSmtpTestEmailUser;
   };
   input: TSendSmtpTestEmailInputSchema;
 };
 
-function getOrganizationId(user: NonNullable<TrpcSessionUser>): number {
-  const organizationId = user.profile?.organizationId || user.organizationId;
+export default async function handler({ ctx, input }: SendSmtpTestEmailOptions) {
+  const organizationId = ctx.user.profile?.organizationId || ctx.user.organizationId;
   if (!organizationId) {
     throw new TRPCError({
-      code: "FORBIDDEN",
+      code: "UNAUTHORIZED",
       message: "You must be part of an organization to manage SMTP configurations",
     });
   }
-  return organizationId;
-}
-
-export default async function handler({ ctx, input }: SendSmtpTestEmailOptions) {
-  const organizationId = getOrganizationId(ctx.user);
   const service = getSmtpConfigurationService();
   const userEmail = ctx.user.email;
 

@@ -4,7 +4,9 @@ import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { _generateMetadata, getTranslate } from "app/_utils";
 import { redirect } from "next/navigation";
-import SmtpConfigurationsView from "~/ee/organizations/smtp-configurations/SmtpConfigurationsView";
+import SmtpConfigurationsView, {
+  NewSmtpConfigurationButton,
+} from "~/ee/organizations/smtp-configurations/SmtpConfigurationsView";
 import { validateUserHasOrg } from "../../actions/validateUserHasOrg";
 
 export const generateMetadata = async () =>
@@ -44,7 +46,10 @@ const Page = async () => {
   }
 
   return (
-    <SettingsHeader title={t("smtp_configurations")} description={t("smtp_configurations_description")}>
+    <SettingsHeader
+      title={t("smtp_configurations")}
+      description={t("smtp_configurations_description")}
+      CTA={canEdit ? <NewSmtpConfigurationButton /> : undefined}>
       <SmtpConfigurationsView permissions={{ canRead, canEdit }} />
     </SettingsHeader>
   );

@@ -2,6 +2,8 @@ import type { TFunction } from "i18next";
 import { createTransport } from "nodemailer";
 import type { Options as SMTPTransportOptions } from "nodemailer/lib/smtp-transport";
 
+import { sanitizeDisplayName } from "@calcom/emails/lib/sanitizeDisplayName";
+
 export interface SmtpConfig {
   host: string;
   port: number;
@@ -56,13 +58,15 @@ export class SmtpService {
     const { config, fromEmail, fromName, toEmail, language } = params;
     const transport = createTransport(this.createTransportOptions(config));
 
+    const sanitizedFromName = fromName ? sanitizeDisplayName(fromName) : undefined;
+
     try {
       const { default: SmtpTestEmail } = await import("@calcom/emails/templates/smtp-test-email");
       const emailTemplate = new SmtpTestEmail({
         language,
         toEmail,
         fromEmail,
-        fromName,
+        fromName: sanitizedFromName,
         smtpHost: config.host,
         smtpPort: config.port,
       });

@@ -198,7 +198,7 @@ export class SmtpConfigurationService {
   }
 
   private toPublic(config: SmtpConfigurationWithCredentials): SmtpConfigurationPublic {
-    const { smtpPassword: _p, ...publicFields } = config;
+    const { smtpPassword: _p, smtpUser: _u, ...publicFields } = config;
     return publicFields;
   }
 }

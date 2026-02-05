@@ -16,7 +16,7 @@ function getOrganizationId(user: NonNullable<TrpcSessionUser>): number {
   const organizationId = user.profile?.organizationId || user.organizationId;
   if (!organizationId) {
     throw new TRPCError({
-      code: "FORBIDDEN",
+      code: "UNAUTHORIZED",
       message: "You must be part of an organization to manage SMTP configurations",
     });
   }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -17,11 +19,23 @@ import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 import { SkeletonContainer, SkeletonText } from "@calcom/ui/components/skeleton";
 import { showToast } from "@calcom/ui/components/toast";
 import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@coss/ui/components/collapsible";
-import { ChevronDownIcon, MailIcon } from "lucide-react";
-import { useState } from "react";
+import { ChevronDownIcon, MailIcon, UserIcon, ServerIcon, HashIcon, ShieldCheckIcon } from "lucide-react";
 
 import LicenseRequired from "~/ee/common/components/LicenseRequired";
 import AddSmtpConfigurationDialog from "./AddSmtpConfigurationDialog";
+
+export const smtpConfigModalRef = {
+  current: null as null | ((show: boolean) => void),
+};
+
+export const NewSmtpConfigurationButton = () => {
+  const { t } = useLocale();
+  return (
+    <Button color="secondary" StartIcon="plus" onClick={() => smtpConfigModalRef.current?.(true)}>
+      {t("add")}
+    </Button>
+  );
+};
 
 interface SmtpConfiguration {
   id: number;
@@ -69,21 +83,21 @@ const SmtpConfigurationItem = ({
 
   return (
     <Collapsible className="bg-default border-subtle border-b last:border-b-0">
-      <CollapsibleTrigger className="flex w-full items-center justify-between px-5 py-5 text-left">
-        <div className="flex items-center gap-3">
-          <div className="bg-subtle flex h-10 w-10 items-center justify-center rounded-full">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-5 py-5 text-left">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="bg-subtle flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
             <MailIcon className="text-default h-5 w-5" />
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="text-emphasis text-base font-medium">{config.fromEmail}</span>
+              <span className="text-emphasis min-w-0 truncate text-base font-medium">{config.fromEmail}</span>
               {config.isEnabled && <Badge variant="blue">{t("enabled")}</Badge>}
               {!config.isEnabled && <Badge variant="gray">{t("disabled")}</Badge>}
             </div>
-            <span className="text-subtle text-sm">{config.fromName || t("no_name_provided")}</span>
+            <span className="text-subtle truncate text-sm">{config.fromName || t("no_name_provided")}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {canEdit && (
             <Dropdown>
               <DropdownMenuTrigger asChild>
@@ -138,33 +152,36 @@ const SmtpConfigurationItem = ({
         </div>
       </CollapsibleTrigger>
       <CollapsiblePanel className="px-5">
-        <div className="space-y-4 pb-5">
-          <div className="bg-subtle/50 rounded-lg p-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("from_email")}</span>
-                <p className="text-emphasis mt-1 text-sm font-medium">{config.fromEmail}</p>
-              </div>
-              <div>
-                <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("from_name")}</span>
-                <p className="text-emphasis mt-1 text-sm font-medium">{config.fromName || "-"}</p>
-              </div>
-              <div>
-                <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("smtp_host")}</span>
-                <p className="text-emphasis mt-1 text-sm font-medium">{config.smtpHost}</p>
-              </div>
-              <div>
-                <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("smtp_port")}</span>
-                <p className="text-emphasis mt-1 text-sm font-medium">{config.smtpPort}</p>
-              </div>
-              <div>
-                <span className="text-subtle text-xs font-medium uppercase tracking-wide">{t("connection")}</span>
-                <p className="text-emphasis mt-1 text-sm font-medium">{config.smtpSecure ? t("connection_ssl_tls") : t("connection_starttls")}</p>
-              </div>
+        <div className="pb-5">
+          <div className="border-subtle divide-subtle divide-y overflow-hidden rounded-lg border">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <MailIcon className="text-subtle h-4 w-4 shrink-0" />
+              <span className="text-subtle w-24 shrink-0 text-sm">{t("from_email")}</span>
+              <span className="text-emphasis min-w-0 truncate text-sm font-medium">{config.fromEmail}</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <UserIcon className="text-subtle h-4 w-4 shrink-0" />
+              <span className="text-subtle w-24 shrink-0 text-sm">{t("from_name")}</span>
+              <span className="text-emphasis min-w-0 truncate text-sm font-medium">{config.fromName || "-"}</span>
+            </div>
+            <div className="flex items-start gap-3 px-4 py-3">
+              <ServerIcon className="text-subtle mt-0.5 h-4 w-4 shrink-0" />
+              <span className="text-subtle w-24 shrink-0 text-sm">{t("smtp_host")}</span>
+              <span className="text-emphasis min-w-0 break-all text-sm font-medium">{config.smtpHost}</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <HashIcon className="text-subtle h-4 w-4 shrink-0" />
+              <span className="text-subtle w-24 shrink-0 text-sm">{t("smtp_port")}</span>
+              <span className="text-emphasis text-sm font-medium">{config.smtpPort}</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <ShieldCheckIcon className="text-subtle h-4 w-4 shrink-0" />
+              <span className="text-subtle w-24 shrink-0 text-sm">{t("connection")}</span>
+              <span className="text-emphasis text-sm font-medium">{config.smtpSecure ? t("connection_ssl_tls") : t("connection_starttls")}</span>
             </div>
           </div>
           {config.lastError && (
-            <div className="bg-error/10 text-error rounded-lg p-3 text-sm">{config.lastError}</div>
+            <div className="bg-error/10 text-error mt-4 rounded-lg p-3 text-sm">{config.lastError}</div>
           )}
         </div>
       </CollapsiblePanel>
@@ -209,6 +226,13 @@ const SmtpConfigurationsView = ({ permissions }: { permissions: { canRead: boole
   const utils = trpc.useUtils();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [deleteConfig, setDeleteConfig] = useState<SmtpConfiguration | null>(null);
+
+  useEffect(() => {
+    smtpConfigModalRef.current = setShowAddDialog;
+    return () => {
+      smtpConfigModalRef.current = null;
+    };
+  }, []);
 
   const { data: configs, isPending } = trpc.viewer.organizations.listSmtpConfigurations.useQuery();
 
@@ -267,23 +291,14 @@ const SmtpConfigurationsView = ({ permissions }: { permissions: { canRead: boole
     <LicenseRequired>
       <div className="space-y-6">
         {configs && configs.length > 0 ? (
-          <>
-            {permissions.canEdit && (
-              <div className="flex justify-end">
-                <Button color="primary" onClick={() => setShowAddDialog(true)}>
-                  {t("add_smtp_configuration")}
-                </Button>
-              </div>
-            )}
-            <SmtpConfigurationList
-              configs={configs as SmtpConfiguration[]}
-              canEdit={permissions.canEdit}
-              onDelete={handleDelete}
-              onToggleEnabled={handleToggleEnabled}
-              onSendTestEmail={handleSendTestEmail}
-              isSendingTestEmail={sendTestEmailMutation.isPending}
-            />
-          </>
+          <SmtpConfigurationList
+            configs={configs as SmtpConfiguration[]}
+            canEdit={permissions.canEdit}
+            onDelete={handleDelete}
+            onToggleEnabled={handleToggleEnabled}
+            onSendTestEmail={handleSendTestEmail}
+            isSendingTestEmail={sendTestEmailMutation.isPending}
+          />
         ) : (
           <EmptyScreen
             Icon="mail"
