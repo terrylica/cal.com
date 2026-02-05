@@ -1,4 +1,5 @@
 import type { GetServerSidePropsContext } from "next";
+import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
@@ -57,18 +58,20 @@ export async function getEnrichedEventType({
     return null;
   }
 
+  const db = prisma.replica((await headers()).get("x-cal-replica"));
+
   const { subsetOfHosts, hosts } = await getEventTypeHosts({
     hosts: eventType.hosts,
-    prisma,
+    prisma: db,
   });
 
   const enrichedOwner = eventType.owner
-    ? await new UserRepository(prisma).enrichUserWithItsProfile({
+    ? await new UserRepository(db).enrichUserWithItsProfile({
         user: eventType.owner,
       })
     : null;
   const users =
-    (await getUsersFromEvent({ ...eventType, owner: enrichedOwner, subsetOfHosts, hosts }, prisma)) ?? [];
+    (await getUsersFromEvent({ ...eventType, owner: enrichedOwner, subsetOfHosts, hosts }, db)) ?? [];
   const name = teamData.parent?.name ?? teamData.name ?? null;
   const isUnpublished = teamData.parent ? !teamData.parent.slug : !teamData.slug;
 
@@ -77,7 +80,7 @@ export async function getEnrichedEventType({
   const eventDataShared = await processEventDataShared({
     eventData: eventType,
     metadata: eventMetaData,
-    prisma,
+    prisma: db,
   });
 
   return {
@@ -103,7 +106,8 @@ export async function getEnrichedEventType({
 }
 
 export async function shouldUseApiV2ForTeamSlots(teamId: number): Promise<boolean> {
-  const featureRepo = new FeaturesRepository(prisma);
+  const db = prisma.replica((await headers()).get("x-cal-replica"));
+  const featureRepo = new FeaturesRepository(db);
   const teamHasApiV2Route = await featureRepo.checkIfTeamHasFeature(teamId, "use-api-v2-for-team-slots");
   const useApiV2 = teamHasApiV2Route && Boolean(process.env.NEXT_PUBLIC_API_V2_URL);
 
@@ -166,7 +170,8 @@ export async function getCRMData(
 }
 
 export async function getTeamId(teamSlug: string, orgSlug: string | null): Promise<number | null> {
-  const teamRepo = new TeamRepository(prisma);
+  const db = prisma.replica((await headers()).get("x-cal-replica"));
+  const teamRepo = new TeamRepository(db);
   const team = await teamRepo.findFirstBySlugAndParentSlug({
     slug: teamSlug,
     parentSlug: orgSlug,

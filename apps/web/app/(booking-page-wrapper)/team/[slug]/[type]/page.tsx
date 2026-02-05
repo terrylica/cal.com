@@ -30,7 +30,8 @@ async function isCachedTeamBookingEnabled(params: Params, searchParams: SearchPa
 
   if (!teamId) return false;
 
-  const featuresRepository = new FeaturesRepository(prisma);
+  const db = prisma.replica((await headers()).get("x-cal-replica"));
+  const featuresRepository = new FeaturesRepository(db);
   const isTeamFeatureEnabled = await featuresRepository.checkIfTeamHasFeature(
     teamId,
     "team-booking-page-cache"
