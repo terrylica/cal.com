@@ -14,7 +14,7 @@ interface AddBulkToTeamProps {
   input: TAddMembersToTeams;
 }
 
-export const addMembersToTeams = async ({ user, input }: AddBulkToTeamProps) => {
+export const addMembersToTeams = async ({ user, input }: AddBulkToTeamProps): Promise<{ success: boolean; invitedTotalUsers: number }> => {
   if (!user.organizationId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
   const teamRepository = new TeamRepository(prisma);
@@ -88,7 +88,7 @@ export const addMembersToTeams = async ({ user, input }: AddBulkToTeamProps) => 
   const membershipData = filteredUserIds.flatMap((userId) =>
     input.teamIds.map((teamId) => {
       const userMembership = usersInOrganization.find((membership) => membership.userId === userId);
-      const accepted = userMembership && userMembership.accepted;
+      const accepted = userMembership?.accepted;
       return {
         createdAt: new Date(),
         userId,
@@ -100,7 +100,7 @@ export const addMembersToTeams = async ({ user, input }: AddBulkToTeamProps) => 
   );
 
   const teamService = new TeamService();
-  await teamService.addMembersToTeams({ membershipData });
+  await teamService.addMemberships({ membershipData });
 
   return {
     success: true,

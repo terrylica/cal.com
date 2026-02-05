@@ -22,14 +22,22 @@ vi.mock("@calcom/features/ee/teams/lib/removeMember");
 vi.mock("@calcom/features/profile/lib/createAProfileForAnExistingUser");
 vi.mock("@calcom/features/ee/teams/lib/queries");
 
-const mockTeamBilling = {
+const mockTeamBilling: {
+  cancel: ReturnType<typeof vi.fn>;
+  updateQuantity: ReturnType<typeof vi.fn>;
+  publish: ReturnType<typeof vi.fn>;
+  downgrade: ReturnType<typeof vi.fn>;
+} = {
   cancel: vi.fn(),
   updateQuantity: vi.fn(),
   publish: vi.fn(),
   downgrade: vi.fn(),
 };
 
-const mockTeamBillingFactory = {
+const mockTeamBillingFactory: {
+  findAndInit: ReturnType<typeof vi.fn>;
+  findAndInitMany: ReturnType<typeof vi.fn>;
+} = {
   findAndInit: vi.fn().mockResolvedValue(mockTeamBilling),
   findAndInitMany: vi.fn().mockResolvedValue([mockTeamBilling]),
 };
@@ -57,7 +65,7 @@ describe("TeamService", () => {
         slug: "deleted-team",
       };
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+      // @ts-expect-error
       const mockTeamRepo = {
         deleteById: vi.fn().mockResolvedValue(mockDeletedTeam),
       } as Pick<TeamRepository, "deleteById">;
@@ -395,10 +403,10 @@ describe("TeamService", () => {
     });
   });
 
-  describe("addMembersToTeams", () => {
+  describe("addMemberships", () => {
     it("should do nothing when membershipData is empty", async () => {
       const teamService = new TeamService();
-      await teamService.addMembersToTeams({ membershipData: [] });
+      await teamService.addMemberships({ membershipData: [] });
 
       expect(prismaMock.membership.createMany).not.toHaveBeenCalled();
     });
@@ -426,7 +434,7 @@ describe("TeamService", () => {
         },
       ];
 
-      await teamService.addMembersToTeams({ membershipData });
+      await teamService.addMemberships({ membershipData });
 
       expect(prismaMock.membership.createMany).toHaveBeenCalledWith({
         data: membershipData,
@@ -474,7 +482,7 @@ describe("TeamService", () => {
         },
       ];
 
-      await teamService.addMembersToTeams({ membershipData });
+      await teamService.addMemberships({ membershipData });
 
       expect(prismaMock.membership.createMany).toHaveBeenCalledWith({
         data: membershipData,

@@ -21,7 +21,7 @@ import type { Membership } from "@calcom/prisma/client";
 import { Prisma } from "@calcom/prisma/client";
 import { MembershipRole } from "@calcom/prisma/enums";
 
-const log = logger.getSubLogger({ prefix: ["TeamService"] });
+const log: ReturnType<typeof logger.getSubLogger> = logger.getSubLogger({ prefix: ["TeamService"] });
 
 type MembershipWithRelations = Pick<
   Membership,
@@ -117,7 +117,7 @@ export class TeamService {
    * Deletes a team and all its associated data in a safe, transactional order.
    * External, critical services like billing are handled first to prevent data inconsistencies.
    */
-  static async delete({ id }: { id: number }) {
+  static async delete({ id }: { id: number }): Promise<{ isOrganization: boolean | null; slug: string | null } | null> {
     // Step 1: Cancel the external billing subscription first.
     // If this fails, the entire operation aborts, leaving the team and its data intact.
     // This prevents a state where the user is billed for a deleted team.
@@ -141,7 +141,7 @@ export class TeamService {
     const deletedTeam = await teamRepo.deleteById({ id });
 
     // Step 4: Clean up any final, non-critical external state.
-    if (deletedTeam && deletedTeam.isOrganization && deletedTeam.slug) {
+    if (deletedTeam?.isOrganization && deletedTeam.slug) {
       deleteDomain(deletedTeam.slug);
     }
 
@@ -156,7 +156,7 @@ export class TeamService {
     teamIds: number[];
     userIds: number[];
     isOrg?: boolean;
-  }) {
+  }): Promise<void> {
     const deleteMembershipPromises: Promise<RemoveMemberResult>[] = [];
 
     for (const userId of userIds) {
@@ -180,7 +180,7 @@ export class TeamService {
     await Promise.allSettled(teamBillingPromises);
   }
 
-  async addMembersToTeams({
+  async addMemberships({
     membershipData,
   }: {
     membershipData: Array<{
@@ -190,7 +190,7 @@ export class TeamService {
       role: MembershipRole;
       accepted: boolean;
     }>;
-  }) {
+  }): Promise<void> {
     if (membershipData.length === 0) {
       return;
     }
@@ -205,7 +205,7 @@ export class TeamService {
     await Promise.all(teamIds.map((teamId) => addNewMembersToEventTypes({ userIds, teamId })));
   }
 
-  static async inviteMemberByToken(token: string, userId: number) {
+  static async inviteMemberByToken(token: string, userId: number): Promise<string> {
     const verificationToken = await prisma.verificationToken.findFirst({
       where: {
         token,
@@ -263,7 +263,7 @@ export class TeamService {
     teamId: number;
     userEmail: string;
     username: string | null;
-  }) {
+  }): Promise<void> {
     const teamMembership = await prisma.membership.update({
       where: {
         userId_teamId: { userId, teamId },
@@ -290,7 +290,14 @@ export class TeamService {
     }
 
     const isASubteam = team.parentId !== null;
-    const idOfOrganizationInContext = team.isOrganization ? team.id : isASubteam ? team.parentId : null;
+    let idOfOrganizationInContext: number | null;
+    if (team.isOrganization) {
+      idOfOrganizationInContext = team.id;
+    } else if (isASubteam) {
+      idOfOrganizationInContext = team.parentId;
+    } else {
+      idOfOrganizationInContext = null;
+    }
     const needProfileUpdate = !!idOfOrganizationInContext;
 
     if (needProfileUpdate) {
@@ -306,7 +313,7 @@ export class TeamService {
 
     await updateNewTeamMemberEventTypes(userId, teamId);
   }
-  static async leaveTeamMembership({ userId, teamId }: { userId: number; teamId: number }) {
+  static async leaveTeamMembership({ userId, teamId }: { userId: number; teamId: number }): Promise<void> {
     try {
       const membership = await prisma.membership.delete({
         where: {
@@ -329,7 +336,7 @@ export class TeamService {
     }
   }
 
-  static async acceptInvitationByToken(acceptanceToken: string, userId: number) {
+  static async acceptInvitationByToken(acceptanceToken: string, userId: number): Promise<void> {
     const verificationToken = await prisma.verificationToken.findFirst({
       where: {
         token: acceptanceToken,
@@ -374,7 +381,7 @@ export class TeamService {
     });
   }
 
-  static async publish(teamId: number) {
+  static async publish(teamId: number): Promise<unknown> {
     const teamBillingServiceFactory = getTeamBillingServiceFactory();
     const teamBillingService = await teamBillingServiceFactory.findAndInit(teamId);
     return teamBillingService.publish();
@@ -388,7 +395,7 @@ export class TeamService {
     userId: number;
     teamId: number;
     isOrg: boolean;
-  }) {
+  }): Promise<RemoveMemberResult> {
     const membership = await TeamService.fetchMembershipOrThrow(userId, teamId);
     const team = await TeamService.fetchTeamOrThrow(teamId);
     const user = await TeamService.fetchUserOrThrow(userId);
@@ -484,7 +491,7 @@ export class TeamService {
   }
 
   // TODO: Needs to be moved to repository
-  private static async cleanupTempOrgRedirect(user: UserWithTeams, team: TeamWithSettings) {
+  private static async cleanupTempOrgRedirect(user: UserWithTeams, team: TeamWithSettings): Promise<void> {
     const profileToDelete = await ProfileRepository.findByUserIdAndOrgId({
       userId: user.id,
       organizationId: team.id,
@@ -504,7 +511,7 @@ export class TeamService {
     membership: MembershipWithRelations,
     team: TeamWithSettings,
     user: UserWithTeams
-  ) {
+  ): Promise<void> {
     await TeamService.cleanupTempOrgRedirect(user, team);
     const newUsername = generateNewUsername(user);
 
@@ -564,12 +571,15 @@ export class TeamService {
     // Generate new username for user leaving organization
     function generateNewUsername(user: UserWithTeams): string | null {
       // We ensure that new username would be unique across all users in the global namespace outside any organization
-      return user.username != null ? `${user.username}-${user.id}` : null;
+      if (user.username != null) {
+        return `${user.username}-${user.id}`;
+      }
+      return null;
     }
   }
 
   // Remove member from regular team
-  private static async removeFromTeam(membership: MembershipWithRelations, teamId: number) {
+  private static async removeFromTeam(membership: MembershipWithRelations, teamId: number): Promise<void> {
     await prisma.$transaction([
       // Remove user from all team event types' hosts
       prisma.host.deleteMany({

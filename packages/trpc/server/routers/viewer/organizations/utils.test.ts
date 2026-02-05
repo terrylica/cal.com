@@ -4,13 +4,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { TrpcSessionUser } from "../../../types";
 
-const { mockFindTeamsNotBelongingToOrgByIds, mockCheckPermission, mockAddMembersToTeams } = vi.hoisted(
+const { mockFindTeamsNotBelongingToOrgByIds, mockCheckPermission, mockAddMemberships } = vi.hoisted(
   () => ({
     mockFindTeamsNotBelongingToOrgByIds: vi.fn(),
     mockCheckPermission: vi.fn(),
-    mockAddMembersToTeams: vi.fn(),
+    mockAddMemberships: vi.fn(),
   })
-);
+) as {
+  mockFindTeamsNotBelongingToOrgByIds: ReturnType<typeof vi.fn>;
+  mockCheckPermission: ReturnType<typeof vi.fn>;
+  mockAddMemberships: ReturnType<typeof vi.fn>;
+};
 
 vi.mock("@calcom/prisma", () => ({
   prisma,
@@ -36,7 +40,7 @@ vi.mock("@calcom/features/pbac/services/permission-check.service", () => ({
 vi.mock("@calcom/features/ee/teams/services/teamService", () => ({
   TeamService: vi.fn().mockImplementation(function () {
     return {
-      addMembersToTeams: mockAddMembersToTeams,
+      addMemberships: mockAddMemberships,
     };
   }),
 }));
@@ -45,7 +49,7 @@ import { addMembersToTeams } from "./utils";
 
 const ORGANIZATION_ID = 100;
 
-const createMockUser = (overrides = {}): NonNullable<TrpcSessionUser> =>
+const createMockUser = (overrides: Partial<TrpcSessionUser> = {}): NonNullable<TrpcSessionUser> =>
   ({
     id: 1,
     organizationId: ORGANIZATION_ID,
@@ -58,7 +62,7 @@ describe("addMembersToTeams", () => {
 
     mockFindTeamsNotBelongingToOrgByIds.mockResolvedValue([]);
     mockCheckPermission.mockResolvedValue(true);
-    mockAddMembersToTeams.mockResolvedValue(undefined);
+    mockAddMemberships.mockResolvedValue(undefined);
 
     prisma.membership.findMany.mockResolvedValue([]);
   });
@@ -111,7 +115,7 @@ describe("addMembersToTeams", () => {
     ).rejects.toThrow("One or more users are not in the organization");
   });
 
-  it("should call TeamService.addMembersToTeams with correct membership data", async () => {
+  it("should call TeamService.addMemberships with correct membership data", async () => {
     const user = createMockUser();
     const userIds = [10, 20];
     const teamIds = [1, 2];
@@ -131,8 +135,8 @@ describe("addMembersToTeams", () => {
     expect(result.success).toBe(true);
     expect(result.invitedTotalUsers).toBe(2);
 
-    expect(mockAddMembersToTeams).toHaveBeenCalledTimes(1);
-    expect(mockAddMembersToTeams).toHaveBeenCalledWith({
+    expect(mockAddMemberships).toHaveBeenCalledTimes(1);
+    expect(mockAddMemberships).toHaveBeenCalledWith({
       membershipData: expect.arrayContaining([
         expect.objectContaining({ userId: 10, teamId: 1, role: MembershipRole.MEMBER, accepted: true }),
         expect.objectContaining({ userId: 10, teamId: 2, role: MembershipRole.MEMBER, accepted: true }),
@@ -160,7 +164,7 @@ describe("addMembersToTeams", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(mockAddMembersToTeams).toHaveBeenCalledWith({
+    expect(mockAddMemberships).toHaveBeenCalledWith({
       membershipData: expect.arrayContaining([
         expect.objectContaining({ userId: 10, teamId: 1, accepted: true }),
         expect.objectContaining({ userId: 20, teamId: 1, accepted: false }),
@@ -186,7 +190,7 @@ describe("addMembersToTeams", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(mockAddMembersToTeams).toHaveBeenCalledWith({
+    expect(mockAddMemberships).toHaveBeenCalledWith({
       membershipData: [expect.objectContaining({ userId: 20, teamId: 1 })],
     });
   });
@@ -206,7 +210,7 @@ describe("addMembersToTeams", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(mockAddMembersToTeams).toHaveBeenCalledWith({
+    expect(mockAddMemberships).toHaveBeenCalledWith({
       membershipData: [],
     });
   });
