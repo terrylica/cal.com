@@ -50,7 +50,7 @@ export async function getOrgContext(params: Params) {
   if (!result.success) return notFound(); // should never happen
 
   const { slug: teamSlug, type: meetingSlug } = result.data;
-  const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(
+  const { currentOrgDomain, isValidOrgDomain, customDomain } = orgDomainConfig(
     buildLegacyRequest(await headers(), await cookies()),
     params?.orgSlug ?? undefined
   );
@@ -58,6 +58,7 @@ export async function getOrgContext(params: Params) {
   return {
     currentOrgDomain,
     isValidOrgDomain,
+    customDomain,
     teamSlug,
     meetingSlug,
   };
@@ -74,7 +75,7 @@ const _getMultipleDurationValue = (
 };
 
 export const generateMetadata = async ({ params, searchParams }: PageProps) => {
-  const { currentOrgDomain, isValidOrgDomain, teamSlug, meetingSlug } = await getOrgContext(await params);
+  const { currentOrgDomain, isValidOrgDomain, customDomain, teamSlug, meetingSlug } = await getOrgContext(await params);
 
   const teamData = await getCachedTeamData(teamSlug, currentOrgDomain);
   if (!teamData) return {}; // should never happen
@@ -100,11 +101,11 @@ export const generateMetadata = async ({ params, searchParams }: PageProps) => {
     users: teamIsPrivate
       ? []
       : [
-          ...(enrichedEventType?.subsetOfUsers || []).map((user) => ({
-            name: `${user.name}`,
-            username: `${user.username}`,
-          })),
-        ],
+        ...(enrichedEventType?.subsetOfUsers || []).map((user) => ({
+          name: `${user.name}`,
+          username: `${user.username}`,
+        })),
+      ],
   };
 
   const { hideBranding, isSEOIndexable } = _getTeamMetadataForBooking(teamData, enrichedEventType.id);
@@ -114,7 +115,7 @@ export const generateMetadata = async ({ params, searchParams }: PageProps) => {
     () => `${title} | ${profileName}`,
     () => title,
     hideBranding,
-    getOrgFullOrigin(enrichedEventType.entity.orgSlug ?? null),
+    getOrgFullOrigin(enrichedEventType.entity.customDomain ?? enrichedEventType.entity.orgSlug ?? null, { protocol: true, isCustomDomain: !!enrichedEventType.entity.customDomain }),
     `/team/${teamSlug}/${meetingSlug}`
   );
 
@@ -191,6 +192,10 @@ const CachedTeamBooker = async ({ params, searchParams }: PageProps) => {
     username: teamSlug,
     eventData: {
       ...enrichedEventType,
+      entity: {
+        ...enrichedEventType.entity,
+        isCustomDomain: !!enrichedEventType.entity.customDomain,
+      }
     },
     entity: { ...enrichedEventType.entity },
     bookingData: bookingForReschedule,

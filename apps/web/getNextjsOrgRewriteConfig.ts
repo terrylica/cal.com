@@ -1,5 +1,10 @@
+import { config as dotenvConfig } from "dotenv";
+
+dotenvConfig({ path: "../../.env" });
+
 const isSingleOrgModeEnabled = !!process.env.NEXT_PUBLIC_SINGLE_ORG_SLUG;
 const orgSlugCaptureGroupName = "orgSlug";
+const ALLOWED_HOSTNAMES = JSON.parse(`[${process.env.ALLOWED_HOSTNAMES || ""}]`) as string[];
 
 /**
  * Returns the leftmost subdomain from a given URL.
@@ -34,6 +39,11 @@ export interface NextJsOrgRewriteConfig {
   disableRootEmbedPathRewrite: boolean;
 }
 
+export interface CustomDomainRewriteConfig {
+  orgSlug: string;
+  hostPath: string;
+}
+
 // For app.cal.com, it will match all domains that are not starting with "app". Technically we would want to match domains like acme.cal.com, dunder.cal.com and not app.cal.com
 export const getRegExpThatMatchesAllOrgDomains = ({ webAppUrl }: { webAppUrl: string }): string => {
   if (isSingleOrgModeEnabled) {
@@ -42,7 +52,31 @@ export const getRegExpThatMatchesAllOrgDomains = ({ webAppUrl }: { webAppUrl: st
     return `.*`;
   }
   const subdomainRegExp = getRegExpNotMatchingLeftMostSubdomain(webAppUrl);
+  // Build pattern that only matches subdomains of ALLOWED_HOSTNAMES
+  // e.g., for ["cal.com", "cal.local:3000"], create: (cal\.com|cal\.local:3000)
+  if (ALLOWED_HOSTNAMES.length > 0) {
+    const allowedHostsPattern = ALLOWED_HOSTNAMES.map((host) => host.replace(/\./g, "\\.").replace(/:/g, "\\:")).join("|");
+    return `^(?<${orgSlugCaptureGroupName}>${subdomainRegExp})\\.(${allowedHostsPattern})$`;
+  }
   return `^(?<${orgSlugCaptureGroupName}>${subdomainRegExp})\\.(?!vercel\\.app).*`;
+};
+
+/**
+ * Returns a regex that matches custom domains (any hostname NOT in ALLOWED_HOSTNAMES).
+ * Captures the entire hostname as orgSlug.
+ */
+export const getRegExpThatMatchesCustomDomains = (): string | null => {
+  if (isSingleOrgModeEnabled || ALLOWED_HOSTNAMES.length === 0) {
+    return null;
+  }
+  // Build negative lookahead for all allowed hostnames and their subdomains
+  // e.g., for ["cal.com", "cal.dev"], create: (?!(.+\.)?cal\.com$)(?!(.+\.)?cal\.dev$)
+  const negativePatterns = ALLOWED_HOSTNAMES.map((host) => {
+    const escapedHost = host.replace(/\./g, "\\.");
+    return `(?!(.+\\.)?${escapedHost}(:\\d+)?$)`;
+  }).join("");
+  // Capture the full hostname (with optional port stripped in the app)
+  return `^${negativePatterns}(?<${orgSlugCaptureGroupName}>.+)$`;
 };
 
 export const nextJsOrgRewriteConfig: NextJsOrgRewriteConfig = {
@@ -56,3 +90,14 @@ export const nextJsOrgRewriteConfig: NextJsOrgRewriteConfig = {
   // We disable root embed path rewrite in single org mode as well
   disableRootEmbedPathRewrite: isSingleOrgModeEnabled,
 };
+
+export const customDomainRewriteConfig: CustomDomainRewriteConfig | null = (() => {
+  const hostPath = getRegExpThatMatchesCustomDomains();
+  if (!hostPath) return null;
+  return {
+    orgSlug: `:${orgSlugCaptureGroupName}`,
+    hostPath,
+  };
+})();
+
+console.log(`[Org Rewrite Config] orgHostPath: ${nextJsOrgRewriteConfig.orgHostPath}`);

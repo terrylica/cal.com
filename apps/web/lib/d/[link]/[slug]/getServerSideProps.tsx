@@ -27,7 +27,7 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
   const session = await getServerSession({ req: context.req });
   const { link, slug } = paramsSchema.parse(context.params);
   const { rescheduleUid, duration: queryDuration } = context.query;
-  const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(context.req);
+  const { currentOrgDomain, isValidOrgDomain, customDomain } = orgDomainConfig(context.req);
   const org = isValidOrgDomain ? currentOrgDomain : null;
 
   let name: string;
@@ -120,6 +120,7 @@ async function getUserPageProps(context: GetServerSidePropsContext) {
       isTeamEvent,
       org,
       fromRedirectOfNonOrgLink: context.query.orgRedirection === "true",
+      isCustomDomain: !!customDomain,
     },
     session?.user?.id
   );
