@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 import { getTeamBillingServiceFactory } from "@calcom/ee/billing/di/containers/Billing";
+import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
 import { deleteWorkfowRemindersOfRemovedMember } from "@calcom/features/ee/teams/lib/deleteWorkflowRemindersOfRemovedMember";
 import {
   updateNewTeamMemberEventTypes,
@@ -219,6 +220,7 @@ export class TeamService {
         team: {
           select: {
             name: true,
+            parentId: true,
           },
         },
       },
@@ -247,6 +249,15 @@ export class TeamService {
           );
         }
       } else throw e;
+    }
+
+    if (!verificationToken.team.parentId) {
+      const seatTracker = new SeatChangeTrackingService();
+      await seatTracker.logSeatAddition({
+        teamId: verificationToken.teamId,
+        userId,
+        triggeredBy: userId,
+      });
     }
 
     const teamBillingServiceFactory = getTeamBillingServiceFactory();
@@ -333,6 +344,15 @@ export class TeamService {
           },
         });
       }
+
+      if (!membership.team.parentId) {
+        const seatTracker = new SeatChangeTrackingService();
+        await seatTracker.logSeatRemoval({
+          teamId,
+          userId,
+          triggeredBy: userId,
+        });
+      }
     } catch (e) {
       console.log(e);
     }
@@ -411,6 +431,14 @@ export class TeamService {
     }
 
     await deleteWorkfowRemindersOfRemovedMember(team, userId, isOrg);
+
+    if (!team.parentId) {
+      const seatTracker = new SeatChangeTrackingService();
+      await seatTracker.logSeatRemoval({
+        teamId,
+        userId,
+      });
+    }
 
     return { membership };
   }
