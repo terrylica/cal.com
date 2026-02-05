@@ -3,7 +3,7 @@ import { useAtomsContext } from "@calcom/atoms/hooks/useAtomsContext";
 import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import { Timezone as PlatformTimzoneSelect } from "@calcom/atoms/timezone";
 import getLocationsOptionsForSelect from "@calcom/features/bookings/lib/getLocationOptionsForSelect";
-import DestinationCalendarSelector from "@calcom/features/calendars/DestinationCalendarSelector";
+import DestinationCalendarSelector from "@calcom/features/calendars/components/DestinationCalendarSelector";
 import { TimezoneSelect as WebTimezoneSelect } from "@calcom/web/modules/timezone/components/TimezoneSelect";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import {
@@ -56,7 +56,7 @@ import {
 } from "@calcom/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper";
 import { MultiplePrivateLinksController } from "@calcom/web/modules/event-types/components";
 import AddVerifiedEmail from "@calcom/web/modules/event-types/components/AddVerifiedEmail";
-import { LearnMoreLink } from "@calcom/web/modules/event-types/components/LearnMoreLink";
+import { LearnMoreLink } from "@calcom/features/eventtypes/components/LearnMoreLink";
 import type { Dispatch, SetStateAction } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -442,6 +442,9 @@ export const EventAdvancedTab = ({
     setInterfaceLanguageVisible(watchedInterfaceLanguage !== null && watchedInterfaceLanguage !== undefined);
   }, [watchedInterfaceLanguage]);
   const [redirectUrlVisible, setRedirectUrlVisible] = useState(!!formMethods.getValues("successRedirectUrl"));
+  const [noRoutingFormRedirectUrlVisible, setNoRoutingFormRedirectUrlVisible] = useState(
+    !!formMethods.getValues("redirectUrlOnNoRoutingFormResponse")
+  );
 
   const bookingFields: Prisma.JsonObject = {};
   const workflows = eventType.workflows.map((workflowOnEventType) => workflowOnEventType.workflow);
@@ -978,6 +981,51 @@ export const EventAdvancedTab = ({
                   data-testid="redirect-url-warning">
                   {t("redirect_url_warning")}
                 </div>
+              </div>
+            </SettingsToggle>
+          </>
+        )}
+      />
+      <Controller
+        name="redirectUrlOnNoRoutingFormResponse"
+        render={({ field: { value, onChange } }) => (
+          <>
+            <SettingsToggle
+              labelClassName={classNames("text-sm", customClassNames?.bookingRedirect?.label)}
+              toggleSwitchAtTheEnd={true}
+              switchContainerClassName={classNames(
+                "border-subtle rounded-lg border py-6 px-4 sm:px-6",
+                noRoutingFormRedirectUrlVisible && "rounded-b-none",
+                customClassNames?.bookingRedirect?.container
+              )}
+              childrenClassName={classNames("lg:ml-0", customClassNames?.bookingRedirect?.children)}
+              descriptionClassName={customClassNames?.bookingRedirect?.description}
+              title={t("redirect_on_no_routing_form")}
+              data-testid="redirect-on-no-routing-form"
+              {...successRedirectUrlLocked}
+              description={t("redirect_on_no_routing_form_description")}
+              checked={noRoutingFormRedirectUrlVisible}
+              onCheckedChange={(e) => {
+                setNoRoutingFormRedirectUrlVisible(e);
+                onChange(e ? value : "");
+              }}>
+              <div
+                className={classNames(
+                  "border-subtle rounded-b-lg border border-t-0 p-6",
+                  customClassNames?.bookingRedirect?.redirectUrlInput?.container
+                )}>
+                <TextField
+                  className={classNames("w-full", customClassNames?.bookingRedirect?.redirectUrlInput?.input)}
+                  label={t("redirect_on_no_routing_form")}
+                  labelClassName={customClassNames?.bookingRedirect?.redirectUrlInput?.label}
+                  labelSrOnly
+                  disabled={successRedirectUrlLocked.disabled}
+                  placeholder={t("external_redirect_url")}
+                  data-testid="no-routing-form-redirect-url"
+                  required={noRoutingFormRedirectUrlVisible}
+                  type="text"
+                  {...formMethods.register("redirectUrlOnNoRoutingFormResponse")}
+                />
               </div>
             </SettingsToggle>
           </>
