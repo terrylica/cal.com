@@ -5,6 +5,7 @@ import { z } from "zod";
 import { BooleanChangeSchema } from "../common/changeSchemas";
 import { AuditActionServiceHelper } from "./AuditActionServiceHelper";
 import type {
+  DisplayField,
   GetDisplayFieldsParams,
   GetDisplayJsonParams,
   GetDisplayTitleParams,
@@ -105,24 +106,10 @@ export class NoShowUpdatedAuditActionService implements IAuditActionService {
     throw new Error("Audit action data is invalid");
   }
 
-  async getDisplayFields({ storedData }: GetDisplayFieldsParams): Promise<
-    Array<{
-      labelKey: string;
-      valueKey?: string;
-      value?: string;
-      values?: string[];
-      valuesWithParams?: TranslationWithParams[];
-    }>
-  > {
+  async getDisplayFields({ storedData }: GetDisplayFieldsParams): Promise<DisplayField[]> {
     const { fields } = this.parseStored(storedData);
     const parsedFields = fields as NoShowUpdatedAuditData;
-    const displayFields: {
-      labelKey: string;
-      valueKey?: string;
-      value?: string;
-      values?: string[];
-      valuesWithParams?: TranslationWithParams[];
-    }[] = [];
+    const displayFields: DisplayField[] = [];
 
     if (this.isAttendeesNoShowSet(parsedFields)) {
       const attendeesValuesWithParams: TranslationWithParams[] = parsedFields.attendeesNoShow.map((attendee) => ({
@@ -134,7 +121,10 @@ export class NoShowUpdatedAuditActionService implements IAuditActionService {
       }));
       displayFields.push({
         labelKey: "booking_audit_action.attendees",
-        valuesWithParams: attendeesValuesWithParams,
+        fieldValue: {
+          type: "translationsWithParams",
+          valuesWithParams: attendeesValuesWithParams,
+        },
       });
     }
 
@@ -143,15 +133,18 @@ export class NoShowUpdatedAuditActionService implements IAuditActionService {
       const hostName = user?.name || "Unknown";
       displayFields.push({
         labelKey: "booking_audit_action.host",
-        valuesWithParams: [
-          {
-            key: "booking_audit_action.host_no_show_status",
-            params: {
-              name: hostName,
-              status: parsedFields.host.noShow.new ? "yes" : "no",
+        fieldValue: {
+          type: "translationsWithParams",
+          valuesWithParams: [
+            {
+              key: "booking_audit_action.host_no_show_status",
+              params: {
+                name: hostName,
+                status: parsedFields.host.noShow.new ? "yes" : "no",
+              },
             },
-          },
-        ],
+          ],
+        },
       });
     }
 

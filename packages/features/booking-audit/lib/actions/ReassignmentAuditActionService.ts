@@ -3,6 +3,7 @@ import { z } from "zod";
 import { StringChangeSchema } from "../common/changeSchemas";
 import { AuditActionServiceHelper } from "./AuditActionServiceHelper";
 import type {
+  DisplayField,
   GetDisplayFieldsParams,
   GetDisplayJsonParams,
   GetDisplayTitleParams,
@@ -123,12 +124,7 @@ export class ReassignmentAuditActionService implements IAuditActionService {
     };
   }
 
-  async getDisplayFields({ storedData }: GetDisplayFieldsParams): Promise<
-    Array<{
-      labelKey: string;
-      valueKey: string;
-    }>
-  > {
+  async getDisplayFields({ storedData }: GetDisplayFieldsParams): Promise<DisplayField[]> {
     const { fields } = this.parseStored(storedData);
     const map = {
       manual: "manual",
@@ -139,11 +135,11 @@ export class ReassignmentAuditActionService implements IAuditActionService {
     return [
       {
         labelKey: "booking_audit_action.assignment_type",
-        valueKey: typeTranslationKey,
+        fieldValue: { type: "translationKey", valueKey: typeTranslationKey },
       },
       {
         labelKey: "booking_audit_action.previous_assignee",
-        valueKey: previousUser?.name ?? "Unknown",
+        fieldValue: { type: "rawValue", value: previousUser?.name ?? "Unknown" },
       },
     ];
   }
