@@ -1,6 +1,6 @@
 import { OrganizationsRepository } from "@/modules/organizations/index/organizations.repository";
 import { RedisService } from "@/modules/redis/redis.service";
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException, BadRequestException } from "@nestjs/common";
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from "@nestjs/common";
 import { Request } from "express";
 
 import type { Team } from "@calcom/prisma/client";
@@ -23,13 +23,6 @@ export class IsOrgGuard implements CanActivate {
 
     if (!organizationId) {
       throw new ForbiddenException("IsOrgGuard - No organization id found in request params.");
-    }
-
-    const orgIdNumber = Number(organizationId);
-    if (Number.isNaN(orgIdNumber) || !Number.isInteger(orgIdNumber) || orgIdNumber <= 0) {
-      throw new BadRequestException(
-        `IsOrgGuard - Invalid organization id '${organizationId}'. Organization id must be a positive integer.`
-      );
     }
 
     const { canAccess, org } = await this.checkOrgAccess(organizationId);
