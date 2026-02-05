@@ -1,7 +1,7 @@
 import logger from "@calcom/lib/logger";
 
+import { getMonthlyProrationService } from "../../di/containers/MonthlyProrationService";
 import { findMonthlyProrationLineItem } from "../../lib/proration-utils";
-import { MonthlyProrationService } from "../../service/proration/MonthlyProrationService";
 import type { SWHMap } from "./__handler";
 
 const log = logger.getSubLogger({ prefix: ["invoice-payment-succeeded"] });
@@ -23,7 +23,7 @@ const handler = async (data: Data) => {
     return { success: false, message: "missing prorationId in metadata" };
   }
 
-  const prorationService = new MonthlyProrationService();
+  const prorationService = getMonthlyProrationService();
 
   await prorationService.handleProrationPaymentSuccess(prorationId);
 

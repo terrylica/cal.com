@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 import { getTeamBillingServiceFactory } from "@calcom/ee/billing/di/containers/Billing";
-import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
+import { getSeatChangeTrackingService } from "@calcom/features/ee/billing/di/containers/SeatChangeTrackingService";
 import { deleteWorkfowRemindersOfRemovedMember } from "@calcom/features/ee/teams/lib/deleteWorkflowRemindersOfRemovedMember";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
@@ -221,7 +221,7 @@ export class TeamService {
     }
 
     if (!verificationToken.team.parentId) {
-      const seatTracker = new SeatChangeTrackingService();
+      const seatTracker = getSeatChangeTrackingService();
       await seatTracker.logSeatAddition({
         teamId: verificationToken.teamId,
         userId,
@@ -309,7 +309,7 @@ export class TeamService {
       }
 
       if (!membership.team.parentId) {
-        const seatTracker = new SeatChangeTrackingService();
+        const seatTracker = getSeatChangeTrackingService();
         await seatTracker.logSeatRemoval({
           teamId,
           userId,
@@ -396,7 +396,7 @@ export class TeamService {
     await deleteWorkfowRemindersOfRemovedMember(team, userId, isOrg);
 
     if (!team.parentId) {
-      const seatTracker = new SeatChangeTrackingService();
+      const seatTracker = getSeatChangeTrackingService();
       await seatTracker.logSeatRemoval({
         teamId,
         userId,

@@ -17,4 +17,8 @@ export const DI_TOKENS = {
   HIGH_WATER_MARK_REPOSITORY_MODULE: Symbol("HighWaterMarkRepositoryModule"),
   MONTHLY_PRORATION_TEAM_REPOSITORY: Symbol("MonthlyProrationTeamRepository"),
   MONTHLY_PRORATION_TEAM_REPOSITORY_MODULE: Symbol("MonthlyProrationTeamRepositoryModule"),
+  SEAT_CHANGE_LOG_REPOSITORY: Symbol("SeatChangeLogRepository"),
+  SEAT_CHANGE_LOG_REPOSITORY_MODULE: Symbol("SeatChangeLogRepositoryModule"),
+  SEAT_CHANGE_TRACKING_SERVICE: Symbol("SeatChangeTrackingService"),
+  SEAT_CHANGE_TRACKING_SERVICE_MODULE: Symbol("SeatChangeTrackingServiceModule"),
 };

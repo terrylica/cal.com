@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
 import { sendTeamInviteEmail } from "@calcom/emails/organization-email-service";
 import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
-import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
+import { getSeatChangeTrackingService } from "@calcom/features/ee/billing/di/containers/SeatChangeTrackingService";
 import { getParsedTeam } from "@calcom/features/ee/teams/lib/getParsedTeam";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
@@ -415,7 +415,7 @@ export async function createNewUsersConnectToOrgIfExists({
   );
 
   if (createdUsers.length > 0) {
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
     const trackingTeamId = parentId ?? teamId;
     await seatTracker.logSeatAddition({
       teamId: trackingTeamId,
@@ -473,7 +473,7 @@ export async function createMemberships({
       }),
     });
 
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
     const teamSeatAdditions = parentId ? 0 : invitees.length;
     const organizationSeatAdditions = parentId
       ? invitees.filter((invitee) => invitee.needToCreateOrgMembership).length
@@ -964,7 +964,7 @@ export async function handleExistingUsersInvites({
     );
 
     if (!team.parentId && existingUsersWithMembershipsNew.length > 0) {
-      const seatTracker = new SeatChangeTrackingService();
+      const seatTracker = getSeatChangeTrackingService();
       await seatTracker.logSeatAddition({
         teamId: team.id,
         seatCount: existingUsersWithMembershipsNew.length,

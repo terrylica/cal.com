@@ -1,13 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { prisma } from "@calcom/prisma";
 
+import { HighWaterMarkRepository } from "../../../repository/highWaterMark/HighWaterMarkRepository";
+import { MonthlyProrationTeamRepository } from "../../../repository/proration/MonthlyProrationTeamRepository";
+import { SeatChangeLogRepository } from "../../../repository/seatChangeLogs/SeatChangeLogRepository";
 import { SeatChangeTrackingService } from "../SeatChangeTrackingService";
 
 vi.mock("@calcom/prisma", () => ({
   prisma: {
     seatChangeLog: {
       create: vi.fn(),
+      upsert: vi.fn(),
       groupBy: vi.fn(),
       findMany: vi.fn(),
       updateMany: vi.fn(),
@@ -28,12 +33,34 @@ vi.mock("@calcom/lib/logger", () => ({
   },
 }));
 
+const mockFeaturesRepository: IFeaturesRepository = {
+  checkIfFeatureIsEnabledGlobally: vi.fn().mockResolvedValue(false),
+  checkIfUserHasFeature: vi.fn().mockResolvedValue(false),
+  getUserFeaturesStatus: vi.fn().mockResolvedValue({}),
+  checkIfUserHasFeatureNonHierarchical: vi.fn().mockResolvedValue(false),
+  checkIfTeamHasFeature: vi.fn().mockResolvedValue(false),
+  getTeamsWithFeatureEnabled: vi.fn().mockResolvedValue([]),
+  setUserFeatureState: vi.fn().mockResolvedValue(undefined),
+  setTeamFeatureState: vi.fn().mockResolvedValue(undefined),
+  getUserFeatureStates: vi.fn().mockResolvedValue({}),
+  getTeamsFeatureStates: vi.fn().mockResolvedValue({}),
+  getUserAutoOptIn: vi.fn().mockResolvedValue(false),
+  getTeamsAutoOptIn: vi.fn().mockResolvedValue({}),
+  setUserAutoOptIn: vi.fn().mockResolvedValue(undefined),
+  setTeamAutoOptIn: vi.fn().mockResolvedValue(undefined),
+};
+
 describe("SeatChangeTrackingService", () => {
   let service: SeatChangeTrackingService;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new SeatChangeTrackingService();
+    service = new SeatChangeTrackingService({
+      repository: new SeatChangeLogRepository(),
+      highWaterMarkRepo: new HighWaterMarkRepository(),
+      teamRepo: new MonthlyProrationTeamRepository(),
+      featuresRepository: mockFeaturesRepository,
+    });
   });
 
   describe("logSeatAddition", () => {

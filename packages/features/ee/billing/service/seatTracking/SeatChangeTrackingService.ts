@@ -1,11 +1,9 @@
 import { formatMonthKey } from "@calcom/features/ee/billing/lib/month-key";
-import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
-import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
-import { SeatChangeLogRepository } from "@calcom/features/ee/billing/repository/seatChangeLogs/SeatChangeLogRepository";
-import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+import type { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
+import type { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
+import type { SeatChangeLogRepository } from "@calcom/features/ee/billing/repository/seatChangeLogs/SeatChangeLogRepository";
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
-import { prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { SeatChangeType } from "@calcom/prisma/enums";
 
@@ -30,10 +28,10 @@ export interface MonthlyChanges {
 }
 
 export interface SeatChangeTrackingServiceDeps {
-  repository?: SeatChangeLogRepository;
-  highWaterMarkRepo?: HighWaterMarkRepository;
-  teamRepo?: MonthlyProrationTeamRepository;
-  featuresRepository?: IFeaturesRepository;
+  repository: SeatChangeLogRepository;
+  highWaterMarkRepo: HighWaterMarkRepository;
+  teamRepo: MonthlyProrationTeamRepository;
+  featuresRepository: IFeaturesRepository;
 }
 
 export class SeatChangeTrackingService {
@@ -42,29 +40,11 @@ export class SeatChangeTrackingService {
   private teamRepo: MonthlyProrationTeamRepository;
   private featuresRepository: IFeaturesRepository;
 
-  constructor(
-    repositoryOrDeps?: SeatChangeLogRepository | SeatChangeTrackingServiceDeps,
-    highWaterMarkRepo?: HighWaterMarkRepository,
-    teamRepo?: MonthlyProrationTeamRepository
-  ) {
-    // Support both old positional args and new deps object for backwards compatibility
-    if (
-      repositoryOrDeps &&
-      typeof repositoryOrDeps === "object" &&
-      "featuresRepository" in repositoryOrDeps
-    ) {
-      const deps = repositoryOrDeps as SeatChangeTrackingServiceDeps;
-      this.repository = deps.repository || new SeatChangeLogRepository();
-      this.highWaterMarkRepo = deps.highWaterMarkRepo || new HighWaterMarkRepository();
-      this.teamRepo = deps.teamRepo || new MonthlyProrationTeamRepository();
-      this.featuresRepository = deps.featuresRepository || new FeaturesRepository(prisma);
-    } else {
-      // Legacy constructor signature
-      this.repository = (repositoryOrDeps as SeatChangeLogRepository) || new SeatChangeLogRepository();
-      this.highWaterMarkRepo = highWaterMarkRepo || new HighWaterMarkRepository();
-      this.teamRepo = teamRepo || new MonthlyProrationTeamRepository();
-      this.featuresRepository = new FeaturesRepository(prisma);
-    }
+  constructor(deps: SeatChangeTrackingServiceDeps) {
+    this.repository = deps.repository;
+    this.highWaterMarkRepo = deps.highWaterMarkRepo;
+    this.teamRepo = deps.teamRepo;
+    this.featuresRepository = deps.featuresRepository;
   }
 
   async logSeatAddition(params: SeatChangeLogParams): Promise<void> {

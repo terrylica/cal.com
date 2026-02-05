@@ -1,9 +1,9 @@
-import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import type { ISimpleLogger } from "@calcom/features/di/shared/services/logger.service";
 import stripe from "@calcom/features/ee/payments/server/stripe";
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
-import type { Logger } from "tslog";
+
+import { getSeatChangeTrackingService } from "../../di/containers/SeatChangeTrackingService";
 import { buildMonthlyProrationMetadata } from "../../lib/proration-utils";
 import { extractBillingDataFromStripeSubscription } from "../../lib/stripe-subscription-utils";
 import { updateSubscriptionQuantity } from "../../lib/subscription-updates";
@@ -12,7 +12,6 @@ import type { BillingInfo } from "../../repository/proration/MonthlyProrationTea
 import { MonthlyProrationTeamRepository } from "../../repository/proration/MonthlyProrationTeamRepository";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
 import { StripeBillingService } from "../billingProvider/StripeBillingService";
-import { SeatChangeTrackingService } from "../seatTracking/SeatChangeTrackingService";
 
 const log = logger.getSubLogger({ prefix: ["MonthlyProrationService"] });
 
@@ -44,21 +43,10 @@ export class MonthlyProrationService {
   private billingService: IBillingProviderService;
   private featuresRepository: IFeaturesRepository;
 
-  constructor(deps: MonthlyProrationServiceDeps);
-  constructor(customLogger?: Logger<unknown>, billingService?: IBillingProviderService);
-  constructor(
-    depsOrLogger?: MonthlyProrationServiceDeps | Logger<unknown>,
-    billingService?: IBillingProviderService
-  ) {
-    if (depsOrLogger && typeof depsOrLogger === "object" && "logger" in depsOrLogger) {
-      this.logger = depsOrLogger.logger;
-      this.featuresRepository = depsOrLogger.featuresRepository;
-      this.billingService = depsOrLogger.billingService || new StripeBillingService(stripe);
-    } else {
-      this.logger = (depsOrLogger as Logger<unknown>) || log;
-      this.featuresRepository = getFeaturesRepository();
-      this.billingService = billingService || new StripeBillingService(stripe);
-    }
+  constructor(deps: MonthlyProrationServiceDeps) {
+    this.logger = deps.logger;
+    this.featuresRepository = deps.featuresRepository;
+    this.billingService = deps.billingService || new StripeBillingService(stripe);
     this.teamRepository = new MonthlyProrationTeamRepository();
     this.prorationRepository = new MonthlyProrationRepository();
   }
@@ -109,7 +97,7 @@ export class MonthlyProrationService {
 
     this.logger.info(`[${teamId}] starting monthly proration`, { monthKey });
 
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
 
     const changes = await seatTracker.getMonthlyChanges({ teamId, monthKey });
 

@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import type { Logger } from "tslog";
 
-import { MonthlyProrationService } from "../MonthlyProrationService";
+import { getMonthlyProrationService } from "../../../di/containers/MonthlyProrationService";
 import { ProrationEmailService } from "../ProrationEmailService";
 import type { IMonthlyProrationTasker } from "./types";
 
@@ -10,7 +10,7 @@ export class MonthlyProrationSyncTasker implements IMonthlyProrationTasker {
 
   async processBatch(payload: Parameters<IMonthlyProrationTasker["processBatch"]>[0]) {
     const runId = `sync_${nanoid(10)}`;
-    const prorationService = new MonthlyProrationService(this.logger);
+    const prorationService = getMonthlyProrationService();
     const prorationResults = await prorationService.processMonthlyProrations(payload);
 
     // Send invoice emails for eligible prorations

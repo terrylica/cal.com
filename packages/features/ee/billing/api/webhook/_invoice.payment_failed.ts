@@ -1,8 +1,8 @@
 import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
 import logger from "@calcom/lib/logger";
 
+import { getMonthlyProrationService } from "../../di/containers/MonthlyProrationService";
 import { findMonthlyProrationLineItem } from "../../lib/proration-utils";
-import { MonthlyProrationService } from "../../service/proration/MonthlyProrationService";
 import type { SWHMap } from "./__handler";
 
 const log = logger.getSubLogger({ prefix: ["invoice-payment-failed"] });
@@ -24,7 +24,7 @@ const handler = async (data: Data) => {
     return { success: false, message: "missing prorationId in metadata" };
   }
 
-  const prorationService = new MonthlyProrationService();
+  const prorationService = getMonthlyProrationService();
   let failureReason = invoice.status ?? "payment_failed";
   const paymentIntentId =
     typeof invoice.payment_intent === "string" ? invoice.payment_intent : invoice.payment_intent?.id;

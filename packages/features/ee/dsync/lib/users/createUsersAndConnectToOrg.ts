@@ -1,5 +1,5 @@
 import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
-import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
+import { getSeatChangeTrackingService } from "@calcom/features/ee/billing/di/containers/SeatChangeTrackingService";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import prisma from "@calcom/prisma";
 import type { IdentityProvider } from "@calcom/prisma/enums";
@@ -80,7 +80,7 @@ export const createUsersAndConnectToOrg = async ({
   );
 
   if (membershipResult.count > 0) {
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
     await seatTracker.logSeatAddition({
       teamId: org.id,
       seatCount: membershipResult.count,

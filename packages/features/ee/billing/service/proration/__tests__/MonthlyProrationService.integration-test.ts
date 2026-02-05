@@ -1,3 +1,4 @@
+import { getSeatChangeTrackingService } from "@calcom/features/ee/billing/di/containers/SeatChangeTrackingService";
 import { TeamService } from "@calcom/features/ee/teams/services/teamService";
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import prisma from "@calcom/prisma";
@@ -8,7 +9,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildMonthlyProrationMetadata } from "../../../lib/proration-utils";
 import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
-import { SeatChangeTrackingService } from "../../seatTracking/SeatChangeTrackingService";
 import { MonthlyProrationService } from "../MonthlyProrationService";
 
 function getTestDates() {
@@ -158,10 +158,11 @@ describe("MonthlyProrationService Integration Tests", () => {
   });
 
   it("should process end-to-end proration for annual team with seat additions", async () => {
-    const prorationService = new MonthlyProrationService(
-      undefined,
-      mockBillingService
-    );
+    const prorationService = new MonthlyProrationService({
+      logger: mockLogger,
+      featuresRepository: mockFeaturesRepository,
+      billingService: mockBillingService,
+    });
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(7);
 
@@ -237,11 +238,12 @@ describe("MonthlyProrationService Integration Tests", () => {
   });
 
   it("should create a $0 proration for team with no net change", async () => {
-    const seatTracker = new SeatChangeTrackingService();
-    const prorationService = new MonthlyProrationService(
-      undefined,
-      mockBillingService
-    );
+    const seatTracker = getSeatChangeTrackingService();
+    const prorationService = new MonthlyProrationService({
+      logger: mockLogger,
+      featuresRepository: mockFeaturesRepository,
+      billingService: mockBillingService,
+    });
 
     await seatTracker.logSeatAddition({
       teamId: testTeam.id,
@@ -317,7 +319,7 @@ describe("MonthlyProrationService Integration Tests", () => {
       },
     });
 
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
 
     await seatTracker.logSeatAddition({
       teamId: testTeam.id,
@@ -354,11 +356,12 @@ describe("MonthlyProrationService Integration Tests", () => {
   });
 
   it("should handle payment success callback", async () => {
-    const seatTracker = new SeatChangeTrackingService();
-    const prorationService = new MonthlyProrationService(
-      undefined,
-      mockBillingService
-    );
+    const seatTracker = getSeatChangeTrackingService();
+    const prorationService = new MonthlyProrationService({
+      logger: mockLogger,
+      featuresRepository: mockFeaturesRepository,
+      billingService: mockBillingService,
+    });
 
     await seatTracker.logSeatAddition({
       teamId: testTeam.id,
@@ -386,11 +389,12 @@ describe("MonthlyProrationService Integration Tests", () => {
   });
 
   it("should handle payment failure callback", async () => {
-    const seatTracker = new SeatChangeTrackingService();
-    const prorationService = new MonthlyProrationService(
-      undefined,
-      mockBillingService
-    );
+    const seatTracker = getSeatChangeTrackingService();
+    const prorationService = new MonthlyProrationService({
+      logger: mockLogger,
+      featuresRepository: mockFeaturesRepository,
+      billingService: mockBillingService,
+    });
 
     await seatTracker.logSeatAddition({
       teamId: testTeam.id,
@@ -421,11 +425,12 @@ describe("MonthlyProrationService Integration Tests", () => {
   });
 
   it("should call handleSubscriptionUpdate when updating subscription quantity", async () => {
-    const seatTracker = new SeatChangeTrackingService();
-    const prorationService = new MonthlyProrationService(
-      undefined,
-      mockBillingService
-    );
+    const seatTracker = getSeatChangeTrackingService();
+    const prorationService = new MonthlyProrationService({
+      logger: mockLogger,
+      featuresRepository: mockFeaturesRepository,
+      billingService: mockBillingService,
+    });
 
     // Reset the mock to track calls
     vi.mocked(mockBillingService.handleSubscriptionUpdate).mockClear();
@@ -457,17 +462,18 @@ describe("MonthlyProrationService Integration Tests", () => {
   });
 
   it("should throw error when subscription update fails", async () => {
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
     const failingBillingService = {
       ...mockBillingService,
       handleSubscriptionUpdate: vi
         .fn()
         .mockRejectedValue(new Error("Subscription not found")),
     };
-    const prorationService = new MonthlyProrationService(
-      undefined,
-      failingBillingService
-    );
+    const prorationService = new MonthlyProrationService({
+      logger: mockLogger,
+      featuresRepository: mockFeaturesRepository,
+      billingService: failingBillingService,
+    });
 
     await seatTracker.logSeatAddition({
       teamId: testTeam.id,

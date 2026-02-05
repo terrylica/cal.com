@@ -1,5 +1,5 @@
 import { getTeamBillingServiceFactory } from "@calcom/ee/billing/di/containers/Billing";
-import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
+import { getSeatChangeTrackingService } from "@calcom/features/ee/billing/di/containers/SeatChangeTrackingService";
 import { Resource, CustomAction } from "@calcom/features/pbac/domain/types/permission-registry";
 import { getSpecificPermissions } from "@calcom/features/pbac/lib/resource-permissions";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
@@ -144,7 +144,7 @@ export async function bulkDeleteUsersHandler({ ctx, input }: BulkDeleteUsersHand
   ]);
 
   if (orgMembershipRemovalCount > 0) {
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
     await seatTracker.logSeatRemoval({
       teamId: currentUserOrgId,
       seatCount: orgMembershipRemovalCount,
