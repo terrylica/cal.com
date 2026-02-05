@@ -341,7 +341,7 @@ export function getBookingResponsesSchemaWithOptionalChecks({
 }
 
 type FieldZodCtxState = {
-  issuesCount: number;
+  issues: z.IssueData[];
 } | null;
 
 const buildFieldZodCtx = ({
@@ -355,13 +355,13 @@ const buildFieldZodCtx = ({
   state: FieldZodCtxState;
 } => {
   if (isPartialSchema) {
-    const state = {
-      issuesCount: 0,
+    const state: FieldZodCtxState = {
+      issues: [],
     };
     return {
       fieldZodCtx: {
-        addIssue: (_issue: z.IssueData) => {
-          state.issuesCount++;
+        addIssue: (issue: z.IssueData) => {
+          state.issues.push(issue);
         },
       },
       state,
@@ -493,9 +493,13 @@ function preprocess<T extends z.ZodType>({
         }
 
         // For partial schemas, remove invalid fields from responses
-        if (isPartialSchema && (superRefineError || (state?.issuesCount ?? 0) > 0)) {
+        const issues = state?.issues ?? [];
+        if (isPartialSchema && (superRefineError || issues.length > 0)) {
           delete responses[bookingField.name];
-          console.warn(`Partial prefill: skipped field '${bookingField.name}' due to validation errors`);
+          console.warn(
+            `Partial prefill: skipped field '${bookingField.name}' due to validation errors`,
+            issues
+          );
         }
       }
     })

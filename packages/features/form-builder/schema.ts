@@ -8,18 +8,6 @@ type FieldZodCtx = {
   addIssue: (issue: z.IssueData) => void;
 };
 
-// Schema for validating name field response - can be a string or firstName/lastName object
-// Note: We extend nameObjectSchema to add .default("") for lastName to ensure it's always a string (not undefined)
-const nameResponseSchema = z
-  .union([
-    z.string(),
-    z.object({
-      firstName: z.string(),
-      lastName: z.string().default(""),
-    }),
-  ])
-  .optional();
-
 const nonEmptyString = () => z.string().refine((value: string) => value.trim().length > 0);
 
 type FieldTypeSchemaConfig<TInput = unknown, TOutput = unknown> = {
@@ -138,6 +126,15 @@ function stringifyResponse(response: unknown): string {
 export const fieldTypesSchemaMap = {
   name: defineFieldSchema<unknown, string | Record<"firstName" | "lastName", string>>({
     preprocess: ({ response, field }) => {
+      const nameResponseSchema = z
+        .union([
+          z.string(),
+          z.object({
+            firstName: z.string(),
+            lastName: z.string().default(""),
+          }),
+        ])
+        .optional();
       const validResponse = nameResponseSchema.safeParse(response);
       if (!validResponse.success) {
         throw new Error("Invalid response for name field");
