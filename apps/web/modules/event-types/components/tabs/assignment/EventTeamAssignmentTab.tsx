@@ -639,7 +639,7 @@ const ChildrenEventTypes = ({
       const removed = currentChildren.filter((c) => !newMap.has(c.owner.id));
       // Find hidden changes (same children but hidden toggled)
       const hiddenChanges: { userId: number; hidden: boolean }[] = [];
-      for (const [ownerId, newChild] of newMap) {
+      for (const [ownerId, newChild] of Array.from(newMap.entries())) {
         const currentChild = currentMap.get(ownerId);
         if (currentChild && currentChild.hidden !== newChild.hidden) {
           hiddenChanges.push({ userId: ownerId, hidden: newChild.hidden });
