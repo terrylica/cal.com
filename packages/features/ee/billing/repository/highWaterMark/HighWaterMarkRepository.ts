@@ -137,81 +137,30 @@ export class HighWaterMarkRepository {
     return null;
   }
 
-  async updateIfHigher(params: {
+  async setHighWaterMark(params: {
     teamId: number;
     isOrganization: boolean;
-    newSeatCount: number;
+    highWaterMark: number;
     periodStart: Date;
-  }): Promise<{ updated: boolean; previousHighWaterMark: number | null }> {
-    const { teamId, isOrganization, newSeatCount, periodStart } = params;
+  }): Promise<void> {
+    const { teamId, isOrganization, highWaterMark, periodStart } = params;
 
-    return this.prisma.$transaction(async (tx) => {
-      // Get current high water mark within transaction
-      const team = await tx.team.findUnique({
-        where: { id: teamId },
-        select: {
-          isOrganization: true,
-          teamBilling: {
-            select: {
-              highWaterMark: true,
-              highWaterMarkPeriodStart: true,
-            },
-          },
-          organizationBilling: {
-            select: {
-              highWaterMark: true,
-              highWaterMarkPeriodStart: true,
-            },
-          },
-        },
+    const updateData = {
+      highWaterMark,
+      highWaterMarkPeriodStart: periodStart,
+    };
+
+    if (isOrganization) {
+      await this.prisma.organizationBilling.update({
+        where: { teamId },
+        data: updateData,
       });
-
-      if (!team) {
-        throw new Error(`No team found for teamId ${teamId}`);
-      }
-
-      const billing = isOrganization
-        ? team.organizationBilling
-        : team.teamBilling;
-      if (!billing) {
-        throw new Error(`No billing record found for team ${teamId}`);
-      }
-
-      const currentHwm = billing.highWaterMark;
-      const currentPeriodStart = billing.highWaterMarkPeriodStart;
-
-      // Check if we're in a new period (period start changed)
-      const isNewPeriod =
-        !currentPeriodStart ||
-        periodStart.getTime() !== currentPeriodStart.getTime();
-
-      // If new period, always update. Otherwise, only update if higher.
-      const shouldUpdate =
-        isNewPeriod || currentHwm === null || newSeatCount > currentHwm;
-
-      if (!shouldUpdate) {
-        return { updated: false, previousHighWaterMark: currentHwm };
-      }
-
-      const updateData = {
-        highWaterMark: newSeatCount,
-        highWaterMarkPeriodStart: periodStart,
-      };
-
-      if (isOrganization) {
-        await tx.organizationBilling.update({
-          where: { teamId },
-          data: updateData,
-        });
-      } else {
-        await tx.teamBilling.update({
-          where: { teamId },
-          data: updateData,
-        });
-      }
-
-      return { updated: true, previousHighWaterMark: currentHwm };
-    });
+    } else {
+      await this.prisma.teamBilling.update({
+        where: { teamId },
+        data: updateData,
+      });
+    }
   }
 
   async reset(params: {

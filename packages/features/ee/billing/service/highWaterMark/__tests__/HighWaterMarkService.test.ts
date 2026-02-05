@@ -14,7 +14,7 @@ const createMockLogger = () => ({
 const createMockRepository = () => ({
   getByTeamId: vi.fn(),
   getBySubscriptionId: vi.fn(),
-  updateIfHigher: vi.fn(),
+  setHighWaterMark: vi.fn(),
   reset: vi.fn(),
   updateQuantityAfterStripeSync: vi.fn(),
 });
@@ -157,17 +157,15 @@ describe("HighWaterMarkService", () => {
       expect(mockLogger.warn).toHaveBeenCalled();
     });
 
-    it("updates HWM and returns result when successful", async () => {
+    it("updates HWM and returns result when member count is higher", async () => {
       mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
       mockRepository.getByTeamId.mockResolvedValue({
         billingPeriod: "MONTHLY",
         isOrganization: false,
+        highWaterMark: 3,
+        highWaterMarkPeriodStart: currentPeriodStart,
       });
       mockTeamRepository.getTeamMemberCount.mockResolvedValue(5);
-      mockRepository.updateIfHigher.mockResolvedValue({
-        updated: true,
-        previousHighWaterMark: 3,
-      });
 
       const result = await service.updateHighWaterMarkOnSeatAddition({
         teamId,
@@ -179,10 +177,90 @@ describe("HighWaterMarkService", () => {
         previousHighWaterMark: 3,
         newHighWaterMark: 5,
       });
-      expect(mockRepository.updateIfHigher).toHaveBeenCalledWith({
+      expect(mockRepository.setHighWaterMark).toHaveBeenCalledWith({
         teamId,
         isOrganization: false,
-        newSeatCount: 5,
+        highWaterMark: 5,
+        periodStart: currentPeriodStart,
+      });
+    });
+
+    it("does not update HWM when member count is not higher in same period", async () => {
+      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockRepository.getByTeamId.mockResolvedValue({
+        billingPeriod: "MONTHLY",
+        isOrganization: false,
+        highWaterMark: 10,
+        highWaterMarkPeriodStart: currentPeriodStart,
+      });
+      mockTeamRepository.getTeamMemberCount.mockResolvedValue(8);
+
+      const result = await service.updateHighWaterMarkOnSeatAddition({
+        teamId,
+        currentPeriodStart,
+      });
+
+      expect(result).toEqual({
+        updated: false,
+        previousHighWaterMark: 10,
+        newHighWaterMark: 10,
+      });
+      expect(mockRepository.setHighWaterMark).not.toHaveBeenCalled();
+    });
+
+    it("always updates when in a new period even if member count is lower", async () => {
+      const oldPeriodStart = new Date("2023-12-01");
+      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockRepository.getByTeamId.mockResolvedValue({
+        billingPeriod: "MONTHLY",
+        isOrganization: false,
+        highWaterMark: 10,
+        highWaterMarkPeriodStart: oldPeriodStart,
+      });
+      mockTeamRepository.getTeamMemberCount.mockResolvedValue(5);
+
+      const result = await service.updateHighWaterMarkOnSeatAddition({
+        teamId,
+        currentPeriodStart,
+      });
+
+      expect(result).toEqual({
+        updated: true,
+        previousHighWaterMark: 10,
+        newHighWaterMark: 5,
+      });
+      expect(mockRepository.setHighWaterMark).toHaveBeenCalledWith({
+        teamId,
+        isOrganization: false,
+        highWaterMark: 5,
+        periodStart: currentPeriodStart,
+      });
+    });
+
+    it("updates when current HWM is null", async () => {
+      mockFeaturesRepository.checkIfFeatureIsEnabledGlobally.mockResolvedValue(true);
+      mockRepository.getByTeamId.mockResolvedValue({
+        billingPeriod: "MONTHLY",
+        isOrganization: false,
+        highWaterMark: null,
+        highWaterMarkPeriodStart: null,
+      });
+      mockTeamRepository.getTeamMemberCount.mockResolvedValue(5);
+
+      const result = await service.updateHighWaterMarkOnSeatAddition({
+        teamId,
+        currentPeriodStart,
+      });
+
+      expect(result).toEqual({
+        updated: true,
+        previousHighWaterMark: null,
+        newHighWaterMark: 5,
+      });
+      expect(mockRepository.setHighWaterMark).toHaveBeenCalledWith({
+        teamId,
+        isOrganization: false,
+        highWaterMark: 5,
         periodStart: currentPeriodStart,
       });
     });
