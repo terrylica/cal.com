@@ -401,6 +401,23 @@ export class PaymentService implements IAbstractPaymentService {
         referenceUid: booking.uid,
       }
     );
+
+    // Schedule automatic cancellation of booking if payment is not completed
+    // Default: 24 hours, configurable via ABANDONED_PAYMENT_CANCEL_HOURS env var
+    const cancelDelayHours = Number(process.env.ABANDONED_PAYMENT_CANCEL_HOURS) || 24;
+    const scheduledCancelAt = dayjs().add(cancelDelayHours, "hours").toDate();
+
+    await tasker.create(
+      "cancelAbandonedPaymentBooking",
+      {
+        bookingId: booking.id,
+        paymentId: paymentData.id,
+      },
+      {
+        scheduledAt: scheduledCancelAt,
+        referenceUid: `${booking.uid}-cancel`,
+      }
+    );
   }
 
   async deletePayment(paymentId: Payment["id"]): Promise<boolean> {

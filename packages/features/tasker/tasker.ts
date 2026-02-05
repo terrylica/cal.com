@@ -42,6 +42,9 @@ type TaskPayloads = {
   sendAwaitingPaymentEmail: z.infer<
     typeof import("./tasks/sendAwaitingPaymentEmail").sendAwaitingPaymentEmailPayloadSchema
   >;
+  cancelAbandonedPaymentBooking: z.infer<
+    typeof import("./tasks/cancelAbandonedPaymentBooking").cancelAbandonedPaymentBookingPayloadSchema
+  >;
 };
 export type TaskTypes = keyof TaskPayloads;
 export type TaskHandler = (payload: string, taskId?: string) => Promise<void>;
