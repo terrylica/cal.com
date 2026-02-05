@@ -9,6 +9,7 @@ import {
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
 import { WorkflowService } from "@calcom/features/ee/workflows/lib/service/WorkflowService";
 import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
+import type { TeamBillingPublishResponse } from "@calcom/features/ee/billing/service/teams/ITeamBillingService";
 import { createAProfileForAnExistingUser } from "@calcom/features/profile/lib/createAProfileForAnExistingUser";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -298,9 +299,8 @@ export class TeamService {
     } else {
       idOfOrganizationInContext = null;
     }
-    const needProfileUpdate = !!idOfOrganizationInContext;
 
-    if (needProfileUpdate) {
+    if (idOfOrganizationInContext) {
       await createAProfileForAnExistingUser({
         user: {
           id: userId,
@@ -381,7 +381,7 @@ export class TeamService {
     });
   }
 
-  static async publish(teamId: number): Promise<unknown> {
+  static async publish(teamId: number): Promise<TeamBillingPublishResponse> {
     const teamBillingServiceFactory = getTeamBillingServiceFactory();
     const teamBillingService = await teamBillingServiceFactory.findAndInit(teamId);
     return teamBillingService.publish();
