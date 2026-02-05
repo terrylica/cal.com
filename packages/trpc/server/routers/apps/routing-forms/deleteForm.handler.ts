@@ -1,6 +1,6 @@
 import getConnectedForms from "@calcom/app-store/routing-forms/lib/getConnectedForms";
 import { entityPrismaWhereClause } from "@calcom/features/pbac/lib/entityPermissionUtils.server";
-import type { PrismaClient } from "@calcom/prisma";
+import type { DatabaseProxy } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
 
@@ -11,7 +11,7 @@ import { checkPermissionOnExistingRoutingForm } from "./permissions";
 
 interface DeleteFormHandlerOptions {
   ctx: {
-    prisma: PrismaClient;
+    prisma: DatabaseProxy;
     user: NonNullable<TrpcSessionUser>;
   };
   input: TDeleteFormInputSchema;
