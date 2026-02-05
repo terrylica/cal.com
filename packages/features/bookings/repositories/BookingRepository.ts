@@ -1431,53 +1431,6 @@ export class BookingRepository implements IBookingRepository {
     return totalBookingTime.totalMinutes ?? 0;
   }
 
-  async getTotalBookingDurationForUsers({
-    eventId,
-    userIds,
-    startDate,
-    endDate,
-    rescheduleUid,
-  }: {
-    eventId: number;
-    userIds: number[];
-    startDate: Date;
-    endDate: Date;
-    rescheduleUid?: string;
-  }): Promise<Map<number, number>> {
-    if (userIds.length === 0) {
-      return new Map();
-    }
-
-    const results = rescheduleUid
-      ? await this.prismaClient.$queryRaw<{ userId: number; totalMinutes: number | null }[]>`
-          SELECT "userId", SUM(EXTRACT(EPOCH FROM ("endTime" - "startTime")) / 60) as "totalMinutes"
-          FROM "Booking"
-          WHERE "status" = 'accepted'
-            AND "eventTypeId" = ${eventId}
-            AND "userId" IN (${Prisma.join(userIds)})
-            AND "startTime" >= ${startDate}
-            AND "endTime" <= ${endDate}
-            AND "uid" != ${rescheduleUid}
-          GROUP BY "userId"
-        `
-      : await this.prismaClient.$queryRaw<{ userId: number; totalMinutes: number | null }[]>`
-          SELECT "userId", SUM(EXTRACT(EPOCH FROM ("endTime" - "startTime")) / 60) as "totalMinutes"
-          FROM "Booking"
-          WHERE "status" = 'accepted'
-            AND "eventTypeId" = ${eventId}
-            AND "userId" IN (${Prisma.join(userIds)})
-            AND "startTime" >= ${startDate}
-            AND "endTime" <= ${endDate}
-          GROUP BY "userId"
-        `;
-
-    const map = new Map<number, number>();
-    for (const row of results) {
-      map.set(row.userId, row.totalMinutes ?? 0);
-    }
-    return map;
-  }
-
   async findOriginalRescheduledBookingUserId({ rescheduleUid }: { rescheduleUid: string }) {
     return await this.prismaClient.booking.findFirst({
       where: {

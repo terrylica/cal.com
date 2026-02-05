@@ -486,8 +486,8 @@ export class AvailableSlotsService {
       }
     }
 
-    // Pre-fetch yearly duration totals for all users to avoid N+1 queries
-    const yearlyDurationMaps = new Map<string, Map<number, number>>();
+    // Pre-fetch yearly duration totals per event type to avoid N+1 queries
+    const yearlyDurationTotals = new Map<string, number>();
     if (durationLimits?.PER_YEAR) {
       const yearPeriodStartDates = this.dependencies.userAvailabilityService.getPeriodStartDatesBetween(
         dateFrom,
@@ -497,14 +497,13 @@ export class AvailableSlotsService {
       );
       for (const periodStart of yearPeriodStartDates) {
         const yearKey = periodStart.format("YYYY");
-        const durationsForYear = await this.dependencies.bookingRepo.getTotalBookingDurationForUsers({
+        const totalDurationForYear = await this.dependencies.bookingRepo.getTotalBookingDuration({
           eventId: eventType.id,
-          userIds: users.map((u) => u.id),
           startDate: periodStart.toDate(),
           endDate: periodStart.endOf("year").toDate(),
           rescheduleUid,
         });
-        yearlyDurationMaps.set(yearKey, durationsForYear);
+        yearlyDurationTotals.set(yearKey, totalDurationForYear);
       }
     }
 
@@ -595,7 +594,7 @@ export class AvailableSlotsService {
 
             if (unit === "year") {
               const yearKey = periodStart.format("YYYY");
-              const totalYearlyDuration = yearlyDurationMaps.get(yearKey)?.get(user.id) ?? 0;
+              const totalYearlyDuration = yearlyDurationTotals.get(yearKey) ?? 0;
               if (totalYearlyDuration + selectedDuration > limit) {
                 limitManager.addBusyTime(periodStart, unit, timeZone);
                 if (
