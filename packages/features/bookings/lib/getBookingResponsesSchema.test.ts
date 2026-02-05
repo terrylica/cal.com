@@ -2071,6 +2071,44 @@ describe("getBookingResponsesPartialSchema - Prefill validation", () => {
     );
   });
 
+  test(`should accept email field with any string value during partial prefill (validation relaxed for partial values)`, async ({}) => {
+    const schema = getBookingResponsesPartialSchema({
+      bookingFields: [
+        {
+          name: "name",
+          type: "name",
+          required: true,
+        },
+        {
+          name: "email",
+          type: "email",
+          required: true,
+        },
+        {
+          name: "testField",
+          type: "text",
+          required: false,
+        },
+      ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+      view: "ALL_VIEWS",
+    });
+    // During partial prefill, email validation is relaxed to z.string() to allow partial values
+    // This is consistent with phone field behavior where partial values like "+91" are accepted
+    const parsedResponses = await schema.parseAsync({
+      name: "John Doe",
+      email: "invalid-email",
+      testField: "test value",
+    });
+    // Email field accepts any string during partial prefill (validation is relaxed)
+    expect(parsedResponses).toEqual(
+      expect.objectContaining({
+        name: "John Doe",
+        email: "invalid-email",
+        testField: "test value",
+      })
+    );
+  });
+
   test(`should prefill valid boolean field`, async ({}) => {
     const schema = getBookingResponsesPartialSchema({
       bookingFields: [
