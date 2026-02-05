@@ -95,6 +95,7 @@ export async function getEnrichedEventType({
       teamSlug: teamData.slug ?? null,
       name,
       hideProfileLink: false,
+      customDomain: teamData.parent?.customDomain?.slug,
       logoUrl: teamData.parent
         ? getPlaceholderAvatar(teamData.parent.logoUrl, teamData.parent.name)
         : getPlaceholderAvatar(teamData.logoUrl, teamData.name),

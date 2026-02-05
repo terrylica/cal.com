@@ -24,6 +24,14 @@ export async function getTeamData(teamSlug: string, orgSlug: string | null) {
           bannerUrl: true,
           logoUrl: true,
           hideBranding: true,
+          customDomain: {
+            where: {
+              verified: true
+            },
+            select: {
+              slug: true,
+            }
+          },
           organizationSettings: {
             select: {
               allowSEOIndexing: true,

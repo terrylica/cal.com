@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
+import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import type { User } from "@calcom/prisma/client";
 import type { UserProfile } from "@calcom/types/UserProfile";
@@ -35,10 +35,14 @@ export function UserAvatarGroup(props: UserAvatarProps) {
   useEffect(() => {
     setItems(
       users.map((user) => {
+        const org = user.profile?.organization;
+        const customDomain = org?.customDomain?.verified ? org.customDomain.slug : null;
+        const baseUrl = getOrgFullOrigin(customDomain ?? org?.slug ?? null, {
+          protocol: true,
+          isCustomDomain: !!customDomain,
+        });
         return {
-          href: `${getBookerBaseUrlSync(user.profile?.organization?.slug ?? null)}/${
-            user.profile?.username
-          }?redirect=false`,
+          href: `${baseUrl}/${user.profile?.username}?redirect=false`,
           alt: user.name || "",
           title: user.name || "",
           image: getUserAvatarUrl(user),

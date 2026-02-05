@@ -1002,12 +1002,12 @@ const InfiniteScrollMain = ({
   // If the event type group is the same as the org branding team, or the parent team, set the bookerUrl to the org branding URL
   // This is to ensure that the bookerUrl is always the same as the one in the org branding settings
   // This keeps the app working for personal event types that were not migrated to the org (rare)
-  if (
-    orgBranding &&
-    (activeEventTypeGroup[0].teamId === orgBranding.id || activeEventTypeGroup[0].parentId === orgBranding.id)
-  ) {
-    activeEventTypeGroup[0].bookerUrl = bookerUrl;
-  }
+  // if (
+  //   orgBranding &&
+  //   (activeEventTypeGroup[0].teamId === orgBranding.id || activeEventTypeGroup[0].parentId === orgBranding.id)
+  // ) {
+  //   activeEventTypeGroup[0].bookerUrl = bookerUrl;
+  // }
 
   return (
     <>

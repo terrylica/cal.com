@@ -6,6 +6,7 @@ import { withAxiom } from "next-axiom";
 import i18nConfig from "./next-i18next.config";
 import packageJson from "./package.json";
 import {
+  customDomainRewriteConfig,
   nextJsOrgRewriteConfig,
   orgUserRoutePath,
   orgUserTypeEmbedRoutePath,
@@ -210,6 +211,43 @@ const orgDomainMatcherConfig: {
   },
 };
 
+// Custom domain matcher config - matches any hostname NOT in ALLOWED_HOSTNAMES
+const customDomainMatcherConfig: {
+  root: OrgDomainMatcher | null;
+  user: OrgDomainMatcher | null;
+  userType: OrgDomainMatcher | null;
+} = customDomainRewriteConfig
+  ? {
+      root: {
+        has: [
+          {
+            type: "host",
+            value: customDomainRewriteConfig.hostPath,
+          },
+        ],
+        source: "/",
+      },
+      user: {
+        has: [
+          {
+            type: "host",
+            value: customDomainRewriteConfig.hostPath,
+          },
+        ],
+        source: orgUserRoutePath,
+      },
+      userType: {
+        has: [
+          {
+            type: "host",
+            value: customDomainRewriteConfig.hostPath,
+          },
+        ],
+        source: orgUserTypeRoutePath,
+      },
+    }
+  : { root: null, user: null, userType: null };
+
 const nextConfig = (phase: string): NextConfig => {
   if (isOrganizationsEnabled) {
     console.log(
@@ -334,6 +372,29 @@ const nextConfig = (phase: string): NextConfig => {
                 ...orgDomainMatcherConfig.userTypeEmbed,
                 destination: `/org/${orgSlug}/:user/:type/embed`,
               },
+            ]
+          : []),
+        // Custom domain rewrites - rewrite to /org/{hostname}/...
+        ...(customDomainRewriteConfig
+          ? [
+              customDomainMatcherConfig.root
+                ? {
+                    ...customDomainMatcherConfig.root,
+                    destination: `/team/${customDomainRewriteConfig.orgSlug}?isOrgProfile=1`,
+                  }
+                : null,
+              customDomainMatcherConfig.user
+                ? {
+                    ...customDomainMatcherConfig.user,
+                    destination: `/org/${customDomainRewriteConfig.orgSlug}/:user`,
+                  }
+                : null,
+              customDomainMatcherConfig.userType
+                ? {
+                    ...customDomainMatcherConfig.userType,
+                    destination: `/org/${customDomainRewriteConfig.orgSlug}/:user/:type`,
+                  }
+                : null,
             ]
           : []),
       ].filter(isNotNull);

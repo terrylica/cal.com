@@ -66,7 +66,7 @@ export const generateMetadata = async ({ params, searchParams }: PageProps) => {
     (t) => `${booking?.uid && !!booking ? t("reschedule") : ""} ${title} | ${profileName}`,
     (t) => `${booking?.uid ? t("reschedule") : ""} ${title}`,
     isBrandingHidden,
-    getOrgFullOrigin(eventData.entity.orgSlug ?? null),
+    getOrgFullOrigin(eventData.entity.orgSlug ?? null, { protocol: true, isCustomDomain: eventData.entity.isCustomDomain }),
     `/team/${decodedParams.slug}/${decodedParams.type}`
   );
 

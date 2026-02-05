@@ -28,7 +28,7 @@ type GetTeamOrOrgArg<TeamSelect extends Prisma.TeamSelect> = {
     havingMemberWithId?: number;
   };
   /**
-   * If we are fetching a team, this is the slug of the organization that the team belongs to.
+   * If we are fetching a team, this is the slug or custom domain of the organization that the team belongs to.
    */
   forOrgWithSlug: string | null;
   /**

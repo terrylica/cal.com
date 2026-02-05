@@ -1,6 +1,6 @@
 import { sync as globSync } from "glob";
 
-import { nextJsOrgRewriteConfig } from "./getNextjsOrgRewriteConfig";
+import { customDomainRewriteConfig, nextJsOrgRewriteConfig } from "./getNextjsOrgRewriteConfig";
 
 // Top-level route names that are explicitly allowed for org rewrite (whitelist)
 export const topLevelRouteNamesWhitelistedForRewrite: string[] = [
@@ -62,7 +62,7 @@ export const topLevelRoutesExcludedFromOrgRewrite: string[] = globSync(
 // ?!book ensures it doesn't match /free/book page which doesn't have a corresponding new-booker page.
 // [^/]+ makes the RegExp match the full path, it seems like a partial match doesn't work.
 // book$ ensures that only /book is excluded from rewrite(which is at the end always) and not /booked
-export { nextJsOrgRewriteConfig };
+export { customDomainRewriteConfig, nextJsOrgRewriteConfig };
 
 /**
  * Returns a regex that matches all existing routes, virtual routes (like /forms, /router, /success etc) and nextjs special paths (_next, public)
