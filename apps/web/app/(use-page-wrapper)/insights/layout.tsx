@@ -1,32 +1,30 @@
-import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppDir";
-import { getTranslate } from "app/_utils";
-
-import { cookies, headers } from "next/headers";
-
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { FeaturesRepository } from "@calcom/features/flags/features.repository";
-
-import { buildLegacyRequest } from "@lib/buildLegacyCtx";
-
 import { CTA_CONTAINER_CLASS_NAME } from "@calcom/features/data-table/lib/utils";
-import Shell from "~/shell/Shell";
+import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
-import { FullScreenUpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/forOrgPlan";
+import { UpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/forOrgPlan";
+import { buildLegacyRequest } from "@lib/buildLegacyCtx";
+import { getTranslate } from "app/_utils";
+import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppDir";
+import { cookies, headers } from "next/headers";
+import Shell from "~/shell/Shell";
 
 export default async function InsightsLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslate();
   const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
   const userId = session?.user?.id;
-  const hasOrgMembership = userId ? await PrismaOrgMembershipRepository.hasAnyAcceptedMembershipByUserId({ userId }) : false;
+  const hasOrgMembership = userId
+    ? await PrismaOrgMembershipRepository.hasAnyAcceptedMembershipByUserId({ userId })
+    : false;
 
   if (!hasOrgMembership) {
     return (
       <Shell withoutMain={true}>
         <ShellMainAppDir>
-          <FullScreenUpgradeBannerForInsightsPage />
+          <UpgradeBannerForInsightsPage />
         </ShellMainAppDir>
       </Shell>
-    )
+    );
   }
 
   return (

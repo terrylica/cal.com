@@ -1,3 +1,9 @@
+import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
+import { getEventTypePermissions } from "@calcom/features/pbac/lib/event-type-permissions";
+import { eventTypesRouter } from "@calcom/trpc/server/routers/viewer/eventTypes/_router";
+import { EventTypeWebWrapper } from "@calcom/web/modules/event-types/components/EventTypeWebWrapper";
+import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { createRouterCaller, getTRPCContext } from "app/_trpc/context";
 import type { PageProps, ReadonlyHeaders, ReadonlyRequestCookies } from "app/_types";
 import { _generateMetadata } from "app/_utils";
@@ -5,13 +11,6 @@ import { unstable_cache } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-
-import { EventTypeWebWrapper } from "@calcom/web/modules/event-types/components/EventTypeWebWrapper";
-import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { getEventTypePermissions } from "@calcom/features/pbac/lib/event-type-permissions";
-import { eventTypesRouter } from "@calcom/trpc/server/routers/viewer/eventTypes/_router";
-
-import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
 const querySchema = z.object({
   type: z
@@ -63,7 +62,13 @@ const ServerPage = async ({ params }: PageProps) => {
   // Fetch permissions for the event type's team
   const permissions = await getEventTypePermissions(session.user.id, data.eventType.teamId);
 
-  return <EventTypeWebWrapper data={data} id={eventTypeId} permissions={permissions} />;
+  const belongsToOrg = await PrismaOrgMembershipRepository.hasAnyAcceptedMembershipByUserId({
+    userId: session.user.id,
+  });
+
+  return (
+    <EventTypeWebWrapper data={data} id={eventTypeId} permissions={permissions} belongsToOrg={belongsToOrg} />
+  );
 };
 
 export default ServerPage;

@@ -95,12 +95,14 @@ const EventAITab = dynamic(() =>
 export type EventTypeWebWrapperProps = {
   id: number;
   data: RouterOutputs["viewer"]["eventTypes"]["get"];
+  belongsToOrg: boolean;
   permissions?: EventPermissions;
 };
 
 export const EventTypeWebWrapper = ({
   id,
   data: serverFetchedData,
+  belongsToOrg,
   permissions = {
     eventTypes: {
       canRead: false,
@@ -124,7 +126,7 @@ export const EventTypeWebWrapper = ({
   if (serverFetchedData) {
     return (
       <EventPermissionProvider initialPermissions={permissions}>
-        <EventTypeWeb {...serverFetchedData} id={id} />
+        <EventTypeWeb {...serverFetchedData} id={id} belongsToOrg={belongsToOrg} />
       </EventPermissionProvider>
     );
   }
@@ -133,16 +135,18 @@ export const EventTypeWebWrapper = ({
 
   return (
     <EventPermissionProvider initialPermissions={permissions}>
-      <EventTypeWeb {...eventTypeQueryData} id={id} />
+      <EventTypeWeb {...eventTypeQueryData} id={id} belongsToOrg={belongsToOrg} />
     </EventPermissionProvider>
   );
 };
 
 const EventTypeWeb = ({
   id,
+  belongsToOrg,
   ...rest
 }: EventTypeSetupProps & {
   id: number;
+  belongsToOrg: boolean;
 }) => {
   const { t } = useLocale();
   const utils = trpc.useUtils();
@@ -270,7 +274,7 @@ const EventTypeWeb = ({
         orgId={orgBranding?.id ?? null}
       />
     ),
-    instant: <EventInstantTab eventType={eventType} isTeamEvent={!!team} />,
+    instant: <EventInstantTab eventType={eventType} isTeamEvent={!!team} belongsToOrg={belongsToOrg} />,
     recurring: <EventRecurringTab eventType={eventType} />,
     apps: (
       <EventAppsTab
