@@ -1416,11 +1416,12 @@ export class UserRepository {
     email: string;
     requiresBookerEmailVerification: boolean | null;
   } | null> {
+    const normalizedEmail = email.trim().toLowerCase();
     return this.prismaClient.user.findFirst({
       where: {
         OR: [
           {
-            email,
+            email: normalizedEmail,
             emailVerified: {
               not: null,
             },
@@ -1428,7 +1429,7 @@ export class UserRepository {
           {
             secondaryEmails: {
               some: {
-                email,
+                email: normalizedEmail,
                 emailVerified: {
                   not: null,
                 },
