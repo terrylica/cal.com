@@ -1,4 +1,5 @@
 import { defaultResponderForAppDir } from "app/api/defaultResponderForAppDir";
+import type { TFunction } from "i18next";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -16,7 +17,7 @@ import { createTeamsHandler } from "@calcom/trpc/server/routers/viewer/organizat
 
 const log = logger.getSubLogger({ prefix: ["moveTeamToOrg"] });
 
-const getFormSchema = (t: (key: string) => string) => {
+const getFormSchema = (t: TFunction) => {
   return z.object({
     teamId: z.number().or(getStringAsNumberRequiredSchema(t)),
     targetOrgId: z.number().or(getStringAsNumberRequiredSchema(t)),
