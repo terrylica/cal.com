@@ -106,13 +106,13 @@ expect.extend({
 
     const emailsToLog = emails
       .get()
-      .map((email) => ({ to: email.to, html: email.html, ics: email.icalEvent }));
+      .map((email) => ({ to: email.to, subject: email.subject }));
 
     if (!testEmail) {
-      logger.silly("All Emails", JSON.stringify({ numEmails: emailsToLog.length, emailsToLog }));
+      logger.silly("All Emails", JSON.stringify({ numEmails: emailsToLog.length }));
       return {
         pass: false,
-        message: () => `No email sent to ${to}. All emails are ${JSON.stringify(emailsToLog)}`,
+        message: () => `No email sent to ${to}. Total emails: ${emailsToLog.length}, recipients: ${emailsToLog.map((e) => e.to).join(", ")}`,
       };
     }
     const ics = testEmail.icalEvent;
@@ -146,7 +146,7 @@ expect.extend({
     );
 
     if (!isEmailContentMatched) {
-      logger.silly("All Emails", JSON.stringify({ numEmails: emailsToLog.length, emailsToLog }));
+      logger.silly("All Emails", JSON.stringify({ numEmails: emailsToLog.length }));
       return {
         pass: false,
         message: () => `Email content ${isNot ? "is" : "is not"} matching.`,
@@ -157,7 +157,7 @@ expect.extend({
 
     isToAddressExpected = expectedEmail.to === testEmail.to;
     if (!isToAddressExpected) {
-      logger.silly("All Emails", JSON.stringify({ numEmails: emailsToLog.length, emailsToLog }));
+      logger.silly("All Emails", JSON.stringify({ numEmails: emailsToLog.length }));
       return {
         pass: false,
         message: () => `To address ${isNot ? "is" : "is not"} matching`,
