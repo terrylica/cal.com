@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { AppPressable } from "@/components/AppPressable";
 import { EmptyScreen } from "@/components/EmptyScreen";
-import { Header } from "@/components/Header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -176,7 +175,6 @@ export function OutOfOfficeScreen({ searchQuery = "" }: OutOfOfficeScreenProps) 
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.backgroundSecondary }}>
-        <Header />
         <View className="flex-1 px-2 pt-4 md:px-4">
           <OutOfOfficeListSkeleton />
         </View>
@@ -187,7 +185,6 @@ export function OutOfOfficeScreen({ searchQuery = "" }: OutOfOfficeScreenProps) 
   if (error) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.backgroundSecondary }}>
-        <Header />
         <View className="flex-1 items-center justify-center p-5">
           <Ionicons name="alert-circle" size={64} color={theme.destructive} />
           <Text style={{ color: colors.text }} className="mb-2 mt-4 text-center text-xl font-bold">
@@ -214,8 +211,6 @@ export function OutOfOfficeScreen({ searchQuery = "" }: OutOfOfficeScreenProps) 
 
   return (
     <>
-      <Header />
-
       {/* Header with New button */}
       <View
         style={{

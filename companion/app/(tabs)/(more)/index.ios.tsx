@@ -79,12 +79,6 @@ export default function More() {
 
   const menuItems: MoreMenuItem[] = [
     {
-      name: "Out of Office",
-      icon: "airplane-outline",
-      isExternal: false,
-      onPress: () => router.push("/(tabs)/(more)/out-of-office"),
-    },
-    {
       name: "Apps",
       icon: "grid-outline",
       isExternal: false,
