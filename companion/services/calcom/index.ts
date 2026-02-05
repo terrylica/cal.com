@@ -34,6 +34,10 @@ export type {
   BookingLimitsCount,
   BookingLimitsDuration,
   ConfirmationPolicy,
+  OutOfOfficeEntry,
+  OutOfOfficeReason,
+  CreateOutOfOfficeEntryInput,
+  UpdateOutOfOfficeEntryInput,
 } from "../types";
 
 // Import all functions from submodules
@@ -99,6 +103,12 @@ import {
   updateEventTypeWebhook,
   updateWebhook,
 } from "./webhooks";
+import {
+  createOutOfOfficeEntry,
+  deleteOutOfOfficeEntry,
+  getOutOfOfficeEntries,
+  updateOutOfOfficeEntry,
+} from "./ooo";
 
 // Re-export the booking participation helper for direct use
 export { getBookingParticipation };
@@ -169,4 +179,10 @@ export const CalComAPIService = {
   createEventTypePrivateLink,
   updateEventTypePrivateLink,
   deleteEventTypePrivateLink,
+
+  // Out of Office
+  getOutOfOfficeEntries,
+  createOutOfOfficeEntry,
+  updateOutOfOfficeEntry,
+  deleteOutOfOfficeEntry,
 };

@@ -79,6 +79,13 @@ export default function More() {
 
   const menuItems: MoreMenuItem[] = [
     {
+      name: "Out of Office",
+      icon: "airplane-outline",
+      isExternal: true,
+      onPress: () =>
+        openInAppBrowser("https://app.cal.com/settings/my-account/out-of-office", "Out of Office"),
+    },
+    {
       name: "Apps",
       icon: "grid-outline",
       isExternal: false,
