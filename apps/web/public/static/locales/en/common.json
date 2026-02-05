@@ -54,6 +54,7 @@
   "enable_automatic_transcription": "Enable automatic transcription after joining the meeting",
   "enable_automatic_recording": "Enable automatic recording after organizer joins the meeting",
   "video_options": "Video options",
+  "video_player": "Video player",
   "edit_event": "Edit event",
   "view_session_details": "View session details",
   "meeting_session_details": "Meeting session details",

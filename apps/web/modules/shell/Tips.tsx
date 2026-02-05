@@ -1,10 +1,12 @@
 import shuffle from "lodash/shuffle";
 import posthog from "posthog-js";
-import { useState, memo } from "react";
+import { useState, memo, useCallback } from "react";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
 import { Card } from "@calcom/ui/components/card";
+import { Dialog, DialogContent, DialogClose } from "@calcom/ui/components/dialog";
+import { Icon } from "@calcom/ui/components/icon";
 
 import { GatedFeatures } from "./stores/gatedFeaturesStore";
 import { useGatedFeaturesStore } from "./stores/gatedFeaturesStore";
@@ -24,6 +26,63 @@ type Tip = {
 function Tips() {
   const { t } = useLocale();
   const openModal = useGatedFeaturesStore((state) => state.open);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+
+  // Extract YouTube video ID from various URL formats
+  const getYouTubeVideoId = useCallback((url: string): string | null => {
+    // Handle youtu.be short URLs
+    const shortUrlMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if (shortUrlMatch) return shortUrlMatch[1];
+
+    // Handle youtube.com URLs (watch, embed, shorts)
+    const longUrlMatch = url.match(/youtube\.com\/(?:watch\?v=|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+    if (longUrlMatch) return longUrlMatch[1];
+
+    // Handle youtube-nocookie.com URLs
+    const noCookieMatch = url.match(/youtube-nocookie\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+    if (noCookieMatch) return noCookieMatch[1];
+
+    return null;
+  }, []);
+
+  // Get video ID from tip's thumbnail URL (which contains the video ID) or mediaLink
+  const getVideoIdFromTip = useCallback(
+    (tip: Tip): string | null => {
+      // First try to extract from thumbnail URL (most reliable for YouTube videos)
+      const thumbnailMatch = tip.thumbnailUrl.match(/img\.youtube\.com\/vi\/([a-zA-Z0-9_-]{11})/);
+      if (thumbnailMatch) return thumbnailMatch[1];
+
+      // Fallback to mediaLink if available
+      if (tip.mediaLink) {
+        return getYouTubeVideoId(tip.mediaLink);
+      }
+
+      return null;
+    },
+    [getYouTubeVideoId]
+  );
+
+  // Handle video click - open in modal instead of redirecting
+  const handleVideoClick = useCallback(
+    (tip: Tip, event: React.MouseEvent) => {
+      event.preventDefault();
+      posthog.capture("tip_video_clicked", tip);
+
+      // If tip has a custom onClick (like for gated features), call it
+      if (tip.onClick) {
+        tip.onClick();
+        return;
+      }
+
+      const videoId = getVideoIdFromTip(tip);
+      if (videoId) {
+        setCurrentVideoId(videoId);
+        setVideoModalOpen(true);
+      }
+    },
+    [getVideoIdFromTip]
+  );
 
   const tips: Tip[] = [
     {
@@ -241,9 +300,8 @@ function Tips() {
                   mediaLink={isTopTip ? tip.mediaLink : undefined}
                   mediaLinkOnClick={
                     isTopTip
-                      ? () => {
-                          posthog.capture("tip_video_clicked", tip);
-                          if (tip.onClick) tip.onClick();
+                      ? (event) => {
+                          handleVideoClick(tip, event);
                         }
                       : undefined
                   }
@@ -252,11 +310,21 @@ function Tips() {
                   learnMore={
                     isTopTip
                       ? {
-                          href: tip.href,
+                          href: tip.onClick ? undefined : tip.href,
                           text: t("learn_more"),
-                          onClick: () => {
+                          onClick: (event) => {
                             posthog.capture("tip_learn_more_clicked", tip);
-                            if (tip.onClick) tip.onClick();
+                            if (tip.onClick) {
+                              tip.onClick();
+                              return;
+                            }
+                            // Open video in modal for learn more clicks too
+                            const videoId = getVideoIdFromTip(tip);
+                            if (videoId) {
+                              event.preventDefault();
+                              setCurrentVideoId(videoId);
+                              setVideoModalOpen(true);
+                            }
                           },
                         }
                       : undefined
@@ -282,6 +350,43 @@ function Tips() {
           );
         })}
       </div>
+
+      {/* Video Modal */}
+      <Dialog
+        open={videoModalOpen}
+        onOpenChange={(open) => {
+          setVideoModalOpen(open);
+          if (!open) {
+            setCurrentVideoId(null);
+          }
+        }}>
+        <DialogContent
+          size="xl"
+          className="!max-w-4xl !rounded-xl !bg-black !p-0"
+          enableOverflow>
+          <div className="relative">
+            {/* Close button */}
+            <DialogClose
+              className="absolute -top-12 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition-all duration-200 hover:bg-black/90"
+              color="minimal">
+              <Icon name="x" className="h-5 w-5" />
+            </DialogClose>
+
+            {/* Video container with 16:9 aspect ratio */}
+            {currentVideoId && (
+              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                <iframe
+                  className="absolute left-0 top-0 h-full w-full rounded-xl"
+                  src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0`}
+                  title={t("video_player")}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
