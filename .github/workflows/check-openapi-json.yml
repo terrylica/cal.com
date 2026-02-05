@@ -40,8 +40,7 @@ jobs:
       - uses: ./.github/actions/cache-checkout
       - uses: ./.github/actions/yarn-install
 
-      - name: Setup for push (non-fork PRs only)
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+      - name: Setup branch for push
         run: |
           git fetch origin ${{ github.event.pull_request.head.ref }}
           git checkout ${{ github.event.pull_request.head.ref }}
@@ -63,16 +62,21 @@ jobs:
           yarn generate-swagger
 
       - name: Check and commit OpenAPI JSON changes
-        env:
-          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
           if git diff --exit-code docs/api-reference/v2/openapi.json; then
             echo "OpenAPI JSON is up-to-date"
           else
             echo "OpenAPI JSON has changed"
             
-            if [ "$IS_FORK" = "true" ]; then
-              echo "::error::OpenAPI JSON is out of date. Since this PR is from a fork, automatic commit is not possible."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/api-reference/v2/openapi.json
+            git commit -m "chore: update openapi.json [skip ci]"
+            
+            if git push; then
+              echo "OpenAPI JSON has been automatically updated and committed"
+            else
+              echo "::error::OpenAPI JSON is out of date and automatic commit failed (likely a fork PR)."
               echo ""
               echo "To fix this:"
               echo "1. cd apps/api/v2"
@@ -80,11 +84,4 @@ jobs:
               echo "3. Commit the updated docs/api-reference/v2/openapi.json"
               exit 1
             fi
-            
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add docs/api-reference/v2/openapi.json
-            git commit -m "chore: update openapi.json [skip ci]"
-            git push
-            echo "OpenAPI JSON has been automatically updated and committed"
           fi
