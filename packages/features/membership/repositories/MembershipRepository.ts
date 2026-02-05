@@ -562,6 +562,18 @@ export class MembershipRepository {
     });
   }
 
+  async hasAnyAcceptedMembershipByUserId({ userId }: { userId: number }): Promise<boolean> {
+    const membership = await this.prismaClient.membership.findFirst({
+      where: {
+        userId,
+        accepted: true,
+      },
+      select: { id: true },
+    });
+
+    return !!membership;
+  }
+
   // Two indexed lookups instead of JOIN with ILIKE (which bypasses index)
   async hasAcceptedMembershipByEmail({ email, teamId }: { email: string; teamId: number }): Promise<boolean> {
     const user = await this.prismaClient.user.findUnique({

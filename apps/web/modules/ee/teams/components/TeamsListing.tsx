@@ -8,7 +8,7 @@ import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 import { Label } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
-import { TeamsFullScreenUpgradeBanner } from "@calcom/web/modules/billing/upgrade-banners/teams";
+import { FullScreenUpgradeBannerForTeamsPage } from "@calcom/web/modules/billing/upgrade-banners/forTeamPlan";
 import { useHasTeamPlan } from "@calcom/web/modules/billing/hooks/useHasPaidPlan";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
@@ -98,7 +98,7 @@ export function TeamsListing({
 
       {teams.length === 0 && isPendingTeamPlan && <SkeletonLoaderTeamList />}
 
-      {teams.length === 0 && !isPendingTeamPlan && <TeamsFullScreenUpgradeBanner />}
+      {teams.length === 0 && !isPendingTeamPlan && <FullScreenUpgradeBannerForTeamsPage />}
 
       {/* Only show tip when not showing the upgrade banner */}
       {(teams.length > 0) && (

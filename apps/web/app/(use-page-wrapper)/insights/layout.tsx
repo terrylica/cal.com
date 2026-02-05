@@ -1,14 +1,33 @@
 import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppDir";
 import { getTranslate } from "app/_utils";
 
+import { cookies, headers } from "next/headers";
+
+import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { FeaturesRepository } from "@calcom/features/flags/features.repository";
+
+import { buildLegacyRequest } from "@lib/buildLegacyCtx";
+
 import { CTA_CONTAINER_CLASS_NAME } from "@calcom/features/data-table/lib/utils";
-
 import Shell from "~/shell/Shell";
-
-import UpgradeTipWrapper from "./UpgradeTipWrapper";
+import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
+import { FullScreenUpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/forOrgPlan";
 
 export default async function InsightsLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslate();
+  const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
+  const userId = session?.user?.id;
+  const hasOrgMembership = userId ? await PrismaOrgMembershipRepository.hasAnyAcceptedMembershipByUserId({ userId }) : false;
+
+  if (!hasOrgMembership) {
+    return (
+      <Shell withoutMain={true}>
+        <ShellMainAppDir>
+          <FullScreenUpgradeBannerForInsightsPage />
+        </ShellMainAppDir>
+      </Shell>
+    )
+  }
 
   return (
     <Shell withoutMain={true}>
@@ -16,7 +35,7 @@ export default async function InsightsLayout({ children }: { children: React.Rea
         heading={t("insights")}
         subtitle={t("insights_subtitle")}
         actions={<div className={`flex items-center gap-2 ${CTA_CONTAINER_CLASS_NAME}`} />}>
-        <UpgradeTipWrapper>{children}</UpgradeTipWrapper>
+        {children}
       </ShellMainAppDir>
     </Shell>
   );

@@ -6,7 +6,7 @@ import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/Upgrad
 import { Button } from "@coss/ui/components/button";
 import { Icon } from "@calcom/ui/components/icon";
 
-export function TeamsFullScreenUpgradeBanner() {
+export function FullScreenUpgradeBannerForInsightsPage() {
   const { t } = useLocale();
 
   const teamsFeatures = [
@@ -20,7 +20,7 @@ export function TeamsFullScreenUpgradeBanner() {
 
   return (
     <FullScreenUpgradeBanner
-      title={t("teams")}
+      title={t("insights")}
       subtitle={t("upgrade_banner_teams_subtitle")}
       features={teamsFeatures}
       target="team"

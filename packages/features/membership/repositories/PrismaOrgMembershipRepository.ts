@@ -21,6 +21,25 @@ export class PrismaOrgMembershipRepository {
     return loggedInUserOrgMemberships.map((m) => m.teamId);
   }
 
+  static async hasAnyAcceptedMembershipByUserId({
+    userId,
+  }: {
+    userId: number;
+  }): Promise<boolean> {
+    const membership = await prisma.membership.findFirst({
+      where: {
+        userId,
+        accepted: true,
+        team: {
+          isOrganization: true,
+        },
+      },
+      select: { id: true },
+    });
+
+    return !!membership;
+  }
+
   static async isLoggedInUserOrgAdminOfBookingHost(loggedInUserId: number, bookingUserId: number) {
     const orgIdsWhereLoggedInUserAdmin = await this.getOrgIdsWhereAdmin(loggedInUserId);
 
