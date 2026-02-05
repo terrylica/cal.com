@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@sentry/nextjs", () => ({
+  metrics: {
+    count: vi.fn(),
+  },
+}));
+
 import { createDatabaseProxy, type DatabaseProxy, type ProxyConfig } from "./DatabaseProxy";
 
 describe("DatabaseProxy", () => {
@@ -11,6 +17,8 @@ describe("DatabaseProxy", () => {
   let proxy: DatabaseProxy;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
     mockPrimary = {
       user: { findMany: vi.fn().mockResolvedValue([{ id: 1, name: "primary" }]) },
       booking: { create: vi.fn().mockResolvedValue({ id: 1 }) },
@@ -314,4 +322,5 @@ describe("DatabaseProxy", () => {
       expect(typeof proxy.tenant).toBe("function");
     });
   });
+
 });
