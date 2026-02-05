@@ -472,7 +472,7 @@ export class ManagedEventManualReassignmentService {
         type: targetEventTypeDetails.slug,
         organizer: {
           id: newUser.id,
-          name: newUser.name,
+          name: newUser.name || "Nameless",
           email: newUser.email,
           timeZone: newUser.timeZone,
           language: { translate: newUserT, locale: newUser.locale ?? "en" },
@@ -693,7 +693,7 @@ export class ManagedEventManualReassignmentService {
         type: targetEventTypeDetails.slug,
         organizer: {
           id: newUser.id,
-          name: newUser.name,
+          name: newUser.name || "Nameless",
           email: newUser.email,
           timeZone: newUser.timeZone,
           timeFormat: getTimeFormatStringFromUserTimeFormat(newUser.timeFormat),
