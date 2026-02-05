@@ -36,10 +36,11 @@ export const getBrand = async (orgId: number | null) => {
   const metadata = teamMetadataSchema.parse(org.metadata);
   const slug = (org.slug || metadata?.requestedSlug) as string;
 
-  const verifiedCustomDomainSlug = org.customDomain?.verified ? org.customDomain.slug : null;
-  const fullDomain = verifiedCustomDomainSlug
-    ? `https://${verifiedCustomDomainSlug}`
-    : getOrgFullOrigin(slug);
+  const verifiedCustomDomain = org.customDomain?.verified ? org.customDomain.slug : null;
+  const fullDomain = getOrgFullOrigin(verifiedCustomDomain ?? slug, {
+    protocol: true,
+    isCustomDomain: !!verifiedCustomDomain,
+  });
   const domainSuffix = subdomainSuffix();
 
   return {
@@ -48,6 +49,6 @@ export const getBrand = async (orgId: number | null) => {
     slug,
     fullDomain,
     domainSuffix,
-    customDomain: org.customDomain?.verified ? org.customDomain.slug : null,
+    customDomain: verifiedCustomDomain,
   };
 };

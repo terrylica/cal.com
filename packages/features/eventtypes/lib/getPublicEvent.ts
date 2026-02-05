@@ -5,7 +5,7 @@ import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-util
 import dayjs from "@calcom/dayjs";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
 import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
-import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getOrgFullOrigin, getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getDefaultEvent, getUsernameList } from "@calcom/features/eventtypes/lib/defaultEvents";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
@@ -29,6 +29,7 @@ import {
   userMetadata as userMetadataSchema,
 } from "@calcom/prisma/zod-utils";
 import type { UserProfile } from "@calcom/types/UserProfile";
+import { profileRepositoryModule } from "~/users/di/Profile.module";
 
 const userSelect = {
   id: true,
@@ -287,6 +288,7 @@ export const getPublicEvent = async (
   org: string | null,
   prisma: PrismaClient,
   fromRedirectOfNonOrgLink: boolean,
+  isCustomDomain: boolean,
   currentUserId?: number,
   fetchAllUsers = false
 ) => {
@@ -374,6 +376,7 @@ export const getPublicEvent = async (
         considerUnpublished: !fromRedirectOfNonOrgLink && unPublishedOrgUser !== undefined,
         fromRedirectOfNonOrgLink,
         orgSlug: org,
+        isCustomDomain,
         name: unPublishedOrgUser?.profile?.organization?.name ?? null,
         teamSlug: null,
         logoUrl: null,
@@ -567,6 +570,7 @@ export const getPublicEvent = async (
           eventWithUserProfiles.owner?.profile?.organization?.slug === null ||
           eventWithUserProfiles.team?.parent?.slug === null),
       orgSlug: org,
+      isCustomDomain,
       teamSlug: (eventWithUserProfiles.team?.slug || teamMetadata?.requestedSlug) ?? null,
       name:
         (eventWithUserProfiles.owner?.profile?.organization?.name ||
@@ -680,7 +684,10 @@ export async function getUsersFromEvent(
   ];
 }
 
-async function getOwnerFromUsersArray(prisma: PrismaClient, eventTypeId: number) {
+async function getOwnerFromUsersArray(
+  prisma: PrismaClient,
+  eventTypeId: number,
+) {
   const { users } = await prisma.eventType.findUniqueOrThrow({
     where: { id: eventTypeId },
     select: {
@@ -708,26 +715,33 @@ async function getOwnerFromUsersArray(prisma: PrismaClient, eventTypeId: number)
     profile: user.profile,
   }));
 
+  const orgInfo = usersWithUserProfile[0].profile?.organization;
+  const customDomain = orgInfo?.verfied ? orgInfo?.customDomain : null;
+
   return [
     {
       ...usersWithUserProfile[0],
-      bookerUrl: getBookerBaseUrlSync(usersWithUserProfile[0].organization?.slug ?? null),
+      bookerUrl: getOrgFullOrigin(customDomain ?? orgInfo?.slug, { isCustomDomain: !!customDomain })
     },
   ];
 }
 
-function mapHostsToUsers(host: {
-  user: Pick<UserType, "username" | "name" | "weekStart" | "avatarUrl"> & {
-    profile: UserProfile;
-  };
-}) {
+function mapHostsToUsers(
+  host: {
+    user: Pick<UserType, "username" | "name" | "weekStart" | "avatarUrl"> & {
+      profile: UserProfile;
+    };
+  },
+) {
+  const orgInfo = host.user.profile?.organization;
+  const customDomain = orgInfo?.verfied ? orgInfo?.customDomain : null;
   return {
     username: host.user.username,
     name: host.user.name,
     avatarUrl: host.user.avatarUrl,
     weekStart: host.user.weekStart,
     organizationId: host.user.profile?.organizationId ?? null,
-    bookerUrl: getBookerBaseUrlSync(host.user.profile?.organization?.slug ?? null),
+    bookerUrl: getOrgFullOrigin(customDomain ?? orgInfo?.slug ?? null, { isCustomDomain: !!customDomain }),
     profile: host.user.profile,
   };
 }

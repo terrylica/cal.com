@@ -1,3 +1,4 @@
+import type { getBrand } from "@calcom/features/ee/organizations/lib/getBrand";
 import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
@@ -6,6 +7,8 @@ import type { MembershipRole } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
 import type { TeamPermissions } from "./permissionUtils";
+
+type OrgBrand = Awaited<ReturnType<typeof getBrand>>;
 
 export interface EventTypeGroup {
   teamId?: number | null;
@@ -88,7 +91,8 @@ export async function createTeamEventGroup(
   },
   effectiveRole: MembershipRole,
   teamSlug: string | null,
-  permissions: TeamPermissions
+  permissions: TeamPermissions,
+  orgBrand: OrgBrand
 ): Promise<EventTypeGroup> {
   const team = {
     ...membership.team,
@@ -97,10 +101,14 @@ export async function createTeamEventGroup(
 
   const teamParentMetadata = team.parent ? teamMetadataSchema.parse(team.parent.metadata) : null;
 
+  const bookerUrl =
+    orgBrand?.fullDomain ??
+    getBookerBaseUrlSync(team.parent?.slug ?? teamParentMetadata?.requestedSlug ?? null);
+
   return {
     teamId: team.id,
     parentId: team.parentId,
-    bookerUrl: getBookerBaseUrlSync(team.parent?.slug ?? teamParentMetadata?.requestedSlug ?? null),
+    bookerUrl,
     membershipRole: effectiveRole,
     profile: {
       image: team.parent

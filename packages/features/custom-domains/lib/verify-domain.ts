@@ -1,69 +1,41 @@
-import type { DomainVerificationResult, DomainVerificationStatus } from "./types";
-import { getConfigFromVercel, getDomainFromVercel, verifyDomainOnVercel } from "./vercel-api";
+import {
+  getConfig,
+  getDomain,
+  verifyDomain as verifyDomainOnVercel,
+} from "@calcom/lib/domainManager/deploymentServices/vercel";
+import type { DomainVerificationResult } from "./types";
+import { DomainVerificationStatus } from "./types";
 
-export async function verifyDomain(domain: string): Promise<DomainVerificationResult> {
-  const [domainJson, configJson] = await Promise.all([
-    getDomainFromVercel(domain),
-    getConfigFromVercel(domain),
-  ]);
+export async function verifyDomainStatus(domain: string): Promise<DomainVerificationResult> {
+  const [domainJson, configJson] = await Promise.all([getDomain(domain), getConfig(domain)]);
 
   if (domainJson?.error?.code === "not_found") {
-    return {
-      status: "Domain Not Found",
-      domainJson,
-      configJson,
-    };
+    return { status: DomainVerificationStatus.NOT_FOUND, domainJson, configJson };
   }
 
   if (domainJson?.error) {
-    return {
-      status: "Unknown Error",
-      domainJson,
-      configJson,
-    };
+    return { status: DomainVerificationStatus.UNKNOWN, domainJson, configJson };
   }
 
   if (configJson?.conflicts && configJson.conflicts.length > 0) {
-    return {
-      status: "Conflicting DNS Records",
-      domainJson,
-      configJson,
-    };
+    return { status: DomainVerificationStatus.CONFLICTING, domainJson, configJson };
   }
 
   if (!domainJson.verified) {
-    const verificationJson = await verifyDomainOnVercel(domain);
+    const verificationResult = await verifyDomainOnVercel(domain);
 
-    if (verificationJson?.verified) {
-      return {
-        status: "Valid Configuration",
-        domainJson,
-        configJson,
-        verificationJson,
-      };
+    if (verificationResult?.verified) {
+      return { status: DomainVerificationStatus.VALID, domainJson: verificationResult, configJson };
     }
 
-    return {
-      status: "Pending Verification",
-      domainJson,
-      configJson,
-      verificationJson,
-    };
+    return { status: DomainVerificationStatus.PENDING, domainJson: verificationResult, configJson };
   }
 
   if (configJson?.misconfigured) {
-    return {
-      status: "Invalid Configuration",
-      domainJson,
-      configJson,
-    };
+    return { status: DomainVerificationStatus.INVALID, domainJson, configJson };
   }
 
-  return {
-    status: "Valid Configuration",
-    domainJson,
-    configJson,
-  };
+  return { status: DomainVerificationStatus.VALID, domainJson, configJson };
 }
 
 export function isValidDomainFormat(domain: string): boolean {

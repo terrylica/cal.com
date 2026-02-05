@@ -1,24 +1,23 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-
 import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
-import BrandColorsForm from "~/ee/common/components/BrandColorsForm";
-import { AppearanceSkeletonLoader } from "~/ee/common/components/CommonSkeletonLoaders";
+import { APP_NAME, DEFAULT_DARK_BRAND_COLOR, DEFAULT_LIGHT_BRAND_COLOR } from "@calcom/lib/constants";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
+import type { RouterOutputs } from "@calcom/trpc/react";
+import { trpc } from "@calcom/trpc/react";
+import { Button } from "@calcom/ui/components/button";
+import { ConfirmationDialogContent, Dialog } from "@calcom/ui/components/dialog";
+import { Form, SettingsToggle } from "@calcom/ui/components/form";
+import { showToast } from "@calcom/ui/components/toast";
 import SectionBottomActions from "@calcom/web/modules/settings/components/SectionBottomActions";
 import ThemeLabel from "@calcom/web/modules/settings/components/ThemeLabel";
-import { DEFAULT_LIGHT_BRAND_COLOR, DEFAULT_DARK_BRAND_COLOR } from "@calcom/lib/constants";
-import { APP_NAME } from "@calcom/lib/constants";
-import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { trpc } from "@calcom/trpc/react";
-import type { RouterOutputs } from "@calcom/trpc/react";
-import { Button } from "@calcom/ui/components/button";
-import { Form } from "@calcom/ui/components/form";
-import { SettingsToggle } from "@calcom/ui/components/form";
-import { showToast } from "@calcom/ui/components/toast";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import BrandColorsForm from "~/ee/common/components/BrandColorsForm";
+import { AppearanceSkeletonLoader } from "~/ee/common/components/CommonSkeletonLoaders";
+import { CustomDomainContent } from "./custom-domain";
 
 type BrandColorsFormValues = {
   brandColor: string;
@@ -53,6 +52,52 @@ const OrgAppearanceView = ({
     currentOrg?.organizationSettings?.orgProfileRedirectsToVerifiedDomain ?? false
   );
 
+  const {
+    data: customDomain,
+    isPending: isCustomDomainLoading,
+    refetch: refetchCustomDomain,
+  } = trpc.viewer.organizations.getCustomDomain.useQuery(
+    { teamId: currentOrg.id },
+    { enabled: !!currentOrg.id }
+  );
+
+  const [customDomainEnabled, setCustomDomainEnabled] = useState(false);
+  const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
+
+  useEffect(() => {
+    if (customDomain) {
+      setCustomDomainEnabled(true);
+    }
+  }, [customDomain]);
+
+  const removeCustomDomainMutation = trpc.viewer.organizations.removeCustomDomain.useMutation({
+    onSuccess: () => {
+      showToast(t("custom_domain_removed"), "success");
+      refetchCustomDomain();
+      setCustomDomainEnabled(false);
+      setShowRemoveConfirmation(false);
+    },
+    onError: (error) => {
+      showToast(error.message, "error");
+    },
+  });
+
+  const handleCustomDomainToggle = (checked: boolean) => {
+    if (checked) {
+      setCustomDomainEnabled(true);
+    } else {
+      if (customDomain) {
+        setShowRemoveConfirmation(true);
+      } else {
+        setCustomDomainEnabled(false);
+      }
+    }
+  };
+
+  const handleConfirmRemoveDomain = () => {
+    removeCustomDomainMutation.mutate({ teamId: currentOrg.id });
+  };
+
   const brandColorsFormMethods = useForm<BrandColorsFormValues>({
     defaultValues: {
       brandColor: currentOrg?.brandColor || DEFAULT_LIGHT_BRAND_COLOR,
@@ -85,6 +130,23 @@ const OrgAppearanceView = ({
 
   return (
     <div>
+      <SettingsToggle
+        toggleSwitchAtTheEnd={true}
+        title={t("custom_domain")}
+        description={t("custom_domain_description")}
+        disabled={removeCustomDomainMutation.isPending || isCustomDomainLoading}
+        checked={customDomainEnabled}
+        onCheckedChange={handleCustomDomainToggle}
+        switchContainerClassName="mt-6"
+        noIndentation
+        childrenClassName="border-subtle border-x border-b rounded-b-lg -mt-px">
+        <CustomDomainContent
+          orgId={currentOrg.id}
+          customDomain={customDomain}
+          refetchCustomDomain={refetchCustomDomain}
+        />
+      </SettingsToggle>
+
       <Form
         form={themeForm}
         handleSubmit={({ theme }) => {
@@ -192,6 +254,17 @@ const OrgAppearanceView = ({
         }}
         switchContainerClassName="mt-6"
       />
+
+      <Dialog open={showRemoveConfirmation} onOpenChange={setShowRemoveConfirmation}>
+        <ConfirmationDialogContent
+          variety="danger"
+          title={t("remove_custom_domain")}
+          confirmBtnText={t("remove")}
+          isPending={removeCustomDomainMutation.isPending}
+          onConfirm={handleConfirmRemoveDomain}>
+          {t("remove_custom_domain_description", { domain: customDomain?.slug })}
+        </ConfirmationDialogContent>
+      </Dialog>
     </div>
   );
 };

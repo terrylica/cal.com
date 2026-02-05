@@ -10,6 +10,20 @@ import type { Prisma } from "@calcom/prisma/client";
 const log = logger.getSubLogger({
   prefix: ["orgDomains.ts"],
 });
+
+function isCustomDomainHostname(hostname: string): boolean {
+  const host = hostname.split(":")[0].toLowerCase();
+
+  if (!host.includes(".")) {
+    return false;
+  }
+
+  const matchesAllowedHost = ALLOWED_HOSTNAMES.some(
+    (allowedHost) => host === allowedHost || host.endsWith(`.${allowedHost}`)
+  );
+
+  return !matchesAllowedHost;
+}
 /**
  * return the org slug
  * @param hostname
@@ -74,6 +88,7 @@ export function getOrgDomainConfig({
     return {
       isValidOrgDomain: true,
       currentOrgDomain: forcedSlug,
+      customDomain: null as string | null,
     };
   }
 
@@ -96,6 +111,7 @@ export function orgDomainConfig(req: IncomingMessage | undefined, fallback?: str
     return {
       isValidOrgDomain: true,
       currentOrgDomain: forcedSlug,
+      customDomain: null as string | null,
     };
   }
 
@@ -119,20 +135,47 @@ export function getOrgDomainConfigFromHostname({
   hostname: string;
   fallback?: string | string[];
   forcedSlug?: string;
-}) {
+}): {
+  currentOrgDomain: string | null;
+  isValidOrgDomain: boolean;
+  customDomain: string | null;
+} {
   const currentOrgDomain = getOrgSlug(hostname, forcedSlug);
   const isValidOrgDomain = currentOrgDomain !== null && !RESERVED_SUBDOMAINS.includes(currentOrgDomain);
-  if (isValidOrgDomain || !fallback) {
+
+  const customDomain = isCustomDomainHostname(hostname) ? hostname.split(":")[0].toLowerCase() : null;
+
+  if (isValidOrgDomain) {
     return {
-      currentOrgDomain: isValidOrgDomain ? currentOrgDomain : null,
-      isValidOrgDomain,
+      currentOrgDomain,
+      isValidOrgDomain: true,
+      customDomain: null,
     };
   }
-  const fallbackOrgSlug = fallback as string;
-  const isValidFallbackDomain = !RESERVED_SUBDOMAINS.includes(fallbackOrgSlug);
+
+  if (customDomain) {
+    console.log("customDomain: ", customDomain);
+    return {
+      currentOrgDomain: customDomain,
+      isValidOrgDomain: true,
+      customDomain,
+    };
+  }
+
+  if (fallback) {
+    const fallbackOrgSlug = fallback as string;
+    const isValidFallbackDomain = !RESERVED_SUBDOMAINS.includes(fallbackOrgSlug);
+    return {
+      currentOrgDomain: isValidFallbackDomain ? fallbackOrgSlug : null,
+      isValidOrgDomain: isValidFallbackDomain,
+      customDomain: null,
+    };
+  }
+
   return {
-    currentOrgDomain: isValidFallbackDomain ? fallbackOrgSlug : null,
-    isValidOrgDomain: isValidFallbackDomain,
+    currentOrgDomain: null,
+    isValidOrgDomain: false,
+    customDomain: null,
   };
 }
 
@@ -145,26 +188,37 @@ export function subdomainSuffix() {
   return urlSplit.length === 3 ? urlSplit.slice(1).join(".") : urlSplit.join(".");
 }
 
-export function getOrgFullOrigin(slug: string | null, options: { protocol: boolean } = { protocol: true }) {
-  if (!slug) {
+export function getOrgFullOrigin(
+  slugOrCustomDomain: string | null,
+  options?: { protocol?: boolean; isCustomDomain?: boolean }
+) {
+  const { protocol = true } = options || {};
+  if (!slugOrCustomDomain) {
     // Use WEBAPP_URL if domains differ (e.g., EU: app.cal.eu vs cal.com)
     const useWebappUrl =
       getTldPlus1(new URL(WEBSITE_URL).hostname) !== getTldPlus1(new URL(WEBAPP_URL).hostname);
     const baseUrl = useWebappUrl ? WEBAPP_URL : WEBSITE_URL;
-    return options.protocol ? baseUrl : baseUrl.replace("https://", "").replace("http://", "");
+    return protocol ? baseUrl : baseUrl.replace("https://", "").replace("http://", "");
+  }
+
+  if (options?.isCustomDomain) {
+    const protocolString = protocol ? `${new URL(WEBSITE_URL).protocol}//` : "";
+    const port = !IS_PRODUCTION ? new URL(WEBAPP_URL).port : "";
+    const portSuffix = port ? `:${port}` : "";
+    return `${protocolString}${slugOrCustomDomain}${portSuffix}`;
   }
 
   const orgFullOrigin = `${
-    options.protocol ? `${new URL(WEBSITE_URL).protocol}//` : ""
-  }${slug}.${subdomainSuffix()}`;
+    protocol ? `${new URL(WEBSITE_URL).protocol}//` : ""
+  }${slugOrCustomDomain}.${subdomainSuffix()}`;
   return orgFullOrigin;
 }
 
 /**
  * @deprecated You most probably intend to query for an organization only, use `whereClauseForOrgWithSlugOrRequestedSlug` instead which will only return the organization and not a team accidentally.
  */
-export function getSlugOrRequestedSlug(slug: string) {
-  const slugifiedValue = slugify(slug);
+export function getSlugOrRequestedSlug(identifier: string): Prisma.TeamWhereInput {
+  const slugifiedValue = slugify(identifier);
   return {
     OR: [
       { slug: slugifiedValue },
@@ -174,28 +228,44 @@ export function getSlugOrRequestedSlug(slug: string) {
           equals: slugifiedValue,
         },
       },
+      {
+        customDomain: {
+          slug: identifier,
+          verified: true,
+        },
+      },
     ],
-  } satisfies Prisma.TeamWhereInput;
+  };
 }
 
-export function whereClauseForOrgWithSlugOrRequestedSlug(slug: string) {
-  const slugifiedValue = slugify(slug);
-
+export function whereClauseForOrgWithSlugOrRequestedSlug(identifier: string): Prisma.TeamWhereInput {
+  const slugifiedValue = slugify(identifier);
   return {
     OR: [
       { slug: slugifiedValue },
       {
         metadata: {
           path: ["requestedSlug"],
-          equals: slug,
+          equals: identifier,
+        },
+      },
+      {
+        customDomain: {
+          slug: identifier,
+          verified: true,
         },
       },
     ],
     isOrganization: true,
-  } satisfies Prisma.TeamWhereInput;
+  };
 }
 
 export function userOrgQuery(req: IncomingMessage | undefined, fallback?: string | string[]) {
   const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(req, fallback);
-  return isValidOrgDomain && currentOrgDomain ? getSlugOrRequestedSlug(currentOrgDomain) : null;
+
+  if (!isValidOrgDomain || !currentOrgDomain) {
+    return null;
+  }
+
+  return getSlugOrRequestedSlug(currentOrgDomain);
 }

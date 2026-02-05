@@ -1,7 +1,6 @@
 import process from "node:process";
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
-import { orgDomainConfig } from "@calcom/ee/organizations/lib/orgDomains";
 import { getAggregatedAvailability } from "@calcom/features/availability/lib/getAggregatedAvailability/getAggregatedAvailability";
 import type {
   CurrentSeats,
@@ -18,6 +17,7 @@ import { isEventTypeLoggingEnabled } from "@calcom/features/bookings/lib/isEvent
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import type { BusyTimesService } from "@calcom/features/busyTimes/services/getBusyTimes";
 import type { getBusyTimesService } from "@calcom/features/di/containers/BusyTimes";
+import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import type { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
 import { getDefaultEvent } from "@calcom/features/eventtypes/lib/defaultEvents";
 import type { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
@@ -1307,7 +1307,7 @@ export class AvailableSlotsService {
 
         const restrictionTimezone = eventType.useBookerTimezone
           ? input.timeZone
-          : restrictionSchedule.timeZone ?? "UTC";
+          : (restrictionSchedule.timeZone ?? "UTC");
         const eventLength = input.duration || eventType.length;
 
         const restrictionAvailability = restrictionSchedule.availability.map((rule) => ({

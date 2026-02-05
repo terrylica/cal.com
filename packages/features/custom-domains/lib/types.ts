@@ -1,47 +1,24 @@
+import type {
+  VercelConfigResponse,
+  VercelDomainResponse,
+} from "@calcom/lib/domainManager/deploymentServices/vercel";
 import type { CustomDomain } from "@calcom/prisma/client";
 
-export type DomainVerificationStatus =
-  | "Valid Configuration"
-  | "Pending Verification"
-  | "Domain Not Found"
-  | "Invalid Configuration"
-  | "Conflicting DNS Records"
-  | "Unknown Error";
+export type { VercelConfigResponse, VercelDomainResponse };
 
-export interface VercelDomainResponse {
-  name: string;
-  apexName: string;
-  verified: boolean;
-  verification?: Array<{
-    type: string;
-    domain: string;
-    value: string;
-    reason: string;
-  }>;
-  error?: {
-    code: string;
-    message: string;
-  };
-}
-
-export interface VercelConfigResponse {
-  misconfigured: boolean;
-  conflicts?: Array<{
-    name: string;
-    type: string;
-    value: string;
-  }>;
-  error?: {
-    code: string;
-    message: string;
-  };
+export enum DomainVerificationStatus {
+  VALID = "Valid Configuration",
+  PENDING = "Pending Verification",
+  NOT_FOUND = "Domain Not Found",
+  INVALID = "Invalid Configuration",
+  CONFLICTING = "Conflicting DNS Records",
+  UNKNOWN = "Unknown Error",
 }
 
 export interface DomainVerificationResult {
   status: DomainVerificationStatus;
   domainJson?: VercelDomainResponse;
   configJson?: VercelConfigResponse;
-  verificationJson?: VercelDomainResponse;
 }
 
 export type CustomDomainWithTeam = CustomDomain & {

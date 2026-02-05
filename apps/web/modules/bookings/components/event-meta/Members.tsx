@@ -2,8 +2,7 @@ import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import { useBookerStore } from "@calcom/features/bookings/Booker/store";
 import type { BookerEvent } from "@calcom/features/bookings/types";
-import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
-import { getTeamUrlSync } from "@calcom/features/ee/organizations/lib/getTeamUrlSync";
+import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { SchedulingType } from "@calcom/prisma/enums";
 import { AvatarGroup } from "@calcom/ui/components/avatar";
@@ -52,6 +51,14 @@ export const EventMembers = ({
     return <p className="text-subtle pt-6 text-sm font-semibold">{profile.name}</p>;
   }
 
+  const getEntityBaseUrl = () => {
+    const baseUrl = getOrgFullOrigin(entity.orgSlug ?? null, {
+      protocol: true,
+      isCustomDomain: entity.isCustomDomain,
+    });
+    return entity.teamSlug ? `${baseUrl}/${entity.teamSlug}` : baseUrl;
+  };
+
   const orgOrTeamAvatarItem =
     hideOrgTeamAvatar || isDynamic || (!profile.image && !entity.logoUrl) || !entity.teamSlug
       ? []
@@ -59,11 +66,7 @@ export const EventMembers = ({
           {
             // We don't want booker to be able to see the list of other users or teams inside the embed
             href:
-              isEmbed || isPlatform || isPrivateLink || entity.hideProfileLink
-                ? null
-                : entity.teamSlug
-                  ? getTeamUrlSync({ orgSlug: entity.orgSlug, teamSlug: entity.teamSlug })
-                  : getBookerBaseUrlSync(entity.orgSlug),
+              isEmbed || isPlatform || isPrivateLink || entity.hideProfileLink ? null : getEntityBaseUrl(),
             image: entity.logoUrl ?? profile.image ?? "",
             alt: entity.name ?? profile.name ?? "",
             title: entity.name ?? profile.name ?? "",
@@ -77,17 +80,23 @@ export const EventMembers = ({
         className="border-muted"
         items={[
           ...orgOrTeamAvatarItem,
-          ...shownUsers.map((user) => ({
-            href:
-              isPlatform || isPrivateLink || entity.hideProfileLink
-                ? null
-                : `${getBookerBaseUrlSync(user.profile?.organization?.slug ?? null)}/${
-                    user.profile?.username
-                  }?redirect=false`,
-            alt: user.name || "",
-            title: user.name || "",
-            image: getUserAvatarUrl(user),
-          })),
+          ...shownUsers.map((user) => {
+            const org = user.profile?.organization;
+            const customDomain = org?.customDomain?.verified ? org.customDomain.slug : null;
+            const baseUrl = getOrgFullOrigin(customDomain ?? org?.slug ?? null, {
+              protocol: true,
+              isCustomDomain: !!customDomain,
+            });
+            return {
+              href:
+                isPlatform || isPrivateLink || entity.hideProfileLink
+                  ? null
+                  : `${baseUrl}/${user.profile?.username}?redirect=false`,
+              alt: user.name || "",
+              title: user.name || "",
+              image: getUserAvatarUrl(user),
+            };
+          }),
         ]}
       />
 

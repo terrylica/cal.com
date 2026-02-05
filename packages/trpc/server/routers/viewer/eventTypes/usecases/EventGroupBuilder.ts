@@ -1,4 +1,5 @@
 import type { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
+import { getBrand } from "@calcom/features/ee/organizations/lib/getBrand";
 import type { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
@@ -80,6 +81,9 @@ export class EventGroupBuilder {
     // Build event type groups
     const eventTypeGroups: EventTypeGroup[] = [];
 
+    // Fetch org brand once for custom domain support
+    const orgBrand = await getBrand(profile.organizationId);
+
     // Add user events if needed
     const filterContext: FilterContext = { filters, userUpId };
     if (shouldListUserEvents(filterContext)) {
@@ -109,7 +113,7 @@ export class EventGroupBuilder {
             forRoutingForms ?? false
           );
 
-          return createTeamEventGroup(membership, effectiveRole, teamSlug, permissions);
+          return createTeamEventGroup(membership, effectiveRole, teamSlug, permissions, orgBrand);
         })
     );
 

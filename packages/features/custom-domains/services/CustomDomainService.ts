@@ -1,10 +1,10 @@
+import { createDomain, deleteDomain } from "@calcom/lib/domainManager/deploymentServices/vercel";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
 import type { PrismaClient } from "@calcom/prisma";
-
 import type { DomainVerificationResult } from "../lib/types";
-import { verifyDomain, isValidDomainFormat } from "../lib/verify-domain";
-import { addDomainToVercel, removeDomainFromVercel } from "../lib/vercel-api";
+import { DomainVerificationStatus } from "../lib/types";
+import { isValidDomainFormat, verifyDomainStatus } from "../lib/verify-domain";
 import { CustomDomainRepository } from "../repositories/CustomDomainRepository";
 
 export class CustomDomainService {
@@ -31,7 +31,7 @@ export class CustomDomainService {
       throw new ErrorWithCode(ErrorCode.BadRequest, "Domain is already in use");
     }
 
-    await addDomainToVercel(normalizedSlug);
+    await createDomain(normalizedSlug);
 
     const domain = await this.repository.create({
       teamId: input.teamId,
@@ -47,7 +47,7 @@ export class CustomDomainService {
       throw new ErrorWithCode(ErrorCode.NotFound, "No custom domain found for this team");
     }
 
-    await removeDomainFromVercel(domain.slug);
+    await deleteDomain(domain.slug);
 
     await this.repository.delete(domain.id);
 
@@ -62,26 +62,20 @@ export class CustomDomainService {
     return this.repository.findBySlugWithTeam(slug.toLowerCase());
   }
 
-  async verifyDomainStatus(teamId: number): Promise<DomainVerificationResult & { domain: string | null }> {
+  async verifyDomainForTeam(teamId: number): Promise<DomainVerificationResult & { domain: string | null }> {
     const domain = await this.repository.findByTeamId(teamId);
     if (!domain) {
-      return {
-        status: "Domain Not Found",
-        domain: null,
-      };
+      return { status: DomainVerificationStatus.NOT_FOUND, domain: null };
     }
 
-    const result = await verifyDomain(domain.slug);
+    const result = await verifyDomainStatus(domain.slug);
 
-    const isVerified = result.status === "Valid Configuration";
+    const isVerified = result.status === DomainVerificationStatus.VALID;
     if (domain.verified !== isVerified) {
       await this.repository.updateVerificationStatus(domain.id, isVerified);
     }
 
-    return {
-      ...result,
-      domain: domain.slug,
-    };
+    return { ...result, domain: domain.slug };
   }
 
   async refreshVerificationStatus(id: string, verified: boolean) {
