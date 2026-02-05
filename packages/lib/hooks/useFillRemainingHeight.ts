@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export function useFillRemainingHeight<T extends HTMLElement = HTMLDivElement>(offset?: number) {
+export function useFillRemainingHeight<T extends HTMLElement = HTMLDivElement>(offset = 0) {
   const ref = useRef<T>(null);
 
   useEffect(() => {
@@ -8,13 +8,19 @@ export function useFillRemainingHeight<T extends HTMLElement = HTMLDivElement>(o
     if (!el) return;
 
     const update = () => {
-      const top = el.getBoundingClientRect().top;
-      el.style.height = `calc(100dvh - ${top + (offset || 0)}px)`;
+      const top = Math.round(el.getBoundingClientRect().top + offset);
+      const newHeight = `calc(100dvh - ${top}px)`;
+      if (el.style.height !== newHeight) {
+        el.style.height = newHeight;
+      }
     };
 
     update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+
+    const observer = new ResizeObserver(update);
+    observer.observe(document.body);
+
+    return () => observer.disconnect();
   }, [offset]);
 
   return ref;
