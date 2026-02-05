@@ -390,21 +390,19 @@ function preprocess<T extends z.ZodType>({
             throw e;
           }
           const errorMessage = e instanceof Error ? e.message : "preprocessing failed";
-          skippedFields.push({ field: field.name, reason: errorMessage });
+          const invalidFieldName = field.name;
+          skippedFields.push({ field: invalidFieldName, reason: errorMessage });
+          // Remove invalid field like it never existed in the first place
+          delete parsedResponses[invalidFieldName];
         }
       });
 
-      // Log skipped fields for partial schema
-      if (isPartialSchema && skippedFields.length > 0) {
+      if (skippedFields.length > 0) {
         console.warn(
-          `Partial prefill: skipped ${skippedFields.length} invalid field(s) during preprocessing: ${skippedFields
+          `Skipped ${skippedFields.length} invalid field(s) during preprocessing: ${skippedFields
             .map((f) => `${f.field} (${f.reason})`)
             .join(", ")}`
         );
-        // Remove skipped fields from parsedResponses to prevent them from being validated in superRefine
-        skippedFields.forEach(({ field }) => {
-          delete parsedResponses[field];
-        });
       }
 
       return {
