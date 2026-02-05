@@ -107,6 +107,7 @@ export const useEventTypeForm = ({
       },
       hostGroups: eventType.hostGroups || [],
       successRedirectUrl: eventType.successRedirectUrl || "",
+      redirectUrlOnNoRoutingFormResponse: eventType.redirectUrlOnNoRoutingFormResponse || "",
       forwardParamsSuccessRedirect: eventType.forwardParamsSuccessRedirect,
       users: eventType.users,
       useEventTypeDestinationCalendarEmail: eventType.useEventTypeDestinationCalendarEmail,

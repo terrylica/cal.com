@@ -231,6 +231,7 @@ export type TUpdateInputSchema = {
   metadata?: EventTypeMetadata;
   successRedirectUrl?: string | null;
   forwardParamsSuccessRedirect?: boolean | null;
+  redirectUrlOnNoRoutingFormResponse?: string | null;
   bookingLimits?: IntervalLimit | null;
   durationLimits?: IntervalLimit | null;
   isInstantEvent?: boolean;
@@ -468,6 +469,7 @@ const BaseEventTypeUpdateInput: z.ZodType<TUpdateInputSchema> = z
     metadata: EventTypeMetaDataSchema.optional(),
     successRedirectUrl: z.string().nullable().optional(),
     forwardParamsSuccessRedirect: z.boolean().nullable().optional(),
+    redirectUrlOnNoRoutingFormResponse: z.string().nullable().optional(),
     bookingLimits: intervalLimitsType.nullable().optional(),
     durationLimits: intervalLimitsType.nullable().optional(),
     isInstantEvent: z.boolean().optional(),

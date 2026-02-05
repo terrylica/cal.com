@@ -185,6 +185,7 @@ export type FormValues = {
     externalId: string;
   };
   successRedirectUrl: string;
+  redirectUrlOnNoRoutingFormResponse: string;
   durationLimits?: IntervalLimit;
   bookingLimits?: IntervalLimit;
   onlyShowFirstAvailableSlot: boolean;

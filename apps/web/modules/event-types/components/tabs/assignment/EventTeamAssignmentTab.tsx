@@ -21,15 +21,15 @@ import { RadioAreaGroup as RadioArea } from "@calcom/ui/components/radio";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import type { AddMembersWithSwitchCustomClassNames } from "@calcom/web/modules/event-types/components/AddMembersWithSwitch";
 import AddMembersWithSwitch from "@calcom/web/modules/event-types/components/AddMembersWithSwitch";
-import AssignAllTeamMembers from "@calcom/web/modules/event-types/components/AssignAllTeamMembers";
+import AssignAllTeamMembers from "@calcom/features/eventtypes/components/AssignAllTeamMembers";
 import type {
   ChildrenEventType,
   ChildrenEventTypeSelectCustomClassNames,
-} from "@calcom/web/modules/event-types/components/ChildrenEventTypeSelect";
-import ChildrenEventTypeSelect from "@calcom/web/modules/event-types/components/ChildrenEventTypeSelect";
+} from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
+import ChildrenEventTypeSelect from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
 import { EditWeightsForAllTeamMembers } from "@calcom/web/modules/event-types/components/EditWeightsForAllTeamMembers";
-import { LearnMoreLink } from "@calcom/web/modules/event-types/components/LearnMoreLink";
-import WeightDescription from "@calcom/web/modules/event-types/components/WeightDescription";
+import { LearnMoreLink } from "@calcom/features/eventtypes/components/LearnMoreLink";
+import WeightDescription from "@calcom/features/eventtypes/components/WeightDescription";
 import { useSearchTeamMembers, type SearchTeamMember } from "@calcom/features/eventtypes/lib/useSearchTeamMembers";
 import type { TFunction } from "i18next";
 import Link from "next/link";
