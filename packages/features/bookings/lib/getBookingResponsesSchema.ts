@@ -85,7 +85,7 @@ function preprocessField({
  * Handles all field type validations including email, phone, multiselect, etc.
  * Throws on configuration errors (e.g., invalid variant) - caller should wrap in try-catch for partial schemas.
  */
-async function getRefinedValue({
+async function superRefineField({
   field,
   value,
   isPartialSchema,
@@ -460,7 +460,7 @@ function preprocess<T extends z.ZodType>({
           : ctx;
 
         try {
-          await getRefinedValue({
+          await superRefineField({
             field: bookingField,
             value,
             isPartialSchema,

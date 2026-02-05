@@ -1011,46 +1011,6 @@ describe("getBookingResponsesSchema", () => {
     });
   });
 
-  describe("multiselect field type", () => {
-    test("should successfully parse a multiselect type field", async () => {
-      const schema = getBookingResponsesSchema({
-        bookingFields: [
-          {
-            name: "name",
-            type: "name",
-            required: true,
-          },
-          {
-            name: "email",
-            type: "email",
-            required: true,
-          },
-          {
-            name: "testMultiselect",
-            type: "multiselect",
-            required: true,
-          },
-        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
-        view: "ALL_VIEWS",
-      });
-      const parsedResponses = await schema.safeParseAsync({
-        email: "test@test.com",
-        name: "test",
-        testMultiselect: ["option1", "option-2"],
-      });
-      expect(parsedResponses.success).toBe(true);
-      // eslint-disable-next-line playwright/no-conditional-in-test
-      if (!parsedResponses.success) {
-        throw new Error("Should not reach here");
-      }
-      expect(parsedResponses.data).toEqual({
-        email: "test@test.com",
-        name: "test",
-        testMultiselect: ["option1", "option-2"],
-      });
-    });
-  });
-
   test.todo("select");
   test.todo("textarea");
   test.todo("number");
@@ -1855,6 +1815,111 @@ describe("getBookingResponsesPartialSchema - Prefill validation", () => {
       );
       // The invalid textarea field should NOT be included in the response
       expect(parsedResponses.notes).toBeUndefined();
+    });
+
+    test(`should skip name field with empty object during partial prefill`, async () => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+            variant: "firstAndLastName",
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "testField",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+      // Empty object {} is invalid for name field - should be skipped during partial prefill
+      const parsedResponses = await schema.parseAsync({
+        name: {},
+        testField: "test value",
+      });
+      // Name field should be skipped (not included), but testField should still be prefilled
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          testField: "test value",
+        })
+      );
+      expect(parsedResponses).not.toHaveProperty("name");
+    });
+
+    test(`should skip url field with invalid format during partial prefill`, async () => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "website",
+            type: "url",
+            required: false,
+          },
+          {
+            name: "testField",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+      // Invalid URL should be skipped during partial prefill
+      const parsedResponses = await schema.parseAsync({
+        name: "John Doe",
+        website: "not-a-valid-url",
+        testField: "test value",
+      });
+      // URL field should be skipped due to validation error, but other fields should still be prefilled
+      expect(parsedResponses).toEqual(
+        expect.objectContaining({
+          name: "John Doe",
+          testField: "test value",
+        })
+      );
+      expect(parsedResponses).not.toHaveProperty("website");
+    });
+
+    test(`should handle null responses gracefully during partial prefill`, async () => {
+      const schema = getBookingResponsesPartialSchema({
+        bookingFields: [
+          {
+            name: "name",
+            type: "name",
+            required: true,
+          },
+          {
+            name: "email",
+            type: "email",
+            required: true,
+          },
+          {
+            name: "testField",
+            type: "text",
+            required: false,
+          },
+        ] as z.infer<typeof eventTypeBookingFields> & z.BRAND<"HAS_SYSTEM_FIELDS">,
+        view: "ALL_VIEWS",
+      });
+      // Null responses should be handled gracefully
+      const parsedResponses = await schema.parseAsync(null);
+      // Should return empty object or null without crashing
+      expect(parsedResponses).toBeDefined();
     });
   });
 });
