@@ -509,70 +509,67 @@ export async function updateNewTeamMemberEventTypes(userId: number, teamId: numb
   }
 }
 
-export async function addNewMembersToEventTypes({ userIds, teamId }: { userIds: number[]; teamId: number }) {
-  const log = logger.getSubLogger({
-    prefix: ["addNewMembersToEventTypes"],
+export async function addNewMembersToEventTypes({
+  userIds,
+  teamId,
+  db,
+}: {
+  userIds: number[];
+  teamId: number;
+  db: Prisma.TransactionClient;
+}): Promise<void> {
+  const eventTypesToAdd = await db.eventType.findMany({
+    where: {
+      team: { id: teamId },
+      assignAllTeamMembers: true,
+    },
+    select: {
+      ...allManagedEventTypeProps,
+      id: true,
+      schedulingType: true,
+    },
   });
-
-  const eventTypesToAdd = await getEventTypesToAddNewMembers(teamId);
 
   const managedEventTypes = eventTypesToAdd.filter((eventType) => eventType.schedulingType === "MANAGED");
   const teamEventTypes = eventTypesToAdd.filter((eventType) => eventType.schedulingType !== "MANAGED");
 
-  await Promise.allSettled([
-    prisma.eventType
-      .createMany({
-        data: managedEventTypes
-          .map((eventType) =>
-            userIds.map((userId) =>
-              generateNewChildEventTypeDataForDB({
-                eventType,
-                userId,
-                includeWorkflow: false,
-                includeUserConnect: false,
-              })
-            )
-          )
-          .flat(),
-        skipDuplicates: true,
+  // Batch create managed children event types
+  const managedChildrenRows = managedEventTypes.flatMap((eventType) =>
+    userIds.map((userId) =>
+      generateNewChildEventTypeDataForDB({
+        eventType,
+        userId,
+        includeWorkflow: false,
+        includeUserConnect: false,
       })
-      .catch((error) => {
-        log.error(
-          `Failed to add new members to managed event types`,
-          safeStringify({
-            teamId,
-            error,
-          })
-        );
-      }),
-    prisma.host
-      .createMany({
-        data: teamEventTypes
-          .map((eventType) => {
-            return userIds.map((userId) => {
-              return {
-                userId,
-                eventTypeId: eventType.id,
-                isFixed: eventType.schedulingType === "COLLECTIVE",
-              };
-            });
-          })
-          .flat(),
-        skipDuplicates: true,
-      })
-      .catch((error) => {
-        log.error(
-          `Failed to add new members as hosts`,
-          safeStringify({
-            teamId,
-            error,
-          })
-        );
-      }),
-  ]);
+    )
+  );
+
+  for (let i = 0; i < managedChildrenRows.length; i += DATABASE_CHUNK_SIZE) {
+    const batch = managedChildrenRows.slice(i, i + DATABASE_CHUNK_SIZE);
+    if (batch.length > 0) {
+      await db.eventType.createMany({ data: batch, skipDuplicates: true });
+    }
+  }
+
+  // Batch create hosts for team event types
+  const hostRows = teamEventTypes.flatMap((eventType) =>
+    userIds.map((userId) => ({
+      userId,
+      eventTypeId: eventType.id,
+      isFixed: eventType.schedulingType === "COLLECTIVE",
+    }))
+  );
+
+  for (let i = 0; i < hostRows.length; i += DATABASE_CHUNK_SIZE) {
+    const batch = hostRows.slice(i, i + DATABASE_CHUNK_SIZE);
+    if (batch.length > 0) {
+      await db.host.createMany({ data: batch, skipDuplicates: true });
+    }
+  }
 
   // Connect to users and workflows
-  const createdChildrenEventTypes = await prisma.eventType.findMany({
+  const createdChildrenEventTypes = await db.eventType.findMany({
     where: {
       userId: {
         in: userIds,
@@ -595,60 +592,36 @@ export async function addNewMembersToEventTypes({ userIds, teamId }: { userIds: 
   });
 
   if (createdChildrenEventTypes.length > 0) {
-    await Promise.allSettled([
-      prisma.workflowsOnEventTypes
-        .createMany({
-          data: createdChildrenEventTypes
-            .map((eventType) =>
-              eventType.workflows.map((workflow) => ({
-                eventTypeId: eventType.id,
-                workflowId: workflow.id,
-              }))
-            )
-            .flat(),
-          skipDuplicates: true,
-        })
-        .catch((error) => {
-          log.error(
-            `Failed to connect new children event types to workflows`,
-            safeStringify({
-              teamId,
-              error,
-            })
-          );
-        }),
-    ]);
+    // Batch create workflow connections
+    const workflowRows = createdChildrenEventTypes.flatMap((eventType) =>
+      eventType.workflows.map((workflow) => ({
+        eventTypeId: eventType.id,
+        workflowId: workflow.id,
+      }))
+    );
+
+    for (let i = 0; i < workflowRows.length; i += DATABASE_CHUNK_SIZE) {
+      const batch = workflowRows.slice(i, i + DATABASE_CHUNK_SIZE);
+      if (batch.length > 0) {
+        await db.workflowsOnEventTypes.createMany({ data: batch, skipDuplicates: true });
+      }
+    }
+
     // Connect children event types to users
     for (let i = 0; i < createdChildrenEventTypes.length; i += DATABASE_CHUNK_SIZE) {
       const childrenEventTypeBatch = createdChildrenEventTypes.slice(i, i + DATABASE_CHUNK_SIZE);
 
-      await Promise.allSettled([
+      await Promise.all(
         childrenEventTypeBatch.map((childEventType) => {
-          if (!childEventType.userId) return;
-          return prisma.eventType
-            .update({
-              where: {
-                id: childEventType.id,
-              },
-              data: {
-                users: {
-                  connect: [{ id: childEventType.userId }],
-                },
-              },
-            })
-            .catch((error) => {
-              log.error(
-                `Failed to connect new children event types to users`,
-                safeStringify({
-                  teamId,
-                  childEventTypeId: childEventType.id,
-                  userId: childEventType.userId,
-                  error,
-                })
-              );
-            });
-        }),
-      ]);
+          if (!childEventType.userId) {
+            return Promise.resolve();
+          }
+          return db.eventType.update({
+            where: { id: childEventType.id },
+            data: { users: { connect: [{ id: childEventType.userId }] } },
+          });
+        })
+      );
     }
   }
 }

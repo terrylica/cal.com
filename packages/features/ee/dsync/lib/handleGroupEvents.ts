@@ -124,15 +124,24 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
         createUsersAndConnectToOrgProps,
         org,
       });
-      await prisma.membership.createMany({
-        data: newUsers.map((user) => ({
-          createdAt: new Date(),
-          userId: user.id,
+
+      await prisma.$transaction(async (tx) => {
+        await tx.membership.createMany({
+          data: newUsers.map((user) => ({
+            createdAt: new Date(),
+            userId: user.id,
+            teamId: group.teamId,
+            role: MembershipRole.MEMBER,
+            accepted: true,
+          })),
+        });
+        await addNewMembersToEventTypes({
+          userIds: newUsers.map((u) => u.id),
           teamId: group.teamId,
-          role: MembershipRole.MEMBER,
-          accepted: true,
-        })),
+          db: tx,
+        });
       });
+
       await Promise.allSettled(
         newUserEmails.map((email) => {
           return sendSignupToOrganizationEmail({
@@ -158,30 +167,37 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
     }
 
     // For existing users create membership for team and org if needed
-    await prisma.membership.createMany({
-      data: [
-        ...users
-          .map((user) => {
-            return [
-              {
-                createdAt: new Date(),
-                userId: user.id,
-                teamId: group.teamId,
-                role: MembershipRole.MEMBER,
-                accepted: true,
-              },
-              {
-                createdAt: new Date(),
-                userId: user.id,
-                teamId: organizationId,
-                role: MembershipRole.MEMBER,
-                accepted: true,
-              },
-            ];
-          })
-          .flat(),
-      ],
-      skipDuplicates: true,
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.createMany({
+        data: [
+          ...users
+            .map((user) => {
+              return [
+                {
+                  createdAt: new Date(),
+                  userId: user.id,
+                  teamId: group.teamId,
+                  role: MembershipRole.MEMBER,
+                  accepted: true,
+                },
+                {
+                  createdAt: new Date(),
+                  userId: user.id,
+                  teamId: organizationId,
+                  role: MembershipRole.MEMBER,
+                  accepted: true,
+                },
+              ];
+            })
+            .flat(),
+        ],
+        skipDuplicates: true,
+      });
+      await addNewMembersToEventTypes({
+        userIds: users.map((u) => u.id),
+        teamId: group.teamId,
+        db: tx,
+      });
     });
 
     // Send emails to new members
@@ -224,12 +240,6 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
       users: newOrgMembers,
       organizationId,
       orgAutoAcceptEmail: org.organizationSettings?.orgAutoAcceptEmail ?? "",
-    });
-
-    // Add users to team event types if assignAllTeamMembers is enabled
-    await addNewMembersToEventTypes({
-      userIds: [...(newUsers ? newUsers.map((user) => user.id) : []), ...users.map((user) => user.id)],
-      teamId: group.teamId,
     });
   }
 };

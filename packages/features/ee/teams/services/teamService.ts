@@ -196,14 +196,16 @@ export class TeamService {
       return;
     }
 
-    await prisma.membership.createMany({
-      data: membershipData,
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.createMany({ data: membershipData });
+
+      const teamIds = Array.from(new Set(membershipData.map((m) => m.teamId)));
+      const userIds = Array.from(new Set(membershipData.map((m) => m.userId)));
+
+      for (const teamId of teamIds) {
+        await addNewMembersToEventTypes({ userIds, teamId, db: tx });
+      }
     });
-
-    const teamIds = Array.from(new Set(membershipData.map((m) => m.teamId)));
-    const userIds = Array.from(new Set(membershipData.map((m) => m.userId)));
-
-    await Promise.all(teamIds.map((teamId) => addNewMembersToEventTypes({ userIds, teamId })));
   }
 
   static async inviteMemberByToken(token: string, userId: number): Promise<string> {
