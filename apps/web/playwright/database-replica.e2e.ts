@@ -28,6 +28,7 @@ test.describe("Database Replica Header", () => {
     });
 
     await page.goto(`/team/${team.slug}/${teamEventSlug}`);
+    await expect(page).toHaveURL(`/team/${team.slug}/${teamEventSlug}`);
 
     // Wait for booker calendar to load
     await page.getByTestId("incrementMonth").waitFor();
@@ -50,6 +51,7 @@ test.describe("Database Replica Header", () => {
     const { slug: teamEventSlug } = await owner.getFirstTeamEvent(team.id);
 
     await page.goto(`/team/${team.slug}/${teamEventSlug}`);
+    await expect(page).toHaveURL(`/team/${team.slug}/${teamEventSlug}`);
 
     // Wait for booker calendar to load
     await page.getByTestId("incrementMonth").waitFor();
@@ -76,6 +78,7 @@ test.describe("Database Replica Header", () => {
     });
 
     await page.goto(`/team/${team.slug}/${teamEventSlug}`);
+    await expect(page).toHaveURL(`/team/${team.slug}/${teamEventSlug}`);
 
     // Should fallback to primary and still work
     await page.getByTestId("incrementMonth").waitFor();
