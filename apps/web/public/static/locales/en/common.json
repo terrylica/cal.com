@@ -4582,5 +4582,8 @@
   "upgrade_plan_team_description": "For growing teams",
   "upgrade_plan_org_description": "For scaling organizations",
   "upgrade_plan_enterprise_description": "For large enterprises",
+  "upgrade_to_teams": "Upgrade to Teams",
+  "upgrade_to_orgs": "Upgrade to Orgs",
+  "get_in_touch": "Get in touch",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }

@@ -50,21 +50,20 @@ function PlanColumn({
 }: PlanColumnProps): JSX.Element {
   return (
     <Card className="flex-1 gap-0 rounded-xl border-subtle p-4 py-0">
-      <CardHeader className="gap-0 px-0">
+      <CardPanel className="px-0">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-sm text-emphasis">{name}</h3>
           {badge && <Badge variant="outline">{badge}</Badge>}
         </div>
         <p className="mt-2 leading-none font-semibold text-2xl text-emphasis">{price}</p>
         <p className="mt-2 leading-none font-medium text-sm text-subtle h-4">{priceSubtext}</p>
-      </CardHeader>
 
-      <CardPanel className="px-0">
         <Button
-          className="mt-4"
+          className="mt-4 w-full"
           variant={primaryButton ? "default" : "outline"}
           render={<Link href={buttonHref} />}>
-          {buttonText}
+          <Icon name="circle-arrow-up" />
+          <span>{buttonText}</span>
         </Button>
 
         <p className="mt-4 text-sm text-subtle">{description}</p>
@@ -72,7 +71,7 @@ function PlanColumn({
         <ul className="mt-3 space-y-2">
           {features.map((feature) => (
             <li key={feature.text} className="flex items-start gap-2 text-sm">
-              <Icon name="square-check" className="h-4 w-4 shrink-0 text-default" />
+              <Icon name="check" className="relative top-0.5 h-4 w-4 shrink-0 text-default" />
               <span className="text-default">{feature.text}</span>
             </li>
           ))}
@@ -159,7 +158,7 @@ export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps):
         </DialogHeader>
 
         <DialogPanel>
-          <div className="flex gap-4">
+          <div className="mt-3 flex gap-4">
             {target === "team" && (
               <PlanColumn
                 name={t("team")}
@@ -168,7 +167,7 @@ export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps):
                 priceSubtext={t("per_month_user")}
                 description={t("upgrade_plan_team_description")}
                 features={teamFeatures}
-                buttonText={t("upgrade")}
+                buttonText={t("upgrade_to_teams")}
                 buttonHref="/settings/teams/new"
                 primaryButton={target === "team"}
               />
@@ -180,7 +179,7 @@ export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps):
               priceSubtext={t("per_month_user")}
               description={t("upgrade_plan_org_description")}
               features={orgFeatures}
-              buttonText={t("upgrade")}
+              buttonText={t("upgrade_to_orgs")}
               buttonHref={organizationHref}
               primaryButton={target === "organization"}
             />
@@ -191,21 +190,19 @@ export function UpgradePlanDialog({ children, target }: UpgradePlanDialogProps):
               priceSubtext=""
               description={t("upgrade_plan_enterprise_description")}
               features={enterpriseFeatures}
-              buttonText={t("contact_sales")}
+              buttonText={t("get_in_touch")}
               buttonHref="https://cal.com/sales"
             />
           </div>
-        </DialogPanel>
 
-        <DialogFooter>
-          <div className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-subtle">{t("individual")}</span>
-              <span className="font-semibold text-emphasis text-sm">{t("free")}</span>
+          <Card className="mt-2 p-4 flex-row justify-between items-center">
+            <div>
+              <p className="font-medium text-sm text-black">{t("individual")}</p>
+              <p className="font-semibold text-black text-2xl">{t("free")}</p>
             </div>
-            <Badge variant="outline">{t("current_plan")}</Badge>
-          </div>
-        </DialogFooter>
+            <Badge variant="outline" size="lg" className="opacity-50">{t("current_plan")}</Badge>
+          </Card>
+        </DialogPanel>
       </DialogPopup>
     </Dialog>
   );
