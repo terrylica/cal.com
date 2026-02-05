@@ -3,6 +3,7 @@
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { getStringAsNumberRequiredSchema } from "@calcom/prisma/zod-utils";
 import { trpc } from "@calcom/trpc/react";
+import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
 import { Form, TextField } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
@@ -76,28 +77,33 @@ export default function MoveTeamToOrgView() {
       </Form>
 
       {moveTeamMutation.isSuccess && moveTeamMutation.data && (
-        <div className="mt-6 rounded-md border border-green-200 bg-green-50 p-4">
-          <h3 className="text-sm font-semibold text-green-800">Migration Successful</h3>
-          <div className="mt-2 space-y-1 text-sm text-green-700">
-            <p>
-              <span className="font-medium">Team ID:</span> {moveTeamMutation.data.teamId}
-            </p>
-            {moveTeamMutation.data.teamSlug && (
+        <Alert
+          className="mt-6"
+          severity="info"
+          CustomIcon="check"
+          title="Migration Successful"
+          message={
+            <div className="space-y-1">
               <p>
-                <span className="font-medium">Team Slug:</span> {moveTeamMutation.data.teamSlug}
+                <span className="font-medium">Team ID:</span> {moveTeamMutation.data.teamId}
               </p>
-            )}
-            <p>
-              <span className="font-medium">Organization ID:</span> {moveTeamMutation.data.organizationId}
-            </p>
-            {moveTeamMutation.data.organizationSlug && (
+              {moveTeamMutation.data.teamSlug && (
+                <p>
+                  <span className="font-medium">Team Slug:</span> {moveTeamMutation.data.teamSlug}
+                </p>
+              )}
               <p>
-                <span className="font-medium">Organization Slug:</span>{" "}
-                {moveTeamMutation.data.organizationSlug}
+                <span className="font-medium">Organization ID:</span> {moveTeamMutation.data.organizationId}
               </p>
-            )}
-          </div>
-        </div>
+              {moveTeamMutation.data.organizationSlug && (
+                <p>
+                  <span className="font-medium">Organization Slug:</span>{" "}
+                  {moveTeamMutation.data.organizationSlug}
+                </p>
+              )}
+            </div>
+          }
+        />
       )}
     </div>
   );
