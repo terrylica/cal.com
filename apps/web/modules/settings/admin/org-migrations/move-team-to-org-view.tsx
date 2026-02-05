@@ -1,16 +1,15 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { TFunction } from "next-i18next";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { getStringAsNumberRequiredSchema } from "@calcom/prisma/zod-utils";
+import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
 import { Form, TextField } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { TFunction } from "next-i18next";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 export const getFormSchema = (t: TFunction) => {
   return z.object({
@@ -20,15 +19,7 @@ export const getFormSchema = (t: TFunction) => {
   });
 };
 
-const enum State {
-  IDLE,
-  LOADING,
-  SUCCESS,
-  ERROR,
-}
-
 export default function MoveTeamToOrgView() {
-  const [state, setState] = useState(State.IDLE);
   const { t } = useLocale();
   const formSchema = getFormSchema(t);
   const formMethods = useForm({
@@ -36,67 +27,78 @@ export default function MoveTeamToOrgView() {
     resolver: zodResolver(formSchema),
   });
 
+  const moveTeamMutation = trpc.viewer.admin.moveTeamToOrg.useMutation({
+    onSuccess: (data) => {
+      showToast(data.message, "success", 10000);
+    },
+    onError: (error) => {
+      showToast(error.message, "error", 10000);
+    },
+  });
+
   const { register } = formMethods;
   return (
-    <Form
-      className="space-y-6"
-      noValidate={true}
-      form={formMethods}
-      handleSubmit={async (values) => {
-        setState(State.LOADING);
-        const res = await fetch(`/api/orgMigration/moveTeamToOrg`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(values),
-        });
-        let response = null;
-        try {
-          response = await res.json();
-        } catch (e) {
-          if (e instanceof Error) {
-            showToast(e.message, "error", 10000);
-          } else {
-            showToast(t("something_went_wrong"), "error", 10000);
-          }
-          setState(State.ERROR);
-          return;
-        }
-        if (res.status === 200) {
-          setState(State.SUCCESS);
-          showToast(response.message, "success", 10000);
-        } else {
-          setState(State.ERROR);
-          showToast(response.message, "error", 10000);
-        }
-      }}>
-      <div className="space-y-6">
-        <TextField
-          {...register("teamId")}
-          label="Team ID"
-          required
-          placeholder="Enter teamId to move to org"
-        />
-        <TextField
-          {...register("teamSlugInOrganization")}
-          label="New Slug"
-          required
-          placeholder="Team slug in the Organization"
-        />
-        <TextField
-          {...register("targetOrgId")}
-          label="Target Organization ID"
-          required
-          placeholder="Enter Target organization ID"
-        />
-        <div className="mt-2 text-sm text-gray-600">
-          Note: Team members will automatically be invited to the organization when the team is moved.
+    <div className="space-y-6">
+      <Form
+        className="space-y-6"
+        noValidate={true}
+        form={formMethods}
+        handleSubmit={async (values) => {
+          const parsedValues = formSchema.parse(values);
+          moveTeamMutation.mutate(parsedValues);
+        }}>
+        <div className="space-y-6">
+          <TextField
+            {...register("teamId")}
+            label="Team ID"
+            required
+            placeholder="Enter teamId to move to org"
+          />
+          <TextField
+            {...register("teamSlugInOrganization")}
+            label="New Slug"
+            required
+            placeholder="Team slug in the Organization"
+          />
+          <TextField
+            {...register("targetOrgId")}
+            label="Target Organization ID"
+            required
+            placeholder="Enter Target organization ID"
+          />
+          <div className="mt-2 text-sm text-gray-600">
+            Note: Team members will automatically be invited to the organization when the team is moved.
+          </div>
         </div>
-      </div>
-      <Button type="submit" loading={state === State.LOADING}>
-        Move Team to Org
-      </Button>
-    </Form>
+        <Button type="submit" loading={moveTeamMutation.isLoading}>
+          Move Team to Org
+        </Button>
+      </Form>
+
+      {moveTeamMutation.isSuccess && moveTeamMutation.data && (
+        <div className="mt-6 rounded-md border border-green-200 bg-green-50 p-4">
+          <h3 className="text-sm font-semibold text-green-800">Migration Successful</h3>
+          <div className="mt-2 space-y-1 text-sm text-green-700">
+            <p>
+              <span className="font-medium">Team ID:</span> {moveTeamMutation.data.teamId}
+            </p>
+            {moveTeamMutation.data.teamSlug && (
+              <p>
+                <span className="font-medium">Team Slug:</span> {moveTeamMutation.data.teamSlug}
+              </p>
+            )}
+            <p>
+              <span className="font-medium">Organization ID:</span> {moveTeamMutation.data.organizationId}
+            </p>
+            {moveTeamMutation.data.organizationSlug && (
+              <p>
+                <span className="font-medium">Organization Slug:</span>{" "}
+                {moveTeamMutation.data.organizationSlug}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

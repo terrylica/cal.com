@@ -2838,6 +2838,7 @@
   "description_requires_booker_email_verification": "To ensure booker's email verification before scheduling events",
   "requires_confirmation_mandatory": "Text messages can only be sent to attendees when event type requires confirmation.",
   "organizations": "Organizations",
+  "migrations": "Migrations",
   "upload_cal_video_logo": "Upload Cal Video logo",
   "update_cal_video_logo": "Update Cal Video logo",
   "upload_banner": "Upload banner",
@@ -4568,5 +4569,7 @@
   "last_6_months": "Last 6 months",
   "last_12_months": "Last 12 months",
   "calendar_events_disabled_video_limitation": "When calendar events are disabled, meeting links cannot be generated for apps whose link generation is tied to calendar event creation, for example, Google Meet and Microsoft Teams. Other video apps like Cal Video will continue to work.",
+  "organization_migration_move_team": "Move team to organization",
+  "organization_migration_move_team_description": "Move an existing regular team to an organization with a new slug",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }
