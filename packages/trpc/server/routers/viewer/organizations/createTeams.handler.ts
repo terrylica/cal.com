@@ -235,6 +235,19 @@ async function moveTeam({
     const creditService = new CreditService();
     await creditService.moveCreditsFromTeamToOrg({ teamId, orgId: org.id });
   } catch (error) {
+    // Check for Prisma unique constraint violation (P2002)
+    // Using duck typing to check for the error code as instanceof may not work in all environments
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: `Slug "${newSlug}" is already in use within this organization`,
+      });
+    }
     log.error(
       "Error while moving team to organization",
       safeStringify(error),

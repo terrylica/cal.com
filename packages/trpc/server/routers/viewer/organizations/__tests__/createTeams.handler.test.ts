@@ -1253,5 +1253,62 @@ describe("createTeams handler - Comprehensive Tests", () => {
       ]);
       inviteSpy.mockRestore();
     });
+
+    it("should throw CONFLICT error when moving team with slug that already exists in the organization", async () => {
+      const { owner, organization } = await createScenario();
+
+      const teamToMove = await createTestTeam({
+        name: "Team To Move",
+        slug: "original-slug",
+        parentId: null,
+      });
+
+      await createTestMembership({
+        userId: owner.id,
+        teamId: teamToMove.id,
+        role: MembershipRole.OWNER,
+      });
+
+      // Mock the Prisma update to throw a unique constraint error (P2002)
+      // This simulates what happens when the database rejects a duplicate slug
+      const originalUpdate = prismock.team.update;
+      prismock.team.update = vi.fn().mockRejectedValueOnce(
+        Object.assign(new Error("Unique constraint failed on the fields: (`slug`,`parentId`)"), {
+          code: "P2002",
+          clientVersion: "5.0.0",
+          meta: { target: ["slug", "parentId"] },
+          name: "PrismaClientKnownRequestError",
+        })
+      );
+
+      await expect(
+        createTeamsHandler({
+          ctx: {
+            user: {
+              id: owner.id,
+              organizationId: organization.id,
+            },
+          },
+          input: {
+            teamNames: [],
+            orgId: organization.id,
+            moveTeams: [
+              {
+                id: teamToMove.id,
+                shouldMove: true,
+                newSlug: "conflicting-slug",
+              },
+            ],
+            creationSource: CreationSource.WEBAPP,
+          },
+        })
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: expect.stringContaining("conflicting-slug"),
+      });
+
+      // Restore the original update function
+      prismock.team.update = originalUpdate;
+    });
   });
 });
