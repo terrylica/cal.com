@@ -5,6 +5,7 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import slugify from "@calcom/lib/slugify";
 import { MembershipRole, UserPermissionRole, CreationSource, RedirectType } from "@calcom/prisma/enums";
 
+import { Prisma } from "@calcom/prisma/client";
 import { TRPCError } from "@trpc/server";
 
 import { createTeamsHandler } from "../createTeams.handler";
@@ -1273,11 +1274,9 @@ describe("createTeams handler - Comprehensive Tests", () => {
       // This simulates what happens when the database rejects a duplicate slug
       const originalUpdate = prismock.team.update;
       prismock.team.update = vi.fn().mockRejectedValueOnce(
-        Object.assign(new Error("Unique constraint failed on the fields: (`slug`,`parentId`)"), {
+        new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`slug`,`parentId`)", {
           code: "P2002",
           clientVersion: "5.0.0",
-          meta: { target: ["slug", "parentId"] },
-          name: "PrismaClientKnownRequestError",
         })
       );
 

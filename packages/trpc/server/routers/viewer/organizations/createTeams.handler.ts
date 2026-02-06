@@ -7,7 +7,7 @@ import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import slugify from "@calcom/lib/slugify";
 import { prisma } from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
+import { Prisma } from "@calcom/prisma/client";
 import type { CreationSource } from "@calcom/prisma/enums";
 import { MembershipRole, RedirectType } from "@calcom/prisma/enums";
 import { teamMetadataSchema, teamMetadataStrictSchema } from "@calcom/prisma/zod-utils";
@@ -235,14 +235,7 @@ async function moveTeam({
     const creditService = new CreditService();
     await creditService.moveCreditsFromTeamToOrg({ teamId, orgId: org.id });
   } catch (error) {
-    // Check for Prisma unique constraint violation (P2002)
-    // Using duck typing to check for the error code as instanceof may not work in all environments
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      error.code === "P2002"
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       throw new TRPCError({
         code: "CONFLICT",
         message: `Slug "${newSlug}" is already in use within this organization`,
