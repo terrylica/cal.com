@@ -1,11 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { usePathname, useRouter as useAppRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
-
+import { useEventTypeForm } from "@calcom/atoms/event-types/hooks/useEventTypeForm";
+import { useHandleRouteChange } from "@calcom/atoms/event-types/hooks/useHandleRouteChange";
+import { useTabsNavigations } from "@calcom/atoms/event-types/hooks/useTabsNavigations";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
+import type { ChildrenEventType } from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
 import type { EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
 import { EventPermissionProvider } from "@calcom/features/pbac/client/context/EventPermissionContext";
 import { useWorkflowPermission } from "@calcom/features/pbac/client/hooks/useEventPermission";
@@ -14,21 +13,18 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
 import { HttpError } from "@calcom/lib/http-error";
 import { SchedulingType } from "@calcom/prisma/enums";
-import { trpc } from "@calcom/trpc/react";
 import type { RouterOutputs } from "@calcom/trpc/react";
+import { trpc } from "@calcom/trpc/react";
 import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { showToast } from "@calcom/ui/components/toast";
-
-import { TRPCClientError } from "@trpc/react-query";
-
 import { revalidateTeamEventTypeCache } from "@calcom/web/app/(booking-page-wrapper)/team/[slug]/[type]/actions";
 import { revalidateEventTypeEditPage } from "@calcom/web/app/(use-page-wrapper)/event-types/[type]/actions";
-
-import type { ChildrenEventType } from "@calcom/features/eventtypes/components/ChildrenEventTypeSelect";
+import { TRPCClientError } from "@trpc/react-query";
+import dynamic from "next/dynamic";
+import { useRouter as useAppRouter, usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { EventType as EventTypeComponent } from "./EventType";
-import { useEventTypeForm } from "@calcom/atoms/event-types/hooks/useEventTypeForm";
-import { useHandleRouteChange } from "@calcom/atoms/event-types/hooks/useHandleRouteChange";
-import { useTabsNavigations } from "@calcom/atoms/event-types/hooks/useTabsNavigations";
 
 type EventPermissions = {
   eventTypes: {
@@ -45,30 +41,27 @@ type EventPermissions = {
   };
 };
 
-const ManagedEventTypeDialog = dynamic(() =>
-  import("@calcom/features/eventtypes/components/dialogs/ManagedEventDialog")
+const ManagedEventTypeDialog = dynamic(
+  () => import("@calcom/features/eventtypes/components/dialogs/ManagedEventDialog")
 );
 
 const AssignmentWarningDialog = dynamic(() => import("./dialogs/AssignmentWarningDialog"));
 
-const EventSetupTab = dynamic(
-  () => import("./tabs/setup/EventSetupTabWebWrapper").then((mod) => mod),
-  { loading: () => null }
-);
+const EventSetupTab = dynamic(() => import("./tabs/setup/EventSetupTabWebWrapper").then((mod) => mod), {
+  loading: () => null,
+});
 
 const EventAvailabilityTab = dynamic(() =>
   import("./tabs/availability/EventAvailabilityTabWebWrapper").then((mod) => mod)
 );
 
-const EventTeamAssignmentTab = dynamic(() => import("./tabs/assignment/EventTeamAssignmentTabWebWrapper").then((mod) => mod));
-
-const EventLimitsTab = dynamic(() =>
-  import("./tabs/limits/EventLimitsTabWebWrapper").then((mod) => mod)
+const EventTeamAssignmentTab = dynamic(() =>
+  import("./tabs/assignment/EventTeamAssignmentTabWebWrapper").then((mod) => mod)
 );
 
-const EventAdvancedTab = dynamic(() =>
-  import("./tabs/advanced/EventAdvancedWebWrapper").then((mod) => mod)
-);
+const EventLimitsTab = dynamic(() => import("./tabs/limits/EventLimitsTabWebWrapper").then((mod) => mod));
+
+const EventAdvancedTab = dynamic(() => import("./tabs/advanced/EventAdvancedWebWrapper").then((mod) => mod));
 
 const EventInstantTab = dynamic(() =>
   import("./tabs/instant/EventInstantTab").then((mod) => mod.EventInstantTab)
@@ -78,9 +71,7 @@ const EventRecurringTab = dynamic(() =>
   import("./tabs/recurring/EventRecurringWebWrapper").then((mod) => mod)
 );
 
-const EventAppsTab = dynamic(() =>
-  import("./tabs/apps/EventAppsTab").then((mod) => mod.EventAppsTab)
-);
+const EventAppsTab = dynamic(() => import("./tabs/apps/EventAppsTab").then((mod) => mod.EventAppsTab));
 
 const EventWorkflowsTab = dynamic(() => import("./tabs/workflows/EventWorkflowsTab"));
 
@@ -88,21 +79,17 @@ const EventWebhooksTab = dynamic(() =>
   import("./tabs/webhooks/EventWebhooksTab").then((mod) => mod.EventWebhooksTab)
 );
 
-const EventAITab = dynamic(() =>
-  import("./tabs/ai/EventAITab").then((mod) => mod.EventAITab)
-);
+const EventAITab = dynamic(() => import("./tabs/ai/EventAITab").then((mod) => mod.EventAITab));
 
 export type EventTypeWebWrapperProps = {
   id: number;
   data: RouterOutputs["viewer"]["eventTypes"]["get"];
-  belongsToOrg: boolean;
   permissions?: EventPermissions;
 };
 
 export const EventTypeWebWrapper = ({
   id,
   data: serverFetchedData,
-  belongsToOrg,
   permissions = {
     eventTypes: {
       canRead: false,
@@ -126,7 +113,7 @@ export const EventTypeWebWrapper = ({
   if (serverFetchedData) {
     return (
       <EventPermissionProvider initialPermissions={permissions}>
-        <EventTypeWeb {...serverFetchedData} id={id} belongsToOrg={belongsToOrg} />
+        <EventTypeWeb {...serverFetchedData} id={id} />
       </EventPermissionProvider>
     );
   }
@@ -135,18 +122,16 @@ export const EventTypeWebWrapper = ({
 
   return (
     <EventPermissionProvider initialPermissions={permissions}>
-      <EventTypeWeb {...eventTypeQueryData} id={id} belongsToOrg={belongsToOrg} />
+      <EventTypeWeb {...eventTypeQueryData} id={id} />
     </EventPermissionProvider>
   );
 };
 
 const EventTypeWeb = ({
   id,
-  belongsToOrg,
   ...rest
 }: EventTypeSetupProps & {
   id: number;
-  belongsToOrg: boolean;
 }) => {
   const { t } = useLocale();
   const utils = trpc.useUtils();
@@ -274,7 +259,7 @@ const EventTypeWeb = ({
         orgId={orgBranding?.id ?? null}
       />
     ),
-    instant: <EventInstantTab eventType={eventType} isTeamEvent={!!team} belongsToOrg={belongsToOrg} />,
+    instant: <EventInstantTab eventType={eventType} isTeamEvent={!!team} />,
     recurring: <EventRecurringTab eventType={eventType} />,
     apps: (
       <EventAppsTab

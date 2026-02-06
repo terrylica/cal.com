@@ -1,5 +1,4 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
 import { getEventTypePermissions } from "@calcom/features/pbac/lib/event-type-permissions";
 import { eventTypesRouter } from "@calcom/trpc/server/routers/viewer/eventTypes/_router";
 import { EventTypeWebWrapper } from "@calcom/web/modules/event-types/components/EventTypeWebWrapper";
@@ -62,13 +61,7 @@ const ServerPage = async ({ params }: PageProps) => {
   // Fetch permissions for the event type's team
   const permissions = await getEventTypePermissions(session.user.id, data.eventType.teamId);
 
-  const belongsToOrg = await PrismaOrgMembershipRepository.hasAnyAcceptedMembershipByUserId({
-    userId: session.user.id,
-  });
-
-  return (
-    <EventTypeWebWrapper data={data} id={eventTypeId} permissions={permissions} belongsToOrg={belongsToOrg} />
-  );
+  return <EventTypeWebWrapper data={data} id={eventTypeId} permissions={permissions} />;
 };
 
 export default ServerPage;
