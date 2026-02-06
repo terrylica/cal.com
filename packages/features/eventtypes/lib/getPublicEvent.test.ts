@@ -261,6 +261,7 @@ const GET_PUBLIC_EVENT_EXPECTED_KEYS= [
   "entity",
   "isDynamic",
   "showInstantEventConnectNowModal",
+  "workflows",
 ].sort();
 
 describe("processEventDataShared", () => {
@@ -456,7 +457,7 @@ describe("getPublicEvent", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result).not.toHaveProperty("workflows");
+    expect(result!.workflows).toBeUndefined();
     const resultStr = JSON.stringify(result);
     expect(resultStr).not.toContain("reminderBody");
     expect(resultStr).not.toContain("emailSubject");

@@ -145,7 +145,7 @@ export class EventTypesController_2024_04_15 {
       );
 
       return {
-        data: event,
+        data: event ? { ...event, workflows: event.workflows ?? [] } : null,
         status: SUCCESS_STATUS,
       };
     } catch (err) {

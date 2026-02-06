@@ -617,7 +617,7 @@ export const getPublicEvent = async (
     disableRescheduling: event.disableRescheduling,
     allowReschedulingCancelledBookings: event.allowReschedulingCancelledBookings,
     interfaceLanguage: event.interfaceLanguage,
-    ...(includeWorkflows ? { workflows: eventWithUserProfiles.workflows } : {}),
+    workflows: includeWorkflows ? eventWithUserProfiles.workflows : undefined,
   };
 };
 
