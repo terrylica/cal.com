@@ -1,88 +1,8 @@
+import { bookingWithUserAndEventDetailsSelect } from "@calcom/platform-libraries/bookings";
 import type { Prisma } from "@calcom/prisma/client";
 import { Injectable } from "@nestjs/common";
 import { PrismaReadService } from "@/modules/prisma/prisma-read.service";
 import { PrismaWriteService } from "@/modules/prisma/prisma-write.service";
-
-const bookingWithUserAndEventDetailsSelect = {
-  title: true,
-  description: true,
-  startTime: true,
-  endTime: true,
-  userPrimaryEmail: true,
-  uid: true,
-  iCalUID: true,
-  iCalSequence: true,
-  eventTypeId: true,
-  id: true,
-  userId: true,
-  location: true,
-  responses: true,
-  metadata: true,
-  destinationCalendar: {
-    select: {
-      id: true,
-      integration: true,
-      externalId: true,
-    },
-  },
-  attendees: {
-    select: {
-      email: true,
-      name: true,
-      timeZone: true,
-      locale: true,
-    },
-  },
-  references: {
-    select: {
-      id: true,
-      type: true,
-      uid: true,
-      deleted: true,
-      credentialId: true,
-      delegationCredentialId: true,
-      externalCalendarId: true,
-    },
-  },
-  user: {
-    select: {
-      email: true,
-      name: true,
-      timeZone: true,
-      locale: true,
-      credentials: {
-        select: {
-          id: true,
-          type: true,
-          delegationCredentialId: true,
-        },
-      },
-      destinationCalendar: {
-        select: {
-          id: true,
-          integration: true,
-          externalId: true,
-        },
-      },
-      profiles: {
-        select: {
-          organizationId: true,
-        },
-      },
-    },
-  },
-  eventType: {
-    select: {
-      title: true,
-      metadata: true,
-      recurringEvent: true,
-      seatsPerTimeSlot: true,
-      seatsShowAttendees: true,
-      hideOrganizerEmail: true,
-      customReplyToEmail: true,
-    },
-  },
-} satisfies Prisma.BookingSelect;
 
 @Injectable()
 export class BookingsRepository_2024_08_13 {

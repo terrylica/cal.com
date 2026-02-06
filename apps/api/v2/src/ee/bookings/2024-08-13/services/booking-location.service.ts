@@ -124,9 +124,6 @@ export class BookingLocationService_2024_08_13 {
     private readonly bookingEventHandlerService: BookingEventHandlerService
   ) {}
 
-  /**
-   * builds a CalendarEvent from booking data for use with video/calendar integrations.
-   */
   private async buildCalEventForIntegration(
     booking: BookingWithDetails,
     location: string,
@@ -177,10 +174,6 @@ export class BookingLocationService_2024_08_13 {
     });
   }
 
-  /**
-   * sends location change email and SMS notifications.
-   * fetches eventType metadata from the booking for email settings.
-   */
   private async sendLocationChangeNotifications(
     evt: CalendarEvent,
     bookingId: number,
@@ -202,10 +195,6 @@ export class BookingLocationService_2024_08_13 {
     }
   }
 
-  /**
-   * updates booking with video location data and emits location changed event.
-   * returns the updated booking response.
-   */
   private async updateBookingWithVideoLocation(
     ctx: IntegrationHandlerContext,
     videoCallUrl: string | undefined,
@@ -395,16 +384,20 @@ export class BookingLocationService_2024_08_13 {
           existingBooking.uid,
           bookingLocation
         );
+      } else if (!bookingWithDetails) {
+        this.logger.warn(
+          `Unable to send location change notifications: booking details not found for bookingId=${existingBooking.id}`
+        );
+      } else if (!bookingWithDetails.user) {
+        this.logger.warn(
+          `Unable to send location change notifications: user not found for bookingId=${existingBooking.id}`
+        );
       }
     }
 
     return this.bookingsService.getBooking(updatedBooking.uid, user);
   }
 
-  /**
-   * router for integration location updates.
-   * dispatches to the appropriate handler based on integration type.
-   */
   private async handleIntegrationLocationUpdate(
     existingBooking: BookingForLocationUpdate,
     inputLocation: { type: "integration"; integration: Integration_2024_08_13 },
@@ -451,10 +444,6 @@ export class BookingLocationService_2024_08_13 {
     }
   }
 
-  /**
-   * since google Meet is NOT a dedicated integration - it only works via Google Calendar.
-   * if the user doesn't have Google Calendar, falls back to Cal Video.
-   */
   private async handleGoogleMeetLocation(ctx: IntegrationHandlerContext): Promise<BookingLocationResponse> {
     const hasGoogleCalendar = ctx.booking.references.some(
       (ref) => ref.type.includes("google_calendar") && !ref.deleted
@@ -472,11 +461,6 @@ export class BookingLocationService_2024_08_13 {
     return this.handleCalendarBasedIntegration(ctx, "google_calendar");
   }
 
-  /**
-   * MS Teams IS a dedicated integration, but when paired with Office365 Calendar,
-   * the meeting link is created through the calendar (like Google Meet).
-   * without Office365 Calendar, it uses VideoApiAdapter.
-   */
   private async handleMSTeamsLocation(ctx: IntegrationHandlerContext): Promise<BookingLocationResponse> {
     const hasOffice365Calendar = ctx.booking.references.some(
       (ref) => ref.type.includes("office365_calendar") && !ref.deleted
@@ -532,11 +516,6 @@ export class BookingLocationService_2024_08_13 {
     return this.updateBookingWithVideoLocation(ctx, videoCallUrl, bookingLocation, evt);
   }
 
-  /**
-   * handle video integrations that use VideoApiAdapter (Zoom, Webex, MS Teams without O365 Calendar, etc.).
-   * these integrations have user-connected credentials and create meetings via their APIs, they dont have any additonal complex logic like google meet or office365 calendar.
-   * hence we can group them under VideoApiAdapter.
-   */
   private async handleVideoApiIntegration(ctx: IntegrationHandlerContext): Promise<BookingLocationResponse> {
     const credential = await this.findVideoCredentialForIntegration(
       ctx.integrationSlug,
@@ -590,10 +569,6 @@ export class BookingLocationService_2024_08_13 {
     return this.updateBookingWithVideoLocation(ctx, videoCallUrl, bookingLocation, evt);
   }
 
-  /**
-   * handle calendar-based integrations (Google Meet via Google Calendar, MS Teams via Office365 Calendar).
-   * the meeting link is created when updating the calendar event with conferenceData.
-   */
   private async handleCalendarBasedIntegration(
     ctx: IntegrationHandlerContext,
     requiredCalendarType: string
@@ -621,7 +596,6 @@ export class BookingLocationService_2024_08_13 {
 
     const evt = await this.buildCalEventForIntegration(ctx.booking, ctx.internalLocation, null);
 
-    // add conferenceData for Google Meet link generation
     if (ctx.integrationSlug === "google-meet") {
       evt.conferenceData = {
         createRequest: {
@@ -630,7 +604,6 @@ export class BookingLocationService_2024_08_13 {
       };
     }
 
-    // update the calendar event - this will generate the meet link
     const updateResult = await updateEvent(
       calendarCredential,
       evt,
@@ -638,7 +611,6 @@ export class BookingLocationService_2024_08_13 {
       calendarReference.externalCalendarId
     );
 
-    // extract the hangout/meet link from the response
     let meetingUrl: string | undefined;
     if (updateResult.updatedEvent) {
       const updatedEvent = Array.isArray(updateResult.updatedEvent)
@@ -796,13 +768,7 @@ export class BookingLocationService_2024_08_13 {
     return null;
   }
 
-  /*
-  1. fetch booking references via booking id or uid
-  2. if booking reference not present, return
-  3. if reference present, use credentials from in there to retreive calendar event and then update it accordingly
-  */
   private async syncCalendarEvent(bookingId: number, newLocation: string): Promise<void> {
-    // 1. Fetch booking with references and user credentials
     const booking = await this.bookingsRepository.getBookingByIdWithUserAndEventDetails(bookingId);
 
     if (!booking || !booking.user) {
@@ -887,10 +853,6 @@ export class BookingLocationService_2024_08_13 {
     }
   }
 
-  /**
-   * Get the credential for a booking reference, following the pattern from EventManager.
-   * Tries to find in local credentials first, then falls back to DB lookup.
-   */
   private async getCredentialForReference(
     reference: {
       credentialId: number | null;
