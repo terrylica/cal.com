@@ -289,7 +289,8 @@ export const getPublicEvent = async (
   prisma: PrismaClient,
   fromRedirectOfNonOrgLink: boolean,
   currentUserId?: number,
-  fetchAllUsers = false
+  fetchAllUsers = false,
+  includeWorkflows = false
 ) => {
   const usernameList = getUsernameList(username);
   const orgQuery = org ? getSlugOrRequestedSlug(org) : null;
@@ -616,6 +617,7 @@ export const getPublicEvent = async (
     disableRescheduling: event.disableRescheduling,
     allowReschedulingCancelledBookings: event.allowReschedulingCancelledBookings,
     interfaceLanguage: event.interfaceLanguage,
+    ...(includeWorkflows ? { workflows: eventWithUserProfiles.workflows } : {}),
   };
 };
 

@@ -246,7 +246,6 @@ const PROCESS_EVENT_DATA_SHARED_EXPECTED_KEYS = [
   "recurringEvent",
   "isDynamic",
   "showInstantEventConnectNowModal",
-  "workflows",
 ].sort();
 
 const GET_PUBLIC_EVENT_EXPECTED_KEYS= [
@@ -535,5 +534,24 @@ describe("getPublicEvent", () => {
 
     expect(result).not.toBeNull();
     expect(result).toHaveProperty("hidden");
+  });
+
+  it("includes workflows when includeWorkflows is true", async () => {
+    const result = await getPublicEvent(
+      "testuser",
+      "test-event",
+      false,
+      null,
+      prismaMock as unknown as PrismaClient,
+      false,
+      undefined,
+      false,
+      true
+    );
+
+    expect(result).not.toBeNull();
+    expect(result).toHaveProperty("workflows");
+    expect(Array.isArray(result!.workflows)).toBe(true);
+    expect(result!.workflows.length).toBeGreaterThan(0);
   });
 });

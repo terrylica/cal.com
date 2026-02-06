@@ -46,7 +46,7 @@ import {
   SUCCESS_STATUS,
   X_CAL_CLIENT_ID,
 } from "@calcom/platform-constants";
-import { getPublicEventForApiV2 as getPublicEvent, getEventTypesByViewer } from "@calcom/platform-libraries/event-types";
+import { getPublicEvent, getEventTypesByViewer } from "@calcom/platform-libraries/event-types";
 import type { PrismaClient } from "@calcom/prisma";
 
 @Controller({
@@ -138,8 +138,9 @@ export class EventTypesController_2024_04_15 {
         queryParams.isTeamEvent,
         orgSlug ?? null,
         this.prismaReadService.prisma as unknown as PrismaClient,
-        // We should be fine allowing unpublished orgs events to be servable through platform because Platform access is behind license
-        // If there is ever a need to restrict this, we can introduce a new query param `fromRedirectOfNonOrgLink`
+        true,
+        undefined,
+        false,
         true
       );
 
