@@ -1,0 +1,31 @@
+name: Check Circular Dependencies
+on:
+  workflow_call:
+permissions:
+  actions: write
+  contents: read
+jobs:
+  check-circular-deps:
+    name: No circular imports
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+      - uses: ./.github/actions/cache-checkout
+      - uses: ./.github/actions/yarn-install
+      - name: Check for circular dependency imports
+        run: |
+          npx biome lint \
+            --only=style/noRestrictedImports \
+            --diagnostic-level=error \
+            --max-diagnostics=none \
+            --reporter=github \
+            --skip-parse-errors \
+            ./packages/lib \
+            ./packages/app-store \
+            ./packages/features \
+            ./packages/trpc \
+            ./packages/testing \
+            ./packages/platform/atoms \
+            ./apps/api/v2
