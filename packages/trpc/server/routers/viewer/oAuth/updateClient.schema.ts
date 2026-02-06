@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { AccessScopeSchema } from "@calcom/prisma/zod/inputTypeSchemas";
 import { OAuthClientStatus } from "@calcom/prisma/enums";
 
 export const ZUpdateClientInputSchema = z.object({
@@ -17,6 +18,7 @@ export const ZUpdateClientInputSchema = z.object({
     (value) => (typeof value === "string" && value.trim() === "" ? null : value),
     z.string().url().nullable().optional()
   ),
+  scopes: z.array(AccessScopeSchema).min(1, "At least one scope is required").optional(),
 }).superRefine((val, ctx) => {
   if (val.status === OAuthClientStatus.REJECTED && !val.rejectionReason) {
     ctx.addIssue({

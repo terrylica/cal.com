@@ -1,17 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import type { Dispatch, SetStateAction } from "react";
-import type { RegisterOptions, UseFormReturn } from "react-hook-form";
-
+import { OAUTH_SCOPES } from "@calcom/features/oauth/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-
+import type { AccessScope } from "@calcom/prisma/enums";
 import { Avatar } from "@calcom/ui/components/avatar";
-import { Label, Switch, TextArea, TextField } from "@calcom/ui/components/form";
+import { CheckboxField, Label, Switch, TextArea, TextField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { ImageUploader } from "@calcom/ui/components/image-uploader";
 import { Tooltip } from "@calcom/ui/components/tooltip";
-
+import type { Dispatch, SetStateAction } from "react";
+import { useMemo } from "react";
+import type { RegisterOptions, UseFormReturn } from "react-hook-form";
+import { Controller } from "react-hook-form";
+import { scopeTranslationKey } from "../../../auth/oauth2/scopes";
 import type { OAuthClientCreateFormValues } from "../create/OAuthClientCreateModal";
 
 export const OAuthClientFormFields = ({
@@ -131,6 +132,8 @@ export const OAuthClientFormFields = ({
         </div>
       </div>
 
+      <OAuthScopeCheckboxes form={form} disabled={isFormDisabled} />
+
       <div>
         <Label className="text-emphasis mb-2 block text-sm font-medium">{t("logo")}</Label>
         <div className="space-y-3">
@@ -161,3 +164,52 @@ export const OAuthClientFormFields = ({
     </>
   );
 };
+
+function OAuthScopeCheckboxes({
+  form,
+  disabled,
+}: {
+  form: UseFormReturn<OAuthClientCreateFormValues>;
+  disabled: boolean;
+}) {
+  const { t } = useLocale();
+
+  return (
+    <Controller
+      control={form.control}
+      name="scopes"
+      render={({ field }) => {
+        const scopes = field.value || [];
+        return (
+          <div>
+            <Label className="text-emphasis mb-2 flex items-center gap-1 text-sm font-medium">
+              {t("oauth_scopes")}
+              <Tooltip content={t("oauth_scopes_description")}>
+                <span>
+                  <Icon name="info" className="text-subtle h-4 w-4" />
+                </span>
+              </Tooltip>
+            </Label>
+            <div className="border-subtle space-y-1 rounded-md border p-3">
+              {OAUTH_SCOPES.map((scope) => (
+                <CheckboxField
+                  key={scope}
+                  data-testid={`oauth-scope-checkbox-${scope}`}
+                  checked={scopes.includes(scope)}
+                  disabled={disabled}
+                  description={t(scopeTranslationKey(scope))}
+                  onChange={(e) => {
+                    const newScopes = e.target.checked
+                      ? [...scopes, scope]
+                      : scopes.filter((s) => s !== scope);
+                    field.onChange(newScopes);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      }}
+    />
+  );
+}

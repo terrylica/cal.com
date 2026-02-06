@@ -1,17 +1,16 @@
-
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-
-import { useLocale } from "@calcom/lib/hooks/useLocale";
-
-import { OAuthClientFormFields } from "../view/OAuthClientFormFields";
-
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+import { OAUTH_SCOPES } from "@calcom/features/oauth/constants";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
+import type { AccessScope } from "@calcom/prisma/enums";
 import { Button } from "@calcom/ui/components/button";
 import { DialogClose, DialogContent, DialogFooter } from "@calcom/ui/components/dialog";
 import { Form } from "@calcom/ui/components/form";
+import { showToast } from "@calcom/ui/components/toast";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { OAuthClientFormFields } from "../view/OAuthClientFormFields";
 
 export type OAuthClientCreateFormValues = {
   name: string;
@@ -20,6 +19,7 @@ export type OAuthClientCreateFormValues = {
   websiteUrl: string;
   logo: string;
   enablePkce: boolean;
+  scopes: AccessScope[];
 };
 
 export type OAuthClientCreateDialogProps = {
@@ -48,6 +48,7 @@ export function OAuthClientCreateDialog({
       websiteUrl: "",
       logo: "",
       enablePkce: false,
+      scopes: [...OAUTH_SCOPES],
     },
   });
 
@@ -75,6 +76,10 @@ export function OAuthClientCreateDialog({
         <Form
           form={form}
           handleSubmit={(values) => {
+            if (!values.scopes || values.scopes.length === 0) {
+              showToast(t("oauth_client_scope_required"), "error");
+              return;
+            }
             onSubmit({
               name: values.name.trim() || "",
               purpose: values.purpose.trim() || "",
@@ -82,6 +87,7 @@ export function OAuthClientCreateDialog({
               websiteUrl: values.websiteUrl.trim() || "",
               logo: values.logo,
               enablePkce: values.enablePkce,
+              scopes: values.scopes,
             });
           }}
           className="space-y-4"
@@ -99,4 +105,3 @@ export function OAuthClientCreateDialog({
     </Dialog>
   );
 }
-

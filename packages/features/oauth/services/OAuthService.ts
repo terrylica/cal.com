@@ -7,11 +7,11 @@ import type { OAuthRefreshTokenRepository } from "@calcom/features/oauth/reposit
 import { generateSecret } from "@calcom/features/oauth/utils/generateSecret";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
+import logger from "@calcom/lib/logger";
 import { verifyCodeChallenge } from "@calcom/lib/pkce";
 import type { AccessScope, OAuthClientType } from "@calcom/prisma/enums";
 import { OAuthClientStatus } from "@calcom/prisma/enums";
 import jwt from "jsonwebtoken";
-import logger from "@calcom/lib/logger";
 
 export interface OAuth2Client {
   clientId: string;
@@ -20,6 +20,7 @@ export interface OAuth2Client {
   logo: string | null;
   isTrusted: boolean;
   clientType: OAuthClientType;
+  scopes: AccessScope[];
 }
 
 export interface OAuth2Tokens {
@@ -27,6 +28,7 @@ export interface OAuth2Tokens {
   tokenType: string;
   refreshToken: string;
   expiresIn: number;
+  scope: string;
 }
 
 export interface AuthorizeResult {
@@ -85,13 +87,15 @@ export class OAuthService {
       logo: client.logo,
       isTrusted: client.isTrusted,
       clientType: client.clientType,
+      scopes: client.scopes,
     };
   }
 
   async getClientForAuthorization(
     clientId: string,
     redirectUri: string,
-    loggedInUserId?: number
+    loggedInUserId?: number,
+    scopeParam?: string
   ): Promise<OAuth2Client> {
     const client = await this.oAuthClientRepository.findByClientId(clientId);
 
@@ -105,6 +109,13 @@ export class OAuthService {
       this.ensureClientIsApproved(client);
     }
 
+    if (scopeParam) {
+      const requestedScopes = scopeParam.split(/[, ]+/).filter(Boolean) as AccessScope[];
+      if (requestedScopes.length > 0) {
+        this.validateRequestedScopes(client.scopes, requestedScopes);
+      }
+    }
+
     return {
       clientId: client.clientId,
       redirectUri: client.redirectUri,
@@ -112,6 +123,7 @@ export class OAuthService {
       logo: client.logo,
       isTrusted: client.isTrusted,
       clientType: client.clientType,
+      scopes: client.scopes,
     };
   }
 
@@ -119,7 +131,7 @@ export class OAuthService {
     clientId: string,
     loggedInUserId: number,
     redirectUri: string,
-    scopes: AccessScope[],
+    requestedScopes: AccessScope[],
     state?: string,
     teamSlug?: string,
     codeChallenge?: string,
@@ -135,8 +147,14 @@ export class OAuthService {
       this.ensureClientIsApproved(client);
     }
 
-    // RFC 6749 4.1.2.1: Redirect URI mismatch on Auth step is 'invalid_request'
     this.validateRedirectUri(client.redirectUri, redirectUri);
+
+    const scopes: AccessScope[] =
+      requestedScopes.length === 0 && client.scopes.length > 0 ? [...client.scopes] : requestedScopes;
+
+    if (requestedScopes.length > 0) {
+      this.validateRequestedScopes(client.scopes, scopes);
+    }
 
     if (client.clientType === "PUBLIC") {
       if (!codeChallenge) {
@@ -159,7 +177,6 @@ export class OAuthService {
     if (teamSlug) {
       const team = await this.teamsRepository.findTeamBySlugWithAdminRole(teamSlug, loggedInUserId);
       if (!team) {
-        // Specific OAuth error for user denying or failing permission
         throw new ErrorWithCode(ErrorCode.Unauthorized, "access_denied", {
           reason: "team_not_found_or_no_access",
         });
@@ -184,7 +201,19 @@ export class OAuthService {
       state,
     });
 
-    return { redirectUrl, authorizationCode, client };
+    return {
+      redirectUrl,
+      authorizationCode,
+      client: {
+        clientId: client.clientId,
+        redirectUri: client.redirectUri,
+        name: client.name,
+        logo: client.logo,
+        isTrusted: client.isTrusted,
+        clientType: client.clientType,
+        scopes: client.scopes,
+      },
+    };
   }
 
   private ensureClientIsApproved(client: { status: OAuthClientStatus }): void {
@@ -198,6 +227,16 @@ export class OAuthService {
   private validateRedirectUri(registeredUri: string, providedUri: string): void {
     if (providedUri !== registeredUri) {
       throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_request", { reason: "redirect_uri_mismatch" });
+    }
+  }
+
+  private validateRequestedScopes(clientScopes: AccessScope[], requestedScopes: AccessScope[]) {
+    if (clientScopes.length === 0) return;
+    const invalidScopes = requestedScopes.filter((requestedScope) => !clientScopes.includes(requestedScope));
+    if (invalidScopes.length > 0) {
+      throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_scope", {
+        reason: "scope_exceeds_client_registration",
+      });
     }
   }
 
@@ -278,7 +317,6 @@ export class OAuthService {
       throw new ErrorWithCode(ErrorCode.Unauthorized, "invalid_client", { reason: "client_not_found" });
     }
 
-    // RFC 6749 5.2: Redirect URI mismatch during Token exchange is 'invalid_grant'
     if (redirectUri && client.redirectUri !== redirectUri) {
       throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_grant", { reason: "redirect_uri_mismatch" });
     }
@@ -299,7 +337,6 @@ export class OAuthService {
 
     const pkceError = this.verifyPKCE(client, accessCode, codeVerifier);
     if (pkceError) {
-      // RFC 7636 4.4.1: If verification fails, return 'invalid_grant'
       throw new ErrorWithCode(ErrorCode.BadRequest, pkceError.error, { reason: pkceError.reason });
     }
 
@@ -419,12 +456,10 @@ export class OAuthService {
 
     const method = source.codeChallengeMethod || "S256";
 
-    // Structural missing params
     if (!source.codeChallenge || !codeVerifier || method !== "S256") {
       return { error: "invalid_request", reason: "pkce_missing_parameters_or_invalid_method" };
     }
 
-    // Logical mismatch
     if (!verifyCodeChallenge(codeVerifier, source.codeChallenge, method)) {
       return { error: "invalid_grant", reason: "pkce_verification_failed" };
     }
@@ -491,6 +526,7 @@ export class OAuthService {
       tokenType: "bearer",
       refreshToken,
       expiresIn: accessTokenExpiresIn,
+      scope: input.scopes.join(" "),
       refreshTokenSecret,
       refreshTokenExpiresIn,
     };
@@ -528,7 +564,8 @@ export type OAuthErrorReason =
   | "invalid_refresh_token"
   | "refresh_token_revoked"
   | "client_id_mismatch"
-  | "encryption_key_missing";
+  | "encryption_key_missing"
+  | "scope_exceeds_client_registration";
 
 // Mapping of OAuth error reasons to descriptive messages, keeping previous messages for compatibility
 export const OAUTH_ERROR_REASONS: Record<OAuthErrorReason, string> = {
@@ -547,4 +584,5 @@ export const OAUTH_ERROR_REASONS: Record<OAuthErrorReason, string> = {
   refresh_token_revoked: "invalid_grant",
   client_id_mismatch: "invalid_grant",
   encryption_key_missing: "CALENDSO_ENCRYPTION_KEY is not set",
+  scope_exceeds_client_registration: "Requested scope exceeds the client's registered scopes",
 };

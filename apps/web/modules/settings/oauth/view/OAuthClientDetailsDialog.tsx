@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
+import { OAUTH_SCOPES } from "@calcom/features/oauth/constants";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import type { AccessScope } from "@calcom/prisma/enums";
 
 import { Alert } from "@calcom/ui/components/alert";
 import { Badge } from "@calcom/ui/components/badge";
@@ -30,6 +32,7 @@ type OAuthClientDetails = {
   clientSecret?: string;
   isPkceEnabled?: boolean;
   clientType?: string;
+  scopes?: AccessScope[];
 };
 
 const OAuthClientDetailsDialog = ({
@@ -56,6 +59,7 @@ const OAuthClientDetailsDialog = ({
     redirectUri: string;
     websiteUrl: string;
     logo: string;
+    scopes: AccessScope[];
   }) => void;
   onDelete?: (clientId: string) => void;
   isStatusChangePending?: boolean;
@@ -64,6 +68,8 @@ const OAuthClientDetailsDialog = ({
 }) => {
   const { t } = useLocale();
   const { copyToClipboard } = useCopy();
+
+  const initializedClientIdRef = useRef<string | null>(null);
 
   const [logo, setLogo] = useState("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -78,6 +84,7 @@ const OAuthClientDetailsDialog = ({
       websiteUrl: "",
       logo: "",
       enablePkce: false,
+      scopes: [...OAUTH_SCOPES],
     },
   });
 
@@ -87,14 +94,26 @@ const OAuthClientDetailsDialog = ({
     setIsRejectConfirmOpen(false);
     setRejectionReason("");
     setShowRejectionReasonError(false);
+    initializedClientIdRef.current = null;
   }, [open]);
 
   useEffect(() => {
-    if (!client) return;
+    if (!client) {
+      initializedClientIdRef.current = null;
+      return;
+    }
+
+    if (initializedClientIdRef.current === client.clientId) {
+      return;
+    }
+
+    initializedClientIdRef.current = client.clientId;
 
     const enablePkce =
       client.isPkceEnabled ?? (client.clientType ? client.clientType.toUpperCase() === "PUBLIC" : false);
     const nextLogo = client.logo ?? "";
+
+    const clientScopes = client.scopes && client.scopes.length > 0 ? client.scopes : [...OAUTH_SCOPES];
 
     setLogo(nextLogo);
     form.reset({
@@ -104,6 +123,7 @@ const OAuthClientDetailsDialog = ({
       websiteUrl: client.websiteUrl ?? "",
       logo: nextLogo,
       enablePkce,
+      scopes: clientScopes,
     });
   }, [client, form]);
 
@@ -201,6 +221,10 @@ const OAuthClientDetailsDialog = ({
             className="space-y-4"
             onSubmit={form.handleSubmit((values) => {
               if (!canEdit) return;
+              if (!values.scopes || values.scopes.length === 0) {
+                showToast(t("oauth_client_scope_required"), "error");
+                return;
+              }
               onUpdate?.({
                 clientId: client.clientId,
                 name: values.name.trim() || "",
@@ -208,6 +232,7 @@ const OAuthClientDetailsDialog = ({
                 redirectUri: values.redirectUri.trim() || "",
                 websiteUrl: values.websiteUrl.trim() || "",
                 logo: values.logo,
+                scopes: values.scopes,
               });
             })}>
             {status ? (

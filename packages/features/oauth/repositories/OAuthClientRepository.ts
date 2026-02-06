@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { PrismaClient } from "@calcom/prisma";
-import type { OAuthClientStatus } from "@calcom/prisma/enums";
+import type { AccessScope, OAuthClientStatus } from "@calcom/prisma/enums";
 
 export class OAuthClientRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -22,6 +22,7 @@ export class OAuthClientRepository {
         rejectionReason: true,
         status: true,
         userId: true,
+        scopes: true,
         createdAt: true,
       },
     });
@@ -56,6 +57,7 @@ export class OAuthClientRepository {
         isTrusted: true,
         status: true,
         userId: true,
+        scopes: true,
         createdAt: true,
         user: {
           select: {
@@ -82,6 +84,7 @@ export class OAuthClientRepository {
         clientType: true,
         status: true,
         userId: true,
+        scopes: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -108,6 +111,7 @@ export class OAuthClientRepository {
         clientType: true,
         status: true,
         userId: true,
+        scopes: true,
         createdAt: true,
         user: {
           select: {
@@ -135,6 +139,7 @@ export class OAuthClientRepository {
         clientType: true,
         status: true,
         userId: true,
+        scopes: true,
         createdAt: true,
         user: {
           select: {
@@ -156,10 +161,12 @@ export class OAuthClientRepository {
     logo?: string;
     websiteUrl?: string;
     enablePkce?: boolean;
+    scopes?: AccessScope[];
     userId?: number;
     status: OAuthClientStatus;
   }) {
-    const { name, purpose, redirectUri, clientSecret, logo, websiteUrl, enablePkce, userId, status } = data;
+    const { name, purpose, redirectUri, clientSecret, logo, websiteUrl, enablePkce, scopes, userId, status } =
+      data;
 
     const clientId = randomBytes(32).toString("hex");
 
@@ -174,6 +181,7 @@ export class OAuthClientRepository {
         websiteUrl,
         status,
         clientSecret,
+        ...(scopes && { scopes }),
         ...(userId && {
           user: {
             connect: { id: userId },
