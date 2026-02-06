@@ -21,7 +21,7 @@ export const findTeamMembersMatchingAttributeLogicHandler = async ({
   ctx,
   input,
 }: FindTeamMembersMatchingAttributeLogicHandlerOptions) => {
-  const { teamId, attributesQueryValue, _enablePerf, _concurrency } = input;
+  const { teamId, attributesQueryValue, _enablePerf, _concurrency, cursor, limit } = input;
   const orgId = ctx.user.organizationId;
   if (!orgId) {
     throw new Error("You must be in an organization to use this feature");
@@ -50,21 +50,46 @@ export const findTeamMembersMatchingAttributeLogicHandler = async ({
       mainWarnings,
       fallbackWarnings,
       result: null,
+      nextCursor: undefined,
+      total: 0,
     };
   }
 
   const matchingTeamMembersIds = matchingTeamMembersWithResult.map((member) => member.userId);
   const matchingTeamMembers = await new UserRepository(ctx.prisma).findByIds({ ids: matchingTeamMembersIds });
 
-  return {
-    mainWarnings,
-    fallbackWarnings,
-    troubleshooter: troubleshooter,
-    result: matchingTeamMembers.map((user) => ({
+  const sortedMembers = matchingTeamMembers
+    .map((user) => ({
       id: user.id,
       name: user.name,
       email: user.email,
-    })),
+    }))
+    .sort((a, b) => a.id - b.id);
+
+  // When limit is not provided, return all results (backward compatible)
+  if (!limit) {
+    return {
+      mainWarnings,
+      fallbackWarnings,
+      troubleshooter,
+      result: sortedMembers,
+      nextCursor: undefined,
+      total: sortedMembers.length,
+    };
+  }
+
+  // Paginate using cursor-based keyset pagination on user ID
+  const startIndex = cursor ? sortedMembers.findIndex((m) => m.id > cursor) : 0;
+  const page = startIndex >= 0 ? sortedMembers.slice(startIndex, startIndex + limit) : [];
+  const nextCursor = page.length === limit ? page[page.length - 1].id : undefined;
+
+  return {
+    mainWarnings,
+    fallbackWarnings,
+    troubleshooter,
+    result: page,
+    nextCursor,
+    total: sortedMembers.length,
   };
 };
 
