@@ -8,6 +8,7 @@ import {
 import { DatabaseTeamEventType } from "@/modules/organizations/event-types/services/output.service";
 import { PrismaWriteService } from "@/modules/prisma/prisma-write.service";
 import { TeamsEventTypesRepository } from "@/modules/teams/event-types/teams-event-types.repository";
+import { TeamsRepository } from "@/modules/teams/teams/teams.repository";
 import { UsersService } from "@/modules/users/services/users.service";
 import { UserWithProfile } from "@/modules/users/users.repository";
 import { Injectable, NotFoundException, Logger } from "@nestjs/common";
@@ -26,7 +27,8 @@ export class TeamsEventTypesService {
     private readonly teamsEventTypesRepository: TeamsEventTypesRepository,
     private readonly eventTypesRepository: EventTypesRepository_2024_06_14,
     private readonly usersService: UsersService,
-    private readonly membershipsRepository: MembershipsRepository
+    private readonly membershipsRepository: MembershipsRepository,
+    private readonly teamsRepository: TeamsRepository
   ) {}
 
   async createTeamEventType(
@@ -110,13 +112,20 @@ export class TeamsEventTypesService {
     sortCreatedAt?: SortOrderType,
     userId?: number
   ): Promise<DatabaseTeamEventType[]> {
-    const includeHidden = userId ? await this.isUserTeamMember(userId, teamId) : false;
+    const includeHidden = userId ? await this.canSeeHiddenEvents(userId, teamId) : false;
     return await this.teamsEventTypesRepository.getTeamEventTypes(teamId, sortCreatedAt, includeHidden);
   }
 
-  private async isUserTeamMember(userId: number, teamId: number): Promise<boolean> {
+  private async canSeeHiddenEvents(userId: number, teamId: number): Promise<boolean> {
     const membership = await this.membershipsRepository.findMembershipByTeamId(teamId, userId);
-    return !!membership?.accepted;
+    if (membership?.accepted) return true;
+
+    const team = await this.teamsRepository.getById(teamId);
+    if (team?.parentId) {
+      return this.membershipsRepository.isUserOrganizationAdmin(userId, team.parentId);
+    }
+
+    return false;
   }
 
   async updateTeamEventType(
