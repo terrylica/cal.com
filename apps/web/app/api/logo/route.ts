@@ -196,12 +196,7 @@ async function getHandler(request: NextRequest) {
   const type: LogoType = parsedQuery?.type && isValidLogoType(parsedQuery.type) ? parsedQuery.type : "logo";
   const logoDefinition = logoDefinitions[type];
   if (shouldUseDefaultLogo(subdomain)) {
-    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), {
-      status: 302,
-      headers: {
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
-      },
-    });
+    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), { status: 302 });
   }
 
   // Create a legacy request object for compatibility with the legacy request object
@@ -210,12 +205,7 @@ async function getHandler(request: NextRequest) {
 
   const teamLogos = await getTeamLogos(subdomain, isValidOrgDomain);
   if (!teamLogos[logoDefinition.source]) {
-    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), {
-      status: 302,
-      headers: {
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
-      },
-    });
+    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), { status: 302 });
   }
 
   const filteredLogo = teamLogos[logoDefinition.source] ?? logoDefinition.fallback;
