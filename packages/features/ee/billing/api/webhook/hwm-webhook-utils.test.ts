@@ -3,33 +3,29 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   extractPeriodStartFromInvoice,
   validateInvoiceLinesForHwm,
-  handleHwmResetAfterRenewal,
+  handlePostRenewalReset,
 } from "./hwm-webhook-utils";
 
-// Mock dependencies
-vi.mock("@calcom/ee/billing/di/containers/Billing", () => ({
-  getBillingProviderService: vi.fn(() => ({
-    handleSubscriptionUpdate: vi.fn(),
-    getSubscription: vi.fn(),
-  })),
+const mockHandleInvoiceUpcoming = vi.fn();
+const mockHandlePostRenewalReset = vi.fn();
+
+vi.mock("../../service/billingModelStrategy/BillingModelStrategyFactory", () => ({
+  getStrategyForSubscription: vi.fn(),
 }));
 
-const mockResetSubscriptionAfterRenewal = vi.fn();
+import { getStrategyForSubscription } from "../../service/billingModelStrategy/BillingModelStrategyFactory";
+const mockGetStrategy = vi.mocked(getStrategyForSubscription);
 
-vi.mock("@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService", () => {
-  return {
-    HighWaterMarkService: class MockHighWaterMarkService {
-      resetSubscriptionAfterRenewal = mockResetSubscriptionAfterRenewal;
-    },
-  };
-});
-
-// Create a mock logger
 const createMockLogger = () => ({
   warn: vi.fn(),
   info: vi.fn(),
   error: vi.fn(),
   debug: vi.fn(),
+});
+
+const createMockStrategy = () => ({
+  handleInvoiceUpcoming: mockHandleInvoiceUpcoming,
+  handlePostRenewalReset: mockHandlePostRenewalReset,
 });
 
 describe("hwm-webhook-utils", () => {
@@ -130,75 +126,77 @@ describe("hwm-webhook-utils", () => {
     });
   });
 
-  describe("handleHwmResetAfterRenewal", () => {
+  describe("handlePostRenewalReset", () => {
     it("returns failure when periodStartTimestamp is undefined", async () => {
       const mockLog = createMockLogger();
       // @ts-expect-error - mock logger
-      const result = await handleHwmResetAfterRenewal("sub_123", undefined, mockLog);
+      const result = await handlePostRenewalReset("sub_123", undefined, mockLog);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("No period start timestamp");
       expect(mockLog.warn).toHaveBeenCalledWith(
-        "No period start timestamp for subscription sub_123, skipping HWM reset"
+        "No period start timestamp for subscription sub_123, skipping post-renewal reset"
       );
-      expect(mockResetSubscriptionAfterRenewal).not.toHaveBeenCalled();
+      expect(mockGetStrategy).not.toHaveBeenCalled();
     });
 
-    it("returns success when reset succeeds", async () => {
+    it("returns failure when no billing record found", async () => {
+      mockGetStrategy.mockResolvedValue(null);
       const mockLog = createMockLogger();
-      mockResetSubscriptionAfterRenewal.mockResolvedValue(true);
 
-      const timestamp = 1704067200;
       // @ts-expect-error - mock logger
-      const result = await handleHwmResetAfterRenewal("sub_456", timestamp, mockLog);
+      const result = await handlePostRenewalReset("sub_unknown", 1704067200, mockLog);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("No billing record found");
+      expect(mockLog.warn).toHaveBeenCalledWith(
+        "No billing record found for subscription sub_unknown, skipping post-renewal reset"
+      );
+    });
+
+    it("dispatches to strategy.handlePostRenewalReset", async () => {
+      const mockStrategy = createMockStrategy();
+      mockStrategy.handlePostRenewalReset.mockResolvedValue({ success: true, updated: true });
+      mockGetStrategy.mockResolvedValue({
+        strategy: mockStrategy,
+        billingModel: "SEATS",
+        billingPeriod: "MONTHLY",
+      });
+      const mockLog = createMockLogger();
+      const timestamp = 1704067200;
+
+      // @ts-expect-error - mock logger
+      const result = await handlePostRenewalReset("sub_456", timestamp, mockLog);
 
       expect(result.success).toBe(true);
       expect(result.updated).toBe(true);
-      expect(mockResetSubscriptionAfterRenewal).toHaveBeenCalledWith({
-        subscriptionId: "sub_456",
-        newPeriodStart: new Date(timestamp * 1000),
+      expect(mockStrategy.handlePostRenewalReset).toHaveBeenCalledWith(
+        { subscriptionId: "sub_456", periodStartTimestamp: timestamp },
+        expect.anything()
+      );
+    });
+
+    it("logs billing model info when dispatching", async () => {
+      const mockStrategy = createMockStrategy();
+      mockStrategy.handlePostRenewalReset.mockResolvedValue({ success: true });
+      mockGetStrategy.mockResolvedValue({
+        strategy: mockStrategy,
+        billingModel: "ACTIVE_USERS",
+        billingPeriod: "MONTHLY",
       });
-      expect(mockLog.info).toHaveBeenCalled();
-    });
-
-    it("returns success with updated=false when no update needed", async () => {
       const mockLog = createMockLogger();
-      mockResetSubscriptionAfterRenewal.mockResolvedValue(false);
 
-      const timestamp = 1704067200;
       // @ts-expect-error - mock logger
-      const result = await handleHwmResetAfterRenewal("sub_789", timestamp, mockLog);
+      await handlePostRenewalReset("sub_789", 1704067200, mockLog);
 
-      expect(result.success).toBe(true);
-      expect(result.updated).toBe(false);
-    });
-
-    it("returns failure when reset throws an error", async () => {
-      const mockLog = createMockLogger();
-      mockResetSubscriptionAfterRenewal.mockRejectedValue(new Error("Stripe API error"));
-
-      const timestamp = 1704067200;
-      // @ts-expect-error - mock logger
-      const result = await handleHwmResetAfterRenewal("sub_error", timestamp, mockLog);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Stripe API error");
-      expect(mockLog.error).toHaveBeenCalledWith("Failed to reset HWM after invoice paid", {
-        subscriptionId: "sub_error",
-        error: "Stripe API error",
-      });
-    });
-
-    it("handles non-Error thrown values", async () => {
-      const mockLog = createMockLogger();
-      mockResetSubscriptionAfterRenewal.mockRejectedValue("string error");
-
-      const timestamp = 1704067200;
-      // @ts-expect-error - mock logger
-      const result = await handleHwmResetAfterRenewal("sub_string", timestamp, mockLog);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("string error");
+      expect(mockLog.info).toHaveBeenCalledWith(
+        "Dispatching post-renewal reset to billing model strategy",
+        {
+          subscriptionId: "sub_789",
+          billingModel: "ACTIVE_USERS",
+          billingPeriod: "MONTHLY",
+        }
+      );
     });
   });
 });

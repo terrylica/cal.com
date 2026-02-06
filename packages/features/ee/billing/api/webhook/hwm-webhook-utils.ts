@@ -1,7 +1,9 @@
-import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
-import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
 import type { Logger } from "tslog";
+import { getStrategyForSubscription } from "../../service/billingModelStrategy/BillingModelStrategyFactory";
+import type { PostRenewalResetResult } from "../../service/billingModelStrategy/IBillingModelStrategy";
+
+export type { PostRenewalResetResult };
 
 const defaultLogger = logger.getSubLogger({ prefix: ["hwm-webhook-utils"] });
 
@@ -20,67 +22,42 @@ export function validateInvoiceLinesForHwm(
   log: Logger<unknown> = defaultLogger
 ): { isValid: boolean; periodStart?: number } {
   if (!linesData || linesData.length === 0) {
-    log.warn(
-      `Invoice has no line items for subscription ${subscriptionId}, cannot process HWM`
-    );
+    log.warn(`Invoice has no line items for subscription ${subscriptionId}, cannot process HWM`);
     return { isValid: false };
   }
 
   const periodStart = linesData[0]?.period?.start;
   if (!periodStart) {
-    log.warn(
-      `Invoice line item missing period.start for subscription ${subscriptionId}, cannot process HWM`
-    );
+    log.warn(`Invoice line item missing period.start for subscription ${subscriptionId}, cannot process HWM`);
     return { isValid: false };
   }
 
   return { isValid: true, periodStart };
 }
 
-export interface HwmResetResult {
-  success: boolean;
-  updated?: boolean;
-  error?: string;
-}
-
-export async function handleHwmResetAfterRenewal(
+export async function handlePostRenewalReset(
   subscriptionId: string,
   periodStartTimestamp: number | undefined,
   log: Logger<unknown> = defaultLogger
-): Promise<HwmResetResult> {
+): Promise<PostRenewalResetResult> {
   if (!periodStartTimestamp) {
-    log.warn(
-      `No period start timestamp for subscription ${subscriptionId}, skipping HWM reset`
-    );
+    log.warn(`No period start timestamp for subscription ${subscriptionId}, skipping post-renewal reset`);
     return { success: false, error: "No period start timestamp" };
   }
 
-  const newPeriodStart = new Date(periodStartTimestamp * 1000);
-  const billingProviderService = getBillingProviderService();
-  const highWaterMarkService = new HighWaterMarkService({
-    logger: log,
-    billingService: billingProviderService,
+  const result = await getStrategyForSubscription(subscriptionId, undefined, log);
+
+  if (!result) {
+    log.warn(`No billing record found for subscription ${subscriptionId}, skipping post-renewal reset`);
+    return { success: false, error: "No billing record found" };
+  }
+
+  const { strategy, billingModel, billingPeriod } = result;
+  log.info("Dispatching post-renewal reset to billing model strategy", {
+    subscriptionId,
+    billingModel,
+    billingPeriod,
   });
 
-  try {
-    const updated = await highWaterMarkService.resetSubscriptionAfterRenewal({
-      subscriptionId,
-      newPeriodStart,
-    });
-
-    log.info("HWM reset after invoice paid", {
-      subscriptionId,
-      newPeriodStart,
-      updated,
-    });
-
-    return { success: true, updated };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    log.error("Failed to reset HWM after invoice paid", {
-      subscriptionId,
-      error: errorMessage,
-    });
-    return { success: false, error: errorMessage };
-  }
+  return strategy.handlePostRenewalReset({ subscriptionId, periodStartTimestamp }, log);
 }

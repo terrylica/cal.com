@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { getTeamBillingServiceFactory } from "@calcom/ee/billing/di/containers/Billing";
+import { getStrategyForTeam } from "@calcom/features/ee/billing/service/billingModelStrategy/BillingModelStrategyFactory";
 import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
 import { deleteWorkfowRemindersOfRemovedMember } from "@calcom/features/ee/teams/lib/deleteWorkflowRemindersOfRemovedMember";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
@@ -169,12 +170,15 @@ export class TeamService {
     }
 
     await Promise.all(deleteMembershipPromises);
-    const teamBillingServiceFactory = getTeamBillingServiceFactory();
-    const teamBillingServices = await teamBillingServiceFactory.findAndInitMany(teamIds);
-    const teamBillingPromises = teamBillingServices.map((teamBillingService) =>
-      teamBillingService.updateQuantity()
-    );
-    await Promise.allSettled(teamBillingPromises);
+
+    // Seat removal logging already happened per-user inside removeMember.
+    // Sync billing quantity -- each strategy decides whether to update Stripe.
+    const billingPromises = teamIds.map(async (teamId) => {
+      const result = await getStrategyForTeam(teamId, undefined, log);
+      if (!result) return;
+      await result.strategy.syncBillingQuantity({ teamId }, log);
+    });
+    await Promise.allSettled(billingPromises);
   }
 
   static async inviteMemberByToken(token: string, userId: number) {
@@ -219,18 +223,22 @@ export class TeamService {
       } else throw e;
     }
 
-    if (!verificationToken.team.parentId) {
-      const seatTracker = new SeatChangeTrackingService();
-      await seatTracker.logSeatAddition({
-        teamId: verificationToken.teamId,
-        userId,
-        triggeredBy: userId,
-      });
+    const strategyResult = await getStrategyForTeam(verificationToken.teamId, undefined, log);
+    if (strategyResult) {
+      if (!verificationToken.team.parentId) {
+        await strategyResult.strategy.handleMemberAddition(
+          { teamId: verificationToken.teamId, userId, triggeredBy: userId, seatCount: 1 },
+          log
+        );
+      } else {
+        // Child team: seat tracking is org-level only, but billing sync must still
+        // happen because updateQuantity resolves to the parent org internally.
+        await strategyResult.strategy.syncBillingQuantity(
+          { teamId: verificationToken.teamId },
+          log
+        );
+      }
     }
-
-    const teamBillingServiceFactory = getTeamBillingServiceFactory();
-    const teamBillingService = await teamBillingServiceFactory.findAndInit(verificationToken.teamId);
-    await teamBillingService.updateQuantity();
 
     return verificationToken.team.name;
   }
@@ -307,13 +315,16 @@ export class TeamService {
         });
       }
 
-      if (!membership.team.parentId) {
-        const seatTracker = new SeatChangeTrackingService();
-        await seatTracker.logSeatRemoval({
-          teamId,
-          userId,
-          triggeredBy: userId,
-        });
+      const strategyResult = await getStrategyForTeam(teamId, undefined, log);
+      if (strategyResult) {
+        if (!membership.team.parentId) {
+          await strategyResult.strategy.handleMemberRemoval(
+            { teamId, userId, triggeredBy: userId, seatCount: 1 },
+            log
+          );
+        } else {
+          await strategyResult.strategy.syncBillingQuantity({ teamId }, log);
+        }
       }
     } catch (e) {
       console.log(e);

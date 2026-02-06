@@ -1,21 +1,18 @@
-import { type TFunction } from "i18next";
-
-import { getTeamBillingServiceFactory } from "@calcom/ee/billing/di/containers/Billing";
+import { getStrategyForTeam } from "@calcom/features/ee/billing/service/billingModelStrategy/BillingModelStrategyFactory";
 import { DueInvoiceService } from "@calcom/features/ee/billing/service/dueInvoice/DueInvoiceService";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
+import { isOrganisationOwner } from "@calcom/features/pbac/utils/isOrganisationAdmin";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { getTranslation } from "@calcom/lib/server/i18n";
-import { isOrganisationOwner } from "@calcom/features/pbac/utils/isOrganisationAdmin";
 import prisma from "@calcom/prisma";
-import { MembershipRole } from "@calcom/prisma/enums";
 import type { CreationSource } from "@calcom/prisma/enums";
+import { MembershipRole } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
-
 import { TRPCError } from "@trpc/server";
-
+import type { TFunction } from "i18next";
 import type { TInviteMemberInputSchema } from "./inviteMember.schema";
 import type { TeamWithParent } from "./types";
 import type { Invitation } from "./utils";
@@ -51,18 +48,21 @@ function getOrgConnectionInfoGroupedByUsernameOrEmail({
   team: Pick<TeamWithParent, "parentId" | "id">;
   isOrg: boolean;
 }) {
-  return uniqueInvitations.reduce((acc, invitation) => {
-    return {
-      ...acc,
-      [invitation.usernameOrEmail]: getOrgConnectionInfo({
-        orgVerified: orgState.orgVerified,
-        orgAutoAcceptDomain: orgState.autoAcceptEmailDomain,
-        email: invitation.usernameOrEmail,
-        team,
-        isOrg: isOrg,
-      }),
-    };
-  }, {} as Record<string, ReturnType<typeof getOrgConnectionInfo>>);
+  return uniqueInvitations.reduce(
+    (acc, invitation) => {
+      return {
+        ...acc,
+        [invitation.usernameOrEmail]: getOrgConnectionInfo({
+          orgVerified: orgState.orgVerified,
+          orgAutoAcceptDomain: orgState.autoAcceptEmailDomain,
+          email: invitation.usernameOrEmail,
+          team,
+          isOrg: isOrg,
+        }),
+      };
+    },
+    {} as Record<string, ReturnType<typeof getOrgConnectionInfo>>
+  );
 }
 
 function getInvitationsForNewUsers({
@@ -230,9 +230,12 @@ export const inviteMembersWithNoInviterPermissionCheck = async (
     });
   }
 
-  const teamBillingServiceFactory = getTeamBillingServiceFactory();
-  const teamBillingService = teamBillingServiceFactory.init(team);
-  await teamBillingService.updateQuantity();
+  // Seat tracking already logged by invite utils.
+  // Sync billing quantity -- the strategy decides whether to update Stripe.
+  const strategyResult = await getStrategyForTeam(team.id, undefined, log);
+  if (strategyResult) {
+    await strategyResult.strategy.syncBillingQuantity({ teamId: team.id }, log);
+  }
 
   return {
     // TODO: Better rename it to invitations only maybe?
@@ -267,8 +270,8 @@ const inviteMembers = async ({ ctx, input }: InviteMemberOptions) => {
 
   // Check if invitations are blocked due to unpaid invoices
   const dueInvoiceService = new DueInvoiceService();
-  const inviteeEmails = (typeof usernameOrEmail === "string" ? [usernameOrEmail] : usernameOrEmail).map((u) =>
-    typeof u === "string" ? u : u.email
+  const inviteeEmails = (typeof usernameOrEmail === "string" ? [usernameOrEmail] : usernameOrEmail).map(
+    (u) => (typeof u === "string" ? u : u.email)
   );
   const canInvite = await dueInvoiceService.canInviteToTeam({
     teamId: team.id,

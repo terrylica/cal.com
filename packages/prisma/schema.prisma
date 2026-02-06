@@ -2559,6 +2559,11 @@ enum BillingPeriod {
   ANNUALLY
 }
 
+enum BillingModel {
+  SEATS
+  ACTIVE_USERS
+}
+
 model OrganizationOnboarding {
   // TODO: Use uuid for id
   id String @id @default(uuid())
@@ -3003,6 +3008,8 @@ model TeamBilling {
   monthlyProrations MonthlyProration[]
   seatChangeLogs    SeatChangeLog[]
 
+  billingModel BillingModel @default(SEATS)
+
   // High water mark tracking for monthly billing
   highWaterMark            Int?
   highWaterMarkPeriodStart DateTime?
@@ -3030,6 +3037,8 @@ model OrganizationBilling {
   paidSeats         Int?
   monthlyProrations MonthlyProration[]
   seatChangeLogs    SeatChangeLog[]
+
+  billingModel BillingModel @default(SEATS)
 
   // High water mark tracking for monthly billing
   highWaterMark            Int?

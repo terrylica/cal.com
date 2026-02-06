@@ -1,10 +1,10 @@
+import { getStrategyForTeam } from "@calcom/features/ee/billing/service/billingModelStrategy/BillingModelStrategyFactory";
 import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
-import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
+import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
 import type { IdentityProvider } from "@calcom/prisma/enums";
 import { CreationSource, MembershipRole } from "@calcom/prisma/enums";
-
 import {
   deriveNameFromOrgUsername,
   getOrgUsernameFromEmail,
@@ -80,11 +80,11 @@ export const createUsersAndConnectToOrg = async ({
   );
 
   if (membershipResult.count > 0) {
-    const seatTracker = new SeatChangeTrackingService();
-    await seatTracker.logSeatAddition({
-      teamId: org.id,
-      seatCount: membershipResult.count,
-    });
+    const log = logger.getSubLogger({ prefix: ["dsync-createUsersAndConnectToOrg"] });
+    const result = await getStrategyForTeam(org.id, undefined, log);
+    if (result) {
+      await result.strategy.handleMemberAddition({ teamId: org.id, seatCount: membershipResult.count }, log);
+    }
   }
 
   return users;

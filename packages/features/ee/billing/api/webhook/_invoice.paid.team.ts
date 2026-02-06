@@ -1,7 +1,7 @@
 import logger from "@calcom/lib/logger";
 import { z } from "zod";
 import type { SWHMap } from "./__handler";
-import { handleHwmResetAfterRenewal, validateInvoiceLinesForHwm } from "./hwm-webhook-utils";
+import { handlePostRenewalReset, validateInvoiceLinesForHwm } from "./hwm-webhook-utils";
 
 const log = logger.getSubLogger({ prefix: ["invoice-paid-team"] });
 
@@ -40,7 +40,7 @@ const handler = async (data: SWHMap["invoice.paid"]["data"]) => {
     log.info(`Processing renewal invoice for team subscription ${subscriptionId}`);
     const validation = validateInvoiceLinesForHwm(invoice.lines.data, subscriptionId, log);
     if (validation.isValid) {
-      await handleHwmResetAfterRenewal(subscriptionId, validation.periodStart, log);
+      await handlePostRenewalReset(subscriptionId, validation.periodStart, log);
     }
   }
 

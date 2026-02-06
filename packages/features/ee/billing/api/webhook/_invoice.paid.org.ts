@@ -11,7 +11,7 @@ import { prisma } from "@calcom/prisma";
 import { z } from "zod";
 import { getTeamBillingServiceFactory } from "../../di/containers/Billing";
 import type { SWHMap } from "./__handler";
-import { handleHwmResetAfterRenewal, validateInvoiceLinesForHwm } from "./hwm-webhook-utils";
+import { handlePostRenewalReset, validateInvoiceLinesForHwm } from "./hwm-webhook-utils";
 
 const invoicePaidSchema = z.object({
   object: z.object({
@@ -68,7 +68,7 @@ const handler = async (data: SWHMap["invoice.paid"]["data"]) => {
       logger.info(`Processing renewal invoice for subscription ${subscriptionId}`);
       const validation = validateInvoiceLinesForHwm(invoice.lines.data, subscriptionId, logger);
       if (validation.isValid) {
-        await handleHwmResetAfterRenewal(subscriptionId, validation.periodStart, logger);
+        await handlePostRenewalReset(subscriptionId, validation.periodStart, logger);
       }
     } else {
       logger.info(
@@ -107,7 +107,7 @@ const handler = async (data: SWHMap["invoice.paid"]["data"]) => {
         logger.info(`Processing renewal invoice for completed org, subscription ${subscriptionId}`);
         const validation = validateInvoiceLinesForHwm(invoice.lines.data, subscriptionId, logger);
         if (validation.isValid) {
-          await handleHwmResetAfterRenewal(subscriptionId, validation.periodStart, logger);
+          await handlePostRenewalReset(subscriptionId, validation.periodStart, logger);
         }
       }
       return {

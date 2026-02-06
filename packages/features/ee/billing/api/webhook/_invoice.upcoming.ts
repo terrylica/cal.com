@@ -1,7 +1,5 @@
-import { getBillingProviderService } from "@calcom/features/ee/billing/di/containers/Billing";
-import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
-
+import { getStrategyForSubscription } from "../../service/billingModelStrategy/BillingModelStrategyFactory";
 import type { SWHMap } from "./__handler";
 
 type Data = SWHMap["invoice.upcoming"]["data"];
@@ -26,30 +24,35 @@ const handler = async (data: Data) => {
     customerId: typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id,
   });
 
-  const billingService = getBillingProviderService();
-  const highWaterMarkService = new HighWaterMarkService({
-    logger: log,
-    billingService,
-  });
-
   try {
-    const applied = await highWaterMarkService.applyHighWaterMarkToSubscription(subscriptionId);
+    const result = await getStrategyForSubscription(subscriptionId, undefined, log);
+
+    if (!result) {
+      log.debug("No billing record found, skipping", { subscriptionId });
+      return { success: true, highWaterMarkApplied: false };
+    }
+
+    const { strategy, billingModel, billingPeriod } = result;
+    log.info("Dispatching invoice.upcoming to billing model strategy", {
+      subscriptionId,
+      billingModel,
+      billingPeriod,
+    });
+
+    const { applied } = await strategy.handleInvoiceUpcoming({ subscriptionId }, log);
 
     if (applied) {
-      log.info("Successfully applied high water mark before renewal", {
-        subscriptionId,
-      });
+      log.info("Strategy applied changes before renewal", { subscriptionId, billingModel });
       return { success: true, highWaterMarkApplied: true };
     }
 
-    log.debug("No high water mark update needed", { subscriptionId });
+    log.debug("No changes needed before renewal", { subscriptionId, billingModel });
     return { success: true, highWaterMarkApplied: false };
   } catch (error) {
-    log.error("Failed to apply high water mark", {
+    log.error("Failed to process invoice.upcoming", {
       subscriptionId,
       error,
     });
-    // Return success: false but don't throw - we don't want to fail the webhook
     return { success: false, error: String(error) };
   }
 };
