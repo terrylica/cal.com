@@ -3264,6 +3264,7 @@
   "skip_contact_creation": "Skip creating contacts if they do not exist in {{appName}} ",
   "skip_writing_to_calendar_note": "If your ICS link is read-only (e.g., Proton Calendar), check the box above to avoid errors. You'll also need to manually update your calendar for changes.",
   "attributes": "Attributes",
+  "attributes_description": "Manage attributes for your team members",
   "new_attribute": "New attribute",
   "add_attributes": "Add attributes",
   "add_attributes_description": "Add attributes to your team members",

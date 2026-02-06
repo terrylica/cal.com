@@ -1,7 +1,7 @@
 import { getPaymentAppData } from "@calcom/app-store/_utils/payments/getPaymentAppData";
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
 import type { EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
-import { UpgradeBannerForInstantBooking } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/forOrgPlan";
+import { UpgradeBannerForInstantBooking } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/toOrgPlan";
 import InstantEventController from "./InstantEventController";
 
 export const EventInstantTab = ({
