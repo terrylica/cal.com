@@ -797,9 +797,7 @@ export class BookingLocationService_2024_08_13 {
     if (loc.type === "attendeeDefined") return loc.location;
 
     this.logger.log(
-      `Booking location service getNonIntegrationLocationValue - loc ${JSON.stringify(
-        loc
-      )} was passed but the type is not supported.`
+      `Booking location service getNonIntegrationLocationValue - unsupported type: ${loc.type}`
     );
 
     return undefined;
