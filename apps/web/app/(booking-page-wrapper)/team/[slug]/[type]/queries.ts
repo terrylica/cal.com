@@ -82,6 +82,7 @@ export async function getEnrichedEventType({
 
   return {
     ...eventDataShared,
+    workflows: undefined,
     owner: enrichedOwner,
     subsetOfHosts,
     hosts,
