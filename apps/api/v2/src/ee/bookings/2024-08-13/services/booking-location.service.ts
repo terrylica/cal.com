@@ -374,11 +374,7 @@ export class BookingLocationService_2024_08_13 {
         existingBooking.id
       );
       if (bookingWithDetails?.user) {
-        const evt = await this.buildCalEventForIntegration(
-          bookingWithDetails as BookingWithDetails,
-          bookingLocation,
-          null
-        );
+        const evt = await this.buildCalEventForIntegration(bookingWithDetails, bookingLocation, null);
         await this.sendLocationChangeNotifications(
           evt,
           existingBooking.id,
