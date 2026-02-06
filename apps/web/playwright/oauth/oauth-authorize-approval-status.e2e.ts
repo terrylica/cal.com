@@ -70,10 +70,7 @@ test.describe("OAuth authorize - client approval status", () => {
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&state=1234`
     );
 
-    // Should NOT redirect, should show error on page
     await expect(page).not.toHaveURL(/^https:\/\/example\.com/);
-
-    // Check error message is displayed
     await expect(page.getByText(OAUTH_ERROR_REASONS["client_not_approved"])).toBeVisible();
   });
 
@@ -96,10 +93,7 @@ test.describe("OAuth authorize - client approval status", () => {
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&state=1234`
     );
 
-    // Should NOT redirect, should show error on page
     await expect(page).not.toHaveURL(/^https:\/\/example\.com/);
-
-    // Check error message is displayed
     await expect(page.getByText(OAUTH_ERROR_REASONS["client_not_approved"])).toBeVisible();
   });
 
@@ -263,12 +257,10 @@ test.describe("OAuth authorize - client approval status", () => {
       scopes: ["BOOKING_READ"],
     });
 
-    // Request SCHEDULE_WRITE which is not in the client's registered scopes
     await page.goto(
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ,SCHEDULE_WRITE&state=1234`
     );
 
-    // Scope validation happens upfront - should redirect immediately without showing consent screen
     await page.waitForFunction(() => {
       return window.location.href.startsWith("https://example.com");
     });
@@ -300,12 +292,10 @@ test.describe("OAuth authorize - client approval status", () => {
       scopes: ["BOOKING_READ"],
     });
 
-    // Request scopes with space delimiter (RFC 6749 standard) - SCHEDULE_WRITE is not in client's registered scopes
     await page.goto(
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ%20SCHEDULE_WRITE&state=1234`
     );
 
-    // Scope validation happens upfront - should redirect immediately without showing consent screen
     await page.waitForFunction(() => {
       return window.location.href.startsWith("https://example.com");
     });
@@ -337,7 +327,6 @@ test.describe("OAuth authorize - client approval status", () => {
       scopes: ["BOOKING_READ", "BOOKING_WRITE", "SCHEDULE_READ"],
     });
 
-    // Request only BOOKING_READ which is within the client's registered scopes
     await page.goto(
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ&state=1234`
     );
@@ -373,24 +362,18 @@ test.describe("OAuth authorize - client approval status", () => {
       scopes: ["BOOKING_READ", "BOOKING_WRITE", "SCHEDULE_READ", "PROFILE_READ"],
     });
 
-    // Request only BOOKING_READ and SCHEDULE_READ
     await page.goto(
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ,SCHEDULE_READ&state=1234`
     );
 
     await page.waitForSelector('[data-testid="allow-button"]');
 
-    // Verify the consent screen shows the correct scope labels
-    // BOOKING_READ should show "View bookings"
     await expect(page.getByText("View bookings")).toBeVisible();
-    // SCHEDULE_READ should show "View availability"
     await expect(page.getByText("View availability")).toBeVisible();
 
-    // These should NOT be visible since we didn't request them
     await expect(page.getByText("Create, edit, and delete bookings")).not.toBeVisible();
     await expect(page.getByText("View personal info and primary email address")).not.toBeVisible();
 
-    // Complete the authorization
     await page.getByTestId("allow-button").click();
 
     await page.waitForFunction(() => {
@@ -417,21 +400,17 @@ test.describe("OAuth authorize - client approval status", () => {
       scopes: ["BOOKING_READ", "BOOKING_WRITE", "SCHEDULE_READ", "SCHEDULE_WRITE"],
     });
 
-    // Request both read and write for BOOKING - should show merged label
     await page.goto(
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ,BOOKING_WRITE&state=1234`
     );
 
     await page.waitForSelector('[data-testid="allow-button"]');
 
-    // When both read+write are present, should show merged label
     await expect(page.getByText("Create, read, update, and delete bookings")).toBeVisible();
 
-    // Individual labels should NOT be visible when merged
     await expect(page.getByText("View bookings")).not.toBeVisible();
     await expect(page.getByText("Create, edit, and delete bookings")).not.toBeVisible();
 
-    // Complete the authorization
     await page.getByTestId("allow-button").click();
 
     await page.waitForFunction(() => {
