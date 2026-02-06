@@ -46,7 +46,7 @@ import {
   SUCCESS_STATUS,
   X_CAL_CLIENT_ID,
 } from "@calcom/platform-constants";
-import { getPublicEvent, getEventTypesByViewer } from "@calcom/platform-libraries/event-types";
+import { getPublicEventForApiV2 as getPublicEvent, getEventTypesByViewer } from "@calcom/platform-libraries/event-types";
 import type { PrismaClient } from "@calcom/prisma";
 
 @Controller({
