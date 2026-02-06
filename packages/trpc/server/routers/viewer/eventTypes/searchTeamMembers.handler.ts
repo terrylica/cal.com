@@ -34,7 +34,7 @@ export const searchTeamMembersHandler = async ({
   ctx,
   input,
 }: SearchTeamMembersInput): Promise<SearchTeamMembersResponse> => {
-  const { teamId, cursor, limit, search } = input;
+  const { teamId, cursor, limit, search, memberUserIds } = input;
 
   // Verify the requesting user is a member of this team
   const callerMembership = await ctx.prisma.membership.findFirst({
@@ -60,7 +60,11 @@ export const searchTeamMembersHandler = async ({
     ];
   }
 
-  if (cursor) {
+  if (memberUserIds?.length && cursor) {
+    userFilter.id = { in: memberUserIds, gt: cursor };
+  } else if (memberUserIds?.length) {
+    userFilter.id = { in: memberUserIds };
+  } else if (cursor) {
     userFilter.id = { gt: cursor };
   }
 

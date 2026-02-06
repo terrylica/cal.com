@@ -35,7 +35,7 @@ export const getHostsForAssignmentHandler = async ({
   ctx,
   input,
 }: GetHostsForAssignmentInput): Promise<GetHostsForAssignmentResponse> => {
-  const { eventTypeId, cursor, limit, search } = input;
+  const { eventTypeId, cursor, limit, search, memberUserIds } = input;
 
   const hostRepository = new HostRepository(ctx.prisma);
   const { items, nextCursor, hasMore, hasFixedHosts } =
@@ -44,6 +44,7 @@ export const getHostsForAssignmentHandler = async ({
       cursor: cursor ?? undefined,
       limit,
       search,
+      memberUserIds,
     });
 
   const hosts: AssignmentHost[] = items.map((item) => ({

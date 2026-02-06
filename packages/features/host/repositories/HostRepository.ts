@@ -194,16 +194,26 @@ export class HostRepository {
     cursor,
     limit = 20,
     search,
+    memberUserIds,
   }: {
     eventTypeId: number;
     cursor?: number;
     limit?: number;
     search?: string;
+    memberUserIds?: number[];
   }) {
+    const userIdFilter = memberUserIds?.length
+      ? cursor
+        ? { in: memberUserIds, gt: cursor }
+        : { in: memberUserIds }
+      : cursor
+        ? { gt: cursor }
+        : undefined;
+
     const hosts = await this.prismaClient.host.findMany({
       where: {
         eventTypeId,
-        ...(cursor && { userId: { gt: cursor } }),
+        ...(userIdFilter && { userId: userIdFilter }),
         ...(search && {
           user: {
             name: { contains: search, mode: "insensitive" as const },

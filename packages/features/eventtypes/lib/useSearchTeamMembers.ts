@@ -30,14 +30,21 @@ export function useSearchTeamMembers({
   teamId,
   search,
   enabled = true,
+  memberUserIds,
 }: {
   teamId: number;
   search: string;
   enabled?: boolean;
+  memberUserIds?: number[];
 }) {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     trpc.viewer.eventTypes.searchTeamMembers.useInfiniteQuery(
-      { teamId, limit: 20, search: search || undefined },
+      {
+        teamId,
+        limit: 20,
+        search: search || undefined,
+        memberUserIds: memberUserIds?.length ? memberUserIds : undefined,
+      },
       {
         enabled: enabled && teamId > 0,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
