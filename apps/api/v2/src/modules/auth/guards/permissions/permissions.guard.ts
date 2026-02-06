@@ -1,16 +1,8 @@
-import {
-  BOOKING_READ,
-  BOOKING_WRITE,
-  EVENT_TYPE_READ,
-  EVENT_TYPE_WRITE,
-  PROFILE_READ,
-  SCHEDULE_READ,
-  SCHEDULE_WRITE,
-  X_CAL_CLIENT_ID,
-} from "@calcom/platform-constants";
+import { X_CAL_CLIENT_ID } from "@calcom/platform-constants";
+import type { NewAccessScope } from "@calcom/platform-libraries";
+import { PERMISSION_TO_SCOPE, SCOPE_TO_PERMISSION } from "@calcom/platform-libraries";
 import { hasPermissions } from "@calcom/platform-utils";
 import type { PlatformOAuthClient } from "@calcom/prisma/client";
-import type { AccessScope } from "@calcom/prisma/enums";
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
@@ -21,29 +13,6 @@ import { OAuthClientRepository } from "@/modules/oauth-clients/oauth-client.repo
 import { OAuthClientsOutputService } from "@/modules/oauth-clients/services/oauth-clients/oauth-clients-output.service";
 import { TokensRepository } from "@/modules/tokens/tokens.repository";
 import { TokensService } from "@/modules/tokens/tokens.service";
-
-// note(Lauris): exclude legacy scopes
-type NewAccessScope = Exclude<AccessScope, "READ_BOOKING" | "READ_PROFILE">;
-
-const SCOPE_TO_PERMISSION: Record<NewAccessScope, number> = {
-  EVENT_TYPE_READ: EVENT_TYPE_READ,
-  EVENT_TYPE_WRITE: EVENT_TYPE_WRITE,
-  BOOKING_READ: BOOKING_READ,
-  BOOKING_WRITE: BOOKING_WRITE,
-  SCHEDULE_READ: SCHEDULE_READ,
-  SCHEDULE_WRITE: SCHEDULE_WRITE,
-  PROFILE_READ: PROFILE_READ,
-};
-
-const PERMISSION_TO_SCOPE: Record<number, NewAccessScope> = {
-  [EVENT_TYPE_READ]: "EVENT_TYPE_READ",
-  [EVENT_TYPE_WRITE]: "EVENT_TYPE_WRITE",
-  [BOOKING_READ]: "BOOKING_READ",
-  [BOOKING_WRITE]: "BOOKING_WRITE",
-  [SCHEDULE_READ]: "SCHEDULE_READ",
-  [SCHEDULE_WRITE]: "SCHEDULE_WRITE",
-  [PROFILE_READ]: "PROFILE_READ",
-};
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
