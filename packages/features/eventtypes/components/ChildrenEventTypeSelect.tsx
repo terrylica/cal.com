@@ -50,6 +50,7 @@ export const ChildrenEventTypeSelect = ({
   isLoadingMore,
   assignedSearchValue,
   onAssignedSearchChange,
+  isSearchingAssigned,
   ...props
 }: Omit<Props<ChildrenEventType, true>, "value" | "onChange"> & {
   value?: ChildrenEventType[];
@@ -60,6 +61,7 @@ export const ChildrenEventTypeSelect = ({
   isLoadingMore?: boolean;
   assignedSearchValue?: string;
   onAssignedSearchChange?: (value: string) => void;
+  isSearchingAssigned?: boolean;
 }) => {
   const { t } = useLocale();
   const [animationRef] = useAutoAnimate<HTMLUListElement>();
@@ -93,7 +95,13 @@ export const ChildrenEventTypeSelect = ({
             placeholder={t("search")}
             value={assignedSearchValue ?? ""}
             onChange={(e) => onAssignedSearchChange(e.target.value)}
-            addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
+            addOnLeading={
+              isSearchingAssigned ? (
+                <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
+              ) : (
+                <Icon name="search" className="text-subtle h-4 w-4" />
+              )
+            }
           />
         </div>
       )}

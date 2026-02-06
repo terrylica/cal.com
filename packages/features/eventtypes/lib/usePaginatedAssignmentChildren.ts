@@ -1,3 +1,4 @@
+import { keepPreviousData } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import type { ChildrenEventType } from "@calcom/features/eventtypes/lib/childrenEventType";
@@ -37,12 +38,13 @@ export function usePaginatedAssignmentChildren({
   search: string;
   enabled?: boolean;
 }) {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching, isLoading } =
     trpc.viewer.eventTypes.getChildrenForAssignment.useInfiniteQuery(
       { eventTypeId, limit: 20, search: search || undefined },
       {
         enabled: enabled && eventTypeId > 0,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
+        placeholderData: keepPreviousData,
       }
     );
 
@@ -112,7 +114,7 @@ export function usePaginatedAssignmentChildren({
     return result;
   }, [serverChildren, pendingChanges]);
 
-  return { children, serverChildren, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading };
+  return { children, serverChildren, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching, isLoading };
 }
 
 /** Convert an AssignmentChild to a ChildrenEventType for form compatibility */

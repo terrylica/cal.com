@@ -1,3 +1,4 @@
+import { keepPreviousData } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { trpc } from "@calcom/trpc/react";
@@ -27,12 +28,13 @@ export function usePaginatedAssignmentHosts({
   search: string;
   enabled?: boolean;
 }) {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching, isLoading } =
     trpc.viewer.eventTypes.getHostsForAssignment.useInfiniteQuery(
       { eventTypeId, limit: 20, search: search || undefined },
       {
         enabled: enabled && eventTypeId > 0,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
+        placeholderData: keepPreviousData,
       }
     );
 
@@ -93,5 +95,5 @@ export function usePaginatedAssignmentHosts({
     return result;
   }, [serverHosts, pendingChanges]);
 
-  return { hosts, serverHosts, serverHasFixedHosts, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading };
+  return { hosts, serverHosts, serverHasFixedHosts, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching, isLoading };
 }

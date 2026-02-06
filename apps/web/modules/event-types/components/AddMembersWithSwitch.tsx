@@ -225,6 +225,7 @@ export type AddMembersWithSwitchProps = {
   fetchNextPageSelected?: () => void;
   assignedSearchValue?: string;
   onAssignedSearchChange?: (value: string) => void;
+  isSearchingAssigned?: boolean;
 };
 
 enum AssignmentState {

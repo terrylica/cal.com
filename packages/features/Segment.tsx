@@ -12,8 +12,10 @@ import { isEqual } from "@calcom/lib/isEqual";
 import type { AttributesQueryValue } from "@calcom/lib/raqb/types";
 import { type RouterOutputs, trpc } from "@calcom/trpc/react";
 import cn from "@calcom/ui/classNames";
+import { TextField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BuilderProps, ImmutableTree, JsonTree } from "react-awesome-query-builder";
 import { Builder, Utils as QbUtils, Query } from "react-awesome-query-builder";
 
@@ -109,6 +111,13 @@ function MatchingTeamMembers({
   const { t } = useLocale();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   // Check if queryValue has valid children properties value
   const hasValidValue = queryValue?.children1
     ? Object.values(queryValue.children1).some(
@@ -116,17 +125,19 @@ function MatchingTeamMembers({
     )
     : false;
 
-  const { data, isPending, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isPending, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useInfiniteQuery(
       {
         teamId,
         attributesQueryValue: queryValue,
         _enablePerf: true,
         limit: MATCHING_MEMBERS_PAGE_SIZE,
+        search: debouncedSearch || undefined,
       },
       {
         enabled: hasValidValue,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
+        placeholderData: keepPreviousData,
       }
     );
 
@@ -176,6 +187,19 @@ function MatchingTeamMembers({
       <div className="text-emphasis flex items-center text-sm font-medium">
         <span>{t("x_matching_members", { x: total })}</span>
       </div>
+      <TextField
+        type="search"
+        placeholder={t("search")}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        addOnLeading={
+          isFetching && debouncedSearch ? (
+            <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
+          ) : (
+            <Icon name="search" className="text-subtle h-4 w-4" />
+          )
+        }
+      />
       <div ref={scrollContainerRef} className="max-h-[400px] overflow-y-auto">
         <ul className="divide-subtle divide-y">
           {allMatchingTeamMembers.map((member) => (

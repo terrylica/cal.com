@@ -62,6 +62,7 @@ export const CheckedTeamSelect = ({
   fetchNextPageSelected,
   assignedSearchValue,
   onAssignedSearchChange,
+  isSearchingAssigned,
   ...props
 }: Omit<Props<CheckedSelectOption, true>, "value" | "onChange"> & {
   options?: Options<CheckedSelectOption>;
@@ -79,6 +80,7 @@ export const CheckedTeamSelect = ({
   fetchNextPageSelected?: () => void;
   assignedSearchValue?: string;
   onAssignedSearchChange?: (value: string) => void;
+  isSearchingAssigned?: boolean;
 }) => {
   const isPlatform = useIsPlatform();
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
@@ -148,7 +150,13 @@ export const CheckedTeamSelect = ({
             placeholder={t("search")}
             value={assignedSearchValue ?? ""}
             onChange={(e) => onAssignedSearchChange(e.target.value)}
-            addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
+            addOnLeading={
+              isSearchingAssigned ? (
+                <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
+              ) : (
+                <Icon name="search" className="text-subtle h-4 w-4" />
+              )
+            }
           />
         </div>
       )}

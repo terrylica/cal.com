@@ -173,6 +173,7 @@ const FixedHosts = ({
   fetchNextPageSelected,
   assignedSearch,
   onAssignedSearchChange,
+  isSearchingAssigned,
 }: {
   teamId: number;
   value: Host[];
@@ -189,6 +190,7 @@ const FixedHosts = ({
   fetchNextPageSelected?: () => void;
   assignedSearch: string;
   onAssignedSearchChange: (value: string) => void;
+  isSearchingAssigned?: boolean;
 }) => {
   const { t } = useLocale();
   const { setHosts } = useHosts();
@@ -263,6 +265,7 @@ const FixedHosts = ({
               fetchNextPageSelected={fetchNextPageSelected}
               assignedSearchValue={assignedSearch}
               onAssignedSearchChange={onAssignedSearchChange}
+              isSearchingAssigned={isSearchingAssigned}
             />
           </div>
         </>
@@ -302,6 +305,7 @@ const FixedHosts = ({
               fetchNextPageSelected={fetchNextPageSelected}
               assignedSearchValue={assignedSearch}
               onAssignedSearchChange={onAssignedSearchChange}
+              isSearchingAssigned={isSearchingAssigned}
             />
           </div>
         </SettingsToggle>
@@ -333,6 +337,7 @@ const RoundRobinHosts = ({
   fetchNextPageSelected,
   assignedSearch,
   onAssignedSearchChange,
+  isSearchingAssigned,
 }: {
   orgId: number | null;
   value: Host[];
@@ -348,6 +353,7 @@ const RoundRobinHosts = ({
   fetchNextPageSelected?: () => void;
   assignedSearch: string;
   onAssignedSearchChange: (value: string) => void;
+  isSearchingAssigned?: boolean;
 }) => {
   const { t } = useLocale();
 
@@ -488,6 +494,7 @@ const RoundRobinHosts = ({
       fetchNextPageSelected={fetchNextPageSelected}
       assignedSearchValue={assignedSearch}
       onAssignedSearchChange={onAssignedSearchChange}
+      isSearchingAssigned={isSearchingAssigned}
     />
   );
 
@@ -733,6 +740,7 @@ const ChildrenEventTypes = ({
     fetchNextPage: fetchNextChildrenPage,
     hasNextPage: hasNextChildrenPage,
     isFetchingNextPage: isFetchingNextChildrenPage,
+    isFetching: isFetchingAssignedChildren,
   } = usePaginatedAssignmentChildren({
     eventTypeId,
     pendingChanges,
@@ -894,6 +902,7 @@ const ChildrenEventTypes = ({
               isLoadingMore={isFetchingNextSearchPage}
               assignedSearchValue={assignedChildrenSearch}
               onAssignedSearchChange={setAssignedChildrenSearch}
+              isSearchingAssigned={isFetchingAssignedChildren && !!debouncedAssignedChildrenSearch}
             />
           </>
         ) : (
@@ -957,6 +966,7 @@ const Hosts = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isFetching: isFetchingAssignedHosts,
   } = usePaginatedAssignmentHosts({
     eventTypeId,
     pendingChanges,
@@ -1041,6 +1051,7 @@ const Hosts = ({
         fetchNextPageSelected={fetchNextPage}
         assignedSearch={assignedSearch}
         onAssignedSearchChange={setAssignedSearch}
+        isSearchingAssigned={isFetchingAssignedHosts && !!debouncedAssignedSearch}
       />
     ),
     ROUND_ROBIN: (
@@ -1066,6 +1077,7 @@ const Hosts = ({
           fetchNextPageSelected={fetchNextPage}
           assignedSearch={assignedSearch}
           onAssignedSearchChange={setAssignedSearch}
+          isSearchingAssigned={isFetchingAssignedHosts && !!debouncedAssignedSearch}
         />
         <RoundRobinHosts
           orgId={orgId}
@@ -1088,6 +1100,7 @@ const Hosts = ({
           fetchNextPageSelected={fetchNextPage}
           assignedSearch={assignedSearch}
           onAssignedSearchChange={setAssignedSearch}
+          isSearchingAssigned={isFetchingAssignedHosts && !!debouncedAssignedSearch}
         />
       </>
     ),
