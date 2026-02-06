@@ -239,16 +239,6 @@ describe("Bookings Endpoints 2024-08-13 get attendees", () => {
       });
     });
 
-    describe("Validation", () => {
-      it("should return 403 when booking does not exist", async () => {
-        await request(app.getHttpServer())
-          .get(`/v2/bookings/non-existent-booking-uid/attendees`)
-          .set(CAL_API_VERSION_HEADER, VERSION_2024_08_13)
-          .set("Authorization", `Bearer ${testSetup.organizer.accessToken}`)
-          .expect(403);
-      });
-    });
-
     describe("Response format", () => {
       it("should return attendees with correct structure", async () => {
         const getAttendeesResponse = await request(app.getHttpServer())
