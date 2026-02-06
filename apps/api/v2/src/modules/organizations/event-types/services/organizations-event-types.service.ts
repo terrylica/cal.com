@@ -97,13 +97,15 @@ export class OrganizationsEventTypesService {
     orgId: number,
     skip = 0,
     take = 250,
-    sortCreatedAt?: SortOrderType
+    sortCreatedAt?: SortOrderType,
+    includeHidden = true
   ): Promise<DatabaseTeamEventType[]> {
     return await this.organizationEventTypesRepository.getOrganizationTeamsEventTypes(
       orgId,
       skip,
       take,
-      sortCreatedAt
+      sortCreatedAt,
+      includeHidden
     );
   }
 
