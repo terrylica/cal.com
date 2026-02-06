@@ -139,7 +139,7 @@ function ActionTitle({ actionDisplayTitle }: { actionDisplayTitle: TranslationWi
                 values={actionDisplayTitle.params}
                 components={actionDisplayTitle.components.map((comp) =>
                     comp.type === "link" ? (
-                        <Link key={comp.href} href={comp.href} className="text-emphasis underline hover:no-underline" />
+                        <Link key={comp.href} href={comp.href} target="_blank" rel="noopener noreferrer" className="text-emphasis underline hover:no-underline" />
                     ) : (
                         <span key={comp.href} />
                     )

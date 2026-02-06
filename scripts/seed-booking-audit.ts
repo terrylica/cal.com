@@ -138,41 +138,6 @@ async function seedAuditLogsForBooking({
 
   auditLogs.push({
     bookingUid,
-    actorId: (attendeeActor ?? guestActor).id,
-    action: "RESCHEDULE_REQUESTED",
-    type: "RECORD_UPDATED",
-    timestamp: nextTimestamp(),
-    source: "WEBAPP",
-    operationId: uuidv4(),
-    data: {
-      version: 1,
-      fields: {
-        rescheduleReason: "Conflict with another meeting",
-        rescheduledRequestedBy: attendeeEmail,
-      },
-    },
-  });
-
-  auditLogs.push({
-    bookingUid,
-    actorId: userActor.id,
-    action: "RESCHEDULED",
-    type: "RECORD_UPDATED",
-    timestamp: nextTimestamp(),
-    source: "WEBAPP",
-    operationId: uuidv4(),
-    data: {
-      version: 1,
-      fields: {
-        startTime: { old: hoursFromNow(24), new: hoursFromNow(48) },
-        endTime: { old: hoursFromNow(24.5), new: hoursFromNow(48.5) },
-        rescheduledToUid: { old: null, new: rescheduledToUid },
-      },
-    },
-  });
-
-  auditLogs.push({
-    bookingUid,
     actorId: userActor.id,
     action: "LOCATION_CHANGED",
     type: "RECORD_UPDATED",
@@ -301,24 +266,6 @@ async function seedAuditLogsForBooking({
 
   auditLogs.push({
     bookingUid,
-    actorId: appActor.id,
-    action: "CANCELLED",
-    type: "RECORD_UPDATED",
-    timestamp: nextTimestamp(),
-    source: "WEBHOOK",
-    operationId: uuidv4(),
-    data: {
-      version: 1,
-      fields: {
-        cancellationReason: "Payment failed - automatic cancellation",
-        cancelledBy: "stripe@app.internal",
-        status: { old: BookingStatus.ACCEPTED, new: BookingStatus.CANCELLED },
-      },
-    },
-  });
-
-  auditLogs.push({
-    bookingUid,
     actorId: userActor.id,
     action: "REJECTED",
     type: "RECORD_UPDATED",
@@ -372,6 +319,59 @@ async function seedAuditLogsForBooking({
         startTime: { old: hoursFromNow(48), new: hoursFromNow(72) },
         endTime: { old: hoursFromNow(48.5), new: hoursFromNow(72.5) },
         rescheduledToBookingUid: { old: null, new: rescheduledToUid },
+      },
+    },
+  });
+
+  auditLogs.push({
+    bookingUid,
+    actorId: appActor.id,
+    action: "CANCELLED",
+    type: "RECORD_UPDATED",
+    timestamp: nextTimestamp(),
+    source: "WEBHOOK",
+    operationId: uuidv4(),
+    data: {
+      version: 1,
+      fields: {
+        cancellationReason: "Payment failed - automatic cancellation",
+        cancelledBy: "stripe@app.internal",
+        status: { old: BookingStatus.ACCEPTED, new: BookingStatus.CANCELLED },
+      },
+    },
+  });
+
+  auditLogs.push({
+    bookingUid,
+    actorId: (attendeeActor ?? guestActor).id,
+    action: "RESCHEDULE_REQUESTED",
+    type: "RECORD_UPDATED",
+    timestamp: nextTimestamp(),
+    source: "WEBAPP",
+    operationId: uuidv4(),
+    data: {
+      version: 1,
+      fields: {
+        rescheduleReason: "Conflict with another meeting",
+        rescheduledRequestedBy: attendeeEmail,
+      },
+    },
+  });
+
+  auditLogs.push({
+    bookingUid,
+    actorId: userActor.id,
+    action: "RESCHEDULED",
+    type: "RECORD_UPDATED",
+    timestamp: nextTimestamp(),
+    source: "WEBAPP",
+    operationId: uuidv4(),
+    data: {
+      version: 1,
+      fields: {
+        startTime: { old: hoursFromNow(24), new: hoursFromNow(48) },
+        endTime: { old: hoursFromNow(24.5), new: hoursFromNow(48.5) },
+        rescheduledToUid: { old: null, new: rescheduledToUid },
       },
     },
   });
@@ -502,14 +502,14 @@ export default async function seedBookingAuditLogs() {
   });
 
   console.log(`  ✅ Created ${count} audit log entries`);
-  console.log(`  View logs at: /booking/${booking.uid}/logs`);
+  console.log(`  View logs at: /bookings/upcoming?uid=${booking.uid}&activeSegment=history`);
 
   console.log(`\n📊 Summary:`);
   console.log(`  Booking UID: ${booking.uid}`);
   console.log(`  Total audit log entries created: ${count}`);
-  console.log("  Actions covered: CREATED, ACCEPTED, RESCHEDULE_REQUESTED, RESCHEDULED,");
-  console.log("    LOCATION_CHANGED, ATTENDEE_ADDED, ATTENDEE_REMOVED, REASSIGNMENT (x2),");
-  console.log("    NO_SHOW_UPDATED (x2), CANCELLED, REJECTED, SEAT_BOOKED, SEAT_RESCHEDULED");
+  console.log("  Actions covered: CREATED, ACCEPTED, LOCATION_CHANGED, ATTENDEE_ADDED,");
+  console.log("    ATTENDEE_REMOVED, REASSIGNMENT (x2), NO_SHOW_UPDATED (x2), REJECTED,");
+  console.log("    SEAT_BOOKED, SEAT_RESCHEDULED, CANCELLED, RESCHEDULE_REQUESTED, RESCHEDULED");
   console.log("  Actor types: USER, ATTENDEE, GUEST, SYSTEM, APP");
   console.log("  Sources: WEBAPP, API_V1, API_V2, WEBHOOK, MAGIC_LINK, SYSTEM");
 }

@@ -90,7 +90,7 @@ export class SeatRescheduledAuditActionService implements IAuditActionService {
         newDate,
       },
       components: rescheduledToBookingUid
-        ? [{ type: "link", href: `/booking/${rescheduledToBookingUid}/logs` }]
+        ? [{ type: "link", href: `/bookings/upcoming?uid=${rescheduledToBookingUid}&activeSegment=history` }]
         : undefined,
     };
   }
