@@ -197,12 +197,7 @@ async function getHandler(request: NextRequest) {
   const [subdomain] = domains;
 
   if (shouldUseDefaultLogo(subdomain)) {
-    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), {
-      status: 302,
-      headers: {
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
-      },
-    });
+    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), { status: 302 });
   }
 
   // Create a legacy request object for compatibility with the legacy request object
@@ -213,12 +208,7 @@ async function getHandler(request: NextRequest) {
   const filteredLogo = teamLogos[logoDefinition.source] ?? logoDefinition.fallback;
 
   if (!teamLogos[logoDefinition.source]) {
-    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), {
-      status: 302,
-      headers: {
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
-      },
-    });
+    return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), { status: 302 });
   }
 
   try {

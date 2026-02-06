@@ -146,54 +146,25 @@ describe("logo route", () => {
     });
   });
 
-  describe("caching headers", () => {
-    it("should include proper Cache-Control headers in redirect response", async () => {
+  describe("redirect behavior", () => {
+    it("should not include caching headers in redirect response for immediate logo updates", async () => {
       const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
 
       await GET(req, { params: Promise.resolve({}) });
 
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        expect.any(URL),
-        expect.objectContaining({
-          status: 302,
-          headers: expect.objectContaining({
-            "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
-          }),
-        })
-      );
-    });
-
-    it("should have 7-day stale-while-revalidate for better cache hit rates", async () => {
-      const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
-
-      await GET(req, { params: Promise.resolve({}) });
-
+      expect(NextResponse.redirect).toHaveBeenCalledWith(expect.any(URL), { status: 302 });
       const mockCalls = vi.mocked(NextResponse.redirect).mock.calls;
       const callArgs = mockCalls[0];
-      const init = callArgs[1] as { headers?: Record<string, string> } | undefined;
-      expect(init?.headers?.["Cache-Control"]).toContain("stale-while-revalidate=604800");
+      const init = callArgs[1] as { headers?: Record<string, string>; status?: number } | undefined;
+      expect(init?.headers).toBeUndefined();
     });
 
-    it("should include public directive for CDN caching", async () => {
+    it("should use 302 status code for redirects", async () => {
       const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
 
-      await GET(req, { params: Promise.resolve({}) });
+      const res = await GET(req, { params: Promise.resolve({}) });
 
-      const mockCalls = vi.mocked(NextResponse.redirect).mock.calls;
-      const callArgs = mockCalls[0];
-      const init = callArgs[1] as { headers?: Record<string, string> } | undefined;
-      expect(init?.headers?.["Cache-Control"]).toContain("public");
-    });
-
-    it("should include max-age for client-side caching", async () => {
-      const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
-
-      await GET(req, { params: Promise.resolve({}) });
-
-      const mockCalls = vi.mocked(NextResponse.redirect).mock.calls;
-      const callArgs = mockCalls[0];
-      const init = callArgs[1] as { headers?: Record<string, string> } | undefined;
-      expect(init?.headers?.["Cache-Control"]).toContain("max-age=86400");
+      expect(res.status).toBe(302);
     });
   });
 
