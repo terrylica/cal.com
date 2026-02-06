@@ -7,12 +7,9 @@ import type { Slot } from "@calcom/features/schedules/lib/use-schedule/types";
 import { useNonEmptyScheduleDays } from "@calcom/features/schedules/lib/use-schedule/useNonEmptyScheduleDays";
 import { useSlotsForAvailableDates } from "@calcom/features/schedules/lib/use-schedule/useSlotsForDate";
 import { PUBLIC_INVALIDATE_AVAILABLE_SLOTS_ON_BOOKING_FORM } from "@calcom/lib/constants";
-import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
 import { BookerLayouts } from "@calcom/prisma/zod-utils";
 import classNames from "@calcom/ui/classNames";
-import { Badge } from "@calcom/ui/components/badge";
-import { Tooltip } from "@calcom/ui/components/tooltip";
 import {
   AvailableTimes,
   AvailableTimesSkeleton,
@@ -82,9 +79,7 @@ export const AvailableTimeSlots = ({
   hideAvailableTimesHeader = false,
   ...props
 }: AvailableTimeSlotsProps) => {
-  const { t } = useLocale();
   const selectedDate = useBookerStoreContext((state) => state.selectedDate);
-  const teamMemberEmail = useBookerStoreContext((state) => state.teamMemberEmail);
 
   const setSeatedEventData = useBookerStoreContext((state) => state.setSeatedEventData);
   const date = selectedDate || dayjs().format("YYYY-MM-DD");
@@ -194,15 +189,6 @@ export const AvailableTimeSlots = ({
 
   return (
     <>
-      {teamMemberEmail && (
-        <div className="mb-2">
-          <Tooltip content={teamMemberEmail}>
-            <Badge variant="blue" startIcon="contact" size="sm">
-              {t("contact_owner")}
-            </Badge>
-          </Tooltip>
-        </div>
-      )}
       <div
         className={classNames(
           `flex`,
