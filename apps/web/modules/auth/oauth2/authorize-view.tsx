@@ -39,7 +39,6 @@ export function Authorize() {
     label: string;
   } | null>();
 
-
   const {
     data: client,
     error: getClientError,
@@ -275,7 +274,7 @@ export function Authorize() {
 }
 
 function isScopeError(errorMessage: string): boolean {
-  return errorMessage.includes("scope");
+  return errorMessage.includes("Requested scope exceeds");
 }
 
 function mapTrpcCodeToOAuthError(code: string | undefined) {
