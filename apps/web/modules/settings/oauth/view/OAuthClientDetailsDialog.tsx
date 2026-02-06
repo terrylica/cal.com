@@ -74,9 +74,9 @@ const OAuthClientDetailsDialog = ({
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectionReasonError, setShowRejectionReasonError] = useState(false);
 
-  const enablePkce =
+  const formEnablePkce =
     client?.isPkceEnabled ?? (client?.clientType ? client.clientType.toUpperCase() === "PUBLIC" : false);
-  const clientScopes = client?.scopes && client.scopes.length > 0 ? client.scopes : [...OAUTH_SCOPES];
+  const formClientScopes = client?.scopes && client.scopes.length > 0 ? client.scopes : [...OAUTH_SCOPES];
 
   const form = useForm<OAuthClientCreateFormValues>({
     defaultValues: {
@@ -85,8 +85,8 @@ const OAuthClientDetailsDialog = ({
       redirectUri: client?.redirectUri ?? "",
       websiteUrl: client?.websiteUrl ?? "",
       logo: client?.logo ?? "",
-      enablePkce,
-      scopes: clientScopes,
+      enablePkce: formEnablePkce,
+      scopes: formClientScopes,
     },
   });
 
