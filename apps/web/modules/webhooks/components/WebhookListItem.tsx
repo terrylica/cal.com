@@ -10,6 +10,14 @@ import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/setti
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import {
+  ListItem,
+  ListItemActions,
+  ListItemBadges,
+  ListItemContent,
+  ListItemHeader,
+  ListItemTitle,
+} from "@coss/ui/components/list-item";
+import {
   Menu,
   MenuCheckboxItem,
   MenuGroup,
@@ -69,21 +77,11 @@ export default function WebhookListItem(props: {
   });
 
   return (
-    <div
+    <ListItem
       data-testid="webhook-list-item"
-      className="not-last:border-b border-subtle flex w-full items-start justify-between gap-4 p-6">
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
+      className="not-last:border-b bg-clip-padding transition-[background-color] has-[[data-slot=list-item-title]:hover]:z-1 has-[[data-slot=list-item-title]:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-black)_2%)] dark:has-[[data-slot=list-item-title]:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-white)_2%)]">
+      <ListItemContent>
         <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <span className="truncate font-semibold text-sm" data-testid="webhook-url">
-                  {webhook.subscriberUrl}
-                </span>
-              }
-            />
-            <TooltipPopup>{webhook.subscriberUrl}</TooltipPopup>
-          </Tooltip>
           {!props.permissions.canEditWebhook && <Badge variant="outline">{t("readonly")}</Badge>}
           <Badge variant="info">{getWebhookVersionLabel(webhook.version)}</Badge>
           <Tooltip>
@@ -102,7 +100,15 @@ export default function WebhookListItem(props: {
             </TooltipPopup>
           </Tooltip>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <ListItemHeader>
+          <h2
+            className="truncate font-semibold sm:text-sm"
+            data-slot="list-item-title"
+            data-testid="webhook-url">
+            {webhook.subscriberUrl}
+          </h2>
+        </ListItemHeader>
+        <ListItemBadges>
           {webhook.eventTriggers.slice(0, MAX_BADGES_TWO_ROWS).map((trigger) => (
             <Badge key={trigger} variant="outline">
               <WebhookIcon />
@@ -114,10 +120,10 @@ export default function WebhookListItem(props: {
               +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
             </Badge>
           )}
-        </div>
-      </div>
+        </ListItemBadges>
+      </ListItemContent>
       {(props.permissions.canEditWebhook || props.permissions.canDeleteWebhook) && (
-        <div className="flex items-center gap-4">
+        <ListItemActions>
           <div className="flex items-center gap-4 max-md:hidden">
             <Tooltip>
               <TooltipTrigger
@@ -226,9 +232,8 @@ export default function WebhookListItem(props: {
               )}
             </MenuPopup>
           </Menu>
-        </div>
+        </ListItemActions>
       )}
-
       <DeleteWebhookDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -241,6 +246,6 @@ export default function WebhookListItem(props: {
           });
         }}
       />
-    </div>
+    </ListItem>
   );
 }
