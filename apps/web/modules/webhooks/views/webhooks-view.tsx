@@ -4,9 +4,24 @@ import { useBookerUrl } from "@calcom/features/bookings/hooks/useBookerUrl";
 import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
-import { Avatar } from "@calcom/ui/components/avatar";
-import { EmptyScreen } from "@calcom/ui/components/empty-screen";
-import { Frame, FrameDescription, FrameHeader, FramePanel, FrameTitle } from "@coss/ui/components/frame";
+import { Avatar, AvatarFallback, AvatarImage } from "@coss/ui/components/avatar";
+import {
+  Card,
+  CardFrame,
+  CardFrameDescription,
+  CardFrameHeader,
+  CardFrameTitle,
+  CardPanel,
+} from "@coss/ui/components/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@coss/ui/components/empty";
+import { WebhookIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { CreateNewWebhookButton, WebhookListItem } from "../components";
@@ -25,6 +40,15 @@ const WebhooksView = ({ data }: Props) => {
   );
 };
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer }) => {
   const { t } = useLocale();
   const router = useRouter();
@@ -32,62 +56,79 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
   const bookerUrl = useBookerUrl();
 
   const hasTeams = profiles && profiles.length > 1;
+  const hasWebhooks = webhookGroups.some((group) => group.webhooks.length > 0);
 
   return (
-    <Frame>
-      <FrameHeader className="mb-2 flex-row items-center justify-between">
-        <div>
-          <FrameTitle className="text-lg">{t("webhooks")}</FrameTitle>
-          <FrameDescription>{t("add_webhook_description", { appName: APP_NAME })}</FrameDescription>
+    <CardFrame>
+      <CardFrameHeader>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <CardFrameTitle>{t("webhooks")}</CardFrameTitle>
+            <CardFrameDescription>{t("add_webhook_description", { appName: APP_NAME })}</CardFrameDescription>
+          </div>
+          {hasWebhooks && <CreateNewWebhookButton />}
         </div>
-        <CreateNewWebhookButton />
-      </FrameHeader>
-      {webhookGroups.length ? (
+      </CardFrameHeader>
+      {hasWebhooks ? (
         <>
           {webhookGroups.map((group) => (
             <React.Fragment key={group.teamId}>
               {hasTeams && (
-                <div className="mb-2 mt-4 flex items-center px-1">
-                  <Avatar
-                    alt={group.profile.image || ""}
-                    imageSrc={group.profile.image || `${bookerUrl}/${group.profile.name}/avatar.png`}
-                    size="md"
-                    className="inline-flex justify-center"
-                  />
-                  <div className="text-emphasis ml-2 flex grow items-center font-bold">
-                    {group.profile.name || ""}
-                  </div>
+                <div className="flex items-center gap-2 px-6 pb-2 pt-4">
+                  <Avatar className="size-5">
+                    <AvatarImage
+                      alt={group.profile.name || ""}
+                      src={group.profile.image || `${bookerUrl}/${group.profile.name}/avatar.png`}
+                    />
+                    <AvatarFallback className="text-[.625rem]">
+                      {getInitials(group.profile.name || "")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-bold text-sm">{group.profile.name || ""}</span>
                 </div>
               )}
-              {group.webhooks.map((webhook) => (
-                <FramePanel key={webhook.id} className="mt-2">
-                  <WebhookListItem
-                    webhook={webhook}
-                    lastItem={true}
-                    permissions={{
-                      canEditWebhook: group?.metadata?.canModify ?? false,
-                      canDeleteWebhook: group?.metadata?.canDelete ?? false,
-                    }}
-                    onEditWebhook={() =>
-                      router.push(`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`)
-                    }
-                  />
-                </FramePanel>
-              ))}
+              <Card>
+                <CardPanel className="p-0">
+                  {group.webhooks.map((webhook) => (
+                    <WebhookListItem
+                      key={webhook.id}
+                      webhook={webhook}
+                      lastItem={true}
+                      permissions={{
+                        canEditWebhook: group?.metadata?.canModify ?? false,
+                        canDeleteWebhook: group?.metadata?.canDelete ?? false,
+                      }}
+                      onEditWebhook={() =>
+                        router.push(`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`)
+                      }
+                    />
+                  ))}
+                </CardPanel>
+              </Card>
             </React.Fragment>
           ))}
         </>
       ) : (
-        <FramePanel>
-          <EmptyScreen
-            Icon="link"
-            headline={t("create_your_first_webhook")}
-            description={t("create_your_first_webhook_description", { appName: APP_NAME })}
-            buttonRaw={<CreateNewWebhookButton />}
-          />
-        </FramePanel>
+        <Card>
+          <CardPanel>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <WebhookIcon />
+                </EmptyMedia>
+                <EmptyTitle>{t("create_your_first_webhook")}</EmptyTitle>
+                <EmptyDescription>
+                  {t("create_your_first_webhook_description", { appName: APP_NAME })}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <CreateNewWebhookButton />
+              </EmptyContent>
+            </Empty>
+          </CardPanel>
+        </Card>
       )}
-    </Frame>
+    </CardFrame>
   );
 };
 
