@@ -1,5 +1,6 @@
 "use client";
 
+import { SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR } from "@calcom/features/oauth/constants";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -274,7 +275,7 @@ export function Authorize() {
 }
 
 function isScopeError(errorMessage: string): boolean {
-  return errorMessage.includes("Requested scope exceeds");
+  return errorMessage.includes(SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR);
 }
 
 function mapTrpcCodeToOAuthError(code: string | undefined) {

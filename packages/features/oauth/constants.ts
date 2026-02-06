@@ -9,3 +9,5 @@ export const OAUTH_SCOPES: AccessScope[] = [
   "SCHEDULE_WRITE",
   "PROFILE_READ",
 ];
+
+export const SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR = "Requested scope exceeds the client's registered scopes";

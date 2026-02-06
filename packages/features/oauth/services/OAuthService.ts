@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import process from "node:process";
 import type { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
+import { SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR } from "@calcom/features/oauth/constants";
 import type { AccessCodeRepository } from "@calcom/features/oauth/repositories/AccessCodeRepository";
 import type { OAuthClientRepository } from "@calcom/features/oauth/repositories/OAuthClientRepository";
 import type { OAuthRefreshTokenRepository } from "@calcom/features/oauth/repositories/OAuthRefreshTokenRepository";
@@ -584,5 +585,5 @@ export const OAUTH_ERROR_REASONS: Record<OAuthErrorReason, string> = {
   refresh_token_revoked: "invalid_grant",
   client_id_mismatch: "invalid_grant",
   encryption_key_missing: "CALENDSO_ENCRYPTION_KEY is not set",
-  scope_exceeds_client_registration: "Requested scope exceeds the client's registered scopes",
+  scope_exceeds_client_registration: SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR,
 };
