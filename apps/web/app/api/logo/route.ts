@@ -209,8 +209,6 @@ async function getHandler(request: NextRequest) {
   const { isValidOrgDomain } = orgDomainConfig(legacyReq);
 
   const teamLogos = await getTeamLogos(subdomain, isValidOrgDomain);
-  const filteredLogo = teamLogos[logoDefinition.source] ?? logoDefinition.fallback;
-
   if (!teamLogos[logoDefinition.source]) {
     return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), {
       status: 302,
@@ -219,6 +217,8 @@ async function getHandler(request: NextRequest) {
       },
     });
   }
+
+  const filteredLogo = teamLogos[logoDefinition.source] ?? logoDefinition.fallback;
 
   try {
     let response: Response;
