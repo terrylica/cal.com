@@ -67,7 +67,6 @@ export async function handler(req: NextApiRequest) {
       select: bookingReferenceSelect,
       take,
       skip,
-      orderBy: { id: "desc" },
     });
     return { booking_references: data.map((br) => schemaBookingReferenceReadPublic.parse(br)) };
   }
