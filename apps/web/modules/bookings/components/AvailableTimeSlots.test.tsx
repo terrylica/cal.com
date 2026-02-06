@@ -47,7 +47,11 @@ import { AvailableTimeSlots } from "./AvailableTimeSlots";
 const defaultProps = {
   isLoading: false,
   event: { data: null },
-  loadingStates: {} as Record<string, boolean>,
+  loadingStates: {
+    creatingBooking: false,
+    creatingRecurringBooking: false,
+    creatingInstantBooking: false,
+  },
   isVerificationCodeSending: false,
   renderConfirmNotVerifyEmailButtonCond: false,
   onSubmit: vi.fn(),
