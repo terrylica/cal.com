@@ -25,7 +25,6 @@ import { TokensService } from "@/modules/tokens/tokens.service";
 // note(Lauris): exclude legacy scopes
 type NewAccessScope = Exclude<AccessScope, "READ_BOOKING" | "READ_PROFILE">;
 
-// scope name -> permission number (for checking if token has required permissions)
 const SCOPE_TO_PERMISSION: Record<NewAccessScope, number> = {
   EVENT_TYPE_READ: EVENT_TYPE_READ,
   EVENT_TYPE_WRITE: EVENT_TYPE_WRITE,

@@ -1874,10 +1874,10 @@ model OAuthRefreshToken {
 }
 
 enum AccessScope {
-  // Legacy values (kept for backward compatibility with existing tokens/access codes)
+  // note(Lauris): legacy values (kept for backward compatibility with existing tokens/access codes)
   READ_BOOKING
   READ_PROFILE
-  // New scope values
+  // note(Lauris): new scope values
   EVENT_TYPE_READ
   EVENT_TYPE_WRITE
   BOOKING_READ
