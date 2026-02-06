@@ -1,8 +1,4 @@
-import {
-  CAL_API_VERSION_HEADER,
-  SUCCESS_STATUS,
-  VERSION_2024_08_13,
-} from "@calcom/platform-constants";
+import { CAL_API_VERSION_HEADER, SUCCESS_STATUS, VERSION_2024_08_13 } from "@calcom/platform-constants";
 import type { BookingOutput_2024_08_13, CreateBookingInput_2024_08_13 } from "@calcom/platform-types";
 import type { Team, User } from "@calcom/prisma/client";
 import { INestApplication } from "@nestjs/common";
@@ -16,10 +12,11 @@ import { TeamRepositoryFixture } from "test/fixtures/repository/team.repository.
 import { TokensRepositoryFixture } from "test/fixtures/repository/tokens.repository.fixture";
 import { UserRepositoryFixture } from "test/fixtures/repository/users.repository.fixture";
 import { randomString } from "test/utils/randomString";
+import { mockThrottlerGuard } from "test/utils/withNoThrottler";
 import { AppModule } from "@/app.module";
 import { bootstrap } from "@/bootstrap";
-import { GetBookingAttendeesOutput_2024_08_13 } from "@/ee/bookings/2024-08-13/outputs/get-booking-attendees.output";
 import { CreateBookingOutput_2024_08_13 } from "@/ee/bookings/2024-08-13/outputs/create-booking.output";
+import { GetBookingAttendeesOutput_2024_08_13 } from "@/ee/bookings/2024-08-13/outputs/get-booking-attendees.output";
 import { CreateScheduleInput_2024_04_15 } from "@/ee/schedules/schedules_2024_04_15/inputs/create-schedule.input";
 import { SchedulesModule_2024_04_15 } from "@/ee/schedules/schedules_2024_04_15/schedules.module";
 import { SchedulesService_2024_04_15 } from "@/ee/schedules/schedules_2024_04_15/services/schedules.service";
@@ -56,6 +53,8 @@ describe("Bookings Endpoints 2024-08-13 get attendees", () => {
   let testSetup: TestSetup;
 
   beforeAll(async () => {
+    mockThrottlerGuard();
+
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule, PrismaModule, UsersModule, SchedulesModule_2024_04_15],
     })
@@ -241,17 +240,19 @@ describe("Bookings Endpoints 2024-08-13 get attendees", () => {
     });
 
     describe("Validation", () => {
-      it("should return 404 when booking does not exist", async () => {
+      it("should return 403 when booking does not exist", async () => {
         await request(app.getHttpServer())
           .get(`/v2/bookings/non-existent-booking-uid/attendees`)
           .set(CAL_API_VERSION_HEADER, VERSION_2024_08_13)
           .set("Authorization", `Bearer ${testSetup.organizer.accessToken}`)
-          .expect(404);
+          .expect(403);
       });
     });
 
     describe("Rate limiting", () => {
       it("should return 429 after exceeding the rate limit", async () => {
+        jest.restoreAllMocks();
+
         const responses = [];
         for (let i = 0; i < 10; i++) {
           const response = await request(app.getHttpServer())
@@ -269,6 +270,8 @@ describe("Bookings Endpoints 2024-08-13 get attendees", () => {
         for (let i = firstThrottledIndex; i < responses.length; i++) {
           expect(responses[i]).toBe(429);
         }
+
+        mockThrottlerGuard();
       });
     });
 
