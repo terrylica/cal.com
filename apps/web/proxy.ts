@@ -18,7 +18,7 @@ const safeGet = async <T = any>(key: string): Promise<T | undefined> => {
   }
 };
 
-export const POST_METHODS_ALLOWED_API_ROUTES: string[] = [
+export const POST_METHODS_ALLOWED_API_ROUTES = [
   "/api/auth/forgot-password",
   "/api/auth/oauth/me",
   "/api/auth/oauth/refreshToken",
@@ -264,19 +264,8 @@ function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
   return reqWithCSP;
 }
 
-
-/**
- * Middleware matcher configuration.
- * Routes matching the negative lookahead patterns are excluded from middleware processing.
- * Excluded routes: _next, static, public, favicon.ico, robots.txt, sitemap.xml, /api/logo
- *
- * NOTE: Next.js requires config.matcher to be static string literals (no template literals or variables)
- * because Turbopack analyzes the config at build time.
- */
 export const config = {
-  matcher: [
-    "/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|api/logo(?:/|$|\\?)).*)",
-  ],
+  matcher: ["/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$).*)"],
 };
 
 export default proxy;
