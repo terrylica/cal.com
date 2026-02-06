@@ -562,8 +562,8 @@ export class MembershipRepository {
     });
   }
 
-  async hasAnyAcceptedMembershipByUserId({ userId }: { userId: number }): Promise<boolean> {
-    const membership = await this.prismaClient.membership.findFirst({
+  static async hasAnyAcceptedMembershipByUserId({ userId }: { userId: number }): Promise<boolean> {
+    const membership = await prisma.membership.findFirst({
       where: {
         userId,
         accepted: true,

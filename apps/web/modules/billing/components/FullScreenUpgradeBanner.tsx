@@ -14,7 +14,9 @@ const SHELL_FIXED_OFFSET_MOBILE = 174;
 const SHELL_FIXED_OFFSET_TABLET = 174;
 const SHELL_FIXED_OFFSET_DESKTOP = 32;
 
-export type UpgradeTarget = "team" | "organization";
+import type { UpgradeTarget } from "./types";
+
+export type { UpgradeTarget };
 
 export type FullScreenUpgradeBannerProps = {
   title: string;

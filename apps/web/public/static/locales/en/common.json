@@ -1149,6 +1149,7 @@
   "create_team_to_get_started": "Create a team to get started",
   "teams": "Teams",
   "upgrade_banner_teams_subtitle": "Add your teammates and schedule better as a unit.",
+  "upgrade_banner_org_subtitle": "Upgrade to an organization plan to unlock advanced team management features.",
   "upgrade_feature_round_robin": "Round-robin, fixed round-robin",
   "upgrade_feature_collective_events": "Collective events",
   "upgrade_feature_workflows": "Teams workflows",
@@ -4589,5 +4590,6 @@
   "upgrade_info_team_insights_description": "Upgrade to surface all activity across your bookings pages",
   "upgrade_badge_available_team": "Available now on team plans",
   "upgrade_badge_available_org": "Available now on org plans",
+  "orgs": "Orgs",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }
