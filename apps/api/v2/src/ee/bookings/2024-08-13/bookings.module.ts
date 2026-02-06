@@ -6,6 +6,7 @@ import { BookingReferencesRepository_2024_08_13 } from "@/ee/bookings/2024-08-13
 import { BookingsRepository_2024_08_13 } from "@/ee/bookings/2024-08-13/repositories/bookings.repository";
 import { BookingGuestsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-guests.service";
 import { BookingLocationService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-location.service";
+import { BookingVideoService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-video.service";
 import { BookingReferencesService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-references.service";
 import { BookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/bookings.service";
 import { CalVideoOutputService } from "@/ee/bookings/2024-08-13/services/cal-video.output.service";
@@ -105,6 +106,7 @@ import { BookingEventHandlerModule } from "@/lib/modules/booking-event-handler.m
     CalVideoOutputService,
     BookingPbacGuard,
     BookingLocationService_2024_08_13,
+    BookingVideoService_2024_08_13,
   ],
   controllers: [
     BookingsController_2024_08_13,

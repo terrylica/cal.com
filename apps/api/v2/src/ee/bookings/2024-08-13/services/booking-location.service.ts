@@ -7,7 +7,7 @@ import {
   updateEvent,
 } from "@calcom/platform-libraries";
 import { makeUserActor } from "@calcom/platform-libraries/bookings";
-import { createMeeting, deleteMeeting, FAKE_DAILY_CREDENTIAL } from "@calcom/platform-libraries/conferencing";
+import { createMeeting, FAKE_DAILY_CREDENTIAL } from "@calcom/platform-libraries/conferencing";
 import type {
   BookingInputLocation_2024_08_13,
   Integration_2024_08_13,
@@ -101,6 +101,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { BookingsRepository_2024_08_13 } from "@/ee/bookings/2024-08-13/repositories/bookings.repository";
+import { BookingVideoService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-video.service";
 import { BookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/bookings.service";
 import { InputBookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/input.service";
 import { EventTypesRepository_2024_06_14 } from "@/ee/event-types/event-types_2024_06_14/event-types.repository";
@@ -121,7 +122,8 @@ export class BookingLocationService_2024_08_13 {
     private readonly inputService: InputBookingsService_2024_08_13,
     private readonly eventTypesRepository: EventTypesRepository_2024_06_14,
     private readonly eventTypeAccessService: EventTypeAccessService,
-    private readonly bookingEventHandlerService: BookingEventHandlerService
+    private readonly bookingEventHandlerService: BookingEventHandlerService,
+    private readonly bookingVideoService: BookingVideoService_2024_08_13
   ) {}
 
   private async buildCalEventForIntegration(
@@ -282,9 +284,8 @@ export class BookingLocationService_2024_08_13 {
     const { location } = input;
 
     if (location) {
-      // for integration locations, skip the sync here as it's handled in handleIntegrationLocationUpdate
       if (location.type !== "integration") {
-        const locationValue = this.getLocationValue(location);
+        const locationValue = this.getNonIntegrationLocationValue(location);
         if (locationValue) {
           await this.syncCalendarEvent(existingBooking.id, locationValue);
         }
@@ -328,7 +329,10 @@ export class BookingLocationService_2024_08_13 {
       return this.handleIntegrationLocationUpdate(existingBooking, inputLocation, user, existingBookingHost);
     }
 
-    const bookingLocation = this.getLocationValue(inputLocation) ?? existingBooking.location;
+    const bookingLocation = this.getNonIntegrationLocationValue(inputLocation);
+    if (!bookingLocation) {
+      throw new BadRequestException(`Missing or invalid location value for type: ${inputLocation.type}`);
+    }
 
     const bookingFieldsLocation = this.inputService.transformLocation(
       inputLocation as BookingInputLocation_2024_08_13
@@ -342,12 +346,9 @@ export class BookingLocationService_2024_08_13 {
       location: bookingFieldsLocation,
     };
 
-    // clear videoCallUrl from metadata when explicitly setting a new non-integration location.
-    // this ensures the frontend shows the new location instead of the old integration URL.
-    const existingMetadata = (existingBooking.metadata || {}) as Record<string, unknown>;
-    const { videoCallUrl: _removedVideoUrl, ...metadataWithoutVideoUrl } = existingMetadata;
+    const metadataWithoutVideoUrl = this.getMetadataWithoutVideoCallUrl(existingBooking.metadata);
 
-    await this.deleteOldVideoMeetingIfNeeded(existingBooking.id);
+    await this.bookingVideoService.deleteOldVideoMeetingIfNeeded(existingBooking.id);
 
     const updatedBooking = await this.bookingsRepository.updateBooking(bookingUid, {
       location: bookingLocation,
@@ -476,7 +477,7 @@ export class BookingLocationService_2024_08_13 {
   private async handleCalVideoLocation(ctx: IntegrationHandlerContext): Promise<BookingLocationResponse> {
     const credential = { ...FAKE_DAILY_CREDENTIAL };
 
-    await this.deleteOldVideoMeetingIfNeeded(ctx.existingBooking.id);
+    await this.bookingVideoService.deleteOldVideoMeetingIfNeeded(ctx.existingBooking.id);
 
     const evt = await this.buildCalEventForIntegration(ctx.booking, ctx.internalLocation, credential.id);
     const meetingResult = await createMeeting(credential, evt);
@@ -517,7 +518,7 @@ export class BookingLocationService_2024_08_13 {
   }
 
   private async handleVideoApiIntegration(ctx: IntegrationHandlerContext): Promise<BookingLocationResponse> {
-    const credential = await this.findVideoCredentialForIntegration(
+    const credential = await this.bookingVideoService.findVideoCredentialForIntegration(
       ctx.integrationSlug,
       ctx.booking.user?.credentials || []
     );
@@ -528,7 +529,7 @@ export class BookingLocationService_2024_08_13 {
       );
     }
 
-    await this.deleteOldVideoMeetingIfNeeded(ctx.existingBooking.id);
+    await this.bookingVideoService.deleteOldVideoMeetingIfNeeded(ctx.existingBooking.id);
 
     const evt = await this.buildCalEventForIntegration(ctx.booking, ctx.internalLocation, credential.id);
     const meetingResult = await createMeeting(credential, evt);
@@ -654,118 +655,6 @@ export class BookingLocationService_2024_08_13 {
     );
 
     return this.bookingsService.getBooking(updatedBooking.uid, ctx.user);
-  }
-
-  private async findVideoCredentialForIntegration(
-    integrationSlug: string,
-    userCredentials: Array<{
-      id: number;
-      type: string;
-      delegationCredentialId: string | null;
-    }>
-  ): Promise<CredentialForCalendarService | null> {
-    if (integrationSlug === "cal-video") {
-      return { ...FAKE_DAILY_CREDENTIAL };
-    }
-
-    const integrationToCredentialTypeMap: Record<string, string> = {
-      zoom: "zoom_video",
-      "whereby-video": "whereby_video",
-      "webex-video": "webex_video",
-      tandem: "tandem_video",
-      jitsi: "jitsi_video",
-      huddle: "huddle01_video",
-      "office365-video": "office365_video", // MS Teams via VideoApiAdapter (when no O365 Calendar)
-    };
-
-    const credentialType = integrationToCredentialTypeMap[integrationSlug];
-
-    // for integrations not in the map, try to match by looking for _video suffix pattern
-    const matchingCred = userCredentials.find((cred) => {
-      if (credentialType) {
-        return cred.type === credentialType;
-      }
-      // fallback: try to match integration slug in credential type
-      // e.g., "discord-video" matches "discord_video"
-      const normalizedSlug = integrationSlug.replace(/-/g, "_");
-      return cred.type.includes(normalizedSlug) || cred.type.includes(normalizedSlug.replace("_video", ""));
-    });
-
-    if (!matchingCred) {
-      return null;
-    }
-
-    return CredentialRepository.findCredentialForCalendarServiceById({
-      id: matchingCred.id,
-    });
-  }
-
-  private async deleteOldVideoMeetingIfNeeded(bookingId: number): Promise<void> {
-    const booking = await this.bookingsRepository.getBookingByIdWithUserAndEventDetails(bookingId);
-    if (!booking || !booking.user) {
-      return;
-    }
-
-    const videoReferences = booking.references.filter(
-      (ref) => (ref.type.endsWith("_video") || ref.type.endsWith("_conferencing")) && !ref.deleted && ref.uid
-    );
-
-    for (const reference of videoReferences) {
-      const credential = await this.findCredentialForVideoReference(reference, booking.user.credentials);
-
-      if (credential && reference.uid) {
-        try {
-          await deleteMeeting(credential, reference.uid);
-          this.logger.log(
-            `deleteOldVideoMeetingIfNeeded - Deleted video meeting for reference id=${reference.id}, type=${reference.type}`
-          );
-        } catch (error) {
-          this.logger.warn(
-            `deleteOldVideoMeetingIfNeeded - Failed to delete video meeting for reference id=${reference.id}`,
-            error instanceof Error ? error.message : String(error)
-          );
-        }
-      }
-    }
-  }
-
-  private async findCredentialForVideoReference(
-    reference: {
-      credentialId: number | null;
-      delegationCredentialId: string | null;
-      type: string;
-    },
-    userCredentials: Array<{
-      id: number;
-      delegationCredentialId: string | null;
-      type: string;
-    }>
-  ): Promise<CredentialForCalendarService | null> {
-    if (reference.credentialId && reference.credentialId > 0) {
-      const localCred = userCredentials.find(
-        (cred) =>
-          cred.id === reference.credentialId &&
-          (cred.type.endsWith("_video") || cred.type.endsWith("_conferencing"))
-      );
-      if (localCred) {
-        return CredentialRepository.findCredentialForCalendarServiceById({
-          id: localCred.id,
-        });
-      }
-
-      return CredentialRepository.findCredentialForCalendarServiceById({
-        id: reference.credentialId,
-      });
-    }
-
-    const typeCred = userCredentials.find((cred) => cred.type === reference.type);
-    if (typeCred) {
-      return CredentialRepository.findCredentialForCalendarServiceById({
-        id: typeCred.id,
-      });
-    }
-
-    return null;
   }
 
   private async syncCalendarEvent(bookingId: number, newLocation: string): Promise<void> {
@@ -903,7 +792,7 @@ export class BookingLocationService_2024_08_13 {
     return null;
   }
 
-  private getLocationValue(loc: UpdateBookingInputLocation_2024_08_13): string | undefined {
+  private getNonIntegrationLocationValue(loc: UpdateBookingInputLocation_2024_08_13): string | undefined {
     if (loc.type === "address") return loc.address;
     if (loc.type === "link") return loc.link;
     if (loc.type === "phone") return loc.phone;
@@ -911,15 +800,20 @@ export class BookingLocationService_2024_08_13 {
     if (loc.type === "attendeePhone") return loc.phone;
     if (loc.type === "attendeeDefined") return loc.location;
 
-    // integration type is handled separately in handleIntegrationLocationUpdate
-    if (loc.type === "integration") return undefined;
-
     this.logger.log(
-      `Booking location service getLocationValue - loc ${JSON.stringify(
+      `Booking location service getNonIntegrationLocationValue - loc ${JSON.stringify(
         loc
       )} was passed but the type is not supported.`
     );
 
     return undefined;
+  }
+
+  // in case of vide integrations we need to clear the videoCallUrl from metadata when explicitly setting a new non-integration location
+  // this ensures the frontend shows the new location instead of the old integration URL
+  private getMetadataWithoutVideoCallUrl(metadata: unknown): Record<string, unknown> {
+    const existingMetadata = (metadata || {}) as Record<string, unknown>;
+    const { videoCallUrl: _removedVideoUrl, ...metadataWithoutVideoUrl } = existingMetadata;
+    return metadataWithoutVideoUrl;
   }
 }
