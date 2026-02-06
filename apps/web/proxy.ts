@@ -264,13 +264,8 @@ function enrichRequestWithHeaders({ req }: { req: NextRequest }) {
   return reqWithCSP;
 }
 
-// NOTE: Next.js requires config.matcher to be static string literals (no template literals or variables)
-// because Turbopack analyzes the config at build time.
-// Excluded routes: _next, static, public, favicon.ico, robots.txt, sitemap.xml, /api/avatar
 export const config = {
-  matcher: [
-    "/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$|api/avatar(?:/|$|\\?)).*)",
-  ],
+  matcher: ["/((?!_next(?:/|$)|static(?:/|$)|public(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$).*)"],
 };
 
 export default proxy;
