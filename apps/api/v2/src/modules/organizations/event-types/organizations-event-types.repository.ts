@@ -10,13 +10,15 @@ export class OrganizationsEventTypesRepository {
     orgId: number,
     skip: number,
     take: number,
-    sortCreatedAt?: SortOrderType
+    sortCreatedAt?: SortOrderType,
+    includeHidden?: boolean
   ) {
     return this.dbRead.prisma.eventType.findMany({
       where: {
         team: {
           parentId: orgId,
         },
+        ...(!includeHidden && { hidden: false }),
       },
       ...(sortCreatedAt && { orderBy: { id: sortCreatedAt } }),
       skip,

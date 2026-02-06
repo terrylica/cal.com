@@ -81,10 +81,11 @@ export class TeamsEventTypesRepository {
     });
   }
 
-  async getTeamEventTypes(teamId: number, sortCreatedAt?: SortOrderType) {
+  async getTeamEventTypes(teamId: number, sortCreatedAt?: SortOrderType, includeHidden?: boolean) {
     return this.dbRead.prisma.eventType.findMany({
       where: {
         teamId,
+        ...(!includeHidden && { hidden: false }),
       },
       ...(sortCreatedAt && { orderBy: { id: sortCreatedAt } }),
       include: {

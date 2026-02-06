@@ -7,9 +7,14 @@ import {
   OPTIONAL_X_CAL_SECRET_KEY_HEADER,
 } from "@/lib/docs/headers";
 import { PlatformPlan } from "@/modules/auth/decorators/billing/platform-plan.decorator";
+import {
+  GetOptionalUser,
+  type AuthOptionalUser,
+} from "@/modules/auth/decorators/get-optional-user/get-optional-user.decorator";
 import { GetUser } from "@/modules/auth/decorators/get-user/get-user.decorator";
 import { Roles } from "@/modules/auth/decorators/roles/roles.decorator";
 import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+import { OptionalApiAuthGuard } from "@/modules/auth/guards/optional-api-auth/optional-api-auth.guard";
 import { PlatformPlanGuard } from "@/modules/auth/guards/billing/platform-plan.guard";
 import { IsAdminAPIEnabledGuard } from "@/modules/auth/guards/organizations/is-admin-api-enabled.guard";
 import { IsOrgGuard } from "@/modules/auth/guards/organizations/is-org.guard";
@@ -157,16 +162,18 @@ export class OrganizationsEventTypesController {
     };
   }
 
-  @UseGuards(IsOrgGuard, IsTeamInOrg, IsAdminAPIEnabledGuard)
+  @UseGuards(OptionalApiAuthGuard, IsOrgGuard, IsTeamInOrg, IsAdminAPIEnabledGuard)
+  @ApiHeader(OPTIONAL_API_KEY_HEADER)
   @Get("/teams/:teamId/event-types")
   @ApiOperation({
     summary: "Get team event types",
     description:
-      'Use the optional `sortCreatedAt` query parameter to order results by creation date (by ID). Accepts "asc" (oldest first) or "desc" (newest first). When not provided, no explicit ordering is applied.',
+      'Use the optional `sortCreatedAt` query parameter to order results by creation date (by ID). Accepts "asc" (oldest first) or "desc" (newest first). When not provided, no explicit ordering is applied. If authenticated as a team member, hidden event types are included.',
   })
   async getTeamEventTypes(
     @Param("teamId", ParseIntPipe) teamId: number,
-    @Query() queryParams: GetTeamEventTypesQuery_2024_06_14
+    @Query() queryParams: GetTeamEventTypesQuery_2024_06_14,
+    @GetOptionalUser() user: AuthOptionalUser
   ): Promise<GetTeamEventTypesOutput> {
     const { eventSlug, hostsLimit, sortCreatedAt } = queryParams;
 
@@ -183,7 +190,11 @@ export class OrganizationsEventTypesController {
       };
     }
 
-    const eventTypes = await this.organizationsEventTypesService.getTeamEventTypes(teamId, sortCreatedAt);
+    const eventTypes = await this.organizationsEventTypesService.getTeamEventTypes(
+      teamId,
+      sortCreatedAt,
+      user?.id
+    );
 
     return {
       status: SUCCESS_STATUS,

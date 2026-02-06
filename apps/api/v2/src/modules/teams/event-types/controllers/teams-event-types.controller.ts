@@ -1,11 +1,16 @@
 import { CreatePhoneCallInput } from "@/ee/event-types/event-types_2024_06_14/inputs/create-phone-call.input";
 import { CreatePhoneCallOutput } from "@/ee/event-types/event-types_2024_06_14/outputs/create-phone-call.output";
 import { API_VERSIONS_VALUES } from "@/lib/api-versions";
-import { API_KEY_HEADER } from "@/lib/docs/headers";
+import { API_KEY_HEADER, OPTIONAL_API_KEY_OR_ACCESS_TOKEN_HEADER } from "@/lib/docs/headers";
 import { PlatformPlan } from "@/modules/auth/decorators/billing/platform-plan.decorator";
 import { GetUser } from "@/modules/auth/decorators/get-user/get-user.decorator";
+import {
+  GetOptionalUser,
+  type AuthOptionalUser,
+} from "@/modules/auth/decorators/get-optional-user/get-optional-user.decorator";
 import { Roles } from "@/modules/auth/decorators/roles/roles.decorator";
 import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
+import { OptionalApiAuthGuard } from "@/modules/auth/guards/optional-api-auth/optional-api-auth.guard";
 import { RolesGuard } from "@/modules/auth/guards/roles/roles.guard";
 import { OutputTeamEventTypesResponsePipe } from "@/modules/organizations/event-types/pipes/team-event-types-response.transformer";
 import { InputOrganizationsEventTypesService } from "@/modules/organizations/event-types/services/input.service";
@@ -136,14 +141,17 @@ export class TeamsEventTypesController {
   }
 
   @Get("/")
+  @UseGuards(OptionalApiAuthGuard)
+  @ApiHeader(OPTIONAL_API_KEY_OR_ACCESS_TOKEN_HEADER)
   @ApiOperation({
     summary: "Get team event types",
     description:
-      'Use the optional `sortCreatedAt` query parameter to order results by creation date (by ID). Accepts "asc" (oldest first) or "desc" (newest first). When not provided, no explicit ordering is applied.',
+      'Use the optional `sortCreatedAt` query parameter to order results by creation date (by ID). Accepts "asc" (oldest first) or "desc" (newest first). When not provided, no explicit ordering is applied. If authenticated as a team member, hidden event types are included.',
   })
   async getTeamEventTypes(
     @Param("teamId", ParseIntPipe) teamId: number,
-    @Query() queryParams: GetTeamEventTypesQuery_2024_06_14
+    @Query() queryParams: GetTeamEventTypesQuery_2024_06_14,
+    @GetOptionalUser() user: AuthOptionalUser
   ): Promise<GetTeamEventTypesOutput> {
     const { eventSlug, hostsLimit, sortCreatedAt } = queryParams;
 
@@ -160,7 +168,7 @@ export class TeamsEventTypesController {
       };
     }
 
-    const eventTypes = await this.teamsEventTypesService.getTeamEventTypes(teamId, sortCreatedAt);
+    const eventTypes = await this.teamsEventTypesService.getTeamEventTypes(teamId, sortCreatedAt, user?.id);
 
     return {
       status: SUCCESS_STATUS,

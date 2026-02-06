@@ -1,5 +1,6 @@
 import { EventTypesRepository_2024_06_14 } from "@/ee/event-types/event-types_2024_06_14/event-types.repository";
 import { EventTypesService_2024_06_14 } from "@/ee/event-types/event-types_2024_06_14/services/event-types.service";
+import { MembershipsRepository } from "@/modules/memberships/memberships.repository";
 import {
   TransformedCreateTeamEventTypeInput,
   TransformedUpdateTeamEventTypeInput,
@@ -24,7 +25,8 @@ export class TeamsEventTypesService {
     private readonly dbWrite: PrismaWriteService,
     private readonly teamsEventTypesRepository: TeamsEventTypesRepository,
     private readonly eventTypesRepository: EventTypesRepository_2024_06_14,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    private readonly membershipsRepository: MembershipsRepository
   ) {}
 
   async createTeamEventType(
@@ -103,8 +105,18 @@ export class TeamsEventTypesService {
     return eventType;
   }
 
-  async getTeamEventTypes(teamId: number, sortCreatedAt?: SortOrderType): Promise<DatabaseTeamEventType[]> {
-    return await this.teamsEventTypesRepository.getTeamEventTypes(teamId, sortCreatedAt);
+  async getTeamEventTypes(
+    teamId: number,
+    sortCreatedAt?: SortOrderType,
+    userId?: number
+  ): Promise<DatabaseTeamEventType[]> {
+    const includeHidden = userId ? await this.isUserTeamMember(userId, teamId) : false;
+    return await this.teamsEventTypesRepository.getTeamEventTypes(teamId, sortCreatedAt, includeHidden);
+  }
+
+  private async isUserTeamMember(userId: number, teamId: number): Promise<boolean> {
+    const membership = await this.membershipsRepository.findMembershipByTeamId(teamId, userId);
+    return !!membership?.accepted;
   }
 
   async updateTeamEventType(

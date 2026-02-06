@@ -85,8 +85,12 @@ export class OrganizationsEventTypesService {
     return this.teamsEventTypesService.getTeamEventTypeBySlug(teamId, eventTypeSlug, hostsLimit);
   }
 
-  async getTeamEventTypes(teamId: number, sortCreatedAt?: SortOrderType): Promise<DatabaseTeamEventType[]> {
-    return await this.teamsEventTypesService.getTeamEventTypes(teamId, sortCreatedAt);
+  async getTeamEventTypes(
+    teamId: number,
+    sortCreatedAt?: SortOrderType,
+    userId?: number
+  ): Promise<DatabaseTeamEventType[]> {
+    return await this.teamsEventTypesService.getTeamEventTypes(teamId, sortCreatedAt, userId);
   }
 
   async getOrganizationsTeamsEventTypes(
