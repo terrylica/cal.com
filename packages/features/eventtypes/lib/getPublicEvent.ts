@@ -132,7 +132,7 @@ export const getPublicEventSelect = (fetchAllUsers: boolean) => {
         successRedirectUrl: true,
         forwardParamsSuccessRedirect: true,
         redirectUrlOnNoRoutingFormResponse: true,
-        workflows: {
+    workflows: {
       include: {
         workflow: {
           include: {
@@ -546,7 +546,31 @@ export const getPublicEvent = async (
   }
 
   return {
-    ...eventWithUserProfiles,
+    id: eventWithUserProfiles.id,
+    title: eventWithUserProfiles.title,
+    slug: eventWithUserProfiles.slug,
+    schedulingType: eventWithUserProfiles.schedulingType,
+    length: eventWithUserProfiles.length,
+    enablePerHostLocations: eventWithUserProfiles.enablePerHostLocations,
+    lockTimeZoneToggleOnBookingPage: eventWithUserProfiles.lockTimeZoneToggleOnBookingPage,
+    lockedTimeZone: eventWithUserProfiles.lockedTimeZone,
+    requiresConfirmation: eventWithUserProfiles.requiresConfirmation,
+    requiresBookerEmailVerification: eventWithUserProfiles.requiresBookerEmailVerification,
+    autoTranslateDescriptionEnabled: eventWithUserProfiles.autoTranslateDescriptionEnabled,
+    fieldTranslations: eventWithUserProfiles.fieldTranslations,
+    price: eventWithUserProfiles.price,
+    currency: eventWithUserProfiles.currency,
+    seatsPerTimeSlot: eventWithUserProfiles.seatsPerTimeSlot,
+    seatsShowAvailabilityCount: eventWithUserProfiles.seatsShowAvailabilityCount,
+    forwardParamsSuccessRedirect: eventWithUserProfiles.forwardParamsSuccessRedirect,
+    successRedirectUrl: eventWithUserProfiles.successRedirectUrl,
+    redirectUrlOnNoRoutingFormResponse: eventWithUserProfiles.redirectUrlOnNoRoutingFormResponse,
+    disableGuests: eventWithUserProfiles.disableGuests,
+    team: eventWithUserProfiles.team,
+    schedule: eventWithUserProfiles.schedule,
+    owner: eventWithUserProfiles.owner,
+    subsetOfHosts: eventWithUserProfiles.subsetOfHosts,
+    hosts: fetchAllUsers ? eventWithUserProfiles.subsetOfHosts : undefined,
     bookerLayouts: bookerLayoutsSchema.parse(eventMetaData?.bookerLayouts || null),
     description: markdownToSafeHTML(eventWithUserProfiles.description),
     metadata: eventMetaData,
@@ -556,7 +580,6 @@ export const getPublicEvent = async (
     recurringEvent: isRecurringEvent(eventWithUserProfiles.recurringEvent)
       ? parseRecurringEvent(event.recurringEvent)
       : null,
-    // Sets user data on profile object for easier access
     profile: getProfileFromEvent(eventWithUserProfiles),
     subsetOfUsers: users,
     users: fetchAllUsers ? users : undefined,
@@ -754,7 +777,36 @@ export const processEventDataShared = async ({
   }
 
   return {
-    ...eventData,
+    id: eventData.id,
+    title: eventData.title,
+    slug: eventData.slug,
+    schedulingType: eventData.schedulingType,
+    length: eventData.length,
+    enablePerHostLocations: eventData.enablePerHostLocations,
+    lockTimeZoneToggleOnBookingPage: eventData.lockTimeZoneToggleOnBookingPage,
+    lockedTimeZone: eventData.lockedTimeZone,
+    requiresConfirmation: eventData.requiresConfirmation,
+    requiresBookerEmailVerification: eventData.requiresBookerEmailVerification,
+    autoTranslateDescriptionEnabled: eventData.autoTranslateDescriptionEnabled,
+    fieldTranslations: eventData.fieldTranslations,
+    price: eventData.price,
+    currency: eventData.currency,
+    seatsPerTimeSlot: eventData.seatsPerTimeSlot,
+    seatsShowAvailabilityCount: eventData.seatsShowAvailabilityCount,
+    forwardParamsSuccessRedirect: eventData.forwardParamsSuccessRedirect,
+    successRedirectUrl: eventData.successRedirectUrl,
+    redirectUrlOnNoRoutingFormResponse: eventData.redirectUrlOnNoRoutingFormResponse,
+    disableGuests: eventData.disableGuests,
+    team: eventData.team,
+    schedule: eventData.schedule,
+    isInstantEvent: eventData.isInstantEvent,
+    instantMeetingParameters: eventData.instantMeetingParameters,
+    aiPhoneCallConfig: eventData.aiPhoneCallConfig,
+    assignAllTeamMembers: eventData.assignAllTeamMembers,
+    disableCancelling: eventData.disableCancelling,
+    disableRescheduling: eventData.disableRescheduling,
+    allowReschedulingCancelledBookings: eventData.allowReschedulingCancelledBookings,
+    interfaceLanguage: eventData.interfaceLanguage,
     bookerLayouts: bookerLayoutsSchema.parse(metadata?.bookerLayouts || null),
     description: markdownToSafeHTML(eventData.description),
     metadata,
