@@ -26,7 +26,6 @@ jobs:
             ./packages/lib \
             ./packages/testing
           # Clean packages only. Add more as violations are fixed:
-          # ./packages/lib          (3 errors - @calcom/features imports)
           # ./packages/platform/atoms (4 errors - @calcom/trpc imports)
           # ./apps/api/v2           (6 errors - disallowed @calcom/* imports)
           # ./packages/features     (~60 errors - @calcom/trpc imports)
