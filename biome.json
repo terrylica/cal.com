@@ -228,15 +228,15 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["../app-store/**"],
+                    "group": ["../app-store/**", "@calcom/app-store", "@calcom/app-store/**"],
                     "message": "lib package should not import from app-store to avoid circular dependencies."
                   },
                   {
-                    "group": ["../features/**"],
+                    "group": ["../features/**", "@calcom/features", "@calcom/features/**"],
                     "message": "lib package should not import from features to avoid circular dependencies."
                   },
                   {
-                    "group": ["../trpc/**"],
+                    "group": ["../trpc/**", "@calcom/trpc", "@calcom/trpc/**"],
                     "message": "lib package should not import from trpc to avoid circular dependencies."
                   },
                   {
@@ -260,11 +260,11 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["../features/**"],
+                    "group": ["../features/**", "@calcom/features", "@calcom/features/**"],
                     "message": "app-store package should not import from features to avoid circular dependencies."
                   },
                   {
-                    "group": ["../trpc/**"],
+                    "group": ["../trpc/**", "@calcom/trpc", "@calcom/trpc/**"],
                     "message": "app-store package should not import from trpc to avoid circular dependencies."
                   }
                 ]
@@ -284,7 +284,7 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["../trpc/**"],
+                    "group": ["../trpc/**", "@calcom/trpc", "@calcom/trpc/**"],
                     "message": "features package should not import from trpc to avoid circular dependencies."
                   },
                   {
@@ -312,7 +312,7 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["../apps/web/**"],
+                    "group": ["../apps/web/**", "@calcom/web", "@calcom/web/**"],
                     "message": "trpc package should not import from apps/web to avoid circular dependencies."
                   }
                 ]
