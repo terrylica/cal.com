@@ -13,14 +13,14 @@ import { fieldTypesConfigMap } from "@calcom/features/form-builder/fieldTypes";
 import { fieldsThatSupportLabelAsSafeHtml } from "@calcom/features/form-builder/fieldsThatSupportLabelAsSafeHtml";
 import { SystemField } from "@calcom/lib/bookings/SystemField";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import type { PublicEvent } from "@calcom/features/bookings/types";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
-import type { RouterOutputs } from "@calcom/trpc/react";
 
 type TouchedFields = {
   responses?: Record<string, boolean>;
 };
 
-type Fields = NonNullable<RouterOutputs["viewer"]["public"]["event"]>["bookingFields"];
+type Fields = PublicEvent["bookingFields"];
 const PhoneLocationSchema = z.object({
   value: z.literal(DefaultEventLocationTypeEnum.Phone),
   optionValue: z.string().optional(),

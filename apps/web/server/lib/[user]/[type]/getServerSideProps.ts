@@ -7,7 +7,7 @@ import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
 import { getBookingForReschedule, getBookingForSeatedEvent } from "@calcom/features/bookings/lib/get-booking";
 import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getUsernameList } from "@calcom/features/eventtypes/lib/defaultEvents";
-import type { getPublicEvent } from "@calcom/features/eventtypes/lib/getPublicEvent";
+import type { PublicEventType } from "@calcom/features/eventtypes/lib/getPublicEvent";
 import { EventRepository } from "@calcom/features/eventtypes/repositories/EventRepository";
 import { shouldHideBrandingForUserEvent } from "@calcom/features/profile/lib/hideBranding";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
@@ -20,7 +20,7 @@ import { handleOrgRedirect } from "@lib/handleOrgRedirect";
 import { getUsersInOrgContext } from "@server/lib/[user]/getServerSideProps";
 
 type Props = {
-  eventData: NonNullable<Awaited<ReturnType<typeof getPublicEvent>>>;
+  eventData: NonNullable<PublicEventType>;
   booking?: GetBookingType;
   rescheduleUid: string | null;
   bookingUid: string | null;
