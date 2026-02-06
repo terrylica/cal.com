@@ -4571,5 +4571,18 @@
   "calendar_events_disabled_video_limitation": "When calendar events are disabled, meeting links cannot be generated for apps whose link generation is tied to calendar event creation, for example, Google Meet and Microsoft Teams. Other video apps like Cal Video will continue to work.",
   "organization_migration_move_team": "Move team to organization",
   "organization_migration_move_team_description": "Move an existing regular team to an organization with a new slug",
+  "organization_migration_move_team_footnote": "Note: Team members will automatically be invited to the organization when the team is moved. Also, the old team booking links will redirect to the new organization booking link.",
+  "cannot_move_subteam_already_in_org": "Cannot move a sub-team that is already part of an organization",
+  "team_moved_to_org_success": "Team successfully moved to organization",
+  "organization_owner_not_found": "Organization owner not found",
+  "team_not_found": "Team not found",
+  "move_team_to_org_team_id_placeholder": "Enter team ID to move to organization",
+  "move_team_to_org_new_slug": "New Slug",
+  "move_team_to_org_new_slug_placeholder": "Team slug in the organization",
+  "move_team_to_org_target_org_id": "Target Organization ID",
+  "move_team_to_org_target_org_id_placeholder": "Enter target organization ID",
+  "move_team_to_org_migration_successful": "Migration Successful",
+  "move_team_to_org_old_slug": "Old Slug",
+  "move_team_to_org_organization_slug": "Organization Slug",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }

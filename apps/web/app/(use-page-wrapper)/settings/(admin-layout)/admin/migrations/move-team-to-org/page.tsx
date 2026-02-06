@@ -4,14 +4,14 @@ import MoveTeamToOrgView from "~/settings/admin/org-migrations/move-team-to-org-
 
 export const generateMetadata = async () =>
   await _generateMetadata(
-    () => "Organization Migration: Move a team",
-    () => "Migrates a team to an organization",
+    (t) => t("organization_migration_move_team"),
+    (t) => t("organization_migration_move_team_description"),
     undefined,
     undefined,
     "/settings/admin/migrations/move-team-to-org"
   );
 
-const Page = async () => {
+const Page = async (): Promise<React.ReactNode> => {
   const t = await getTranslate();
   return (
     <SettingsHeader

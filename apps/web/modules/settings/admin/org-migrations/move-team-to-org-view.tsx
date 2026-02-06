@@ -30,49 +30,49 @@ export default function MoveTeamToOrgView() {
 
   const moveTeamMutation = trpc.viewer.admin.moveTeamToOrg.useMutation({
     onSuccess: (data) => {
-      showToast(data.message, "success", 10000);
+      showToast(t(data.message), "success", 10000);
     },
     onError: (error) => {
-      showToast(error.message, "error", 10000);
+      showToast(t(error.message), "error", 10000);
     },
   });
 
   const { register } = formMethods;
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <Form
-        className="space-y-6"
+        className="space-y-3"
         noValidate={true}
         form={formMethods}
         handleSubmit={async (values) => {
           const parsedValues = formSchema.parse(values);
           moveTeamMutation.mutate(parsedValues);
         }}>
-        <div className="space-y-6">
+        <div className="space-y-3">
           <TextField
             {...register("teamId")}
-            label="Team ID"
+            label={t("team_id")}
             required
-            placeholder="Enter teamId to move to org"
+            placeholder={t("move_team_to_org_team_id_placeholder")}
           />
           <TextField
             {...register("teamSlugInOrganization")}
-            label="New Slug"
+            label={t("move_team_to_org_new_slug")}
             required
-            placeholder="Team slug in the Organization"
+            placeholder={t("move_team_to_org_new_slug_placeholder")}
           />
           <TextField
             {...register("targetOrgId")}
-            label="Target Organization ID"
+            label={t("move_team_to_org_target_org_id")}
             required
-            placeholder="Enter Target organization ID"
+            placeholder={t("move_team_to_org_target_org_id_placeholder")}
           />
-          <div className="mt-2 text-sm text-gray-600">
-            Note: Team members will automatically be invited to the organization when the team is moved.
+          <div className="mt-2 text-gray-600 text-sm">
+            {t("organization_migration_move_team_footnote")}
           </div>
         </div>
         <Button type="submit" loading={moveTeamMutation.isPending}>
-          Move Team to Org
+          {t("organization_migration_move_team")}
         </Button>
       </Form>
 
@@ -81,23 +81,31 @@ export default function MoveTeamToOrgView() {
           className="mt-6"
           severity="info"
           CustomIcon="check"
-          title="Migration Successful"
+          title={t("move_team_to_org_migration_successful")}
           message={
             <div className="space-y-1">
               <p>
-                <span className="font-medium">Team ID:</span> {moveTeamMutation.data.teamId}
+                <span className="font-medium">{t("team_id")}:</span> {moveTeamMutation.data.teamId}
               </p>
-              {moveTeamMutation.data.teamSlug && (
+              {moveTeamMutation.data.oldTeamSlug && (
                 <p>
-                  <span className="font-medium">Team Slug:</span> {moveTeamMutation.data.teamSlug}
+                  <span className="font-medium">{t("move_team_to_org_old_slug")}:</span>{" "}
+                  {moveTeamMutation.data.oldTeamSlug}
+                </p>
+              )}
+              {moveTeamMutation.data.newTeamSlug && (
+                <p>
+                  <span className="font-medium">{t("move_team_to_org_new_slug")}:</span>{" "}
+                  {moveTeamMutation.data.newTeamSlug}
                 </p>
               )}
               <p>
-                <span className="font-medium">Organization ID:</span> {moveTeamMutation.data.organizationId}
+                <span className="font-medium">{t("organization_id")}:</span>{" "}
+                {moveTeamMutation.data.organizationId}
               </p>
               {moveTeamMutation.data.organizationSlug && (
                 <p>
-                  <span className="font-medium">Organization Slug:</span>{" "}
+                  <span className="font-medium">{t("move_team_to_org_organization_slug")}:</span>{" "}
                   {moveTeamMutation.data.organizationSlug}
                 </p>
               )}
