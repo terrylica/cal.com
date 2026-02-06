@@ -7,7 +7,6 @@ import {
   VERSION_2024_08_13,
 } from "@/lib/api-versions";
 import { API_KEY_OR_ACCESS_TOKEN_HEADER } from "@/lib/docs/headers";
-import { Throttle } from "@/lib/endpoint-throttler-decorator";
 import { Permissions } from "@/modules/auth/decorators/permissions/permissions.decorator";
 import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
@@ -36,12 +35,6 @@ export class BookingAttendeesController_2024_08_13 {
   @Get("/")
   @Permissions([BOOKING_READ])
   @UseGuards(ApiAuthGuard, BookingUidGuard, BookingPbacGuard)
-  @Throttle({
-    limit: 5,
-    ttl: 60000,
-    blockDuration: 60000,
-    name: "booking_attendees_get",
-  })
   @ApiHeader(API_KEY_OR_ACCESS_TOKEN_HEADER)
   @ApiOperation({
     summary: "Get all attendees for a booking",
