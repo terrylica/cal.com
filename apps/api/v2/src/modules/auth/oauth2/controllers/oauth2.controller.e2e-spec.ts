@@ -209,6 +209,7 @@ describe("OAuth2 Controller Endpoints", () => {
           expect(response.body.refresh_token).toBeDefined();
           expect(response.body.token_type).toBe("bearer");
           expect(response.body.expires_in).toBe(1800);
+          expect(response.body.scope).toBe("READ_BOOKING READ_PROFILE");
           expect(response.headers["cache-control"]).toBe("no-store");
           expect(response.headers["pragma"]).toBe("no-cache");
 
@@ -232,6 +233,7 @@ describe("OAuth2 Controller Endpoints", () => {
           expect(response.body.access_token).toBeDefined();
           expect(response.body.refresh_token).toBeDefined();
           expect(response.body.token_type).toBe("bearer");
+          expect(response.body.scope).toBe("READ_BOOKING");
         });
 
         it("should exchange authorization code for tokens with application/x-www-form-urlencoded body", async () => {
@@ -253,6 +255,7 @@ describe("OAuth2 Controller Endpoints", () => {
           expect(response.body.refresh_token).toBeDefined();
           expect(response.body.token_type).toBe("bearer");
           expect(response.body.expires_in).toBe(1800);
+          expect(response.body.scope).toBe("READ_BOOKING");
         });
       });
 
@@ -382,6 +385,7 @@ describe("OAuth2 Controller Endpoints", () => {
           expect(response.body.refresh_token).toBeDefined();
           expect(response.body.token_type).toBe("bearer");
           expect(response.body.expires_in).toBe(1800);
+          expect(response.body.scope).toBe("READ_BOOKING READ_PROFILE");
 
           refreshToken = response.body.refresh_token;
         });
@@ -460,6 +464,7 @@ describe("OAuth2 Controller Endpoints", () => {
 
           expect(firstResponse.body.access_token).toBeDefined();
           expect(firstResponse.body.refresh_token).toBeDefined();
+          expect(firstResponse.body.scope).toBe("READ_BOOKING");
 
           const newRefreshToken = firstResponse.body.refresh_token;
 
@@ -679,6 +684,7 @@ describe("OAuth2 Controller Endpoints", () => {
       expect(response.body.access_token).toBeDefined();
       expect(response.body.refresh_token).toBeDefined();
       expect(response.body.token_type).toBe("bearer");
+      expect(response.body.scope).toBe("READ_BOOKING");
     });
 
     it("should refresh tokens with PENDING client owned by user", async () => {
@@ -710,6 +716,7 @@ describe("OAuth2 Controller Endpoints", () => {
       expect(response.body.access_token).toBeDefined();
       expect(response.body.refresh_token).toBeDefined();
       expect(response.body.token_type).toBe("bearer");
+      expect(response.body.scope).toBe("READ_BOOKING");
     });
 
     it("should exchange authorization code for tokens with REJECTED client owned by user", async () => {
@@ -730,6 +737,7 @@ describe("OAuth2 Controller Endpoints", () => {
       expect(response.body.access_token).toBeDefined();
       expect(response.body.refresh_token).toBeDefined();
       expect(response.body.token_type).toBe("bearer");
+      expect(response.body.scope).toBe("READ_BOOKING");
     });
 
     it("should refresh tokens with REJECTED client owned by user", async () => {
@@ -761,6 +769,7 @@ describe("OAuth2 Controller Endpoints", () => {
       expect(response.body.access_token).toBeDefined();
       expect(response.body.refresh_token).toBeDefined();
       expect(response.body.token_type).toBe("bearer");
+      expect(response.body.scope).toBe("READ_BOOKING");
     });
 
     afterAll(async () => {
