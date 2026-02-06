@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { OAUTH_ERROR_REASONS } from "@calcom/features/oauth/services/OAuthService";
 import type { PrismaClient } from "@calcom/prisma";
+import type { AccessScope } from "@calcom/prisma/enums";
 import { expect } from "@playwright/test";
 import { test } from "../lib/fixtures";
 
@@ -24,11 +25,13 @@ test.describe("OAuth authorize - client approval status", () => {
     name,
     status,
     userId,
+    scopes,
   }: {
     prisma: PrismaClient;
     name: string;
     status: "PENDING" | "APPROVED" | "REJECTED";
     userId?: number;
+    scopes?: AccessScope[];
   }) {
     const clientId = randomBytes(32).toString("hex");
 
@@ -41,6 +44,7 @@ test.describe("OAuth authorize - client approval status", () => {
         clientType: "CONFIDENTIAL",
         status,
         ...(userId && { user: { connect: { id: userId } } }),
+        ...(scopes && { scopes }),
       },
     });
 
@@ -241,5 +245,200 @@ test.describe("OAuth authorize - client approval status", () => {
     expect(url.searchParams.get("code")).toBeTruthy();
     expect(url.searchParams.get("state")).toBe("1234");
     expect(url.searchParams.get("error")).toBeNull();
+  });
+
+  test("scope exceeding client registration redirects with invalid_scope error", async ({
+    page,
+    users,
+    prisma,
+  }, testInfo) => {
+    const user = await users.create({ username: "oauth-authorize-scope-exceed" });
+    await user.apiLogin();
+
+    const testPrefix = `e2e-oauth-authorize-status-${testInfo.testId}-`;
+    const client = await createOAuthClient({
+      prisma,
+      name: `${testPrefix}scope-exceed-${Date.now()}`,
+      status: "APPROVED",
+      scopes: ["BOOKING_READ"],
+    });
+
+    // Request SCHEDULE_WRITE which is not in the client's registered scopes
+    await page.goto(
+      `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ,SCHEDULE_WRITE&state=1234`
+    );
+
+    // Scope validation happens upfront - should redirect immediately without showing consent screen
+    await page.waitForFunction(() => {
+      return window.location.href.startsWith("https://example.com");
+    });
+
+    await expect(page).toHaveURL(/^https:\/\/example\.com/);
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get("error")).toBe("invalid_request");
+    expect(url.searchParams.get("error_description")).toBe(
+      "Requested scope exceeds the client's registered scopes"
+    );
+    expect(url.searchParams.get("state")).toBe("1234");
+    expect(url.searchParams.get("code")).toBeNull();
+  });
+
+  test("scope exceeding client registration with space delimiter redirects with invalid_scope error", async ({
+    page,
+    users,
+    prisma,
+  }, testInfo) => {
+    const user = await users.create({ username: "oauth-authorize-scope-space" });
+    await user.apiLogin();
+
+    const testPrefix = `e2e-oauth-authorize-status-${testInfo.testId}-`;
+    const client = await createOAuthClient({
+      prisma,
+      name: `${testPrefix}scope-space-${Date.now()}`,
+      status: "APPROVED",
+      scopes: ["BOOKING_READ"],
+    });
+
+    // Request scopes with space delimiter (RFC 6749 standard) - SCHEDULE_WRITE is not in client's registered scopes
+    await page.goto(
+      `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ%20SCHEDULE_WRITE&state=1234`
+    );
+
+    // Scope validation happens upfront - should redirect immediately without showing consent screen
+    await page.waitForFunction(() => {
+      return window.location.href.startsWith("https://example.com");
+    });
+
+    await expect(page).toHaveURL(/^https:\/\/example\.com/);
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get("error")).toBe("invalid_request");
+    expect(url.searchParams.get("error_description")).toBe(
+      "Requested scope exceeds the client's registered scopes"
+    );
+    expect(url.searchParams.get("state")).toBe("1234");
+    expect(url.searchParams.get("code")).toBeNull();
+  });
+
+  test("scope within client registration succeeds with authorization code", async ({
+    page,
+    users,
+    prisma,
+  }, testInfo) => {
+    const user = await users.create({ username: "oauth-authorize-scope-valid" });
+    await user.apiLogin();
+
+    const testPrefix = `e2e-oauth-authorize-status-${testInfo.testId}-`;
+    const client = await createOAuthClient({
+      prisma,
+      name: `${testPrefix}scope-valid-${Date.now()}`,
+      status: "APPROVED",
+      scopes: ["BOOKING_READ", "BOOKING_WRITE", "SCHEDULE_READ"],
+    });
+
+    // Request only BOOKING_READ which is within the client's registered scopes
+    await page.goto(
+      `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ&state=1234`
+    );
+
+    await page.waitForSelector('[data-testid="allow-button"]');
+    await page.getByTestId("allow-button").click();
+
+    await page.waitForFunction(() => {
+      return window.location.href.startsWith("https://example.com");
+    });
+
+    await expect(page).toHaveURL(/^https:\/\/example\.com/);
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get("code")).toBeTruthy();
+    expect(url.searchParams.get("state")).toBe("1234");
+    expect(url.searchParams.get("error")).toBeNull();
+  });
+
+  test("consent screen displays correct scope labels for requested permissions", async ({
+    page,
+    users,
+    prisma,
+  }, testInfo) => {
+    const user = await users.create({ username: "oauth-authorize-scope-display" });
+    await user.apiLogin();
+
+    const testPrefix = `e2e-oauth-authorize-status-${testInfo.testId}-`;
+    const client = await createOAuthClient({
+      prisma,
+      name: `${testPrefix}scope-display-${Date.now()}`,
+      status: "APPROVED",
+      scopes: ["BOOKING_READ", "BOOKING_WRITE", "SCHEDULE_READ", "PROFILE_READ"],
+    });
+
+    // Request only BOOKING_READ and SCHEDULE_READ
+    await page.goto(
+      `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ,SCHEDULE_READ&state=1234`
+    );
+
+    await page.waitForSelector('[data-testid="allow-button"]');
+
+    // Verify the consent screen shows the correct scope labels
+    // BOOKING_READ should show "View bookings"
+    await expect(page.getByText("View bookings")).toBeVisible();
+    // SCHEDULE_READ should show "View availability"
+    await expect(page.getByText("View availability")).toBeVisible();
+
+    // These should NOT be visible since we didn't request them
+    await expect(page.getByText("Create, edit, and delete bookings")).not.toBeVisible();
+    await expect(page.getByText("View personal info and primary email address")).not.toBeVisible();
+
+    // Complete the authorization
+    await page.getByTestId("allow-button").click();
+
+    await page.waitForFunction(() => {
+      return window.location.href.startsWith("https://example.com");
+    });
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get("code")).toBeTruthy();
+  });
+
+  test("consent screen displays merged scope labels when both read and write are requested", async ({
+    page,
+    users,
+    prisma,
+  }, testInfo) => {
+    const user = await users.create({ username: "oauth-authorize-scope-merged" });
+    await user.apiLogin();
+
+    const testPrefix = `e2e-oauth-authorize-status-${testInfo.testId}-`;
+    const client = await createOAuthClient({
+      prisma,
+      name: `${testPrefix}scope-merged-${Date.now()}`,
+      status: "APPROVED",
+      scopes: ["BOOKING_READ", "BOOKING_WRITE", "SCHEDULE_READ", "SCHEDULE_WRITE"],
+    });
+
+    // Request both read and write for BOOKING - should show merged label
+    await page.goto(
+      `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&scope=BOOKING_READ,BOOKING_WRITE&state=1234`
+    );
+
+    await page.waitForSelector('[data-testid="allow-button"]');
+
+    // When both read+write are present, should show merged label
+    await expect(page.getByText("Create, read, update, and delete bookings")).toBeVisible();
+
+    // Individual labels should NOT be visible when merged
+    await expect(page.getByText("View bookings")).not.toBeVisible();
+    await expect(page.getByText("Create, edit, and delete bookings")).not.toBeVisible();
+
+    // Complete the authorization
+    await page.getByTestId("allow-button").click();
+
+    await page.waitForFunction(() => {
+      return window.location.href.startsWith("https://example.com");
+    });
+
+    const url = new URL(page.url());
+    expect(url.searchParams.get("code")).toBeTruthy();
   });
 });

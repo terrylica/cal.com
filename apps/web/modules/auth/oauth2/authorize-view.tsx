@@ -1,10 +1,5 @@
 "use client";
 
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-
 import { APP_NAME } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -15,6 +10,11 @@ import { Button } from "@calcom/ui/components/button";
 import { Select } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { Tooltip } from "@calcom/ui/components/tooltip";
+import { useRouter } from "next/navigation";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { getScopeDisplayItems, resolveScopes } from "./scopes";
 
 export function Authorize() {
   const { t } = useLocale();
@@ -29,11 +29,8 @@ export function Authorize() {
   const state = searchParams?.get("state") as string;
   const scope = searchParams?.get("scope") as string;
   const code_challenge = searchParams?.get("code_challenge") as string;
-  const code_challenge_method = searchParams?.get(
-    "code_challenge_method"
-  ) as string;
-  const show_account_selector =
-    searchParams?.get("show_account_selector") === "true";
+  const code_challenge_method = searchParams?.get("code_challenge_method") as string;
+  const show_account_selector = searchParams?.get("show_account_selector") === "true";
 
   const queryString = searchParams?.toString();
 
@@ -41,7 +38,7 @@ export function Authorize() {
     value: string;
     label: string;
   } | null>();
-  const scopes = scope ? scope.toString().split(",") : [];
+
 
   const {
     data: client,
@@ -51,6 +48,7 @@ export function Authorize() {
     {
       clientId: client_id as string,
       redirectUri: redirect_uri,
+      scope: scope || undefined,
     },
     {
       enabled: status === "authenticated" && !!redirect_uri,
@@ -58,30 +56,25 @@ export function Authorize() {
   );
 
   const { data, isPending: isPendingProfiles } =
-    trpc.viewer.loggedInViewerRouter.teamsAndUserProfilesQuery.useQuery(
-      undefined,
-      {
-        enabled: show_account_selector,
-      }
-    );
-
-  const generateAuthCodeMutation =
-    trpc.viewer.oAuth.generateAuthCode.useMutation({
-      onSuccess: (data) => {
-        window.location.href =
-          data.redirectUrl ??
-          `${client?.redirectUri}?code=${data.authorizationCode}&state=${state}`;
-      },
-      onError: (error) => {
-        if (client?.redirectUri) {
-          redirectToOAuthError({
-            redirectUri: client.redirectUri,
-            trpcError: error,
-            state,
-          });
-        }
-      },
+    trpc.viewer.loggedInViewerRouter.teamsAndUserProfilesQuery.useQuery(undefined, {
+      enabled: show_account_selector,
     });
+
+  const generateAuthCodeMutation = trpc.viewer.oAuth.generateAuthCode.useMutation({
+    onSuccess: (data) => {
+      window.location.href =
+        data.redirectUrl ?? `${client?.redirectUri}?code=${data.authorizationCode}&state=${state}`;
+    },
+    onError: (error) => {
+      if (client?.redirectUri) {
+        redirectToOAuthError({
+          redirectUri: client.redirectUri,
+          trpcError: error,
+          state,
+        });
+      }
+    },
+  });
 
   const mappedProfiles = data
     ? data
@@ -98,13 +91,15 @@ export function Authorize() {
     }
   }, [isPendingProfiles, show_account_selector]);
 
+  const effectiveScopes = resolveScopes(scope, client?.scopes ?? []);
+
   // Auto-authorize trusted clients
   useEffect(() => {
     if (client?.isTrusted) {
       generateAuthCodeMutation.mutate({
         clientId: client_id as string,
         redirectUri: client.redirectUri,
-        scopes,
+        scopes: effectiveScopes,
         codeChallenge: code_challenge || undefined,
         codeChallengeMethod: (code_challenge_method as "S256") || undefined,
         state,
@@ -126,15 +121,24 @@ export function Authorize() {
     }
   }, [status]);
 
+  useEffect(() => {
+    if (getClientError && redirect_uri && isScopeError(getClientError.message)) {
+      redirectToOAuthError({
+        redirectUri: redirect_uri,
+        trpcError: getClientError,
+        state,
+      });
+    }
+  }, [getClientError, redirect_uri, state]);
+
   if (getClientError) {
+    if (isScopeError(getClientError.message)) {
+      return <></>;
+    }
     return <div>{getClientError.message}</div>;
   }
 
-  if (
-    isPendingGetClient ||
-    (show_account_selector && isPendingProfiles) ||
-    status !== "authenticated"
-  ) {
+  if (isPendingGetClient || (show_account_selector && isPendingProfiles) || status !== "authenticated") {
     return <></>;
   }
 
@@ -147,9 +151,7 @@ export function Authorize() {
     return (
       <div className="flex justify-center pt-32">
         <div className="flex items-center space-x-3">
-          <span className="text-lg font-medium text-gray-700">
-            {t("authorizing")}
-          </span>
+          <span className="text-lg font-medium text-gray-700">{t("authorizing")}</span>
         </div>
       </div>
     );
@@ -169,11 +171,7 @@ export function Authorize() {
           <div className="relative -ml-6 w-24 h-24">
             <div className="flex absolute inset-0 justify-center items-center">
               <div className="bg-default flex h-[70px] w-[70px] items-center  justify-center rounded-full">
-                <img
-                  src="/cal-com-icon.svg"
-                  alt="Logo"
-                  className="w-16 h-16 rounded-full"
-                />
+                <img src="/cal-com-icon.svg" alt="Logo" className="w-16 h-16 rounded-full" />
               </div>
             </div>
           </div>
@@ -202,9 +200,7 @@ export function Authorize() {
         )}
         {show_account_selector && (
           <>
-            <div className="mb-1 text-sm font-medium">
-              {t("select_account_team")}
-            </div>
+            <div className="mb-1 text-sm font-medium">{t("select_account_team")}</div>
             <Select
               isSearchable={true}
               id="account-select"
@@ -221,33 +217,12 @@ export function Authorize() {
           {t("allow_client_to", { clientName: client.name })}
         </div>
         <ul className="text-sm stack-y-3">
-          <li className="relative pl-5">
-            <span className="absolute left-0">&#10003;</span>{" "}
-            {t("associate_with_cal_account", { clientName: client.name })}
-          </li>
-          <li className="relative pl-5">
-            <span className="absolute left-0">&#10003;</span>
-            {t("see_personal_info")}
-          </li>
-          <li className="relative pl-5">
-            <span className="absolute left-0">&#10003;</span>
-            {t("see_primary_email_address")}
-          </li>
-          <li className="relative pl-5">
-            <span className="absolute left-0">&#10003;</span>
-          </li>
-          <li className="relative pl-5">
-            <span className="absolute left-0">&#10003;</span>
-            {t("access_event_type")}
-          </li>
-          <li className="relative pl-5">
-            <span className="absolute left-0">&#10003;</span>
-            {t("access_availability")}
-          </li>
-          <li className="relative pl-5">
-            <span className="absolute left-0">&#10003;</span>
-            {t("access_bookings")}
-          </li>
+          {getScopeDisplayItems(effectiveScopes, t).map((label, idx) => (
+            <li key={idx} className="relative pl-5">
+              <span className="absolute left-0">&#10003;</span>
+              {label}
+            </li>
+          ))}
         </ul>
         <div className="flex p-3 mt-8 mb-8 rounded-md bg-subtle">
           <div>
@@ -257,9 +232,7 @@ export function Authorize() {
             <div className="mb-1 text-sm font-medium">
               {t("allow_client_to_do", { clientName: client.name })}
             </div>
-            <div className="text-sm">
-              {t("oauth_access_information", { appName: APP_NAME })}
-            </div>{" "}
+            <div className="text-sm">{t("oauth_access_information", { appName: APP_NAME })}</div>{" "}
           </div>
         </div>
         <div className="-mx-9 mb-4 border-b border-subtle border-" />
@@ -274,36 +247,35 @@ export function Authorize() {
               if (state) {
                 params.set("state", state);
               }
-              window.location.href = `${
-                client.redirectUri
-              }${separator}${params.toString()}`;
-            }}
-          >
+              window.location.href = `${client.redirectUri}${separator}${params.toString()}`;
+            }}>
             {t("go_back")}
           </Button>
           <Button
             onClick={() => {
               generateAuthCodeMutation.mutate({
                 clientId: client_id as string,
-                scopes,
+                scopes: effectiveScopes,
                 redirectUri: client.redirectUri,
                 teamSlug: selectedAccount?.value.startsWith("team/")
                   ? selectedAccount?.value.substring(5)
                   : undefined, // team account starts with /team/<slug>
                 codeChallenge: code_challenge || undefined,
-                codeChallengeMethod:
-                  (code_challenge_method as "S256") || undefined,
+                codeChallengeMethod: (code_challenge_method as "S256") || undefined,
                 state,
               });
             }}
-            data-testid="allow-button"
-          >
+            data-testid="allow-button">
             {t("allow")}
           </Button>
         </div>
       </div>
     </div>
   );
+}
+
+function isScopeError(errorMessage: string): boolean {
+  return errorMessage.includes("scope");
 }
 
 function mapTrpcCodeToOAuthError(code: string | undefined) {
@@ -335,9 +307,7 @@ function buildOAuthErrorRedirectUrl({
     errorParams.append("state", state);
   }
 
-  return `${redirectUri}${
-    redirectUri.includes("?") ? "&" : "?"
-  }${errorParams.toString()}`;
+  return `${redirectUri}${redirectUri.includes("?") ? "&" : "?"}${errorParams.toString()}`;
 }
 
 function redirectToOAuthError({
