@@ -7,6 +7,7 @@ import {
   ForbiddenException,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from "@nestjs/common";
 import { Request } from "express";
 
@@ -33,6 +34,15 @@ export class BookingPbacGuard implements CanActivate {
 
     if (!bookingUid) {
       throw new BadRequestException("BookingPbacGuard - bookingUid is required");
+    }
+
+    const booking = await this.prismaReadService.prisma.booking.findFirst({
+      where: { uid: bookingUid },
+      select: { id: true },
+    });
+
+    if (!booking) {
+      throw new NotFoundException(`Booking with uid=${bookingUid} does not exist`);
     }
 
     const hasAccess = await this.bookingAccessService.doesUserIdHaveAccessToBooking({
