@@ -18,7 +18,7 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export const CreateNewWebhookButton = () => {
+export const CreateNewWebhookButton = ({ isEmptyState }: { isEmptyState?: boolean }) => {
   const router = useRouter();
   const { t } = useLocale();
 
@@ -51,7 +51,10 @@ export const CreateNewWebhookButton = () => {
 
   if (options.length <= 1) {
     return (
-      <Button data-testid="new_webhook" onClick={() => handleSelect(options[0] || {})} variant="outline">
+      <Button
+        data-testid="new_webhook"
+        onClick={() => handleSelect(options[0] || {})}
+        variant={isEmptyState ? "default" : "outline"}>
         <PlusIcon />
         {t("new")}
       </Button>
@@ -60,11 +63,12 @@ export const CreateNewWebhookButton = () => {
 
   return (
     <Menu>
-      <MenuTrigger render={<Button data-testid="new_webhook" variant="outline" />}>
+      <MenuTrigger
+        render={<Button data-testid="new_webhook" variant={isEmptyState ? "default" : "outline"} />}>
         <PlusIcon />
         {t("new")}
       </MenuTrigger>
-      <MenuPopup align="end">
+      <MenuPopup align={isEmptyState ? undefined : "end"}>
         <MenuGroup>
           <MenuGroupLabel>{t("create_for")}</MenuGroupLabel>
           {options.map((option, idx) => (

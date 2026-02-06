@@ -122,7 +122,7 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <CreateNewWebhookButton />
+                <CreateNewWebhookButton isEmptyState />
               </EmptyContent>
             </Empty>
           </CardPanel>
