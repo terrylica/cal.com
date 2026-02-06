@@ -322,6 +322,13 @@ jobs:
     uses: ./.github/workflows/lint.yml
     secrets: inherit
 
+  check-circular-deps:
+    name: Circular Dependency Check
+    needs: [prepare]
+    if: ${{ needs.prepare.outputs.has-files-requiring-all-checks == 'true' }}
+    uses: ./.github/workflows/check-circular-deps.yml
+    secrets: inherit
+
   unit-test:
     name: Tests
     needs: [prepare]
@@ -477,6 +484,7 @@ jobs:
         prepare,
         validate-agents-format,
         lint,
+        check-circular-deps,
         type-check,
         unit-test,
         api-v2-unit-test,
@@ -520,6 +528,7 @@ jobs:
             needs.prepare.outputs.has-files-requiring-all-checks == 'true' &&
             (
             needs.lint.result != 'success' ||
+            needs.check-circular-deps.result != 'success' ||
             needs.type-check.result != 'success' ||
             needs.unit-test.result != 'success' ||
             needs.api-v2-unit-test.result != 'success' ||

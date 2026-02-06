@@ -19,6 +19,11 @@ jobs:
     uses: ./.github/workflows/lint.yml
     secrets: inherit
 
+  check-circular-deps:
+    name: Circular Dependency Check
+    uses: ./.github/workflows/check-circular-deps.yml
+    secrets: inherit
+
   unit-test:
     name: Tests
     uses: ./.github/workflows/unit-tests.yml
@@ -80,7 +85,7 @@ jobs:
     secrets: inherit
 
   required:
-    needs: [lint, type-check, unit-test, api-v2-unit-test, integration-test, build, build-api-v1, build-api-v2, e2e, e2e-embed, e2e-embed-react, e2e-app-store]
+    needs: [lint, check-circular-deps, type-check, unit-test, api-v2-unit-test, integration-test, build, build-api-v1, build-api-v2, e2e, e2e-embed, e2e-embed-react, e2e-app-store]
     if: always()
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
