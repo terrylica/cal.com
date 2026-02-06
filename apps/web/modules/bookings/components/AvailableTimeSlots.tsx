@@ -195,10 +195,10 @@ export const AvailableTimeSlots = ({
   return (
     <>
       {teamMemberEmail && (
-        <div className="mb-3">
+        <div className="mb-2">
           <Tooltip content={teamMemberEmail}>
-            <Badge variant="blue" startIcon="contact" size="md">
-              {t("booking_with_contact_owner")}
+            <Badge variant="blue" startIcon="contact" size="sm">
+              {t("contact_owner")}
             </Badge>
           </Tooltip>
         </div>
