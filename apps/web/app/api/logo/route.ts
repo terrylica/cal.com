@@ -180,10 +180,6 @@ function shouldUseDefaultLogo(subdomain: string | undefined): boolean {
 async function getHandler(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const parsedQuery = logoApiSchema.parse(Object.fromEntries(searchParams.entries()));
-
-  const type: LogoType = parsedQuery?.type && isValidLogoType(parsedQuery.type) ? parsedQuery.type : "logo";
-  const logoDefinition = logoDefinitions[type];
-
   const hostname = request.headers.get("host");
   if (!hostname) {
     return NextResponse.json({ error: "No hostname" }, { status: 400 });
@@ -196,6 +192,9 @@ async function getHandler(request: NextRequest) {
 
   const [subdomain] = domains;
 
+  // Resolve all icon types to team logos, falling back to Cal.com defaults.
+  const type: LogoType = parsedQuery?.type && isValidLogoType(parsedQuery.type) ? parsedQuery.type : "logo";
+  const logoDefinition = logoDefinitions[type];
   if (shouldUseDefaultLogo(subdomain)) {
     return NextResponse.redirect(new URL(logoDefinition.staticPath, request.url), { status: 302 });
   }
