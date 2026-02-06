@@ -63,6 +63,20 @@ export class MembershipsRepository {
     return membership;
   }
 
+  async findAcceptedStatusByTeamId(teamId: number, userId: number) {
+    return this.dbRead.prisma.membership.findUnique({
+      where: {
+        userId_teamId: {
+          userId: userId,
+          teamId: teamId,
+        },
+      },
+      select: {
+        accepted: true,
+      },
+    });
+  }
+
   async findUserMemberships(userId: number) {
     const memberships = await this.dbRead.prisma.membership.findMany({
       where: {

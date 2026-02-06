@@ -21,6 +21,13 @@ export class TeamsRepository {
     });
   }
 
+  async findParentIdById(teamId: number) {
+    return this.dbRead.prisma.team.findUnique({
+      where: { id: teamId },
+      select: { parentId: true },
+    });
+  }
+
   async getByIds(teamIds: number[]) {
     return this.dbRead.prisma.team.findMany({
       where: {

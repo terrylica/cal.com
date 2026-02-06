@@ -117,10 +117,10 @@ export class TeamsEventTypesService {
   }
 
   private async canSeeHiddenEvents(userId: number, teamId: number): Promise<boolean> {
-    const membership = await this.membershipsRepository.findMembershipByTeamId(teamId, userId);
+    const membership = await this.membershipsRepository.findAcceptedStatusByTeamId(teamId, userId);
     if (membership?.accepted) return true;
 
-    const team = await this.teamsRepository.getById(teamId);
+    const team = await this.teamsRepository.findParentIdById(teamId);
     if (team?.parentId) {
       return this.membershipsRepository.isUserOrganizationAdmin(userId, team.parentId);
     }
