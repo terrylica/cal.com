@@ -1,3 +1,5 @@
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import type { Ensure } from "@calcom/types/utils";
 import { z } from "zod";
 import { BooleanChangeSchema } from "../common/changeSchemas";
@@ -105,7 +107,7 @@ export class NoShowUpdatedAuditActionService implements IAuditActionService {
     if (this.isAttendeesNoShowSet(parsedFields)) {
       return { key: "booking_audit_action.attendee_no_show_updated" };
     }
-    throw new Error("Audit action data is invalid");
+    throw new ErrorWithCode(ErrorCode.InternalServerError, "Audit action data is invalid");
   }
 
   async getDisplayFields({ storedData, dbStore }: GetDisplayFieldsParams): Promise<

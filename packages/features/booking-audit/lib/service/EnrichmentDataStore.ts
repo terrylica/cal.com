@@ -1,6 +1,8 @@
 import type { IAttendeeRepository } from "@calcom/features/bookings/repositories/IAttendeeRepository";
 import type { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 
 /**
  * Entity types stored in the enrichment data store
@@ -150,7 +152,8 @@ export class EnrichmentDataStore {
    */
   getUserByUuid(uuid: string): StoredUser | null {
     if (!this.usersByUuid.has(uuid)) {
-      throw new Error(
+      throw new ErrorWithCode(
+        ErrorCode.InternalServerError,
         `EnrichmentDataStore: getUserByUuid("${uuid}") called but was not declared in getDataRequirements. ` +
           `This is a bug - ensure the action service declares all required userUuids.`
       );
@@ -165,7 +168,8 @@ export class EnrichmentDataStore {
    */
   getAttendeeById(id: number): StoredAttendee | null {
     if (!this.attendeesById.has(id)) {
-      throw new Error(
+      throw new ErrorWithCode(
+        ErrorCode.InternalServerError,
         `EnrichmentDataStore: getAttendeeById(${id}) called but was not declared in getDataRequirements. ` +
           `This is a bug - ensure the action service declares all required attendeeIds.`
       );
@@ -180,7 +184,8 @@ export class EnrichmentDataStore {
    */
   getCredentialById(id: number): StoredCredential | null {
     if (!this.credentialsById.has(id)) {
-      throw new Error(
+      throw new ErrorWithCode(
+        ErrorCode.InternalServerError,
         `EnrichmentDataStore: getCredentialById(${id}) called but was not declared in getDataRequirements. ` +
           `This is a bug - ensure the action service declares all required credentialIds.`
       );

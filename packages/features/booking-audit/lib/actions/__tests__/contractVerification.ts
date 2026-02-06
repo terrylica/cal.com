@@ -1,3 +1,5 @@
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import type { EnrichmentDataStore, DataRequirements, StoredUser, StoredAttendee, StoredCredential } from "../../service/EnrichmentDataStore";
 import type { IAuditActionService, BaseStoredAuditData } from "../IAuditActionService";
 
@@ -98,7 +100,8 @@ export function createMockEnrichmentDataStore(
   return {
     getUserByUuid: (uuid: string) => {
       if (!usersByUuid.has(uuid)) {
-        throw new Error(
+        throw new ErrorWithCode(
+          ErrorCode.InternalServerError,
           `EnrichmentDataStore: getUserByUuid("${uuid}") called but was not declared in getDataRequirements.`
         );
       }
@@ -106,7 +109,8 @@ export function createMockEnrichmentDataStore(
     },
     getAttendeeById: (id: number) => {
       if (!attendeesById.has(id)) {
-        throw new Error(
+        throw new ErrorWithCode(
+          ErrorCode.InternalServerError,
           `EnrichmentDataStore: getAttendeeById(${id}) called but was not declared in getDataRequirements.`
         );
       }
@@ -114,7 +118,8 @@ export function createMockEnrichmentDataStore(
     },
     getCredentialById: (id: number) => {
       if (!credentialsById.has(id)) {
-        throw new Error(
+        throw new ErrorWithCode(
+          ErrorCode.InternalServerError,
           `EnrichmentDataStore: getCredentialById(${id}) called but was not declared in getDataRequirements.`
         );
       }

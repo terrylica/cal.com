@@ -1,3 +1,5 @@
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import type { IAuditActionService } from "../actions/IAuditActionService";
 import type { BookingAuditAction } from "../repository/IBookingAuditRepository";
 
@@ -73,7 +75,7 @@ export class BookingAuditActionServiceRegistry {
     getActionService(action: BookingAuditAction): IAuditActionService {
         const service = this.actionServices.get(action);
         if (!service) {
-            throw new Error(`No action service found for: ${action}`);
+            throw new ErrorWithCode(ErrorCode.InternalServerError, `No action service found for: ${action}`);
         }
         return service;
     }

@@ -1,3 +1,5 @@
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import type { AuditActorType } from "../repository/IAuditActorRepository";
 import type { BookingAuditWithActor } from "../repository/IBookingAuditRepository";
 import { getAppNameFromSlug } from "../getAppNameFromSlug";
@@ -21,7 +23,7 @@ export const ACTOR_STRATEGIES: Record<AuditActorType, ActorStrategy> = {
     getRequirements: (actor) => ({ userUuids: actor.userUuid ? [actor.userUuid] : [] }),
     enrich: (actor, dbStore) => {
       if (!actor.userUuid) {
-        throw new Error("User UUID is required for USER actor");
+        throw new ErrorWithCode(ErrorCode.InternalServerError, "User UUID is required for USER actor");
       }
       const user = dbStore.getUserByUuid(actor.userUuid);
       if (user) {
@@ -42,7 +44,7 @@ export const ACTOR_STRATEGIES: Record<AuditActorType, ActorStrategy> = {
     getRequirements: (actor) => ({ attendeeIds: actor.attendeeId ? [actor.attendeeId] : [] }),
     enrich: (actor, dbStore) => {
       if (!actor.attendeeId) {
-        throw new Error("Attendee ID is required for ATTENDEE actor");
+        throw new ErrorWithCode(ErrorCode.InternalServerError, "Attendee ID is required for ATTENDEE actor");
       }
       const attendee = dbStore.getAttendeeById(actor.attendeeId);
       if (attendee) {

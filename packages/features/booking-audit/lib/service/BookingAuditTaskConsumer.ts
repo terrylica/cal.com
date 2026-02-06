@@ -2,6 +2,8 @@ import type { IAttendeeRepository } from "@calcom/features/bookings/repositories
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { Task } from "@calcom/features/tasker/repository";
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import type { JsonValue } from "@calcom/types/Json";
@@ -390,7 +392,8 @@ export class BookingAuditTaskConsumer {
       // PENDING and AWAITING_HOST are not implemented as they represent initial states
       case "PENDING":
       case "AWAITING_HOST":
-        throw new Error(
+        throw new ErrorWithCode(
+          ErrorCode.BadRequest,
           `Action ${action} is not supported - it represents an initial booking state captured by CREATED`
         );
     }
