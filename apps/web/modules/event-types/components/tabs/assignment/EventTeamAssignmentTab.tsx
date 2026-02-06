@@ -7,7 +7,10 @@ import type {
   SettingsToggleClassNames,
 } from "@calcom/features/eventtypes/lib/types";
 import { useHosts } from "@calcom/features/eventtypes/lib/HostsContext";
-import { usePaginatedAssignmentChildren, assignmentChildToChildrenEventType } from "@calcom/features/eventtypes/lib/usePaginatedAssignmentChildren";
+import {
+  usePaginatedAssignmentChildren,
+  assignmentChildToChildrenEventType,
+} from "@calcom/features/eventtypes/lib/usePaginatedAssignmentChildren";
 import { usePaginatedAssignmentHosts } from "@calcom/features/eventtypes/lib/usePaginatedAssignmentHosts";
 import { sortHosts } from "@calcom/lib/bookings/hostGroupUtils";
 import ServerTrans from "@calcom/lib/components/ServerTrans";
@@ -15,7 +18,12 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { RRTimestampBasis, SchedulingType } from "@calcom/prisma/enums";
 import classNames from "@calcom/ui/classNames";
 import { Button } from "@calcom/ui/components/button";
-import { Label, Select, SettingsToggle } from "@calcom/ui/components/form";
+import {
+  Label,
+  Select,
+  SettingsToggle,
+  TextField,
+} from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { RadioAreaGroup as RadioArea } from "@calcom/ui/components/radio";
 import { Tooltip } from "@calcom/ui/components/tooltip";
@@ -30,7 +38,10 @@ import ChildrenEventTypeSelect from "@calcom/features/eventtypes/components/Chil
 import { EditWeightsForAllTeamMembers } from "@calcom/web/modules/event-types/components/EditWeightsForAllTeamMembers";
 import { LearnMoreLink } from "@calcom/features/eventtypes/components/LearnMoreLink";
 import WeightDescription from "@calcom/features/eventtypes/components/WeightDescription";
-import { useSearchTeamMembers, type SearchTeamMember } from "@calcom/features/eventtypes/lib/useSearchTeamMembers";
+import {
+  useSearchTeamMembers,
+  type SearchTeamMember,
+} from "@calcom/features/eventtypes/lib/useSearchTeamMembers";
 import type { TFunction } from "i18next";
 import Link from "next/link";
 import type { ComponentProps, Dispatch, SetStateAction } from "react";
@@ -68,6 +79,8 @@ const ChildrenEventTypesList = ({
   onSearchChange,
   onMenuScrollToBottom,
   isLoadingMore,
+  assignedSearchValue,
+  onAssignedSearchChange,
   ...rest
 }: {
   value: ChildrenEventType[];
@@ -77,12 +90,24 @@ const ChildrenEventTypesList = ({
   onSearchChange?: (value: string) => void;
   onMenuScrollToBottom?: () => void;
   isLoadingMore?: boolean;
-} & Omit<Partial<ComponentProps<typeof ChildrenEventTypeSelect>>, "onChange" | "value">) => {
+  assignedSearchValue?: string;
+  onAssignedSearchChange?: (value: string) => void;
+} & Omit<
+  Partial<ComponentProps<typeof ChildrenEventTypeSelect>>,
+  "onChange" | "value"
+>) => {
   const { t } = useLocale();
   return (
-    <div className={classNames("stack-y-5 flex flex-col", customClassNames?.assignToSelect?.container)}>
+    <div
+      className={classNames(
+        "stack-y-5 flex flex-col",
+        customClassNames?.assignToSelect?.container
+      )}
+    >
       <div>
-        <Label className={customClassNames?.assignToSelect?.label}>{t("assign_to")}</Label>
+        <Label className={customClassNames?.assignToSelect?.label}>
+          {t("assign_to")}
+        </Label>
         <ChildrenEventTypeSelect
           aria-label="assignment-dropdown"
           data-testid="assignment-dropdown"
@@ -95,12 +120,16 @@ const ChildrenEventTypesList = ({
               );
           }}
           value={value}
-          options={options.filter((opt) => !value.find((val) => val.owner.id.toString() === opt.value))}
+          options={options.filter(
+            (opt) => !value.find((val) => val.owner.id.toString() === opt.value)
+          )}
           controlShouldRenderValue={false}
           customClassNames={customClassNames}
           onSearchChange={onSearchChange}
           onMenuScrollToBottom={onMenuScrollToBottom}
           isLoadingMore={isLoadingMore}
+          assignedSearchValue={assignedSearchValue}
+          onAssignedSearchChange={onAssignedSearchChange}
           {...rest}
         />
       </div>
@@ -117,7 +146,8 @@ const FixedHostHelper = ({ t }: { t: TFunction }) => (
         key="fixed_host_helper"
         className="underline underline-offset-2"
         target="_blank"
-        href="https://cal.com/docs/enterprise-features/teams/round-robin-scheduling#fixed-hosts">
+        href="https://cal.com/docs/enterprise-features/teams/round-robin-scheduling#fixed-hosts"
+      >
         Learn more
       </Link>,
     ]}
@@ -141,6 +171,8 @@ const FixedHosts = ({
   hasNextPageSelected,
   isFetchingNextPageSelected,
   fetchNextPageSelected,
+  assignedSearch,
+  onAssignedSearchChange,
 }: {
   teamId: number;
   value: Host[];
@@ -155,6 +187,8 @@ const FixedHosts = ({
   hasNextPageSelected?: boolean;
   isFetchingNextPageSelected?: boolean;
   fetchNextPageSelected?: () => void;
+  assignedSearch: string;
+  onAssignedSearchChange: (value: string) => void;
 }) => {
   const { t } = useLocale();
   const { setHosts } = useHosts();
@@ -193,15 +227,22 @@ const FixedHosts = ({
             className={classNames(
               "border-subtle mt-5 rounded-t-md border p-6 pb-5",
               customClassNames?.container
-            )}>
-            <Label className={classNames("mb-1 text-sm font-semibold", customClassNames?.label)}>
+            )}
+          >
+            <Label
+              className={classNames(
+                "mb-1 text-sm font-semibold",
+                customClassNames?.label
+              )}
+            >
               {t("fixed_hosts")}
             </Label>
             <p
               className={classNames(
                 "text-subtle wrap-break-word max-w-full text-sm leading-tight",
                 customClassNames?.description
-              )}>
+              )}
+            >
               <FixedHostHelper t={t} />
             </p>
           </div>
@@ -220,6 +261,8 @@ const FixedHosts = ({
               hasNextPageSelected={hasNextPageSelected}
               isFetchingNextPageSelected={isFetchingNextPageSelected}
               fetchNextPageSelected={fetchNextPageSelected}
+              assignedSearchValue={assignedSearch}
+              onAssignedSearchChange={onAssignedSearchChange}
             />
           </div>
         </>
@@ -232,10 +275,14 @@ const FixedHosts = ({
           checked={isDisabled && !assignAllTeamMembers}
           hideSwitch={assignAllTeamMembers}
           labelClassName={classNames("text-sm", customClassNames?.label)}
-          descriptionClassName={classNames("text-sm text-subtle", customClassNames?.description)}
+          descriptionClassName={classNames(
+            "text-sm text-subtle",
+            customClassNames?.description
+          )}
           switchContainerClassName={customClassNames?.container}
           onCheckedChange={handleFixedHostsToggle}
-          childrenClassName={classNames("lg:ml-0", customClassNames?.children)}>
+          childrenClassName={classNames("lg:ml-0", customClassNames?.children)}
+        >
           <div className="border-subtle flex flex-col gap-6 rounded-bl-md rounded-br-md border border-t-0 px-6">
             <AddMembersWithSwitch
               data-testid="fixed-hosts-select"
@@ -253,6 +300,8 @@ const FixedHosts = ({
               hasNextPageSelected={hasNextPageSelected}
               isFetchingNextPageSelected={isFetchingNextPageSelected}
               fetchNextPageSelected={fetchNextPageSelected}
+              assignedSearchValue={assignedSearch}
+              onAssignedSearchChange={onAssignedSearchChange}
             />
           </div>
         </SettingsToggle>
@@ -282,6 +331,8 @@ const RoundRobinHosts = ({
   hasNextPageSelected,
   isFetchingNextPageSelected,
   fetchNextPageSelected,
+  assignedSearch,
+  onAssignedSearchChange,
 }: {
   orgId: number | null;
   value: Host[];
@@ -295,11 +346,14 @@ const RoundRobinHosts = ({
   hasNextPageSelected?: boolean;
   isFetchingNextPageSelected?: boolean;
   fetchNextPageSelected?: () => void;
+  assignedSearch: string;
+  onAssignedSearchChange: (value: string) => void;
 }) => {
   const { t } = useLocale();
 
   const { setHosts: setHostsFromContext } = useHosts();
-  const { setValue, getValues, control, formState } = useFormContext<FormValues>();
+  const { setValue, getValues, control, formState } =
+    useFormContext<FormValues>();
   const assignRRMembersUsingSegment = getValues("assignRRMembersUsingSegment");
   const isRRWeightsEnabled = useWatch({
     control,
@@ -314,7 +368,10 @@ const RoundRobinHosts = ({
     name: "hostGroups",
   });
 
-  const handleWeightsEnabledChange = (active: boolean, onChange: (value: boolean) => void) => {
+  const handleWeightsEnabledChange = (
+    active: boolean,
+    onChange: (value: boolean) => void
+  ) => {
     onChange(active);
     const allHosts = value;
     const fixedHosts = allHosts.filter((host) => host.isFixed);
@@ -363,12 +420,22 @@ const RoundRobinHosts = ({
       setValue("assignAllTeamMembers", false, { shouldDirty: true });
       setAssignAllTeamMembers(false);
     }
-  }, [hostGroups, value, serverHosts, setHostsFromContext, setValue, assignAllTeamMembers, setAssignAllTeamMembers]);
+  }, [
+    hostGroups,
+    value,
+    serverHosts,
+    setHostsFromContext,
+    setValue,
+    assignAllTeamMembers,
+    setAssignAllTeamMembers,
+  ]);
 
   const handleGroupNameChange = useCallback(
     (groupId: string, newName: string) => {
       const updatedHostGroups =
-        hostGroups?.map((g) => (g.id === groupId ? { ...g, name: newName } : g)) || [];
+        hostGroups?.map((g) =>
+          g.id === groupId ? { ...g, name: newName } : g
+        ) || [];
       setValue("hostGroups", updatedHostGroups, { shouldDirty: true });
     },
     [hostGroups, setValue]
@@ -377,7 +444,8 @@ const RoundRobinHosts = ({
   const handleRemoveGroup = useCallback(
     (groupId: string) => {
       // Remove the group from hostGroups
-      const updatedHostGroups = hostGroups?.filter((g) => g.id !== groupId) || [];
+      const updatedHostGroups =
+        hostGroups?.filter((g) => g.id !== groupId) || [];
       setValue("hostGroups", updatedHostGroups, { shouldDirty: true });
 
       // Remove all hosts that belong to this group
@@ -391,40 +459,42 @@ const RoundRobinHosts = ({
   // No-op: when "assign all" is toggled ON, the assignAllTeamMembers flag
   // is set by the AssignAllTeamMembers component. The booking system resolves
   // all members at booking time, so we don't need to create individual host entries.
-  const handleMembersActivation = useCallback((_groupId: string | null) => {}, []);
+  const handleMembersActivation = useCallback((_groupId: string | null) => {},
+  []);
 
-  const AddMembersWithSwitchComponent = ({
-    groupId,
-    containerClassName,
-  }: {
-    groupId: string | null;
-    containerClassName?: string;
-  }) => {
-    return (
-      <AddMembersWithSwitch
-        placeholder={t("add_a_member")}
-        teamId={teamId}
-        value={value}
-        onChange={onChange}
-        assignAllTeamMembers={assignAllTeamMembers}
-        setAssignAllTeamMembers={setAssignAllTeamMembers}
-        isSegmentApplicable={isSegmentApplicable}
-        automaticAddAllEnabled={true}
-        isRRWeightsEnabled={isRRWeightsEnabled}
-        isFixed={false}
-        groupId={groupId}
-        containerClassName={containerClassName || (assignAllTeamMembers ? "-mt-4" : "")}
-        onActive={() => handleMembersActivation(groupId)}
-        customClassNames={customClassNames?.addMembers}
-        hasNextPageSelected={hasNextPageSelected}
-        isFetchingNextPageSelected={isFetchingNextPageSelected}
-        fetchNextPageSelected={fetchNextPageSelected}
-      />
+  const renderAddMembersWithSwitch = (
+    groupId: string | null,
+    containerClassName?: string
+  ) => (
+    <AddMembersWithSwitch
+      placeholder={t("add_a_member")}
+      teamId={teamId}
+      value={value}
+      onChange={onChange}
+      assignAllTeamMembers={assignAllTeamMembers}
+      setAssignAllTeamMembers={setAssignAllTeamMembers}
+      isSegmentApplicable={isSegmentApplicable}
+      automaticAddAllEnabled={true}
+      isRRWeightsEnabled={isRRWeightsEnabled}
+      isFixed={false}
+      groupId={groupId}
+      containerClassName={
+        containerClassName || (assignAllTeamMembers ? "-mt-4" : "")
+      }
+      onActive={() => handleMembersActivation(groupId)}
+      customClassNames={customClassNames?.addMembers}
+      hasNextPageSelected={hasNextPageSelected}
+      isFetchingNextPageSelected={isFetchingNextPageSelected}
+      fetchNextPageSelected={fetchNextPageSelected}
+      assignedSearchValue={assignedSearch}
+      onAssignedSearchChange={onAssignedSearchChange}
+    />
+  );
+
+  const renderUnassignedHostsGroup = () => {
+    const unassignedHosts = value.filter(
+      (host) => !host.isFixed && !host.groupId
     );
-  };
-
-  const UnassignedHostsGroup = () => {
-    const unassignedHosts = value.filter((host) => !host.isFixed && !host.groupId);
 
     if (unassignedHosts.length === 0) {
       return null;
@@ -434,10 +504,12 @@ const RoundRobinHosts = ({
       <div className="border-subtle my-4 rounded-md border p-4 pb-0">
         <div className="-mb-4 flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <span className="text-default text-sm font-medium">{`Group ${hostGroups.length + 1}`}</span>
+            <span className="text-default text-sm font-medium">{`Group ${
+              hostGroups.length + 1
+            }`}</span>
           </div>
         </div>
-        <AddMembersWithSwitchComponent groupId={null} />
+        {renderAddMembersWithSwitch(null)}
       </div>
     );
   };
@@ -448,25 +520,41 @@ const RoundRobinHosts = ({
         className={classNames(
           "border-subtle mt-5 rounded-t-md border p-6 pb-5",
           customClassNames?.container
-        )}>
+        )}
+      >
         <div className="flex items-center justify-between">
           <div>
-            <Label className={classNames("mb-1 text-sm font-semibold", customClassNames?.label)}>
+            <Label
+              className={classNames(
+                "mb-1 text-sm font-semibold",
+                customClassNames?.label
+              )}
+            >
               {t("round_robin_hosts")}
             </Label>
             <p
               className={classNames(
                 "text-subtle wrap-break-word max-w-full text-sm leading-tight",
                 customClassNames?.description
-              )}>
+              )}
+            >
               <LearnMoreLink
                 t={t}
-                i18nKey={hostGroups?.length > 0 ? "round_robin_groups_helper" : "round_robin_helper"}
+                i18nKey={
+                  hostGroups?.length > 0
+                    ? "round_robin_groups_helper"
+                    : "round_robin_helper"
+                }
                 href="https://cal.com/help/event-types/round-robin"
               />
             </p>
           </div>
-          <Button color="secondary" size="sm" StartIcon="plus" onClick={handleAddGroup}>
+          <Button
+            color="secondary"
+            size="sm"
+            StartIcon="plus"
+            onClick={handleAddGroup}
+          >
             {t("add_group")}
           </Button>
         </div>
@@ -480,10 +568,17 @@ const RoundRobinHosts = ({
                 title={t("enable_weights")}
                 description={<WeightDescription t={t} />}
                 checked={isRRWeightsEnabled}
-                switchContainerClassName={customClassNames?.enableWeights?.container}
+                switchContainerClassName={
+                  customClassNames?.enableWeights?.container
+                }
                 labelClassName={customClassNames?.enableWeights?.label}
-                descriptionClassName={customClassNames?.enableWeights?.description}
-                onCheckedChange={(active) => handleWeightsEnabledChange(active, onChange)}>
+                descriptionClassName={
+                  customClassNames?.enableWeights?.description
+                }
+                onCheckedChange={(active) =>
+                  handleWeightsEnabledChange(active, onChange)
+                }
+              >
                 <EditWeightsForAllTeamMembers
                   value={value}
                   onChange={handleWeightsChange}
@@ -498,24 +593,29 @@ const RoundRobinHosts = ({
           />
         </>
         {!hostGroups.length ? (
-          <AddMembersWithSwitchComponent groupId={hostGroups[0]?.id ?? null} />
+          renderAddMembersWithSwitch(hostGroups[0]?.id ?? null)
         ) : (
           <>
             {/* Show unassigned hosts first */}
-            <UnassignedHostsGroup />
+            {renderUnassignedHostsGroup()}
 
             {/* Show all defined groups */}
             {hostGroups.map((group, index) => {
               const groupNumber = index + 1;
 
               return (
-                <div key={index} className="border-subtle my-4 rounded-md border p-4 pb-0">
+                <div
+                  key={index}
+                  className="border-subtle my-4 rounded-md border p-4 pb-0"
+                >
                   <div className="-mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={group.name ?? ""}
-                        onChange={(e) => handleGroupNameChange(group.id, e.target.value)}
+                        onChange={(e) =>
+                          handleGroupNameChange(group.id, e.target.value)
+                        }
                         className="border-none bg-transparent p-0 text-sm font-medium focus:outline-none focus:ring-0"
                         placeholder={`Group ${groupNumber}`}
                       />
@@ -523,11 +623,12 @@ const RoundRobinHosts = ({
                     <button
                       type="button"
                       onClick={() => handleRemoveGroup(group.id)}
-                      className="text-subtle hover:text-default rounded p-1">
+                      className="text-subtle hover:text-default rounded p-1"
+                    >
                       <Icon name="x" className="h-4 w-4" />
                     </button>
                   </div>
-                  <AddMembersWithSwitchComponent groupId={group.id} />
+                  {renderAddMembersWithSwitch(group.id)}
                 </div>
               );
             })}
@@ -564,7 +665,9 @@ function mapSearchMemberToChildrenOption(
       profile: null,
     },
     value: `${member.userId}`,
-    label: `${member.name || member.email || ""}${!member.username ? ` (${pendingString})` : ""}`,
+    label: `${member.name || member.email || ""}${
+      !member.username ? ` (${pendingString})` : ""
+    }`,
   };
 }
 
@@ -606,6 +709,18 @@ const ChildrenEventTypes = ({
     enabled: !assignAllTeamMembers,
   });
 
+  // Search for assigned children list
+  const [assignedChildrenSearch, setAssignedChildrenSearch] = useState("");
+  const [debouncedAssignedChildrenSearch, setDebouncedAssignedChildrenSearch] =
+    useState("");
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedAssignedChildrenSearch(assignedChildrenSearch),
+      300
+    );
+    return () => clearTimeout(timer);
+  }, [assignedChildrenSearch]);
+
   // Paginated display of existing children
   const pendingChanges = getValues("pendingChildrenChanges") ?? {
     childrenToAdd: [],
@@ -621,7 +736,7 @@ const ChildrenEventTypes = ({
   } = usePaginatedAssignmentChildren({
     eventTypeId,
     pendingChanges,
-    search: "",
+    search: debouncedAssignedChildrenSearch,
     enabled: !assignAllTeamMembers,
   });
 
@@ -644,7 +759,9 @@ const ChildrenEventTypes = ({
     (): ChildrenEventType[] =>
       members
         .filter((member) => !assignedOwnerIds.has(member.userId))
-        .map((member) => mapSearchMemberToChildrenOption(member, eventSlug, t("pending"))),
+        .map((member) =>
+          mapSearchMemberToChildrenOption(member, eventSlug, t("pending"))
+        ),
     [members, eventSlug, t, assignedOwnerIds]
   );
 
@@ -677,9 +794,14 @@ const ChildrenEventTypes = ({
       let updatedAdds = [...current.childrenToAdd];
       const serverHiddenChanges: { userId: number; hidden: boolean }[] = [];
       for (const change of hiddenChanges) {
-        const addIndex = updatedAdds.findIndex((c) => c.owner.id === change.userId);
+        const addIndex = updatedAdds.findIndex(
+          (c) => c.owner.id === change.userId
+        );
         if (addIndex >= 0) {
-          updatedAdds[addIndex] = { ...updatedAdds[addIndex], hidden: change.hidden };
+          updatedAdds[addIndex] = {
+            ...updatedAdds[addIndex],
+            hidden: change.hidden,
+          };
         } else {
           serverHiddenChanges.push(change);
         }
@@ -688,9 +810,14 @@ const ChildrenEventTypes = ({
       // Merge server hidden changes into childrenToUpdate
       let updatedUpdates = [...current.childrenToUpdate];
       for (const change of serverHiddenChanges) {
-        const existingIndex = updatedUpdates.findIndex((u) => u.userId === change.userId);
+        const existingIndex = updatedUpdates.findIndex(
+          (u) => u.userId === change.userId
+        );
         if (existingIndex >= 0) {
-          updatedUpdates[existingIndex] = { ...updatedUpdates[existingIndex], hidden: change.hidden };
+          updatedUpdates[existingIndex] = {
+            ...updatedUpdates[existingIndex],
+            hidden: change.hidden,
+          };
         } else {
           updatedUpdates.push(change);
         }
@@ -702,7 +829,9 @@ const ChildrenEventTypes = ({
 
       // For removals: only add to childrenToRemove if not a pending add
       const serverRemovals = removed
-        .filter((c) => !current.childrenToAdd.some((a) => a.owner.id === c.owner.id))
+        .filter(
+          (c) => !current.childrenToAdd.some((a) => a.owner.id === c.owner.id)
+        )
         .map((c) => c.owner.id);
 
       const updatedChanges = {
@@ -728,7 +857,8 @@ const ChildrenEventTypes = ({
       className={classNames(
         "border-subtle stack-y-5 mt-6 rounded-lg border px-4 py-6 sm:px-6",
         customClassNames?.container
-      )}>
+      )}
+    >
       <div className="flex flex-col gap-4">
         <AssignAllTeamMembers
           assignAllTeamMembers={assignAllTeamMembers}
@@ -737,25 +867,35 @@ const ChildrenEventTypes = ({
           onActive={() =>
             setValue(
               "pendingChildrenChanges",
-              { childrenToAdd: [], childrenToRemove: [], childrenToUpdate: [], clearAllChildren: true },
+              {
+                childrenToAdd: [],
+                childrenToRemove: [],
+                childrenToUpdate: [],
+                clearAllChildren: true,
+              },
               { shouldDirty: true }
             )
           }
         />
         {!assignAllTeamMembers ? (
-          <ChildrenEventTypesList
-            value={displayChildren}
-            options={childrenOptions}
-            onChange={(options) => {
-              if (options) handleChildrenChange(options);
-            }}
-            customClassNames={customClassNames?.childrenEventTypesList}
-            onSearchChange={setSearch}
-            onMenuScrollToBottom={() => {
-              if (hasNextSearchPage && !isFetchingNextSearchPage) fetchNextSearchPage();
-            }}
-            isLoadingMore={isFetchingNextSearchPage}
-          />
+          <>
+            <ChildrenEventTypesList
+              value={displayChildren}
+              options={childrenOptions}
+              onChange={(options) => {
+                if (options) handleChildrenChange(options);
+              }}
+              customClassNames={customClassNames?.childrenEventTypesList}
+              onSearchChange={setSearch}
+              onMenuScrollToBottom={() => {
+                if (hasNextSearchPage && !isFetchingNextSearchPage)
+                  fetchNextSearchPage();
+              }}
+              isLoadingMore={isFetchingNextSearchPage}
+              assignedSearchValue={assignedChildrenSearch}
+              onAssignedSearchChange={setAssignedChildrenSearch}
+            />
+          </>
         ) : (
           <></>
         )}
@@ -789,14 +929,38 @@ const Hosts = ({
     control,
     formState: { submitCount },
   } = useFormContext<FormValues>();
-  const { addHost, updateHost, removeHost, clearAllHosts, setHosts, pendingChanges } = useHosts();
+  const {
+    addHost,
+    updateHost,
+    removeHost,
+    clearAllHosts,
+    setHosts,
+    pendingChanges,
+  } = useHosts();
 
   const eventTypeId = useWatch({ control, name: "id" });
 
-  const { hosts: paginatedHosts, serverHosts, serverHasFixedHosts, fetchNextPage, hasNextPage, isFetchingNextPage } = usePaginatedAssignmentHosts({
+  const [assignedSearch, setAssignedSearch] = useState("");
+  const [debouncedAssignedSearch, setDebouncedAssignedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedAssignedSearch(assignedSearch),
+      300
+    );
+    return () => clearTimeout(timer);
+  }, [assignedSearch]);
+
+  const {
+    hosts: paginatedHosts,
+    serverHosts,
+    serverHasFixedHosts,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = usePaginatedAssignmentHosts({
     eventTypeId,
     pendingChanges,
-    search: "",
+    search: debouncedAssignedSearch,
   });
 
   const schedulingType = useWatch({
@@ -813,7 +977,10 @@ const Hosts = ({
 
   useEffect(() => {
     // Handles init & out of date initial value after submission.
-    if (!initialValue.current || initialValue.current?.submitCount !== submitCount) {
+    if (
+      !initialValue.current ||
+      initialValue.current?.submitCount !== submitCount
+    ) {
       initialValue.current = { pendingChanges, schedulingType, submitCount };
       return;
     }
@@ -829,7 +996,9 @@ const Hosts = ({
   // This is because the host is created from list option in CheckedHostField component.
   const updatedHosts = (changedHosts: Host[]) => {
     return changedHosts.map((newValue) => {
-      const existingHost = paginatedHosts.find((host: Host) => host.userId === newValue.userId);
+      const existingHost = paginatedHosts.find(
+        (host: Host) => host.userId === newValue.userId
+      );
 
       return existingHost
         ? {
@@ -870,6 +1039,8 @@ const Hosts = ({
         hasNextPageSelected={hasNextPage}
         isFetchingNextPageSelected={isFetchingNextPage}
         fetchNextPageSelected={fetchNextPage}
+        assignedSearch={assignedSearch}
+        onAssignedSearchChange={setAssignedSearch}
       />
     ),
     ROUND_ROBIN: (
@@ -878,7 +1049,10 @@ const Hosts = ({
           teamId={teamId}
           value={value}
           onChange={(changeValue) => {
-            handleHostsChange([...value.filter((host: Host) => !host.isFixed), ...updatedHosts(changeValue)]);
+            handleHostsChange([
+              ...value.filter((host: Host) => !host.isFixed),
+              ...updatedHosts(changeValue),
+            ]);
           }}
           assignAllTeamMembers={assignAllTeamMembers}
           setAssignAllTeamMembers={setAssignAllTeamMembers}
@@ -890,13 +1064,18 @@ const Hosts = ({
           hasNextPageSelected={hasNextPage}
           isFetchingNextPageSelected={isFetchingNextPage}
           fetchNextPageSelected={fetchNextPage}
+          assignedSearch={assignedSearch}
+          onAssignedSearchChange={setAssignedSearch}
         />
         <RoundRobinHosts
           orgId={orgId}
           teamId={teamId}
           value={value}
           onChange={(changeValue) => {
-            const newHosts = [...value.filter((host: Host) => host.isFixed), ...updatedHosts(changeValue)];
+            const newHosts = [
+              ...value.filter((host: Host) => host.isFixed),
+              ...updatedHosts(changeValue),
+            ];
             handleHostsChange(newHosts);
           }}
           assignAllTeamMembers={assignAllTeamMembers}
@@ -907,13 +1086,15 @@ const Hosts = ({
           hasNextPageSelected={hasNextPage}
           isFetchingNextPageSelected={isFetchingNextPage}
           fetchNextPageSelected={fetchNextPage}
+          assignedSearch={assignedSearch}
+          onAssignedSearchChange={setAssignedSearch}
         />
       </>
     ),
     MANAGED: <></>,
   };
-  return schedulingType ? schedulingTypeRender[schedulingType] : <></>;
 
+  return schedulingType ? schedulingTypeRender[schedulingType] : <></>;
 };
 
 export const EventTeamAssignmentTab = ({
@@ -942,7 +1123,8 @@ export const EventTeamAssignmentTab = ({
       // description: t("round_robin_description"),
     },
   ];
-  const isManagedEventType = eventType.schedulingType === SchedulingType.MANAGED;
+  const isManagedEventType =
+    eventType.schedulingType === SchedulingType.MANAGED;
   const { getValues, setValue, control } = useFormContext<FormValues>();
   const [assignAllTeamMembers, setAssignAllTeamMembers] = useState<boolean>(
     getValues("assignAllTeamMembers") ?? false
@@ -955,7 +1137,10 @@ export const EventTeamAssignmentTab = ({
   };
 
   const handleSchedulingTypeChange = useCallback(
-    (schedulingType: SchedulingType | undefined, onChange: (value: SchedulingType | undefined) => void) => {
+    (
+      schedulingType: SchedulingType | undefined,
+      onChange: (value: SchedulingType | undefined) => void
+    ) => {
       if (schedulingType) {
         onChange(schedulingType);
         resetRROptions();
@@ -964,7 +1149,10 @@ export const EventTeamAssignmentTab = ({
     [setValue, setAssignAllTeamMembers]
   );
 
-  const handleMaxLeadThresholdChange = (val: string, onChange: (value: number | null) => void) => {
+  const handleMaxLeadThresholdChange = (
+    val: string,
+    onChange: (value: number | null) => void
+  ) => {
     if (val === "loadBalancing") {
       onChange(3);
     } else {
@@ -990,26 +1178,38 @@ export const EventTeamAssignmentTab = ({
             className={classNames(
               "border-subtle flex flex-col rounded-md",
               customClassNames?.assignmentType?.container
-            )}>
+            )}
+          >
             <div className="border-subtle rounded-t-md border p-6 pb-5">
               <Label
-                className={classNames("mb-1 text-sm font-semibold", customClassNames?.assignmentType?.label)}>
+                className={classNames(
+                  "mb-1 text-sm font-semibold",
+                  customClassNames?.assignmentType?.label
+                )}
+              >
                 {t("assignment")}
               </Label>
               <p
                 className={classNames(
                   "text-subtle wrap-break-word max-w-full text-sm leading-tight",
                   customClassNames?.assignmentType?.description
-                )}>
+                )}
+              >
                 {t("assignment_description")}
               </p>
             </div>
             <div
               className={classNames(
                 "border-subtle rounded-b-md border border-t-0 p-6",
-                customClassNames?.assignmentType?.schedulingTypeSelect?.container
-              )}>
-              <Label className={customClassNames?.assignmentType?.schedulingTypeSelect?.label}>
+                customClassNames?.assignmentType?.schedulingTypeSelect
+                  ?.container
+              )}
+            >
+              <Label
+                className={
+                  customClassNames?.assignmentType?.schedulingTypeSelect?.label
+                }
+              >
                 {t("scheduling_type")}
               </Label>
               <Controller<FormValues>
@@ -1017,13 +1217,21 @@ export const EventTeamAssignmentTab = ({
                 render={({ field: { value, onChange } }) => (
                   <Select
                     options={schedulingTypeOptions}
-                    value={schedulingTypeOptions.find((opt) => opt.value === value)}
+                    value={schedulingTypeOptions.find(
+                      (opt) => opt.value === value
+                    )}
                     className={classNames(
                       "w-full",
-                      customClassNames?.assignmentType?.schedulingTypeSelect?.select
+                      customClassNames?.assignmentType?.schedulingTypeSelect
+                        ?.select
                     )}
-                    innerClassNames={customClassNames?.assignmentType?.schedulingTypeSelect?.innerClassNames}
-                    onChange={(val) => handleSchedulingTypeChange(val?.value, onChange)}
+                    innerClassNames={
+                      customClassNames?.assignmentType?.schedulingTypeSelect
+                        ?.innerClassNames
+                    }
+                    onChange={(val) =>
+                      handleSchedulingTypeChange(val?.value, onChange)
+                    }
                   />
                 )}
               />
@@ -1032,7 +1240,9 @@ export const EventTeamAssignmentTab = ({
           {schedulingType === "ROUND_ROBIN" && (
             <div className="border-subtle mt-4 flex flex-col rounded-md">
               <div className="border-subtle rounded-t-md border p-6 pb-5">
-                <Label className="mb-1 text-sm font-semibold">{t("rr_distribution_method")}</Label>
+                <Label className="mb-1 text-sm font-semibold">
+                  {t("rr_distribution_method")}
+                </Label>
                 <p className="text-subtle wrap-break-word max-w-full text-sm leading-tight">
                   {t("rr_distribution_method_description")}
                 </p>
@@ -1042,37 +1252,53 @@ export const EventTeamAssignmentTab = ({
                   name="maxLeadThreshold"
                   render={({ field: { value, onChange } }) => (
                     <RadioArea.Group
-                      onValueChange={(val) => handleMaxLeadThresholdChange(val, onChange)}
-                      className="mt-1 flex flex-col gap-4">
+                      onValueChange={(val) =>
+                        handleMaxLeadThresholdChange(val, onChange)
+                      }
+                      className="mt-1 flex flex-col gap-4"
+                    >
                       <RadioArea.Item
                         value="maximizeAvailability"
                         checked={value === null}
                         className="w-full text-sm"
-                        classNames={{ container: "w-full" }}>
+                        classNames={{ container: "w-full" }}
+                      >
                         <strong className="mb-1 block">
                           {t("rr_distribution_method_availability_title")}
                         </strong>
-                        <p>{t("rr_distribution_method_availability_description")}</p>
+                        <p>
+                          {t("rr_distribution_method_availability_description")}
+                        </p>
                       </RadioArea.Item>
                       {(eventType.team?.rrTimestampBasis &&
-                        eventType.team?.rrTimestampBasis !== RRTimestampBasis.CREATED_AT) ||
+                        eventType.team?.rrTimestampBasis !==
+                          RRTimestampBasis.CREATED_AT) ||
                       hostGroups?.length > 1 ? (
                         <Tooltip
                           content={
                             eventType.team?.rrTimestampBasis &&
-                            eventType.team?.rrTimestampBasis !== RRTimestampBasis.CREATED_AT
+                            eventType.team?.rrTimestampBasis !==
+                              RRTimestampBasis.CREATED_AT
                               ? t("rr_load_balancing_disabled")
                               : t("rr_load_balancing_disabled_with_groups")
-                          }>
+                          }
+                        >
                           <div className="w-full">
                             <RadioArea.Item
                               value="loadBalancing"
                               checked={value !== null}
                               className="text-sm"
                               disabled={true}
-                              classNames={{ container: "w-full" }}>
-                              <strong className="mb-1">{t("rr_distribution_method_balanced_title")}</strong>
-                              <p>{t("rr_distribution_method_balanced_description")}</p>
+                              classNames={{ container: "w-full" }}
+                            >
+                              <strong className="mb-1">
+                                {t("rr_distribution_method_balanced_title")}
+                              </strong>
+                              <p>
+                                {t(
+                                  "rr_distribution_method_balanced_description"
+                                )}
+                              </p>
                             </RadioArea.Item>
                           </div>
                         </Tooltip>
@@ -1082,9 +1308,14 @@ export const EventTeamAssignmentTab = ({
                             value="loadBalancing"
                             checked={value !== null}
                             className="text-sm"
-                            classNames={{ container: "w-full" }}>
-                            <strong className="mb-1">{t("rr_distribution_method_balanced_title")}</strong>
-                            <p>{t("rr_distribution_method_balanced_description")}</p>
+                            classNames={{ container: "w-full" }}
+                          >
+                            <strong className="mb-1">
+                              {t("rr_distribution_method_balanced_title")}
+                            </strong>
+                            <p>
+                              {t("rr_distribution_method_balanced_description")}
+                            </p>
                           </RadioArea.Item>
                         </div>
                       )}
