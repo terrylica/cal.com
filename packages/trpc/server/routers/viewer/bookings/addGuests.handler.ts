@@ -164,7 +164,6 @@ async function getOrganizerData(userId: number | null) {
       hideBranding: true,
       profiles: {
         select: {
-          organizationId: true,
           organization: { select: { hideBranding: true } },
         },
       },

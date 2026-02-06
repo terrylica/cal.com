@@ -37,7 +37,6 @@ async function getHideBrandingForEventType(eventTypeId: number): Promise<boolean
           hideBranding: true,
           profiles: {
             select: {
-              organizationId: true,
               organization: { select: { hideBranding: true } },
             },
           },

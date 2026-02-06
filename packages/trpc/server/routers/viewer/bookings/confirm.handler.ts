@@ -196,7 +196,6 @@ export const confirmHandler = async ({ ctx, input }: ConfirmOptions) => {
           hideBranding: true,
           profiles: {
             select: {
-              organizationId: true,
               organization: { select: { hideBranding: true } },
             },
           },
