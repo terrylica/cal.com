@@ -19,9 +19,9 @@ export type SegmentComponentProps = {
   filterMemberIds?: number[];
 };
 
-import AssignAllTeamMembers from "./AssignAllTeamMembers";
-import type { CheckedSelectOption, CheckedTeamSelectCustomClassNames } from "./CheckedTeamSelect";
-import CheckedTeamSelect from "./CheckedTeamSelect";
+import AssignAllTeamMembers from "@calcom/features/eventtypes/components/AssignAllTeamMembers";
+import type { CheckedSelectOption, CheckedTeamSelectCustomClassNames } from "@calcom/features/eventtypes/components/CheckedTeamSelect";
+import CheckedTeamSelect from "@calcom/features/eventtypes/components/CheckedTeamSelect";
 
 interface IUserToValue {
   id: number | null;

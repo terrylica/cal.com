@@ -150,9 +150,12 @@ export const EventSetupTab = (
                 </Label>
                 <Editor
                   getText={() => md.render(formMethods.getValues("description") || "")}
-                  setText={(value: string) =>
-                    formMethods.setValue("description", turndown(value), { shouldDirty: true })
-                  }
+                  setText={(value: string) => {
+                  // Clean up non-breaking spaces
+                  const cleanedValue = value.replace(/&nbsp;/g, ' ');
+                  const markdownValue = turndown(cleanedValue);
+                  formMethods.setValue("description", markdownValue, { shouldDirty: true });
+                  }}
                   excludedToolbarItems={["blockType"]}
                   placeholder={t("quick_video_meeting")}
                   editable={!descriptionLockedProps.disabled}
@@ -413,7 +416,7 @@ export const EventSetupTab = (
             </div>
           </div>
         </Tooltip>
-        {eventType.schedulingType === SchedulingType.ROUND_ROBIN && props.HostLocationsComponent && (
+        {eventType.schedulingType === SchedulingType.ROUND_ROBIN && !isPlatform && props.HostLocationsComponent && (
           <props.HostLocationsComponent eventTypeId={eventType.id} locationOptions={props.locationOptions} />
         )}
       </div>

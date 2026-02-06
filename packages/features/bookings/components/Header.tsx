@@ -187,7 +187,6 @@ const LayoutToggle = ({
 }) => {
   const isEmbed = useIsEmbed();
   const isPlatform = useIsPlatform();
-
   const { t } = useLocale();
 
   const layoutOptions = useMemo(() => {
