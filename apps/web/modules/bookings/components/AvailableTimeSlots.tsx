@@ -11,7 +11,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
 import { BookerLayouts } from "@calcom/prisma/zod-utils";
 import classNames from "@calcom/ui/classNames";
-import { Badge } from "@calcom/ui/components/badge/Badge";
+import { Badge } from "@calcom/ui/components/badge";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import {
   AvailableTimes,
