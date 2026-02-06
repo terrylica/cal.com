@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import path from "node:path";
 
+import { OAUTH_SCOPES } from "@calcom/features/oauth/constants";
 import type { PrismaClient } from "@calcom/prisma";
 import type { AccessScope, OAuthClientType } from "@calcom/prisma/enums";
 
@@ -110,16 +111,7 @@ async function createOAuthClient(page: Page, input: CreateOAuthClientInput): Pro
   }
 
   if (input.scopes) {
-    const allScopes: AccessScope[] = [
-      "EVENT_TYPE_READ",
-      "EVENT_TYPE_WRITE",
-      "BOOKING_READ",
-      "BOOKING_WRITE",
-      "SCHEDULE_READ",
-      "SCHEDULE_WRITE",
-      "PROFILE_READ",
-    ];
-    for (const scope of allScopes) {
+    for (const scope of OAUTH_SCOPES) {
       const scopeCheckbox = page.getByTestId(`oauth-scope-checkbox-${scope}`);
       const isChecked = await scopeCheckbox.isChecked();
       const shouldBeChecked = input.scopes.includes(scope);
@@ -171,16 +163,7 @@ async function updateOAuthClient(page: Page, input: UpdateOAuthClientInput): Pro
   }
 
   if (input.scopes) {
-    const allScopes: AccessScope[] = [
-      "EVENT_TYPE_READ",
-      "EVENT_TYPE_WRITE",
-      "BOOKING_READ",
-      "BOOKING_WRITE",
-      "SCHEDULE_READ",
-      "SCHEDULE_WRITE",
-      "PROFILE_READ",
-    ];
-    for (const scope of allScopes) {
+    for (const scope of OAUTH_SCOPES) {
       const scopeCheckbox = page.getByTestId(`oauth-scope-checkbox-${scope}`);
       const isChecked = await scopeCheckbox.isChecked();
       const shouldBeChecked = input.scopes.includes(scope);
@@ -293,16 +276,7 @@ async function expectOAuthClientDetails(details: Locator, expected: ExpectedOAut
   await expect(details.locator('img[alt="Logo"][src]')).toHaveCount(expected.hasLogo ? 1 : 0);
 
   if (expected.scopes) {
-    const allScopes: AccessScope[] = [
-      "EVENT_TYPE_READ",
-      "EVENT_TYPE_WRITE",
-      "BOOKING_READ",
-      "BOOKING_WRITE",
-      "SCHEDULE_READ",
-      "SCHEDULE_WRITE",
-      "PROFILE_READ",
-    ];
-    for (const scope of allScopes) {
+    for (const scope of OAUTH_SCOPES) {
       const scopeCheckbox = details.page().getByTestId(`oauth-scope-checkbox-${scope}`);
       const shouldBeChecked = expected.scopes.includes(scope);
       if (shouldBeChecked) {
@@ -787,16 +761,6 @@ test.describe("OAuth client creation", () => {
     const clientName = `${testPrefix}all-scopes-${Date.now()}`;
     const purpose = "Testing all scopes selection";
     const redirectUri = "https://example.com/all-scopes-callback";
-    const allScopes: AccessScope[] = [
-      "EVENT_TYPE_READ",
-      "EVENT_TYPE_WRITE",
-      "BOOKING_READ",
-      "BOOKING_WRITE",
-      "SCHEDULE_READ",
-      "SCHEDULE_WRITE",
-      "PROFILE_READ",
-    ];
-
     const { clientId } = await createOAuthClient(page, {
       name: clientName,
       purpose,
@@ -810,7 +774,7 @@ test.describe("OAuth client creation", () => {
       redirectUri,
       status: "PENDING",
       clientType: "PUBLIC",
-      scopes: allScopes,
+      scopes: [...OAUTH_SCOPES],
     });
 
     await deleteOAuthClient(page, clientId, clientName);
