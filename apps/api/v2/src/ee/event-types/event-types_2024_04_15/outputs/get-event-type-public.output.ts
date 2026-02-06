@@ -395,9 +395,8 @@ class PublicEventTypeOutput {
   successRedirectUrl?: string | null;
 
   @IsArray()
-  @IsOptional()
-  @ApiPropertyOptional()
-  workflows?: any[];
+  @ApiProperty()
+  workflows!: any[];
 
   @IsArray()
   @ApiPropertyOptional()

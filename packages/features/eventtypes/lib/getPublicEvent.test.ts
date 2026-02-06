@@ -192,7 +192,6 @@ function createMockEventData() {
 }
 
 const FIELDS_EXCLUDED_FROM_CLIENT = [
-  "workflows",
   "periodType",
   "periodDays",
   "periodEndDate",
@@ -247,9 +246,10 @@ const PROCESS_EVENT_DATA_SHARED_EXPECTED_KEYS = [
   "recurringEvent",
   "isDynamic",
   "showInstantEventConnectNowModal",
+  "workflows",
 ].sort();
 
-const GET_PUBLIC_EVENT_EXPECTED_KEYS = [
+const GET_PUBLIC_EVENT_EXPECTED_KEYS= [
   ...PROCESS_EVENT_DATA_SHARED_EXPECTED_KEYS.filter(
     (k) => k !== "showInstantEventConnectNowModal" && k !== "isDynamic"
   ),
