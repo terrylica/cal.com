@@ -13,14 +13,11 @@ vi.mock("@formkit/auto-animate/react", () => ({
   useAutoAnimate: () => [null],
 }));
 
-// Mock Segment component
-vi.mock("@calcom/features/Segment", () => ({
-  Segment: vi.fn().mockImplementation(({ onQueryValueChange }) => (
-    <div data-testid="mock-segment">
-      <button onClick={() => onQueryValueChange({ queryValue: { id: "test" } })}>Update Query</button>
-    </div>
-  )),
-}));
+const MockSegment = ({ onQueryValueChange }: { onQueryValueChange: ({ queryValue }: { queryValue: unknown }) => void }) => (
+  <div data-testid="mock-segment">
+    <button onClick={() => onQueryValueChange({ queryValue: { id: "test" } })}>Update Query</button>
+  </div>
+);
 
 const mockTeamMembers: TeamMember[] = [
   {
@@ -107,6 +104,7 @@ describe("AddMembersWithSwitch", () => {
     groupId: null,
     assignAllTeamMembers: false,
     automaticAddAllEnabled: false,
+    SegmentComponent: MockSegment,
   };
 
   it("should render in TOGGLES_OFF_AND_ALL_TEAM_MEMBERS_NOT_APPLICABLE state", () => {
