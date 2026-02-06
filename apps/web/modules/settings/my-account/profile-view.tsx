@@ -25,7 +25,7 @@ import { Form, Label, PasswordField, TextField } from "@calcom/ui/components/for
 import { Icon } from "@calcom/ui/components/icon";
 import { ImageUploader } from "@calcom/ui/components/image-uploader";
 import { showToast } from "@calcom/ui/components/toast";
-import { UpgradeBannerForAttributes } from "@calcom/web/modules/billing/upgrade-banners/large/toOrgPlan";
+import { LargeUpgradeBannerForAttributes } from "@calcom/web/modules/billing/upgrade-banners/large/attributes";
 import { DisplayInfo } from "@calcom/web/modules/users/components/UserTable/EditSheet/DisplayInfo";
 import TwoFactor from "@components/auth/TwoFactor";
 import CustomEmailTextField from "@components/settings/CustomEmailTextField";
@@ -317,7 +317,7 @@ const ProfileView = ({ user }: Props) => {
       )}
 
       <div className="mt-6">
-        <UpgradeBannerForAttributes />
+        <LargeUpgradeBannerForAttributes />
       </div>
 
       <div className="border-subtle mt-6 rounded-lg rounded-b-none border border-b-0 p-6">

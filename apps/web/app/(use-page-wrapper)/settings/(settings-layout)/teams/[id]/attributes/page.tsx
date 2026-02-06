@@ -1,4 +1,4 @@
-import { UpgradeBannerForAttributes } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/toOrgPlan";
+import { FullscreenUpgradeBannerForAttributes } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/attributes";
 import { _generateMetadata } from "app/_utils";
 
 export const generateMetadata = async ({ params }: { params: Promise<{ id: string }> }) =>
@@ -11,7 +11,7 @@ export const generateMetadata = async ({ params }: { params: Promise<{ id: strin
   );
 
 const Page = async () => {
-  return <UpgradeBannerForAttributes />;
+  return <FullscreenUpgradeBannerForAttributes />;
 };
 
 export default Page;

@@ -1,7 +1,7 @@
 import { getPaymentAppData } from "@calcom/app-store/_utils/payments/getPaymentAppData";
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
 import type { EventTypeSetupProps } from "@calcom/features/eventtypes/lib/types";
-import { UpgradeBannerForInstantBooking } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/toOrgPlan";
+import { FullscreenUpgradeBannerForInstantBooking } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/instant-booking";
 import InstantEventController from "./InstantEventController";
 
 export const EventInstantTab = ({
@@ -10,7 +10,7 @@ export const EventInstantTab = ({
   belongsToOrg,
 }: Pick<EventTypeSetupProps, "eventType"> & { isTeamEvent: boolean; belongsToOrg: boolean }) => {
   if (!belongsToOrg) {
-    return <UpgradeBannerForInstantBooking />;
+    return <FullscreenUpgradeBannerForInstantBooking />;
   }
 
   const paymentAppData = getPaymentAppData({

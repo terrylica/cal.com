@@ -1,7 +1,7 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { CTA_CONTAINER_CLASS_NAME } from "@calcom/features/data-table/lib/utils";
 import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
-import { UpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/toOrgPlan";
+import { FullscreenUpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/insights";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { getTranslate } from "app/_utils";
 import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppDir";
@@ -20,7 +20,7 @@ export default async function InsightsLayout({ children }: { children: React.Rea
     return (
       <Shell withoutMain={true}>
         <ShellMainAppDir>
-          <UpgradeBannerForInsightsPage />
+          <FullscreenUpgradeBannerForInsightsPage />
         </ShellMainAppDir>
       </Shell>
     );

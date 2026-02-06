@@ -12,7 +12,7 @@ import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { prisma } from "@calcom/prisma";
 import { viewerTeamsRouter } from "@calcom/trpc/server/routers/viewer/teams/_router";
 import { TeamMembersView } from "@calcom/web/modules/ee/teams/views/team-members-view";
-import { UpgradeBannerForMembers } from "@calcom/web/modules/billing/upgrade-banners/large/toOrgPlan";
+import { LargeUpgradeBannerForMembers } from "@calcom/web/modules/billing/upgrade-banners/large/members";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
@@ -102,7 +102,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
     <SettingsHeader title={t("team_members")} description={t("members_team_description")}>
       {!team.parentId && (
         <div className="mb-4">
-          <UpgradeBannerForMembers />
+          <LargeUpgradeBannerForMembers />
         </div>
       )}
       <TeamMembersView

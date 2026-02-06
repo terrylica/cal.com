@@ -6,29 +6,7 @@ import { LargeUpgradeBanner } from "@calcom/web/modules/billing/components/Large
 import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
 import { Button } from "@coss/ui/components/button";
 
-export function UpgradeBannerForMembers() {
-  const { t } = useLocale();
-
-  return (
-    <LargeUpgradeBanner
-      title={t("members")}
-      subtitle="Create a team and route people to other people on your team based on their responses."
-      target="organization"
-      learnMoreButton={{
-        text: t("learn_more"),
-        href: "https://go.cal.com/teams",
-      }}>
-      <UpgradePlanDialog target="organization">
-        <Button>
-          {t("try_for_free")}
-          <Icon name="arrow-right" />
-        </Button>
-      </UpgradePlanDialog>
-    </LargeUpgradeBanner>
-  );
-}
-
-export function UpgradeBannerForAttributes() {
+export function LargeUpgradeBannerForAttributes() {
   const { t } = useLocale();
 
   return (

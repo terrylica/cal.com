@@ -13,7 +13,7 @@ import { PermissionCheckService } from "@calcom/features/pbac/services/permissio
 import { RoleService } from "@calcom/features/pbac/services/role.service";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { prisma } from "@calcom/prisma";
-import { UpgradeBannerForRolesAndPermissions } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/toOrgPlan";
+import { FullscreenUpgradeBannerForRolesAndPermissions } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/roles";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
@@ -113,7 +113,7 @@ const Page = async ({
 
   // Standalone teams (not in an org): show upgrade banner
   if (!team.parent?.id) {
-    return <UpgradeBannerForRolesAndPermissions />;
+    return <FullscreenUpgradeBannerForRolesAndPermissions />;
   }
 
   // Check if parent team has PBAC feature enabled

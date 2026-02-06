@@ -6,7 +6,7 @@ import { FullScreenUpgradeBanner } from "@calcom/web/modules/billing/components/
 import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
 import { Button } from "@coss/ui/components/button";
 
-export function UpgradeBannerForTeamsPage() {
+export function FullscreenUpgradeBannerForInstantBooking() {
   const { t } = useLocale();
 
   const teamsFeatures = [
@@ -20,47 +20,11 @@ export function UpgradeBannerForTeamsPage() {
 
   return (
     <FullScreenUpgradeBanner
-      title={t("teams")}
+      title={t("instant_tab_title")}
       subtitle={t("upgrade_banner_teams_subtitle")}
       features={teamsFeatures}
       target="team"
-      learnMoreButton={{
-        text: t("learn_more"),
-        href: "https://go.cal.com/teams",
-      }}>
-      <UpgradePlanDialog
-        info={{
-          title: t("upgrade_info_team_insights_title"),
-          description: t("upgrade_info_team_insights_description"),
-        }}
-        target="organization">
-        <Button>
-          {t("try_for_free")}
-          <Icon name="arrow-right" />
-        </Button>
-      </UpgradePlanDialog>
-    </FullScreenUpgradeBanner>
-  );
-}
-
-export function UpgradeBannerForRoutingPage() {
-  const { t } = useLocale();
-
-  const features = [
-    t("upgrade_feature_round_robin"),
-    t("upgrade_feature_collective_events"),
-    t("routing_forms"),
-    t("upgrade_feature_workflows"),
-    t("upgrade_feature_insights"),
-    t("upgrade_feature_remove_branding"),
-  ];
-
-  return (
-    <FullScreenUpgradeBanner
-      title={t("routing")}
-      subtitle={t("upgrade_banner_teams_subtitle")}
-      features={features}
-      target="team"
+      extraOffset={20}
       learnMoreButton={{
         text: t("learn_more"),
         href: "https://go.cal.com/teams",

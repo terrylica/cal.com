@@ -9,7 +9,7 @@ import { Label } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
 import { useHasTeamPlan } from "@calcom/web/modules/billing/hooks/useHasPaidPlan";
-import { UpgradeBannerForTeamsPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/toTeamPlan";
+import { FullscreenUpgradeBannerForTeamsPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/teams";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import SkeletonLoaderTeamList from "~/ee/teams/components/SkeletonloaderTeamList";
@@ -98,7 +98,7 @@ export function TeamsListing({
 
       {teams.length === 0 && isPendingTeamPlan && <SkeletonLoaderTeamList />}
 
-      {teams.length === 0 && !isPendingTeamPlan && <UpgradeBannerForTeamsPage />}
+      {teams.length === 0 && !isPendingTeamPlan && <FullscreenUpgradeBannerForTeamsPage />}
 
       {/* Only show tip when not showing the upgrade banner */}
       {teams.length > 0 && (
