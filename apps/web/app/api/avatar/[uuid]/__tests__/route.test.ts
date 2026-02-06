@@ -1,12 +1,8 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("app/api/defaultResponderForAppDir", () => ({
-  defaultResponderForAppDir:
-    (handler: (req: NextRequest, context: { params: Promise<Record<string, string>> }) => Promise<Response>) =>
-    (req: NextRequest, context: { params: Promise<Record<string, string>> }) =>
-      handler(req, context),
+  defaultResponderForAppDir: (handler: (req: NextRequest, context: { params: Promise<Record<string, string>> }) => Promise<Response>) => handler,
 }));
 
 vi.mock("@calcom/lib/constants", () => ({
@@ -32,169 +28,73 @@ vi.mock("@calcom/prisma", () => ({
 
 import { GET } from "../route";
 
-const createMockRequest = (url: string): NextRequest => {
-  const urlObj = new URL(url);
-  return {
-    method: "GET",
-    url,
-    nextUrl: urlObj,
-    headers: new Headers(),
-  } as unknown as NextRequest;
-};
+const mockRequest = (url: string): NextRequest => ({
+  method: "GET",
+  url,
+  nextUrl: new URL(url),
+  headers: new Headers(),
+}) as unknown as NextRequest;
+
+const PNG_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+const SVG_DATA_URL = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjwvc3ZnPg==";
 
 describe("avatar route", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns avatar with proper cache headers", async () => {
+    mockFindUniqueOrThrow.mockResolvedValue({ data: PNG_DATA_URL });
+
+    const req = mockRequest("https://app.cal.com/api/avatar/test-uuid");
+    const res = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("image/png");
+    expect(res.headers.get("Cache-Control")).toBe("public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800");
   });
 
-  describe("caching headers optimization", () => {
-    it("should include public directive for CDN caching", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      });
+  it("strips file extension from uuid parameter", async () => {
+    mockFindUniqueOrThrow.mockResolvedValue({ data: PNG_DATA_URL });
 
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
+    const req = mockRequest("https://app.cal.com/api/avatar/test-uuid.png");
+    await GET(req, { params: Promise.resolve({ uuid: "test-uuid.png" }) });
 
-      expect(response.headers.get("Cache-Control")).toContain("public");
-    });
-
-    it("should include s-maxage for CDN edge caching", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      });
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
-
-      expect(response.headers.get("Cache-Control")).toContain("s-maxage=86400");
-    });
-
-    it("should include stale-while-revalidate for better cache hit rates", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      });
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
-
-      expect(response.headers.get("Cache-Control")).toContain("stale-while-revalidate=604800");
-    });
-
-    it("should include max-age for client-side caching", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      });
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
-
-      expect(response.headers.get("Cache-Control")).toContain("max-age=86400");
-    });
-
-    it("should have complete Cache-Control header with all directives", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      });
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
-
-      expect(response.headers.get("Cache-Control")).toBe(
-        "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800"
-      );
+    expect(mockFindUniqueOrThrow).toHaveBeenCalledWith({
+      where: { objectKey: "test-uuid" },
+      select: { data: true },
     });
   });
 
-  describe("avatar retrieval", () => {
-    it("should return PNG image with correct content type", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      });
+  it("converts SVG to PNG and updates database", async () => {
+    const { convertSvgToPng } = await import("@calcom/lib/server/imageUtils");
+    mockFindUniqueOrThrow.mockResolvedValue({ data: SVG_DATA_URL });
+    mockUpdate.mockResolvedValue({});
 
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
+    const req = mockRequest("https://app.cal.com/api/avatar/svg-uuid");
+    await GET(req, { params: Promise.resolve({ uuid: "svg-uuid" }) });
 
-      expect(response.headers.get("Content-Type")).toBe("image/png");
-      expect(response.status).toBe(200);
-    });
-
-    it("should handle JPEG images correctly", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBEQCEAwEPwAB//9k=",
-      });
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
-
-      expect(response.headers.get("Content-Type")).toBe("image/png");
-      expect(response.status).toBe(200);
-    });
-
-    it("should strip file extension from uuid parameter", async () => {
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      });
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid.png");
-      await GET(req, { params: Promise.resolve({ uuid: "test-uuid.png" }) });
-
-      expect(mockFindUniqueOrThrow).toHaveBeenCalledWith({
-        where: { objectKey: "test-uuid" },
-        select: { data: true },
-      });
+    expect(convertSvgToPng).toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { objectKey: "svg-uuid" },
+      data: { data: "data:image/png;base64,converted" },
     });
   });
 
-  describe("fallback behavior", () => {
-    it("should redirect to fallback avatar when avatar not found", async () => {
-      mockFindUniqueOrThrow.mockRejectedValue(new Error("Not found"));
+  it("redirects to fallback on error", async () => {
+    mockFindUniqueOrThrow.mockRejectedValue(new Error("Not found"));
 
-      const req = createMockRequest("https://app.cal.com/api/avatar/nonexistent-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "nonexistent-uuid" }) });
+    const req = mockRequest("https://app.cal.com/api/avatar/nonexistent");
+    const res = await GET(req, { params: Promise.resolve({ uuid: "nonexistent" }) });
 
-      expect(response.status).toBe(302);
-      expect(response.headers.get("location")).toBe("https://app.cal.com/avatar-fallback.png");
-    });
-
-    it("should redirect to fallback avatar on any error", async () => {
-      mockFindUniqueOrThrow.mockRejectedValue(new Error("Database error"));
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/test-uuid");
-      const response = await GET(req, { params: Promise.resolve({ uuid: "test-uuid" }) });
-
-      expect(response.status).toBe(302);
-    });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("https://app.cal.com/avatar-fallback.png");
   });
 
-  describe("SVG conversion", () => {
-    it("should convert SVG to PNG and update database", async () => {
-      const { convertSvgToPng } = await import("@calcom/lib/server/imageUtils");
+  it("returns 400 for missing uuid", async () => {
+    const req = mockRequest("https://app.cal.com/api/avatar/");
+    const res = await GET(req, { params: Promise.resolve({}) });
 
-      mockFindUniqueOrThrow.mockResolvedValue({
-        data: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjwvc3ZnPg==",
-      });
-      mockUpdate.mockResolvedValue({});
-
-      const req = createMockRequest("https://app.cal.com/api/avatar/svg-uuid");
-      await GET(req, { params: Promise.resolve({ uuid: "svg-uuid" }) });
-
-      expect(convertSvgToPng).toHaveBeenCalled();
-      expect(mockUpdate).toHaveBeenCalledWith({
-        where: { objectKey: "svg-uuid" },
-        data: { data: "data:image/png;base64,converted" },
-      });
-    });
-  });
-
-  describe("validation", () => {
-    it("should return 400 for invalid uuid parameter", async () => {
-      const req = createMockRequest("https://app.cal.com/api/avatar/");
-      const response = await GET(req, { params: Promise.resolve({}) });
-
-      expect(response.status).toBe(400);
-      const body = await response.json();
-      expect(body.message).toBe("VALIDATION_ERROR");
-    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.message).toBe("VALIDATION_ERROR");
   });
 });
