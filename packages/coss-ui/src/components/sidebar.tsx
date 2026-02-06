@@ -2,12 +2,6 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
-import { PanelLeftIcon } from "lucide-react";
-import * as React from "react";
-
-import { useIsMobile } from "@coss/ui/hooks/use-mobile";
-import { cn } from "@coss/ui/lib/utils";
 import { Button } from "@coss/ui/components/button";
 import { Input } from "@coss/ui/components/input";
 import { ScrollArea } from "@coss/ui/components/scroll-area";
@@ -25,6 +19,11 @@ import {
   TooltipPopup,
   TooltipTrigger,
 } from "@coss/ui/components/tooltip";
+import { useIsMobile } from "@coss/ui/hooks/use-mobile";
+import { cn } from "@coss/ui/lib/utils";
+import { cva, type VariantProps } from "class-variance-authority";
+import { PanelLeftIcon } from "lucide-react";
+import * as React from "react";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -381,7 +380,7 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
     >
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-2 group-data-[collapsible=icon]:overflow-hidden",
+          "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
           className,
         )}
         data-sidebar="content"
@@ -410,7 +409,7 @@ function SidebarGroupLabel({
 }: useRender.ComponentProps<"div">) {
   const defaultProps = {
     className: cn(
-      "flex h-8 shrink-0 items-center rounded-lg px-2 font-medium text-sidebar-foreground/70 text-xs outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+      "flex h-8 shrink-0 items-center rounded-lg px-2 font-medium text-sidebar-foreground text-xs outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
       "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
       className,
     ),
