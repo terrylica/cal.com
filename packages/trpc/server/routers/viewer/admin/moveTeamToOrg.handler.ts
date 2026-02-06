@@ -58,9 +58,7 @@ export const moveTeamToOrgHandler = async ({ ctx, input }: MoveTeamToOrgOptions)
     "Admin moving team to organization",
     safeStringify({
       adminUserId: ctx.user.id,
-      adminEmail: ctx.user.email,
       orgOwnerId: orgOwner.id,
-      orgOwnerEmail: orgOwner.email,
       teamId,
       targetOrgId,
     })
