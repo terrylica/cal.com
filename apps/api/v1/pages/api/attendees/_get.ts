@@ -71,7 +71,6 @@ export async function handler(req: NextApiRequest): Promise<{ attendees: Attende
       select: attendeeSelect,
       take,
       skip,
-      orderBy: { id: "desc" },
     });
     if (!attendees.length) throw new HttpError({ statusCode: 404, message: "No attendees were found" });
     return { attendees };
@@ -82,7 +81,6 @@ export async function handler(req: NextApiRequest): Promise<{ attendees: Attende
     select: attendeeSelect,
     take,
     skip,
-    orderBy: { id: "desc" },
   });
 
   if (!attendees.length) throw new HttpError({ statusCode: 404, message: "No attendees were found" });

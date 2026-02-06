@@ -63,7 +63,6 @@ async function getHandler(req: NextApiRequest) {
     },
     take,
     skip,
-    orderBy: { id: "desc" },
   };
   // Just in case the user want to get more info about the team itself
   if (req.query.include === "team") args.include = { team: true };

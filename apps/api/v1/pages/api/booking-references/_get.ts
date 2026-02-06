@@ -1,11 +1,9 @@
-import type { NextApiRequest } from "next";
-
 import { defaultResponder } from "@calcom/lib/server/defaultResponder";
 import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
-
-import { schemaBookingReferenceReadPublic } from "~/lib/validations/booking-reference";
+import type { NextApiRequest } from "next";
 import { withMiddleware } from "~/lib/helpers/withMiddleware";
+import { schemaBookingReferenceReadPublic } from "~/lib/validations/booking-reference";
 
 const MAX_TAKE = 100;
 
@@ -78,7 +76,6 @@ export async function handler(req: NextApiRequest) {
     .findMany({
       where: { userId },
       select: { id: true },
-      orderBy: { createdAt: "desc" },
       take,
       skip,
     })
@@ -87,7 +84,6 @@ export async function handler(req: NextApiRequest) {
   const data = await prisma.bookingReference.findMany({
     where: { bookingId: { in: bookingIds }, deleted: null },
     select: bookingReferenceSelect,
-    orderBy: { id: "desc" },
   });
 
   return { booking_references: data.map((br) => schemaBookingReferenceReadPublic.parse(br)) };
