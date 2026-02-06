@@ -138,6 +138,9 @@ const FixedHosts = ({
   serverHosts,
   serverHasFixedHosts,
   pendingChanges,
+  hasNextPageSelected,
+  isFetchingNextPageSelected,
+  fetchNextPageSelected,
 }: {
   teamId: number;
   value: Host[];
@@ -149,6 +152,9 @@ const FixedHosts = ({
   serverHosts: Host[];
   serverHasFixedHosts: boolean;
   pendingChanges: PendingHostChanges;
+  hasNextPageSelected?: boolean;
+  isFetchingNextPageSelected?: boolean;
+  fetchNextPageSelected?: () => void;
 }) => {
   const { t } = useLocale();
   const { setHosts } = useHosts();
@@ -211,6 +217,9 @@ const FixedHosts = ({
               isFixed={true}
               customClassNames={customClassNames?.addMembers}
               onActive={handleFixedHostsActivation}
+              hasNextPageSelected={hasNextPageSelected}
+              isFetchingNextPageSelected={isFetchingNextPageSelected}
+              fetchNextPageSelected={fetchNextPageSelected}
             />
           </div>
         </>
@@ -241,6 +250,9 @@ const FixedHosts = ({
               automaticAddAllEnabled={!isRoundRobinEvent}
               isFixed={true}
               onActive={handleFixedHostsActivation}
+              hasNextPageSelected={hasNextPageSelected}
+              isFetchingNextPageSelected={isFetchingNextPageSelected}
+              fetchNextPageSelected={fetchNextPageSelected}
             />
           </div>
         </SettingsToggle>
@@ -267,6 +279,9 @@ const RoundRobinHosts = ({
   teamId,
   isSegmentApplicable,
   serverHosts,
+  hasNextPageSelected,
+  isFetchingNextPageSelected,
+  fetchNextPageSelected,
 }: {
   orgId: number | null;
   value: Host[];
@@ -277,6 +292,9 @@ const RoundRobinHosts = ({
   teamId: number;
   isSegmentApplicable: boolean;
   serverHosts: Host[];
+  hasNextPageSelected?: boolean;
+  isFetchingNextPageSelected?: boolean;
+  fetchNextPageSelected?: () => void;
 }) => {
   const { t } = useLocale();
 
@@ -398,6 +416,9 @@ const RoundRobinHosts = ({
         containerClassName={containerClassName || (assignAllTeamMembers ? "-mt-4" : "")}
         onActive={() => handleMembersActivation(groupId)}
         customClassNames={customClassNames?.addMembers}
+        hasNextPageSelected={hasNextPageSelected}
+        isFetchingNextPageSelected={isFetchingNextPageSelected}
+        fetchNextPageSelected={fetchNextPageSelected}
       />
     );
   };
@@ -772,7 +793,7 @@ const Hosts = ({
 
   const eventTypeId = useWatch({ control, name: "id" });
 
-  const { hosts: paginatedHosts, serverHosts, serverHasFixedHosts } = usePaginatedAssignmentHosts({
+  const { hosts: paginatedHosts, serverHosts, serverHasFixedHosts, fetchNextPage, hasNextPage, isFetchingNextPage } = usePaginatedAssignmentHosts({
     eventTypeId,
     pendingChanges,
     search: "",
@@ -846,6 +867,9 @@ const Hosts = ({
         serverHosts={serverHosts}
         serverHasFixedHosts={serverHasFixedHosts}
         pendingChanges={pendingChanges}
+        hasNextPageSelected={hasNextPage}
+        isFetchingNextPageSelected={isFetchingNextPage}
+        fetchNextPageSelected={fetchNextPage}
       />
     ),
     ROUND_ROBIN: (
@@ -863,6 +887,9 @@ const Hosts = ({
           serverHosts={serverHosts}
           serverHasFixedHosts={serverHasFixedHosts}
           pendingChanges={pendingChanges}
+          hasNextPageSelected={hasNextPage}
+          isFetchingNextPageSelected={isFetchingNextPage}
+          fetchNextPageSelected={fetchNextPage}
         />
         <RoundRobinHosts
           orgId={orgId}
@@ -877,6 +904,9 @@ const Hosts = ({
           customClassNames={customClassNames?.roundRobinHosts}
           isSegmentApplicable={isSegmentApplicable}
           serverHosts={serverHosts}
+          hasNextPageSelected={hasNextPage}
+          isFetchingNextPageSelected={isFetchingNextPage}
+          fetchNextPageSelected={fetchNextPage}
         />
       </>
     ),

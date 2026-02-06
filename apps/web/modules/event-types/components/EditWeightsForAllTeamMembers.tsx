@@ -125,6 +125,35 @@ export const EditWeightsForAllTeamMembers = ({
   const [searchQuery, setSearchQuery] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // When segment filtering is active, query for matching member IDs
+  const { data: segmentData } = trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useQuery(
+    {
+      teamId: teamId || 0,
+      attributesQueryValue: queryValue as AttributesQueryValue,
+      _enablePerf: true,
+    },
+    {
+      enabled: assignRRMembersUsingSegment && !!queryValue && !!teamId && isOpen,
+    }
+  );
+
+  // Derive segment user IDs for server-side filtering
+  const segmentUserIds = useMemo(() => {
+    if (!assignRRMembersUsingSegment || !segmentData?.result) return undefined;
+    return segmentData.result.map((m) => m.id);
+  }, [assignRRMembersUsingSegment, segmentData]);
+
+  // Keep Set form for CSV upload validation
+  const segmentMemberIds = useMemo(() => {
+    if (!segmentUserIds) return null;
+    return new Set(segmentUserIds);
+  }, [segmentUserIds]);
+
+  // Wait for segment data before fetching paginated results (when segment is active)
+  const segmentReady = !assignRRMembersUsingSegment || segmentUserIds !== undefined;
+  const segmentHasNoMembers = assignRRMembersUsingSegment && segmentUserIds?.length === 0;
+  const activeMemberUserIds = assignRRMembersUsingSegment ? segmentUserIds : undefined;
+
   // When assignAllTeamMembers is on (possibly unsaved), query all team members
   const {
     members: allTeamMembers,
@@ -134,7 +163,8 @@ export const EditWeightsForAllTeamMembers = ({
   } = useSearchTeamMembers({
     teamId: teamId ?? 0,
     search: searchQuery,
-    enabled: isOpen && assignAllTeamMembers && !!teamId,
+    enabled: isOpen && assignAllTeamMembers && !!teamId && segmentReady && !segmentHasNoMembers,
+    memberUserIds: activeMemberUserIds,
   });
 
   // When assignAllTeamMembers is off, query only saved hosts
@@ -144,9 +174,14 @@ export const EditWeightsForAllTeamMembers = ({
     hasNextPage: hasNextHostsPage,
     isFetchingNextPage: isFetchingNextHostsPage,
   } = trpc.viewer.eventTypes.getHostsForAssignment.useInfiniteQuery(
-    { eventTypeId, limit: 20, search: searchQuery || undefined },
     {
-      enabled: isOpen && !assignAllTeamMembers && eventTypeId > 0,
+      eventTypeId,
+      limit: 20,
+      search: searchQuery || undefined,
+      memberUserIds: activeMemberUserIds?.length ? activeMemberUserIds : undefined,
+    },
+    {
+      enabled: isOpen && !assignAllTeamMembers && eventTypeId > 0 && segmentReady && !segmentHasNoMembers,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     }
   );
@@ -168,23 +203,6 @@ export const EditWeightsForAllTeamMembers = ({
     isFetchingNextPage,
     fetchNextPage
   );
-
-  // When segment filtering is active, query for matching member IDs
-  const { data: segmentData } = trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useQuery(
-    {
-      teamId: teamId || 0,
-      attributesQueryValue: queryValue as AttributesQueryValue,
-      _enablePerf: true,
-    },
-    {
-      enabled: assignRRMembersUsingSegment && !!queryValue && !!teamId && isOpen,
-    }
-  );
-
-  const segmentMemberIds = useMemo(() => {
-    if (!assignRRMembersUsingSegment || !segmentData?.result) return null;
-    return new Set(segmentData.result.map((m) => m.id));
-  }, [assignRRMembersUsingSegment, segmentData]);
 
   // Build a map of current RR host weights from form state for quick lookup
   const hostWeightsMap = useMemo(() => {
@@ -232,12 +250,11 @@ export const EditWeightsForAllTeamMembers = ({
   };
 
   // Normalize both data sources into WeightMember for display
+  // Segment filtering is now handled server-side via memberUserIds
   const displayMembers = useMemo((): WeightMember[] => {
     if (assignAllTeamMembers) {
-      // All team members mode: filter to RR hosts in form state + segment
       return allTeamMembers
         .filter((m) => hostWeightsMap.has(m.userId))
-        .filter((m) => !segmentMemberIds || segmentMemberIds.has(m.userId))
         .map((m) => ({
           value: String(m.userId),
           label: m.name || m.email || "",
@@ -247,10 +264,8 @@ export const EditWeightsForAllTeamMembers = ({
         }));
     }
 
-    // Saved hosts mode: filter to non-fixed + segment
     return savedHosts
       .filter((h) => !h.isFixed)
-      .filter((h) => !segmentMemberIds || segmentMemberIds.has(h.userId))
       .map((h) => ({
         value: String(h.userId),
         label: h.name || h.email || "",
@@ -259,7 +274,7 @@ export const EditWeightsForAllTeamMembers = ({
         weight: localWeights[String(h.userId)] ?? h.weight ?? 100,
       }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignAllTeamMembers, allTeamMembers, savedHosts, hostWeightsMap, localWeights, segmentMemberIds]);
+  }, [assignAllTeamMembers, allTeamMembers, savedHosts, hostWeightsMap, localWeights]);
 
   // Unified list for CSV upload lookup
   const loadedMembers = useMemo(() => {

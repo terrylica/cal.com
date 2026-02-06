@@ -1,10 +1,11 @@
 "use client";
 
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { Options, Props } from "react-select";
 
 import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
+import { useFetchMoreOnScroll } from "@calcom/features/eventtypes/lib/useFetchMoreOnScroll";
 import type { Host, SelectClassNames } from "@calcom/features/eventtypes/lib/types";
 import { getHostsFromOtherGroups } from "@calcom/lib/bookings/hostGroupUtils";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -56,6 +57,9 @@ export const CheckedTeamSelect = ({
   onSearchChange,
   onMenuScrollToBottom,
   isLoadingMore,
+  hasNextPageSelected,
+  isFetchingNextPageSelected,
+  fetchNextPageSelected,
   ...props
 }: Omit<Props<CheckedSelectOption, true>, "value" | "onChange"> & {
   options?: Options<CheckedSelectOption>;
@@ -68,6 +72,9 @@ export const CheckedTeamSelect = ({
   onSearchChange?: (search: string) => void;
   onMenuScrollToBottom?: () => void;
   isLoadingMore?: boolean;
+  hasNextPageSelected?: boolean;
+  isFetchingNextPageSelected?: boolean;
+  fetchNextPageSelected?: () => void;
 }) => {
   const isPlatform = useIsPlatform();
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
@@ -80,6 +87,15 @@ export const CheckedTeamSelect = ({
   const valueFromGroup = groupId ? value.filter((host) => host.groupId === groupId) : value;
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const stableFetchNextPage = useCallback(() => {
+    fetchNextPageSelected?.();
+  }, [fetchNextPageSelected]);
+  useFetchMoreOnScroll(
+    scrollContainerRef,
+    hasNextPageSelected ?? false,
+    isFetchingNextPageSelected ?? false,
+    stableFetchNextPage
+  );
   const rowVirtualizer = useVirtualizer({
     count: valueFromGroup.length,
     estimateSize: () => 44,
@@ -215,6 +231,11 @@ export const CheckedTeamSelect = ({
               );
             })}
           </ul>
+          {isFetchingNextPageSelected && (
+            <div className="flex justify-center py-2">
+              <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
+            </div>
+          )}
         </div>
       )}
       {currentOption && !currentOption.isFixed ? (

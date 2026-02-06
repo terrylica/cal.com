@@ -63,6 +63,9 @@ const CheckedHostField = ({
   onSearchChange,
   onMenuScrollToBottom,
   isLoadingMore,
+  hasNextPageSelected,
+  isFetchingNextPageSelected,
+  fetchNextPageSelected,
   ...rest
 }: {
   labelText?: string;
@@ -77,6 +80,9 @@ const CheckedHostField = ({
   onSearchChange?: (search: string) => void;
   onMenuScrollToBottom?: () => void;
   isLoadingMore?: boolean;
+  hasNextPageSelected?: boolean;
+  isFetchingNextPageSelected?: boolean;
+  fetchNextPageSelected?: () => void;
 } & Omit<Partial<ComponentProps<typeof CheckedTeamSelect>>, "onChange" | "value">) => {
   return (
     <div className="flex flex-col rounded-md">
@@ -101,16 +107,30 @@ const CheckedHostField = ({
             .filter(({ isFixed: _isFixed }) => isFixed === _isFixed)
             .reduce((acc, host) => {
               const option = options.find((member) => member.value === host.userId.toString());
-              if (!option) return acc;
 
-              acc.push({
-                ...option,
-                priority: host.priority ?? 2,
-                isFixed,
-                weight: host.weight ?? 100,
-                groupId: host.groupId,
-              });
+              // Use option data if available, otherwise create a fallback from host metadata
+              // (host data from usePaginatedAssignmentHosts includes name/email/avatarUrl at runtime)
+              const hostAny = host as Host & { name?: string | null; email?: string; avatarUrl?: string | null };
+              const displayOption: CheckedSelectOption = option
+                ? {
+                    ...option,
+                    priority: host.priority ?? 2,
+                    isFixed,
+                    weight: host.weight ?? 100,
+                    groupId: host.groupId,
+                  }
+                : {
+                    value: host.userId.toString(),
+                    label: hostAny.name || hostAny.email || `User ${host.userId}`,
+                    avatar: hostAny.avatarUrl || "",
+                    priority: host.priority ?? 2,
+                    isFixed,
+                    weight: host.weight ?? 100,
+                    groupId: host.groupId,
+                    defaultScheduleId: host.scheduleId,
+                  };
 
+              acc.push(displayOption);
               return acc;
             }, [] as CheckedSelectOption[])}
           controlShouldRenderValue={false}
@@ -123,6 +143,9 @@ const CheckedHostField = ({
           onSearchChange={onSearchChange}
           onMenuScrollToBottom={onMenuScrollToBottom}
           isLoadingMore={isLoadingMore}
+          hasNextPageSelected={hasNextPageSelected}
+          isFetchingNextPageSelected={isFetchingNextPageSelected}
+          fetchNextPageSelected={fetchNextPageSelected}
           {...rest}
         />
       </div>
@@ -137,7 +160,6 @@ function MembersSegmentWithToggle({
   rrSegmentQueryValue,
   setRrSegmentQueryValue,
   className,
-  filterMemberIds,
 }: {
   teamId: number;
   assignRRMembersUsingSegment: boolean;
@@ -145,7 +167,6 @@ function MembersSegmentWithToggle({
   rrSegmentQueryValue: AttributesQueryValue | null;
   setRrSegmentQueryValue: (value: AttributesQueryValue) => void;
   className?: string;
-  filterMemberIds?: number[];
 }) {
   const { t } = useLocale();
   const onQueryValueChange = ({ queryValue }: { queryValue: AttributesQueryValue }) => {
@@ -171,7 +192,6 @@ function MembersSegmentWithToggle({
               queryValue={rrSegmentQueryValue}
               onQueryValueChange={onQueryValueChange}
               className={className}
-              filterMemberIds={filterMemberIds}
             />
           )}
         </SettingsToggle>
@@ -200,6 +220,9 @@ export type AddMembersWithSwitchProps = {
   groupId: string | null;
   "data-testid"?: string;
   customClassNames?: AddMembersWithSwitchCustomClassNames;
+  hasNextPageSelected?: boolean;
+  isFetchingNextPageSelected?: boolean;
+  fetchNextPageSelected?: () => void;
 };
 
 enum AssignmentState {
@@ -265,6 +288,9 @@ export function AddMembersWithSwitch({
   isSegmentApplicable,
   groupId,
   customClassNames,
+  hasNextPageSelected,
+  isFetchingNextPageSelected,
+  fetchNextPageSelected,
   ...rest
 }: AddMembersWithSwitchProps) {
   const { t } = useLocale();
@@ -329,7 +355,6 @@ export function AddMembersWithSwitch({
                 setAssignRRMembersUsingSegment={setAssignRRMembersUsingSegment}
                 rrSegmentQueryValue={rrSegmentQueryValue}
                 setRrSegmentQueryValue={setRrSegmentQueryValue}
-                filterMemberIds={value.filter((host) => !host.isFixed).map((host) => host.userId)}
               />
             </div>
           )}
@@ -373,6 +398,9 @@ export function AddMembersWithSwitch({
                 if (hasNextPage && !isFetchingNextPage) fetchNextPage();
               }}
               isLoadingMore={isFetchingNextPage}
+              hasNextPageSelected={hasNextPageSelected}
+              isFetchingNextPageSelected={isFetchingNextPageSelected}
+              fetchNextPageSelected={fetchNextPageSelected}
             />
           </div>
         </>
