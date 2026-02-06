@@ -1,12 +1,13 @@
 "use client";
 
-import { getWebhookVersionDocsUrl, getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants";
+import { getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants";
 import type { Webhook } from "@calcom/features/webhooks/lib/dto/types";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { showToast } from "@calcom/ui/components/toast";
 import { revalidateEventTypeEditPage } from "@calcom/web/app/(use-page-wrapper)/event-types/[type]/actions";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
+import { Avatar, AvatarFallback, AvatarImage } from "@coss/ui/components/avatar";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import {
@@ -28,8 +29,7 @@ import {
 } from "@coss/ui/components/menu";
 import { Switch } from "@coss/ui/components/switch";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@coss/ui/components/tooltip";
-import { EllipsisIcon, ExternalLinkIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
-import Link from "next/link";
+import { EllipsisIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
 import { useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 
@@ -37,6 +37,7 @@ const MAX_BADGES_TWO_ROWS = 8;
 
 export default function WebhookListItem(props: {
   webhook: Webhook;
+  profile?: { name: string | null; image?: string; slug?: string | null };
   canEditWebhook?: boolean;
   onEditWebhook: () => void;
   lastItem: boolean;
@@ -82,23 +83,26 @@ export default function WebhookListItem(props: {
       className="not-last:border-b bg-clip-padding transition-[background-color] has-[[data-slot=list-item-title]:hover]:z-1 has-[[data-slot=list-item-title]:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-black)_2%)] dark:has-[[data-slot=list-item-title]:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-white)_2%)]">
       <ListItemContent>
         <div className="flex items-center gap-2">
+          {props.profile && (
+            <>
+              <Avatar className="size-5">
+                <AvatarImage alt={props.profile.name || ""} src={props.profile.image} />
+                <AvatarFallback className="text-[.625rem]">
+                  {(props.profile.name || "")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-sm truncate max-w-[12rem]" title={props.profile.name || ""}>
+                {props.profile.name || ""}
+              </span>
+            </>
+          )}
           {!props.permissions.canEditWebhook && <Badge variant="outline">{t("readonly")}</Badge>}
           <Badge variant="info">{getWebhookVersionLabel(webhook.version)}</Badge>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Link
-                  href={getWebhookVersionDocsUrl(webhook.version)}
-                  target="_blank"
-                  className="text-muted-foreground hover:text-foreground">
-                  <ExternalLinkIcon className="size-3.5" />
-                </Link>
-              }
-            />
-            <TooltipPopup>
-              {t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}
-            </TooltipPopup>
-          </Tooltip>
         </div>
         <ListItemHeader>
           <h2
