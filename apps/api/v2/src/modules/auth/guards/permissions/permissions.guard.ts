@@ -1,17 +1,35 @@
+import {
+  BOOKING_READ,
+  BOOKING_WRITE,
+  EVENT_TYPE_READ,
+  EVENT_TYPE_WRITE,
+  PROFILE_READ,
+  SCHEDULE_READ,
+  SCHEDULE_WRITE,
+  X_CAL_CLIENT_ID,
+} from "@calcom/platform-constants";
+import { hasPermissions } from "@calcom/platform-utils";
+import type { PlatformOAuthClient } from "@calcom/prisma/client";
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Reflector } from "@nestjs/core";
+import { getToken } from "next-auth/jwt";
 import { isApiKey } from "@/lib/api-key";
 import { Permissions } from "@/modules/auth/decorators/permissions/permissions.decorator";
 import { OAuthClientRepository } from "@/modules/oauth-clients/oauth-client.repository";
 import { OAuthClientsOutputService } from "@/modules/oauth-clients/services/oauth-clients/oauth-clients-output.service";
 import { TokensRepository } from "@/modules/tokens/tokens.repository";
 import { TokensService } from "@/modules/tokens/tokens.service";
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { Reflector } from "@nestjs/core";
-import { getToken } from "next-auth/jwt";
 
-import { X_CAL_CLIENT_ID } from "@calcom/platform-constants";
-import { hasPermissions } from "@calcom/platform-utils";
-import type { PlatformOAuthClient } from "@calcom/prisma/client";
+const SCOPE_TO_PERMISSION: Record<string, number> = {
+  EVENT_TYPE_READ: EVENT_TYPE_READ,
+  EVENT_TYPE_WRITE: EVENT_TYPE_WRITE,
+  BOOKING_READ: BOOKING_READ,
+  BOOKING_WRITE: BOOKING_WRITE,
+  SCHEDULE_READ: SCHEDULE_READ,
+  SCHEDULE_WRITE: SCHEDULE_WRITE,
+  PROFILE_READ: PROFILE_READ,
+};
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -37,11 +55,15 @@ export class PermissionsGuard implements CanActivate {
     const nextAuthToken = await getToken({ req: request, secret: nextAuthSecret });
     const oAuthClientId = request.params?.clientId || request.get(X_CAL_CLIENT_ID);
     const apiKey = bearerToken && isApiKey(bearerToken, this.config.get("api.apiKeyPrefix") ?? "cal_");
-    const isThirdPartyBearerToken = bearerToken && this.getDecodedThirdPartyAccessToken(bearerToken);
+    const decodedThirdPartyToken = bearerToken ? this.getDecodedThirdPartyAccessToken(bearerToken) : null;
 
-    // only check permissions for accessTokens attached to platform oAuth Client or platform oAuth credentials, not for next token or api key or third party oauth client
-    if (nextAuthToken || apiKey || isThirdPartyBearerToken) {
+    // NextAuth sessions and API keys have full access
+    if (nextAuthToken || apiKey) {
       return true;
+    }
+
+    if (decodedThirdPartyToken) {
+      return this.checkThirdPartyTokenPermissions(decodedThirdPartyToken, requiredPermissions);
     }
 
     if (!bearerToken && !oAuthClientId) {
@@ -89,6 +111,48 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException(`PermissionsGuard - no oAuth client found for client id=${id}`);
     }
     return oAuthClient;
+  }
+
+  checkThirdPartyTokenPermissions(
+    decodedToken: { scope?: string[] },
+    requiredPermissions: number[]
+  ): boolean {
+    const tokenScopes: string[] = decodedToken.scope ?? [];
+
+    if (tokenScopes.length === 0) {
+      return true;
+    }
+
+    const tokenPermissions = this.resolveTokenPermissions(tokenScopes);
+
+    // note(Lauris): legacy access tokens either did not have scopes defined or had legacy scopes defined,
+    // if so give full access just like we have been doing up until now.
+    if (tokenPermissions.size === 0) {
+      return true;
+    }
+
+    const missing = requiredPermissions.filter((permission) => !tokenPermissions.has(permission));
+    if (missing.length > 0) {
+      const missingNames = missing
+        .map((permission) => Object.entries(SCOPE_TO_PERMISSION).find(([, value]) => value === permission)?.[0] ?? `UNKNOWN(${permission})`)
+        .filter(Boolean);
+      throw new ForbiddenException(
+        `insufficient_scope: token does not have the required scopes. Required: ${missingNames.join(", ")}. Token has: ${tokenScopes.join(", ")}`
+      );
+    }
+
+    return true;
+  }
+
+  private resolveTokenPermissions(scopes: string[]): Set<number> {
+    const permissions = new Set<number>();
+    for (const scope of scopes) {
+      const permission = SCOPE_TO_PERMISSION[scope];
+      if (permission !== undefined) {
+        permissions.add(permission);
+      }
+    }
+    return permissions;
   }
 
   getDecodedThirdPartyAccessToken(bearerToken: string) {

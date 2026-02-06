@@ -1,15 +1,19 @@
-import { OAuthClientRepository } from "@/modules/oauth-clients/oauth-client.repository";
-import { OAuthClientsOutputService } from "@/modules/oauth-clients/services/oauth-clients/oauth-clients-output.service";
-import { TokensRepository } from "@/modules/tokens/tokens.repository";
-import { TokensService } from "@/modules/tokens/tokens.service";
+import {
+  APPS_WRITE,
+  BOOKING_READ,
+  BOOKING_WRITE,
+  SCHEDULE_READ,
+  SCHEDULE_WRITE,
+} from "@calcom/platform-constants";
 import { createMock } from "@golevelup/ts-jest";
 import { ExecutionContext } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
-
-import { APPS_WRITE, SCHEDULE_READ, SCHEDULE_WRITE } from "@calcom/platform-constants";
-
 import { PermissionsGuard } from "./permissions.guard";
+import { OAuthClientRepository } from "@/modules/oauth-clients/oauth-client.repository";
+import { OAuthClientsOutputService } from "@/modules/oauth-clients/services/oauth-clients/oauth-clients-output.service";
+import { TokensRepository } from "@/modules/tokens/tokens.repository";
+import { TokensService } from "@/modules/tokens/tokens.service";
 
 describe("PermissionsGuard", () => {
   let guard: PermissionsGuard;
@@ -76,6 +80,7 @@ describe("PermissionsGuard", () => {
     it("should return true for valid permissions", async () => {
       const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
       jest.spyOn(reflector, "get").mockReturnValue([SCHEDULE_WRITE]);
+      jest.spyOn(guard, "getDecodedThirdPartyAccessToken").mockReturnValue(null);
 
       let oAuthClientPermissions = 0;
       oAuthClientPermissions |= SCHEDULE_WRITE;
@@ -88,6 +93,7 @@ describe("PermissionsGuard", () => {
     it("should return true for multiple valid permissions", async () => {
       const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
       jest.spyOn(reflector, "get").mockReturnValue([SCHEDULE_WRITE, SCHEDULE_READ]);
+      jest.spyOn(guard, "getDecodedThirdPartyAccessToken").mockReturnValue(null);
 
       let oAuthClientPermissions = 0;
       oAuthClientPermissions |= SCHEDULE_WRITE;
@@ -143,14 +149,59 @@ describe("PermissionsGuard", () => {
       );
     });
 
-    it("should return true for 3rd party access token", async () => {
+    it("should return true for 3rd party access token with legacy/unknown scopes (backward compat)", async () => {
       const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(reflector, "get").mockReturnValue([SCHEDULE_WRITE]);
       jest.spyOn(guard, "getDecodedThirdPartyAccessToken").mockReturnValue({
-        scope: ["scope"],
+        scope: ["READ_BOOKING"],
         token_type: "Bearer",
       });
 
       await expect(guard.canActivate(mockContext)).resolves.toBe(true);
+    });
+
+    it("should return true for 3rd party access token with empty scopes (backward compat)", async () => {
+      const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(reflector, "get").mockReturnValue([SCHEDULE_WRITE]);
+      jest.spyOn(guard, "getDecodedThirdPartyAccessToken").mockReturnValue({
+        scope: [],
+        token_type: "Bearer",
+      });
+
+      await expect(guard.canActivate(mockContext)).resolves.toBe(true);
+    });
+
+    it("should return true for 3rd party access token with matching new scopes", async () => {
+      const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(reflector, "get").mockReturnValue([BOOKING_READ]);
+      jest.spyOn(guard, "getDecodedThirdPartyAccessToken").mockReturnValue({
+        scope: ["BOOKING_READ", "BOOKING_WRITE"],
+        token_type: "Bearer",
+      });
+
+      await expect(guard.canActivate(mockContext)).resolves.toBe(true);
+    });
+
+    it("should throw for 3rd party access token with insufficient new scopes", async () => {
+      const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(reflector, "get").mockReturnValue([BOOKING_WRITE]);
+      jest.spyOn(guard, "getDecodedThirdPartyAccessToken").mockReturnValue({
+        scope: ["BOOKING_READ"],
+        token_type: "Bearer",
+      });
+
+      await expect(guard.canActivate(mockContext)).rejects.toThrow("insufficient_scope");
+    });
+
+    it("should throw for 3rd party token when endpoint requires permission without scope mapping", async () => {
+      const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(reflector, "get").mockReturnValue([APPS_WRITE]);
+      jest.spyOn(guard, "getDecodedThirdPartyAccessToken").mockReturnValue({
+        scope: ["BOOKING_READ"],
+        token_type: "Bearer",
+      });
+
+      await expect(guard.canActivate(mockContext)).rejects.toThrow("insufficient_scope");
     });
   });
 
