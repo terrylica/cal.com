@@ -10,6 +10,7 @@ import {
 } from "@calcom/platform-constants";
 import { hasPermissions } from "@calcom/platform-utils";
 import type { PlatformOAuthClient } from "@calcom/prisma/client";
+import type { AccessScope } from "@calcom/prisma/enums";
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
@@ -21,7 +22,11 @@ import { OAuthClientsOutputService } from "@/modules/oauth-clients/services/oaut
 import { TokensRepository } from "@/modules/tokens/tokens.repository";
 import { TokensService } from "@/modules/tokens/tokens.service";
 
-const SCOPE_TO_PERMISSION: Record<string, number> = {
+// note(Lauris): exclude legacy scopes
+type NewAccessScope = Exclude<AccessScope, "READ_BOOKING" | "READ_PROFILE">;
+
+// scope name -> permission number (for checking if token has required permissions)
+const SCOPE_TO_PERMISSION: Record<NewAccessScope, number> = {
   EVENT_TYPE_READ: EVENT_TYPE_READ,
   EVENT_TYPE_WRITE: EVENT_TYPE_WRITE,
   BOOKING_READ: BOOKING_READ,
@@ -29,6 +34,16 @@ const SCOPE_TO_PERMISSION: Record<string, number> = {
   SCHEDULE_READ: SCHEDULE_READ,
   SCHEDULE_WRITE: SCHEDULE_WRITE,
   PROFILE_READ: PROFILE_READ,
+};
+
+const PERMISSION_TO_SCOPE: Record<number, NewAccessScope> = {
+  [EVENT_TYPE_READ]: "EVENT_TYPE_READ",
+  [EVENT_TYPE_WRITE]: "EVENT_TYPE_WRITE",
+  [BOOKING_READ]: "BOOKING_READ",
+  [BOOKING_WRITE]: "BOOKING_WRITE",
+  [SCHEDULE_READ]: "SCHEDULE_READ",
+  [SCHEDULE_WRITE]: "SCHEDULE_WRITE",
+  [PROFILE_READ]: "PROFILE_READ",
 };
 
 @Injectable()
@@ -57,7 +72,6 @@ export class PermissionsGuard implements CanActivate {
     const apiKey = bearerToken && isApiKey(bearerToken, this.config.get("api.apiKeyPrefix") ?? "cal_");
     const decodedThirdPartyToken = bearerToken ? this.getDecodedThirdPartyAccessToken(bearerToken) : null;
 
-    // NextAuth sessions and API keys have full access
     if (nextAuthToken || apiKey) {
       return true;
     }
@@ -131,13 +145,11 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const missing = requiredPermissions.filter((permission) => !tokenPermissions.has(permission));
-    if (missing.length > 0) {
-      const missingNames = missing
-        .map((permission) => Object.entries(SCOPE_TO_PERMISSION).find(([, value]) => value === permission)?.[0] ?? `UNKNOWN(${permission})`)
-        .filter(Boolean);
+    const missingPermissions = requiredPermissions.filter((permission) => !tokenPermissions.has(permission));
+    if (missingPermissions.length > 0) {
+      const missingScopeNames = missingPermissions.map((permission) => PERMISSION_TO_SCOPE[permission]).filter(Boolean);
       throw new ForbiddenException(
-        `insufficient_scope: token does not have the required scopes. Required: ${missingNames.join(", ")}. Token has: ${tokenScopes.join(", ")}`
+        `insufficient_scope: token does not have the required scopes. Required: ${missingScopeNames.join(", ")}. Token has: ${tokenScopes.join(", ")}`
       );
     }
 
@@ -147,9 +159,8 @@ export class PermissionsGuard implements CanActivate {
   private resolveTokenPermissions(scopes: string[]): Set<number> {
     const permissions = new Set<number>();
     for (const scope of scopes) {
-      const permission = SCOPE_TO_PERMISSION[scope];
-      if (permission !== undefined) {
-        permissions.add(permission);
+      if (scope in SCOPE_TO_PERMISSION) {
+        permissions.add(SCOPE_TO_PERMISSION[scope as NewAccessScope]);
       }
     }
     return permissions;
