@@ -43,6 +43,7 @@ describe("GET /api/attendees", () => {
 
       expect(result.attendees).toHaveLength(2);
       expect(prismaMock.attendee.findMany).toHaveBeenCalledWith({
+        where: {},
         select: {
           id: true,
           bookingId: true,
@@ -52,7 +53,7 @@ describe("GET /api/attendees", () => {
         },
         take: 10,
         skip: 0,
-        orderBy: { id: "desc" },
+        orderBy: { id: "asc" },
       });
     });
 
@@ -103,7 +104,7 @@ describe("GET /api/attendees", () => {
         },
         take: 10,
         skip: 0,
-        orderBy: { id: "desc" },
+        orderBy: { id: "asc" },
       });
     });
 
@@ -221,7 +222,7 @@ describe("GET /api/attendees", () => {
       });
     });
 
-    test("should order attendees by id descending", async () => {
+    test("should order attendees by id ascending", async () => {
       const mockAttendees = [
         { id: 3, bookingId: 1, name: "C", email: "c@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
         { id: 2, bookingId: 1, name: "B", email: "b@example.com", timeZone: "UTC", locale: null, phoneNumber: null, noShow: null },
@@ -240,7 +241,7 @@ describe("GET /api/attendees", () => {
 
       expect(prismaMock.attendee.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: { id: "desc" },
+          orderBy: { id: "asc" },
         })
       );
     });

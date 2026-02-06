@@ -66,21 +66,14 @@ export async function handler(req: NextApiRequest): Promise<{ attendees: Attende
   const take = Math.min(pagination.take, MAX_TAKE);
   const skip = pagination.skip;
 
-  if (isSystemWideAdmin) {
-    const attendees = await prisma.attendee.findMany({
-      select: attendeeSelect,
-      take,
-      skip,
-    });
-    if (!attendees.length) throw new HttpError({ statusCode: 404, message: "No attendees were found" });
-    return { attendees };
-  }
+  const where = isSystemWideAdmin ? {} : { booking: { userId } };
 
   const attendees = await prisma.attendee.findMany({
-    where: { booking: { userId } },
+    where,
     select: attendeeSelect,
     take,
     skip,
+    orderBy: { id: "asc" },
   });
 
   if (!attendees.length) throw new HttpError({ statusCode: 404, message: "No attendees were found" });
