@@ -1,7 +1,6 @@
 "use client";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { getStringAsNumberRequiredSchema } from "@calcom/prisma/zod-utils";
 import { trpc } from "@calcom/trpc/react";
 import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
@@ -14,9 +13,9 @@ import { z } from "zod";
 
 export const getFormSchema = (t: TFunction) => {
   return z.object({
-    teamId: z.number().or(getStringAsNumberRequiredSchema(t)),
-    targetOrgId: z.number().or(getStringAsNumberRequiredSchema(t)),
-    teamSlugInOrganization: z.string(),
+    teamId: z.number(),
+    targetOrgId: z.number(),
+    teamSlugInOrganization: z.string().min(1),
   });
 };
 
@@ -50,7 +49,8 @@ export default function MoveTeamToOrgView() {
         }}>
         <div className="space-y-3">
           <TextField
-            {...register("teamId")}
+            {...register("teamId", { valueAsNumber: true })}
+            type="number"
             label={t("team_id")}
             required
             placeholder={t("move_team_to_org_team_id_placeholder")}
@@ -62,7 +62,8 @@ export default function MoveTeamToOrgView() {
             placeholder={t("move_team_to_org_new_slug_placeholder")}
           />
           <TextField
-            {...register("targetOrgId")}
+            {...register("targetOrgId", { valueAsNumber: true })}
+            type="number"
             label={t("move_team_to_org_target_org_id")}
             required
             placeholder={t("move_team_to_org_target_org_id_placeholder")}

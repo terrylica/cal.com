@@ -1,11 +1,11 @@
 import { getOrganizationRepository } from "@calcom/features/ee/organizations/di/OrganizationRepository.container";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
-import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import slugify from "@calcom/lib/slugify";
 import { CreationSource } from "@calcom/prisma/enums";
 import { createTeamsHandler } from "@calcom/trpc/server/routers/viewer/organizations/createTeams.handler";
+import { TRPCError } from "@trpc/server";
 import type { TrpcSessionUser } from "../../../types";
 import type { TMoveTeamToOrg } from "./moveTeamToOrg.schema";
 
@@ -32,23 +32,35 @@ export const moveTeamToOrgHandler = async ({ ctx, input }: MoveTeamToOrgOptions)
   );
 
   const organizationRepository = getOrganizationRepository();
-  const org = await organizationRepository.adminFindById({ id: targetOrgId });
+  let org;
+  try {
+    org = await organizationRepository.adminFindById({ id: targetOrgId });
+  } catch (error) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "organization_not_found" });
+  }
 
   if (!org.members || org.members.length === 0) {
-    throw new HttpError({ statusCode: 400, message: "organization_owner_not_found" });
+    throw new TRPCError({ code: "BAD_REQUEST", message: "organization_owner_not_found" });
   }
 
   const teamRepository = new TeamRepository(ctx.prisma);
   const team = await teamRepository.findById({ id: teamId });
 
   if (!team) {
-    throw new HttpError({ statusCode: 404, message: "team_not_found" });
+    throw new TRPCError({ code: "NOT_FOUND", message: "team_not_found" });
   }
 
   if (team.parentId) {
-    throw new HttpError({
-      statusCode: 400,
+    throw new TRPCError({
+      code: "BAD_REQUEST",
       message: "cannot_move_subteam_already_in_org",
+    });
+  }
+
+  if (team.isOrganization) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "cannot_move_organization_to_organization",
     });
   }
 

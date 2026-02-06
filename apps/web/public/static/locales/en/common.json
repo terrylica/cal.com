@@ -4576,6 +4576,7 @@
   "team_moved_to_org_success": "Team successfully moved to organization",
   "organization_owner_not_found": "Organization owner not found",
   "team_not_found": "Team not found",
+  "organization_not_found": "Organization not found",
   "move_team_to_org_team_id_placeholder": "Enter team ID to move to organization",
   "move_team_to_org_new_slug": "New Slug",
   "move_team_to_org_new_slug_placeholder": "Team slug in the organization",
@@ -4584,5 +4585,6 @@
   "move_team_to_org_migration_successful": "Migration Successful",
   "move_team_to_org_old_slug": "Old Slug",
   "move_team_to_org_organization_slug": "Organization Slug",
+  "cannot_move_organization_to_organization": "Cannot move an organization to an organization",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }
