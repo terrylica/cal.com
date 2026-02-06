@@ -158,9 +158,10 @@ export class HostRepository {
         eventTypeId,
         ...(cursor && { userId: { gt: cursor } }),
         ...(search && {
-          user: {
-            name: { contains: search, mode: "insensitive" as const },
-          },
+          OR: [
+            { user: { name: { contains: search, mode: "insensitive" as const } } },
+            { user: { email: { contains: search, mode: "insensitive" as const } } },
+          ],
         }),
       },
       take: limit + 1,
@@ -215,9 +216,10 @@ export class HostRepository {
         eventTypeId,
         ...(userIdFilter && { userId: userIdFilter }),
         ...(search && {
-          user: {
-            name: { contains: search, mode: "insensitive" as const },
-          },
+          OR: [
+            { user: { name: { contains: search, mode: "insensitive" as const } } },
+            { user: { email: { contains: search, mode: "insensitive" as const } } },
+          ],
         }),
       },
       take: limit + 1,
@@ -291,9 +293,10 @@ export class HostRepository {
         parentId: eventTypeId,
         ...(cursor && { id: { gt: cursor } }),
         ...(search && {
-          owner: {
-            name: { contains: search, mode: "insensitive" as const },
-          },
+          OR: [
+            { owner: { name: { contains: search, mode: "insensitive" as const } } },
+            { owner: { email: { contains: search, mode: "insensitive" as const } } },
+          ],
         }),
       },
       take: limit + 1,

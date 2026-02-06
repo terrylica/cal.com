@@ -223,6 +223,8 @@ export type AddMembersWithSwitchProps = {
   hasNextPageSelected?: boolean;
   isFetchingNextPageSelected?: boolean;
   fetchNextPageSelected?: () => void;
+  assignedSearchValue?: string;
+  onAssignedSearchChange?: (value: string) => void;
 };
 
 enum AssignmentState {
@@ -401,6 +403,8 @@ export function AddMembersWithSwitch({
               hasNextPageSelected={hasNextPageSelected}
               isFetchingNextPageSelected={isFetchingNextPageSelected}
               fetchNextPageSelected={fetchNextPageSelected}
+              assignedSearchValue={rest.assignedSearchValue}
+              onAssignedSearchChange={rest.onAssignedSearchChange}
             />
           </div>
         </>

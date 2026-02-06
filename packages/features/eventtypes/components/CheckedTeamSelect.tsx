@@ -12,7 +12,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import classNames from "@calcom/ui/classNames";
 import { Avatar } from "@calcom/ui/components/avatar";
 import { Button } from "@calcom/ui/components/button";
-import { Select } from "@calcom/ui/components/form";
+import { Select, TextField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 
@@ -60,6 +60,8 @@ export const CheckedTeamSelect = ({
   hasNextPageSelected,
   isFetchingNextPageSelected,
   fetchNextPageSelected,
+  assignedSearchValue,
+  onAssignedSearchChange,
   ...props
 }: Omit<Props<CheckedSelectOption, true>, "value" | "onChange"> & {
   options?: Options<CheckedSelectOption>;
@@ -75,6 +77,8 @@ export const CheckedTeamSelect = ({
   hasNextPageSelected?: boolean;
   isFetchingNextPageSelected?: boolean;
   fetchNextPageSelected?: () => void;
+  assignedSearchValue?: string;
+  onAssignedSearchChange?: (value: string) => void;
 }) => {
   const isPlatform = useIsPlatform();
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
@@ -137,6 +141,17 @@ export const CheckedTeamSelect = ({
         onMenuScrollToBottom={onMenuScrollToBottom}
         isLoading={isLoadingMore}
       />
+      {onAssignedSearchChange && (
+        <div className="mt-3">
+          <TextField
+            type="search"
+            placeholder={t("search")}
+            value={assignedSearchValue ?? ""}
+            onChange={(e) => onAssignedSearchChange(e.target.value)}
+            addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
+          />
+        </div>
+      )}
       {valueFromGroup.length >= 1 && (
         <div
           ref={scrollContainerRef}
