@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Dialog } from "@calcom/features/components/controlled-dialog";
@@ -69,22 +69,24 @@ const OAuthClientDetailsDialog = ({
   const { t } = useLocale();
   const { copyToClipboard } = useCopy();
 
-  const initializedClientIdRef = useRef<string | null>(null);
-
-  const [logo, setLogo] = useState("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectionReasonError, setShowRejectionReasonError] = useState(false);
+
+  const enablePkce =
+    client?.isPkceEnabled ?? (client?.clientType ? client.clientType.toUpperCase() === "PUBLIC" : false);
+  const clientScopes = client?.scopes && client.scopes.length > 0 ? client.scopes : [...OAUTH_SCOPES];
+
   const form = useForm<OAuthClientCreateFormValues>({
     defaultValues: {
-      name: "",
-      purpose: "",
-      redirectUri: "",
-      websiteUrl: "",
-      logo: "",
-      enablePkce: false,
-      scopes: [...OAUTH_SCOPES],
+      name: client?.name ?? "",
+      purpose: client?.purpose ?? "",
+      redirectUri: client?.redirectUri ?? "",
+      websiteUrl: client?.websiteUrl ?? "",
+      logo: client?.logo ?? "",
+      enablePkce,
+      scopes: clientScopes,
     },
   });
 
@@ -94,38 +96,7 @@ const OAuthClientDetailsDialog = ({
     setIsRejectConfirmOpen(false);
     setRejectionReason("");
     setShowRejectionReasonError(false);
-    initializedClientIdRef.current = null;
   }, [open]);
-
-  useEffect(() => {
-    if (!client) {
-      initializedClientIdRef.current = null;
-      return;
-    }
-
-    if (initializedClientIdRef.current === client.clientId) {
-      return;
-    }
-
-    initializedClientIdRef.current = client.clientId;
-
-    const enablePkce =
-      client.isPkceEnabled ?? (client.clientType ? client.clientType.toUpperCase() === "PUBLIC" : false);
-    const nextLogo = client.logo ?? "";
-
-    const clientScopes = client.scopes && client.scopes.length > 0 ? client.scopes : [...OAUTH_SCOPES];
-
-    setLogo(nextLogo);
-    form.reset({
-      name: client.name ?? "",
-      purpose: client.purpose ?? "",
-      redirectUri: client.redirectUri ?? "",
-      websiteUrl: client.websiteUrl ?? "",
-      logo: nextLogo,
-      enablePkce,
-      scopes: clientScopes,
-    });
-  }, [client, form]);
 
   const status = client?.status;
 
@@ -283,13 +254,7 @@ const OAuthClientDetailsDialog = ({
               </div>
             </div>
 
-            <OAuthClientFormFields
-              form={form}
-              logo={logo}
-              setLogo={setLogo}
-              isClientReadOnly={isFormDisabled}
-              isPkceLocked
-            />
+            <OAuthClientFormFields form={form} isClientReadOnly={isFormDisabled} isPkceLocked />
 
             {canDelete ? (
               <div className="pt-2">

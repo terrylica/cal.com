@@ -8,7 +8,6 @@ import { CheckboxField, Label, Switch, TextArea, TextField } from "@calcom/ui/co
 import { Icon } from "@calcom/ui/components/icon";
 import { ImageUploader } from "@calcom/ui/components/image-uploader";
 import { Tooltip } from "@calcom/ui/components/tooltip";
-import type { Dispatch, SetStateAction } from "react";
 import { useMemo } from "react";
 import type { RegisterOptions, UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
@@ -17,14 +16,10 @@ import type { OAuthClientCreateFormValues } from "../create/OAuthClientCreateMod
 
 export const OAuthClientFormFields = ({
   form,
-  logo,
-  setLogo,
   isClientReadOnly,
   isPkceLocked,
 }: {
   form: UseFormReturn<OAuthClientCreateFormValues>;
-  logo: string;
-  setLogo: Dispatch<SetStateAction<string>>;
   isClientReadOnly?: boolean;
   isPkceLocked?: boolean;
 }) => {
@@ -141,7 +136,7 @@ export const OAuthClientFormFields = ({
             <Avatar
               alt={t("logo")}
               fallback={<Icon name="key" className="text-subtle h-6 w-6" />}
-              imageSrc={logo}
+              imageSrc={form.watch("logo")}
               size="lg"
             />
             {allowUploadingLogo ? (
@@ -151,10 +146,9 @@ export const OAuthClientFormFields = ({
                 buttonMsg={t("upload_logo")}
                 testId="oauth-client-logo"
                 handleAvatarChange={(newLogo: string) => {
-                  setLogo(newLogo);
                   form.setValue("logo", newLogo);
                 }}
-                imageSrc={logo}
+                imageSrc={form.watch("logo")}
                 disabled={isFormDisabled}
               />
             ) : null}

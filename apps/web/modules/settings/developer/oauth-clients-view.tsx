@@ -160,6 +160,7 @@ const OAuthClientsView = () => {
       )}
 
       <OAuthClientDetailsDialog
+        key={selectedClient?.clientId}
         open={Boolean(selectedClient)}
         onOpenChange={(open) => !open && handleCloseDetailsDialog()}
         client={selectedClient}

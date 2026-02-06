@@ -8,7 +8,6 @@ import { Button } from "@calcom/ui/components/button";
 import { DialogClose, DialogContent, DialogFooter } from "@calcom/ui/components/dialog";
 import { Form } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { OAuthClientFormFields } from "../view/OAuthClientFormFields";
 
@@ -38,7 +37,6 @@ export function OAuthClientCreateDialog({
   onClose,
 }: OAuthClientCreateDialogProps) {
   const { t } = useLocale();
-  const [logo, setLogo] = useState("");
 
   const form = useForm<OAuthClientCreateFormValues>({
     defaultValues: {
@@ -54,7 +52,6 @@ export function OAuthClientCreateDialog({
 
   const handleClose = () => {
     onClose();
-    setLogo("");
     form.reset();
   };
 
@@ -92,7 +89,7 @@ export function OAuthClientCreateDialog({
           }}
           className="space-y-4"
           data-testid="oauth-client-create-form">
-          <OAuthClientFormFields form={form} logo={logo} setLogo={setLogo} />
+          <OAuthClientFormFields form={form} />
 
           <DialogFooter>
             <DialogClose>{t("close")}</DialogClose>
