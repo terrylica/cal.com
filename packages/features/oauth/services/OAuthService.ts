@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import process from "node:process";
 import type { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
-import { SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR } from "@calcom/features/oauth/constants";
+import { parseScopeParam, SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR } from "@calcom/features/oauth/constants";
 import type { AccessCodeRepository } from "@calcom/features/oauth/repositories/AccessCodeRepository";
 import type { OAuthClientRepository } from "@calcom/features/oauth/repositories/OAuthClientRepository";
 import type { OAuthRefreshTokenRepository } from "@calcom/features/oauth/repositories/OAuthRefreshTokenRepository";
@@ -110,11 +110,9 @@ export class OAuthService {
       this.ensureClientIsApproved(client);
     }
 
-    if (scopeParam) {
-      const requestedScopes = scopeParam.split(/[, ]+/).filter(Boolean) as AccessScope[];
-      if (requestedScopes.length > 0) {
-        this.validateRequestedScopes(client.scopes, requestedScopes);
-      }
+    const requestedScopes = parseScopeParam(scopeParam);
+    if (requestedScopes.length > 0) {
+      this.validateRequestedScopes(client.scopes, requestedScopes);
     }
 
     return {
@@ -231,9 +229,11 @@ export class OAuthService {
     }
   }
 
-  private validateRequestedScopes(clientScopes: AccessScope[], requestedScopes: AccessScope[]) {
+  private validateRequestedScopes(clientScopes: AccessScope[], requestedScopes: string[]) {
     if (clientScopes.length === 0) return;
-    const invalidScopes = requestedScopes.filter((requestedScope) => !clientScopes.includes(requestedScope));
+    const invalidScopes = requestedScopes.filter(
+      (requestedScope) => !clientScopes.includes(requestedScope as AccessScope)
+    );
     if (invalidScopes.length > 0) {
       throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_scope", {
         reason: "scope_exceeds_client_registration",

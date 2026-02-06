@@ -21,6 +21,13 @@ export const OAUTH_SCOPES: AccessScope[] = [
 
 export const SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR = "Requested scope exceeds the client's registered scopes";
 
+export function parseScopeParam(scopeParam: string | null | undefined): string[] {
+  if (!scopeParam) {
+    return [];
+  }
+  return scopeParam.split(/[, ]+/).filter(Boolean);
+}
+
 export type NewAccessScope = Exclude<AccessScope, "READ_BOOKING" | "READ_PROFILE">;
 
 export const SCOPE_TO_PERMISSION: Record<NewAccessScope, number> = {

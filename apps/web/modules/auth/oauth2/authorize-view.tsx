@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { getScopeDisplayItems, resolveScopes } from "./scopes";
+import { getScopeDisplayItems, resolveScopesForTokens } from "./scopes";
 
 export function Authorize() {
   const { t } = useLocale();
@@ -91,7 +91,7 @@ export function Authorize() {
     }
   }, [isPendingProfiles, show_account_selector]);
 
-  const effectiveScopes = resolveScopes(scope, client?.scopes ?? []);
+  const effectiveScopes = resolveScopesForTokens(scope, client?.scopes ?? []);
 
   // Auto-authorize trusted clients
   useEffect(() => {
