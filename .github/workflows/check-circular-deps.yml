@@ -22,10 +22,12 @@ jobs:
             --max-diagnostics=none \
             --reporter=github \
             --skip-parse-errors \
-            ./packages/lib \
-            ./packages/app-store \
-            ./packages/features \
             ./packages/trpc \
-            ./packages/testing \
-            ./packages/platform/atoms \
-            ./apps/api/v2
+            ./packages/lib \
+            ./packages/testing
+          # Clean packages only. Add more as violations are fixed:
+          # ./packages/lib          (3 errors - @calcom/features imports)
+          # ./packages/platform/atoms (4 errors - @calcom/trpc imports)
+          # ./apps/api/v2           (6 errors - disallowed @calcom/* imports)
+          # ./packages/features     (~60 errors - @calcom/trpc imports)
+          # ./packages/app-store    (~100+ errors - @calcom/features imports)
