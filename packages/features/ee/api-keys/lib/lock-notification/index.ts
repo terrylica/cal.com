@@ -1,5 +1,5 @@
+import { getUserLockRepository } from "@calcom/features/ee/api-keys/di/PrismaUserLockRepository.container";
 import logger from "@calcom/lib/logger";
-import prisma from "@calcom/prisma";
 import type { UserLockReason } from "@calcom/prisma/enums";
 import { LockNotificationSyncTasker } from "./tasker/LockNotificationSyncTasker";
 import { LockNotificationTasker } from "./tasker/LockNotificationTasker";
@@ -35,20 +35,11 @@ export async function createUserLockAndNotify({
   userId: number;
   reason: UserLockReason;
 }): Promise<void> {
-  await prisma.userLock.create({
-    data: {
-      userId,
-      reason,
-    },
-  });
+  const userLockRepository = getUserLockRepository();
 
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: {
-      email: true,
-      name: true,
-    },
-  });
+  await userLockRepository.create({ userId, reason });
+
+  const user = await userLockRepository.findUserEmailAndName({ userId });
 
   const tasker = getLockNotificationTasker();
   try {

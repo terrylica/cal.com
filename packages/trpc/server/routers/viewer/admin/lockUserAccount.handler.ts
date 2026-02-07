@@ -1,6 +1,6 @@
+import { getUserLockRepository } from "@calcom/features/ee/api-keys/di/PrismaUserLockRepository.container";
 import { createUserLockAndNotify } from "@calcom/features/ee/api-keys/lib/lock-notification";
 import logger from "@calcom/lib/logger";
-import { prisma } from "@calcom/prisma";
 import { UserLockReason } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "../../../types";
 import type { TAdminLockUserAccountSchema } from "./lockUserAccount.schema";
@@ -17,22 +17,8 @@ type GetOptions = {
 const lockUserAccountHandler = async ({ input }: GetOptions) => {
   const { userId, locked } = input;
 
-  const user = await prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: {
-      locked,
-    },
-    select: {
-      id: true,
-      locked: true,
-    },
-  });
-
-  if (!user) {
-    throw new Error("User not found");
-  }
+  const userLockRepository = getUserLockRepository();
+  await userLockRepository.updateLockedStatus({ userId, locked });
 
   if (locked) {
     try {

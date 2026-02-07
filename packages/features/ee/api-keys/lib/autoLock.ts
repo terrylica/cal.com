@@ -1,7 +1,7 @@
 import process from "node:process";
+import { getUserLockRepository } from "@calcom/features/ee/api-keys/di/PrismaUserLockRepository.container";
 import { RedisService } from "@calcom/features/redis/RedisService";
 import logger from "@calcom/lib/logger";
-import prisma from "@calcom/prisma";
 import { UserLockReason } from "@calcom/prisma/enums";
 import type { RatelimitResponse } from "@unkey/ratelimit";
 import { hashAPIKey } from "./apiKeys";
@@ -115,58 +115,24 @@ export async function lockUser(identifierType: string, identifier: string, lockR
   } | null;
 
   let user: UserType = null;
+  const userLockRepository = getUserLockRepository();
 
   switch (identifierType) {
     case "userId":
-      user = await prisma.user.update({
-        where: { id: Number(identifier) },
-        data: { locked: true },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-        },
-      });
+      user = await userLockRepository.updateLockedStatus({ userId: Number(identifier), locked: true });
       break;
     case "email":
-      user = await prisma.user.update({
-        where: { email: identifier },
-        data: { locked: true },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-        },
-      });
+      user = await userLockRepository.lockUserByEmail({ email: identifier });
       break;
     case "apiKey": {
       const hashedApiKey = hashAPIKey(identifier);
-      const apiKey = await prisma.apiKey.findUnique({
-        where: { hashedKey: hashedApiKey },
-        select: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              username: true,
-            },
-          },
-        },
-      });
+      const apiKey = await userLockRepository.findUserByApiKeyHash({ hashedKey: hashedApiKey });
 
       if (!apiKey?.user) {
         throw new Error("No user found for this API key.");
       }
 
-      user = await prisma.user.update({
-        where: { id: apiKey.user.id },
-        data: { locked: true },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-        },
-      });
+      user = await userLockRepository.updateLockedStatus({ userId: apiKey.user.id, locked: true });
       break;
     }
     // Leaving SMS here but it is handled differently via checkRateLimitForSMS that auto locks
