@@ -18,25 +18,25 @@ vi.mock("next/headers", () => ({
 vi.mock("next/server", () => {
   return {
     NextResponse: {
-      redirect: vi.fn((url: string | URL, init?: { status?: number; headers?: Record<string, string> }) => {
+      redirect: vi.fn((url: string | URL, init: { status: number; headers?: Record<string, string> }) => {
         const location = typeof url === "string" ? url : url.toString();
-        const headers = new Map(Object.entries(init?.headers || {}));
+        const headers = new Map(Object.entries(init.headers || {}));
         headers.set("location", location);
         return {
-          status: init?.status ?? 302,
+          status: init.status,
           headers: {
             get: (name: string) => headers.get(name.toLowerCase()) || null,
           },
-        } as unknown as Response;
+        };
       }),
-      json: vi.fn((data: unknown, init?: { status?: number }) => {
+      json: vi.fn((data: unknown, init: { status: number }) => {
         return {
-          status: init?.status ?? 200,
+          status: init.status,
           json: async () => data,
           headers: {
             get: () => null,
           },
-        } as unknown as Response;
+        };
       }),
     },
   };
