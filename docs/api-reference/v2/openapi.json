@@ -29788,7 +29788,7 @@
         },
         "required": ["id", "slug"]
       },
-      "BookingAttendeeOutput_2024_08_13": {
+      "BookingAttendee": {
         "type": "object",
         "properties": {
           "name": {
@@ -29985,7 +29985,7 @@
           "attendees": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/BookingAttendeeOutput_2024_08_13"
+              "$ref": "#/components/schemas/BookingAttendee"
             }
           },
           "guests": {
@@ -30140,7 +30140,7 @@
           "attendees": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/BookingAttendeeOutput_2024_08_13"
+              "$ref": "#/components/schemas/BookingAttendee"
             }
           },
           "guests": {
