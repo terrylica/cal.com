@@ -252,11 +252,12 @@ async function getHandler(request: NextRequest) {
     // Create a new response with the image buffer
     const imageResponse = new NextResponse(buffer as BodyInit);
 
+    // Set the appropriate headers
     imageResponse.headers.set("Content-Type", contentType);
     imageResponse.headers.set("Cache-Control", "s-maxage=86400, stale-while-revalidate=60");
 
     return imageResponse;
-  } catch {
+  } catch (error) {
     return NextResponse.json({ error: "Failed fetching logo" }, { status: 404 });
   }
 }
