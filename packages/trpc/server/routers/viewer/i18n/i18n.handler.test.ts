@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { i18nHandler } from "./i18n.handler";
 
 const mockServerSideTranslations = vi.fn().mockResolvedValue({
   _nextI18Next: {
@@ -13,12 +15,12 @@ vi.mock("next-i18next/serverSideTranslations", () => ({
 }));
 
 describe("i18n handler", () => {
+  beforeEach(() => {
+    mockServerSideTranslations.mockClear();
+  });
+
   describe("passing config directly bypasses file system lookup", () => {
-    it("i18nHandler passes config as third argument to serverSideTranslations", async () => {
-      mockServerSideTranslations.mockClear();
-
-      const { i18nHandler } = await import("./i18n.handler");
-
+    it("passes config as third argument to serverSideTranslations", async () => {
       await i18nHandler({ input: { locale: "en", CalComVersion: "1.0" } });
 
       expect(mockServerSideTranslations).toHaveBeenCalledOnce();
@@ -31,10 +33,6 @@ describe("i18n handler", () => {
     });
 
     it("passed config includes i18n settings from @calcom/config", async () => {
-      mockServerSideTranslations.mockClear();
-
-      const { i18nHandler } = await import("./i18n.handler");
-
       await i18nHandler({ input: { locale: "en", CalComVersion: "1.0" } });
 
       const config = mockServerSideTranslations.mock.calls[0][2];
@@ -45,10 +43,6 @@ describe("i18n handler", () => {
     });
 
     it("passed config includes localePath pointing to public/static/locales", async () => {
-      mockServerSideTranslations.mockClear();
-
-      const { i18nHandler } = await import("./i18n.handler");
-
       await i18nHandler({ input: { locale: "en", CalComVersion: "1.0" } });
 
       const config = mockServerSideTranslations.mock.calls[0][2];
@@ -56,11 +50,7 @@ describe("i18n handler", () => {
       expect(config.localePath).toContain("public/static/locales");
     });
 
-    it("serverSideTranslations does not throw when config is passed directly", async () => {
-      mockServerSideTranslations.mockClear();
-
-      const { i18nHandler } = await import("./i18n.handler");
-
+    it("does not throw when config is passed directly", async () => {
       const result = await i18nHandler({ input: { locale: "en", CalComVersion: "1.0" } });
       expect(result.locale).toBe("en");
       expect(result.i18n).toBeDefined();
