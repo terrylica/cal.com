@@ -582,6 +582,7 @@ export const getPublicEvent = async (
     recurringEvent: isRecurringEvent(eventWithUserProfiles.recurringEvent)
       ? parseRecurringEvent(event.recurringEvent)
       : null,
+    // Sets user data on profile object for easier access
     profile: getProfileFromEvent(eventWithUserProfiles),
     subsetOfUsers: users,
     users: fetchAllUsers ? users : undefined,
