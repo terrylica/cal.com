@@ -39,10 +39,7 @@ export class BookingAttendeesController_2024_08_13 {
   @ApiOperation({
     summary: "Get all attendees for a booking",
     description: `Retrieve all attendees for a specific booking by its UID.
-    
-      **Rate Limiting:**
-      This endpoint is rate limited to 5 requests per minute to prevent abuse.
-    
+        
       <Note>The cal-api-version header is required for this endpoint. Without it, the request will fail with a 404 error.</Note>
       `,
   })
