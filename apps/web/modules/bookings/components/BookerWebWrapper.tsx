@@ -29,7 +29,7 @@ import { shallow } from "zustand/shallow";
 import { Booker as BookerComponent } from "./Booker";
 
 export type BookerWebWrapperAtomProps = BookerProps & {
-  eventData?: NonNullable<PublicEventType>;
+  eventData?: Omit<NonNullable<PublicEventType>, "workflows">;
 };
 
 const BookerWebWrapperComponent = (props: BookerWebWrapperAtomProps): JSX.Element => {
