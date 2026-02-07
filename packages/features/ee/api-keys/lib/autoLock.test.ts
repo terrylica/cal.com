@@ -3,24 +3,24 @@ import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import { hashAPIKey } from "@calcom/features/ee/api-keys/lib/apiKeys";
 import { RedisService } from "@calcom/features/redis/RedisService";
-import prisma from "@calcom/prisma";
 
 import { handleAutoLock } from "./autoLock";
 
-// Mock the dependencies
+const mockUserLockRepository = {
+  create: vi.fn(),
+  findByUserId: vi.fn(),
+  findUserEmailAndName: vi.fn(),
+  updateLockedStatus: vi.fn(),
+  lockUserByEmail: vi.fn(),
+  findUserByApiKeyHash: vi.fn(),
+};
+
 vi.mock("@calcom/features/redis/RedisService");
 vi.mock("@calcom/features/ee/api-keys/lib/apiKeys", () => ({
   hashAPIKey: vi.fn((key) => `hashed_${key}`),
 }));
-vi.mock("@calcom/prisma", () => ({
-  default: {
-    user: {
-      update: vi.fn(),
-    },
-    apiKey: {
-      findUnique: vi.fn(),
-    },
-  },
+vi.mock("@calcom/features/ee/api-keys/di/PrismaUserLockRepository.container", () => ({
+  getUserLockRepository: () => mockUserLockRepository,
 }));
 
 describe("autoLock", () => {
@@ -103,7 +103,8 @@ describe("autoLock", () => {
 
       expect(mockRedis.set).toHaveBeenCalledWith("autolock:email:test@example.com.count", "3");
       expect(mockRedis.expire).toHaveBeenCalledWith("autolock:email:test@example.com.count", 1800);
-      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(mockUserLockRepository.updateLockedStatus).not.toHaveBeenCalled();
+      expect(mockUserLockRepository.lockUserByEmail).not.toHaveBeenCalled();
     });
 
     it("should lock user when threshold is reached", async () => {
@@ -122,15 +123,7 @@ describe("autoLock", () => {
         rateLimitResponse,
       });
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { email: "test@example.com" },
-        data: { locked: true },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-        },
-      });
+      expect(mockUserLockRepository.lockUserByEmail).toHaveBeenCalledWith({ email: "test@example.com" });
       expect(mockRedis.del).toHaveBeenCalledWith("autolock:email:test@example.com.count");
     });
 
@@ -154,7 +147,8 @@ describe("autoLock", () => {
 
       expect(mockRedis.set).toHaveBeenCalledWith("autolock:email:test@example.com.count", "2");
       expect(mockRedis.expire).toHaveBeenCalledWith("autolock:email:test@example.com.count", 1800);
-      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(mockUserLockRepository.updateLockedStatus).not.toHaveBeenCalled();
+      expect(mockUserLockRepository.lockUserByEmail).not.toHaveBeenCalled();
     });
 
     it("should lock API key and associated user", async () => {
@@ -168,11 +162,9 @@ describe("autoLock", () => {
       mockRedis.get.mockResolvedValue("4");
       const testApiKey = "test_api_key_123";
 
-      // Mock API key lookup
-      vi.mocked(prisma.apiKey.findUnique).mockResolvedValue({
-        hashedKey: `hashed_${testApiKey}`,
-        user: { id: 456 },
-      } as any);
+      mockUserLockRepository.findUserByApiKeyHash.mockResolvedValue({
+        user: { id: 456, email: "user@example.com", username: "testuser" },
+      });
 
       await handleAutoLock({
         identifier: testApiKey,
@@ -180,19 +172,9 @@ describe("autoLock", () => {
         rateLimitResponse,
       });
 
-      // Verify the API key was hashed
       expect(hashAPIKey).toHaveBeenCalledWith(testApiKey);
-
-      // Verify the associated user was locked
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: 456 },
-        data: { locked: true },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-        },
-      });
+      expect(mockUserLockRepository.findUserByApiKeyHash).toHaveBeenCalledWith({ hashedKey: `hashed_${testApiKey}` });
+      expect(mockUserLockRepository.updateLockedStatus).toHaveBeenCalledWith({ userId: 456, locked: true });
     });
 
     it("should throw error when API key has no associated user", async () => {
@@ -206,8 +188,7 @@ describe("autoLock", () => {
       mockRedis.get.mockResolvedValue("4"); // Over threshold to trigger lock
       const testApiKey = "test_api_key_123";
 
-      // Mock API key lookup with no user
-      vi.mocked(prisma.apiKey.findUnique).mockResolvedValue(null);
+      mockUserLockRepository.findUserByApiKeyHash.mockResolvedValue(null);
 
       // Expect handleAutoLock to throw the error from lockUser
       await expect(async () => {
@@ -294,15 +275,7 @@ describe("autoLock", () => {
         rateLimitResponse,
       });
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { email: "test@example.com" },
-        data: { locked: true },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-        },
-      });
+      expect(mockUserLockRepository.lockUserByEmail).toHaveBeenCalledWith({ email: "test@example.com" });
     });
 
     it("should lock user by userId", async () => {
@@ -321,15 +294,7 @@ describe("autoLock", () => {
         rateLimitResponse,
       });
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: 123 },
-        data: { locked: true },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-        },
-      });
+      expect(mockUserLockRepository.updateLockedStatus).toHaveBeenCalledWith({ userId: 123, locked: true });
     });
   });
 });
