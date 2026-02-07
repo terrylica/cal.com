@@ -89,10 +89,10 @@ vi.mock("@calcom/prisma", () => {
   };
 });
 
-const createMockRequest = (url: string, host?: string): NextRequest => {
+const createMockRequest = (url: string): NextRequest => {
   const urlObj = new URL(url);
   const headers = new Headers();
-  headers.set("host", host || urlObj.host);
+  headers.set("host", urlObj.host);
   return {
     method: "GET",
     url,
