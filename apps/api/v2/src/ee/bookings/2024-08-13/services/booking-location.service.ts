@@ -1,3 +1,11 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
+
 import type { CalendarEvent, CredentialForCalendarService } from "@calcom/platform-libraries";
 import {
   BookingReferenceRepository,
@@ -21,6 +29,17 @@ import type {
   RecurringBookingOutput_2024_08_13,
 } from "@calcom/platform-types/bookings/2024-08-13/outputs/booking.output";
 import type { Booking, Prisma } from "@calcom/prisma/client";
+
+import { BookingsRepository_2024_08_13 } from "@/ee/bookings/2024-08-13/repositories/bookings.repository";
+import { BookingVideoService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-video.service";
+import { BookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/bookings.service";
+import { InputBookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/input.service";
+import { EventTypesRepository_2024_06_14 } from "@/ee/event-types/event-types_2024_06_14/event-types.repository";
+import { apiToInternalintegrationsMapping } from "@/ee/event-types/event-types_2024_06_14/transformers/api-to-internal/locations";
+import { BookingEventHandlerService } from "@/lib/services/booking-event-handler.service";
+import type { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
+import { EventTypeAccessService } from "@/modules/event-types/services/event-type-access.service";
+import { UsersRepository } from "@/modules/users/users.repository";
 
 type BookingLocationResponse =
   | BookingOutput_2024_08_13
@@ -66,6 +85,7 @@ type BookingWithDetails = {
     seatsShowAttendees: boolean | null;
     hideOrganizerEmail: boolean | null;
     customReplyToEmail: string | null;
+    metadata: unknown;
   } | null;
   references: Array<{
     id: number;
@@ -83,33 +103,23 @@ type BookingForLocationUpdate = Pick<
   "id" | "uid" | "userId" | "eventTypeId" | "location" | "responses" | "metadata"
 >;
 
+type BookingWithRequiredUser = Omit<BookingWithDetails, "user"> & {
+  user: NonNullable<BookingWithDetails["user"]>;
+};
+
+function bookingHasUser(booking: BookingWithDetails | null): booking is BookingWithRequiredUser {
+  return booking !== null && booking.user !== null;
+}
+
 type IntegrationHandlerContext = {
   existingBooking: BookingForLocationUpdate;
-  booking: BookingWithDetails;
+  booking: BookingWithRequiredUser;
   integrationSlug: string;
   internalLocation: string;
   user: ApiAuthGuardUser;
   existingBookingHost: { organizationId: number | null } | null;
   inputLocation: { type: "integration"; integration: Integration_2024_08_13 };
 };
-
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from "@nestjs/common";
-import { BookingsRepository_2024_08_13 } from "@/ee/bookings/2024-08-13/repositories/bookings.repository";
-import { BookingVideoService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-video.service";
-import { BookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/bookings.service";
-import { InputBookingsService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/input.service";
-import { EventTypesRepository_2024_06_14 } from "@/ee/event-types/event-types_2024_06_14/event-types.repository";
-import { apiToInternalintegrationsMapping } from "@/ee/event-types/event-types_2024_06_14/transformers/api-to-internal/locations";
-import { BookingEventHandlerService } from "@/lib/services/booking-event-handler.service";
-import type { ApiAuthGuardUser } from "@/modules/auth/strategies/api-auth/api-auth.strategy";
-import { EventTypeAccessService } from "@/modules/event-types/services/event-type-access.service";
-import { UsersRepository } from "@/modules/users/users.repository";
 
 @Injectable()
 export class BookingLocationService_2024_08_13 {
@@ -178,17 +188,12 @@ export class BookingLocationService_2024_08_13 {
 
   private async sendLocationChangeNotifications(
     evt: CalendarEvent,
-    bookingId: number,
     bookingUid: string,
-    newLocation: string
+    newLocation: string,
+    eventTypeMetadata?: Record<string, unknown>
   ): Promise<void> {
-    const bookingWithEventType =
-      await this.bookingsRepository.getBookingByIdWithUserAndEventDetails(bookingId);
     try {
-      await sendLocationChangeEmailsAndSMS(
-        { ...evt, location: newLocation },
-        bookingWithEventType?.eventType?.metadata as Record<string, unknown> | undefined
-      );
+      await sendLocationChangeEmailsAndSMS({ ...evt, location: newLocation }, eventTypeMetadata);
     } catch (error) {
       this.logger.error(
         `Failed to send location change emails for booking uid=${bookingUid}`,
@@ -209,9 +214,7 @@ export class BookingLocationService_2024_08_13 {
       videoCallUrl,
     };
 
-    const bookingFieldsLocation = this.inputService.transformLocation(
-      ctx.inputLocation as BookingInputLocation_2024_08_13
-    );
+    const bookingFieldsLocation = this.inputService.transformLocation(ctx.inputLocation);
 
     const responses = (ctx.existingBooking.responses || {}) as Record<string, unknown>;
     const { location: _existingLocation, ...rest } = responses;
@@ -242,9 +245,9 @@ export class BookingLocationService_2024_08_13 {
 
     await this.sendLocationChangeNotifications(
       evt,
-      ctx.existingBooking.id,
       ctx.existingBooking.uid,
-      bookingLocation
+      bookingLocation,
+      ctx.booking.eventType?.metadata as Record<string, unknown> | undefined
     );
 
     return this.bookingsService.getBooking(updatedBooking.uid, ctx.user);
@@ -334,9 +337,7 @@ export class BookingLocationService_2024_08_13 {
       throw new BadRequestException(`Missing or invalid location value for type: ${inputLocation.type}`);
     }
 
-    const bookingFieldsLocation = this.inputService.transformLocation(
-      inputLocation as BookingInputLocation_2024_08_13
-    );
+    const bookingFieldsLocation = this.inputService.transformLocation(inputLocation);
 
     const responses = (existingBooking.responses || {}) as Record<string, unknown>;
     const { location: _existingLocation, ...rest } = responses;
@@ -377,9 +378,9 @@ export class BookingLocationService_2024_08_13 {
         const evt = await this.buildCalEventForIntegration(bookingWithDetails, bookingLocation, null);
         await this.sendLocationChangeNotifications(
           evt,
-          existingBooking.id,
           existingBooking.uid,
-          bookingLocation
+          bookingLocation,
+          bookingWithDetails.eventType?.metadata as Record<string, unknown> | undefined
         );
       } else if (!bookingWithDetails) {
         this.logger.warn(
@@ -414,13 +415,13 @@ export class BookingLocationService_2024_08_13 {
     }
 
     const booking = await this.bookingsRepository.getBookingByIdWithUserAndEventDetails(existingBooking.id);
-    if (!booking || !booking.user) {
+    if (!bookingHasUser(booking)) {
       throw new NotFoundException(`Could not load booking details for uid=${existingBooking.uid}`);
     }
 
     const ctx: IntegrationHandlerContext = {
       existingBooking,
-      booking: booking as BookingWithDetails,
+      booking,
       integrationSlug,
       internalLocation,
       user,
@@ -645,9 +646,9 @@ export class BookingLocationService_2024_08_13 {
 
     await this.sendLocationChangeNotifications(
       evt,
-      ctx.existingBooking.id,
       ctx.existingBooking.uid,
-      bookingLocation
+      bookingLocation,
+      ctx.booking.eventType?.metadata as Record<string, unknown> | undefined
     );
 
     return this.bookingsService.getBooking(updatedBooking.uid, ctx.user);
