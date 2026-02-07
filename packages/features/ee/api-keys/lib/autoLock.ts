@@ -1,10 +1,11 @@
-import type { RatelimitResponse } from "@unkey/ratelimit";
-
+import process from "node:process";
 import { RedisService } from "@calcom/features/redis/RedisService";
 import logger from "@calcom/lib/logger";
 import prisma from "@calcom/prisma";
-
+import { UserLockReason } from "@calcom/prisma/enums";
+import type { RatelimitResponse } from "@unkey/ratelimit";
 import { hashAPIKey } from "./apiKeys";
+import { createUserLockAndNotify } from "./lock-notification";
 
 // This is the number of times a user can exceed the rate limit before being locked
 const DEFAULT_AUTOLOCK_THRESHOLD = 5;
@@ -27,6 +28,12 @@ export enum LockReason {
 }
 
 const log = logger.getSubLogger({ prefix: ["[autoLock]"] });
+
+const LOCK_REASON_TO_USER_LOCK_REASON: Record<LockReason, UserLockReason> = {
+  [LockReason.RATE_LIMIT]: UserLockReason.RATE_LIMIT_EXCEEDED,
+  [LockReason.SPAM_WORKFLOW_BODY]: UserLockReason.SPAM_WORKFLOW_BODY,
+  [LockReason.MALICIOUS_URL_IN_WORKFLOW]: UserLockReason.MALICIOUS_URL_IN_WORKFLOW,
+};
 
 /**
  * The "Requests to Hit Limit × Threshold" shows how many requests would be needed to trigger an auto-lock if a user consistently hits
@@ -136,7 +143,7 @@ export async function lockUser(identifierType: string, identifier: string, lockR
       const hashedApiKey = hashAPIKey(identifier);
       const apiKey = await prisma.apiKey.findUnique({
         where: { hashedKey: hashedApiKey },
-        include: {
+        select: {
           user: {
             select: {
               id: true,
@@ -175,5 +182,21 @@ export async function lockUser(identifierType: string, identifier: string, lockR
       email: user.email,
       username: user.username,
     });
+  }
+
+  if (user) {
+    const prismaReason = LOCK_REASON_TO_USER_LOCK_REASON[lockReason];
+    try {
+      await createUserLockAndNotify({
+        userId: user.id,
+        reason: prismaReason,
+      });
+    } catch (err) {
+      log.error("Failed to create UserLock record", {
+        userId: user.id,
+        reason: prismaReason,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 }

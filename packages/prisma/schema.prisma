@@ -477,6 +477,7 @@ model User {
 
   // Used to lock the user account
   locked                         Boolean                       @default(false)
+  locks                          UserLock[]
   platformOAuthClients           PlatformOAuthClient[]
   AccessToken                    AccessToken[]
   RefreshToken                   RefreshToken[]
@@ -2212,6 +2213,27 @@ enum SMSLockState {
   LOCKED
   UNLOCKED
   REVIEW_NEEDED
+}
+
+enum UserLockReason {
+  WATCHLIST_EMAIL_MATCH
+  WATCHLIST_DOMAIN_MATCH
+  RATE_LIMIT_EXCEEDED
+  SPAM_WORKFLOW_BODY
+  MALICIOUS_URL_IN_WORKFLOW
+  ADMIN_ACTION
+}
+
+model UserLock {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason    UserLockReason
+  metadata  Json?
+  createdAt DateTime       @default(now())
+
+  @@index([userId])
+  @@map(name: "user_locks")
 }
 
 model ManagedOrganization {

@@ -1,3 +1,4 @@
+import { createUserLockAndNotify } from "@calcom/features/ee/api-keys/lib/lock-notification";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { sentrySpan } from "@calcom/features/watchlist/lib/telemetry";
 import { checkIfEmailIsBlockedInWatchlistController } from "@calcom/features/watchlist/operations/check-if-email-in-watchlist.controller";
@@ -5,7 +6,12 @@ import { hashPassword } from "@calcom/lib/auth/hashPassword";
 import logger from "@calcom/lib/logger";
 import slugify from "@calcom/lib/slugify";
 import prisma from "@calcom/prisma";
-import type { CreationSource, UserPermissionRole, IdentityProvider } from "@calcom/prisma/enums";
+import {
+  type CreationSource,
+  type IdentityProvider,
+  UserLockReason,
+  type UserPermissionRole,
+} from "@calcom/prisma/enums";
 
 interface CreateUserInput {
   email: string;
@@ -52,6 +58,20 @@ export class UserCreationService {
     });
 
     log.info(`Created user: ${user.id} with locked status of ${user.locked}`);
+
+    if (user.locked) {
+      try {
+        await createUserLockAndNotify({
+          userId: user.id,
+          reason: UserLockReason.WATCHLIST_EMAIL_MATCH,
+        });
+      } catch (err) {
+        log.error("Failed to create UserLock record for watchlist lock", {
+          userId: user.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
 
     const { locked: _locked, ...restUser } = user;
 
