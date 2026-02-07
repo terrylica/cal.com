@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import { describe, expect, it, vi } from "vitest";
 
 const mockServerSideTranslations = vi.fn().mockResolvedValue({
@@ -16,29 +13,7 @@ vi.mock("next-i18next/serverSideTranslations", () => ({
 }));
 
 describe("i18n handler", () => {
-  describe("root cause: next-i18next.config.js no longer exists", () => {
-    it("next-i18next.config.js does not exist (was converted to .ts in #26126)", () => {
-      const jsConfigPath = path.resolve("./next-i18next.config.js");
-      expect(fs.existsSync(jsConfigPath)).toBe(false);
-    });
-
-    it("next-i18next.config.ts does exist (the replacement)", () => {
-      const tsConfigPath = path.resolve("./apps/web/next-i18next.config.ts");
-      expect(fs.existsSync(tsConfigPath)).toBe(true);
-    });
-
-    it("serverSideTranslations defaults configOverride to null, which triggers the error when the .js file is missing", async () => {
-      const { serverSideTranslations } = await import(
-        "next-i18next/dist/es/serverSideTranslations"
-      );
-
-      await expect(serverSideTranslations("en", ["common"])).rejects.toThrow(
-        /next-i18next was unable to find a user config/
-      );
-    });
-  });
-
-  describe("fix: passing config directly bypasses file system lookup", () => {
+  describe("passing config directly bypasses file system lookup", () => {
     it("i18nHandler passes config as third argument to serverSideTranslations", async () => {
       mockServerSideTranslations.mockClear();
 
