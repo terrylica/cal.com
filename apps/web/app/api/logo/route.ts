@@ -253,7 +253,7 @@ async function getHandler(request: NextRequest) {
     const imageResponse = new NextResponse(buffer as BodyInit);
 
     imageResponse.headers.set("Content-Type", contentType);
-    imageResponse.headers.set("Cache-Control", "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800");
+    imageResponse.headers.set("Cache-Control", "s-maxage=86400, stale-while-revalidate=60");
 
     return imageResponse;
   } catch {

@@ -147,23 +147,12 @@ describe("logo route", () => {
   });
 
   describe("redirect behavior", () => {
-    it("should not include caching headers in redirect response for immediate logo updates", async () => {
-      const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
-
-      await GET(req, { params: Promise.resolve({}) });
-
-      expect(NextResponse.redirect).toHaveBeenCalledWith(expect.any(URL), { status: 302 });
-      const mockCalls = vi.mocked(NextResponse.redirect).mock.calls;
-      const callArgs = mockCalls[0];
-      const init = callArgs[1] as { headers?: Record<string, string>; status?: number } | undefined;
-      expect(init?.headers).toBeUndefined();
-    });
-
-    it("should use 302 status code for redirects", async () => {
+    it("should use 302 status code for redirects to static files", async () => {
       const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
 
       const res = await GET(req, { params: Promise.resolve({}) });
 
+      expect(NextResponse.redirect).toHaveBeenCalledWith(expect.any(URL), { status: 302 });
       expect(res.status).toBe(302);
     });
   });
