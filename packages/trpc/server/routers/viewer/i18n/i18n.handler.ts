@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import type { I18nInputSchema } from "./i18n.schema";
 
 type I18nOptions = {
@@ -7,7 +9,11 @@ type I18nOptions = {
 export const i18nHandler = async ({ input }: I18nOptions) => {
   const { locale } = input;
   const { serverSideTranslations } = await import("next-i18next/serverSideTranslations");
-  const i18n = await serverSideTranslations(locale, ["common", "vital"]);
+  const i18nConfig = require("@calcom/config/next-i18next.config");
+  const i18n = await serverSideTranslations(locale, ["common", "vital"], {
+    ...i18nConfig,
+    localePath: path.resolve("./public/static/locales"),
+  });
 
   return {
     i18n,
