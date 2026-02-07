@@ -107,7 +107,7 @@ describe("logo route - 302 redirects", () => {
   });
 
   it("should redirect with 302 status for system subdomains", async () => {
-    const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
+    const req = createMockRequest("https://app.cal.com/api/logo");
 
     const res = await GET(req, { params: Promise.resolve({}) });
 
@@ -118,7 +118,7 @@ describe("logo route - 302 redirects", () => {
   });
 
   it("should redirect to correct static path based on type parameter", async () => {
-    const req = createMockRequest("https://app.cal.com/api/logo?type=favicon-32", "app.cal.com");
+    const req = createMockRequest("https://app.cal.com/api/logo?type=favicon-32");
 
     const res = await GET(req, { params: Promise.resolve({}) });
 
@@ -129,7 +129,7 @@ describe("logo route - 302 redirects", () => {
   });
 
   it("should redirect to logo type when no type specified", async () => {
-    const req = createMockRequest("https://app.cal.com/api/logo", "app.cal.com");
+    const req = createMockRequest("https://app.cal.com/api/logo");
 
     await GET(req, { params: Promise.resolve({}) });
 
@@ -139,7 +139,7 @@ describe("logo route - 302 redirects", () => {
   });
 
   it("should redirect to logo type for invalid type parameter", async () => {
-    const req = createMockRequest("https://app.cal.com/api/logo?type=invalid", "app.cal.com");
+    const req = createMockRequest("https://app.cal.com/api/logo?type=invalid");
 
     await GET(req, { params: Promise.resolve({}) });
 
@@ -149,7 +149,7 @@ describe("logo route - 302 redirects", () => {
   });
 
   it("should preserve request origin in redirect URL", async () => {
-    const req = createMockRequest("https://custom.example.com/api/logo", "custom.example.com");
+    const req = createMockRequest("https://custom.example.com/api/logo");
 
     await GET(req, { params: Promise.resolve({}) });
 
