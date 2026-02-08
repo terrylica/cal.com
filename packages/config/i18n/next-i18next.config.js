@@ -1,5 +1,5 @@
 const path = require("node:path");
-const i18n = require("../../i18n.json");
+const i18n = require("../../../i18n.json");
 
 /** @type {import("next-i18next").UserConfig} */
 const config = {
