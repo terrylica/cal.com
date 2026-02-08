@@ -12,8 +12,6 @@ export const ZWorkflows: z.ZodType<TWorkflows> = z
   .array()
   .optional();
 
-export { ZWorkflow };
-
 export type TGetAllActiveWorkflowsInputSchema = {
   eventType: {
     id: number;
