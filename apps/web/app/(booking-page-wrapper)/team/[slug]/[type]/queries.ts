@@ -1,4 +1,6 @@
-import process from "node:process";
+import type { GetServerSidePropsContext } from "next";
+import { unstable_cache } from "next/cache";
+
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
 import { getTeamData } from "@calcom/features/ee/teams/lib/getTeamData";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
@@ -10,8 +12,6 @@ import { NEXTJS_CACHE_TTL } from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { SchedulingType } from "@calcom/prisma/enums";
-import type { GetServerSidePropsContext } from "next";
-import { unstable_cache } from "next/cache";
 import { _processTeamEventData } from "./utils";
 
 export async function getCachedTeamData(teamSlug: string, orgSlug: string | null) {
