@@ -126,7 +126,7 @@ packages/lib/                # Shared utilities
 - Routes: `apps/web/app/` (App Router)
 - Database schema: `packages/prisma/schema.prisma`
 - tRPC routers: `packages/trpc/server/routers/`
-- Translations: `packages/config/locales/en/common.json`
+- Translations: `packages/config/i18n/locales/en/common.json`
 - Workflow constants: `packages/features/ee/workflows/lib/constants.ts`
 
 ## Tech Stack
