@@ -20,7 +20,7 @@ import type { getCachedTeamData } from "./queries";
  * Processes team event data and enriches it with all necessary fields for the booking page.
  * @internal - Exported for testing purposes only
  */
-export async function processTeamEventData({
+export async function _processTeamEventData({
   eventData,
   metadata,
   prisma,

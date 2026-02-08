@@ -12,7 +12,7 @@ import type { Prisma } from "@calcom/prisma/client";
 import type { SchedulingType } from "@calcom/prisma/enums";
 import type { GetServerSidePropsContext } from "next";
 import { unstable_cache } from "next/cache";
-import { processTeamEventData } from "./utils";
+import { _processTeamEventData } from "./utils";
 
 export async function getCachedTeamData(teamSlug: string, orgSlug: string | null) {
   return unstable_cache(async () => getTeamData(teamSlug, orgSlug), ["team-data", teamSlug, orgSlug ?? ""], {
@@ -67,7 +67,7 @@ export async function getEnrichedEventType({
 
   const eventMetaData = eventTypeMetaDataSchemaWithTypedApps.parse(eventType.metadata);
 
-  return processTeamEventData({
+  return _processTeamEventData({
     eventData: eventType,
     metadata: eventMetaData,
     prisma,
