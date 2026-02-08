@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import i18nConfig from "@calcom/config/next-i18next.config";
+import i18nConfig from "@calcom/config/i18n/next-i18next.config";
 
 describe("i18n handler", () => {
   it("serverSideTranslations throws without config because next-i18next.config.js no longer exists", async () => {

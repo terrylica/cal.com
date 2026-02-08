@@ -6,7 +6,7 @@ import type { i18n as I18nInstance } from "i18next";
 import { createInstance } from "i18next";
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { i18n } = require("@calcom/config/next-i18next.config");
+const { i18n } = require("@calcom/config/i18n/next-i18next.config");
 const englishTranslations: Record<string, string> = require("../../../config/locales/en/common.json");
 /* eslint-enable @typescript-eslint/no-require-imports */
 

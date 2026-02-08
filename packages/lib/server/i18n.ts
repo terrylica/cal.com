@@ -3,7 +3,7 @@ import { createInstance } from "i18next";
 import { fetchWithTimeout } from "../fetchWithTimeout";
 import logger from "../logger";
 
-const { i18n } = require("@calcom/config/next-i18next.config");
+const { i18n } = require("@calcom/config/i18n/next-i18next.config");
 const log = logger.getSubLogger({ prefix: ["[i18n]"] });
 
 // Import only English translations directly to avoid HTTP requests
