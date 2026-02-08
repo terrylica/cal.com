@@ -12,14 +12,14 @@ export const VerifyEmailByCode = (
   return (
     <BaseEmailHtml
       hideLogo={props.hideLogo}
-      subject={props.language(
-        `verify_email_subject${
-          props.isVerifyingEmail ? "_verifying_email" : ""
-        }`,
-        {
-          appName: APP_NAME,
-        }
-      )}
+      subject={
+        props.hideLogo
+          ? props.language("verify_email_subject_no_branding")
+          : props.language(
+              `verify_email_subject${props.isVerifyingEmail ? "_verifying_email" : ""}`,
+              { appName: APP_NAME }
+            )
+      }
     >
       <p
         style={{
