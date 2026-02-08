@@ -227,6 +227,13 @@ const PROCESS_PUBLIC_EVENT_DATA_EXPECTED_KEYS = [
   "recurringEvent",
   "isDynamic",
   "showInstantEventConnectNowModal",
+  "owner",
+  "subsetOfHosts",
+  "hosts",
+  "profile",
+  "subsetOfUsers",
+  "users",
+  "entity",
 ].sort();
 
 describe("processPublicEventData", () => {
@@ -236,14 +243,59 @@ describe("processPublicEventData", () => {
     },
   } as unknown as PrismaClient;
 
+  const mockTeamData = {
+    id: 1,
+    name: "Test Team",
+    slug: "test-team",
+    logoUrl: null,
+    parent: null,
+  };
+
+  const mockEnrichedOwner = {
+    id: 1,
+    name: "Test Owner",
+    email: "owner@test.com",
+    profile: {
+      organization: { id: 1, slug: "org", name: "Org" },
+      organizationId: 1,
+    },
+  };
+
+  const mockHosts = [
+    {
+      user: {
+        id: 1,
+        name: "Host 1",
+        email: "host1@test.com",
+      },
+    },
+  ];
+
+  const mockUsers = [
+    {
+      id: 1,
+      name: "User 1",
+      email: "user1@test.com",
+    },
+  ];
+
+  const getTestParams = (eventData: ReturnType<typeof createMockEventData>) => ({
+    eventData: eventData as never,
+    metadata: null,
+    prisma: prismaMock,
+    enrichedOwner: mockEnrichedOwner as never,
+    subsetOfHosts: mockHosts as never,
+    hosts: mockHosts as never,
+    users: mockUsers as never,
+    teamData: mockTeamData as never,
+    fromRedirectOfNonOrgLink: false,
+    orgSlug: null,
+  });
+
   it("returns exactly the expected set of keys", async () => {
     const eventData = createMockEventData();
 
-    const result = await processPublicEventData({
-      eventData: eventData as never,
-      metadata: null,
-      prisma: prismaMock,
-    });
+    const result = await processPublicEventData(getTestParams(eventData));
 
     const resultKeys = Object.keys(result).sort();
     expect(resultKeys).toEqual(PROCESS_PUBLIC_EVENT_DATA_EXPECTED_KEYS);
@@ -252,11 +304,7 @@ describe("processPublicEventData", () => {
   it("does not leak heavy fields that are queried but not needed client-side", async () => {
     const eventData = createMockEventData();
 
-    const result = await processPublicEventData({
-      eventData: eventData as never,
-      metadata: null,
-      prisma: prismaMock,
-    });
+    const result = await processPublicEventData(getTestParams(eventData));
 
     for (const field of FIELDS_EXCLUDED_FROM_CLIENT) {
       expect(result).not.toHaveProperty(field);
@@ -267,11 +315,7 @@ describe("processPublicEventData", () => {
     const eventData = createMockEventData();
     expect(eventData.workflows.length).toBeGreaterThan(0);
 
-    const result = await processPublicEventData({
-      eventData: eventData as never,
-      metadata: null,
-      prisma: prismaMock,
-    });
+    const result = await processPublicEventData(getTestParams(eventData));
 
     expect(result).not.toHaveProperty("workflows");
     const resultStr = JSON.stringify(result);
@@ -316,11 +360,7 @@ describe("processPublicEventData", () => {
 
     const eventData = createMockEventData();
 
-    const result = await processPublicEventData({
-      eventData: eventData as never,
-      metadata: null,
-      prisma: prismaMock,
-    });
+    const result = await processPublicEventData(getTestParams(eventData));
 
     for (const field of bookerEventFields) {
       expect(result).toHaveProperty(field);
@@ -331,13 +371,26 @@ describe("processPublicEventData", () => {
     const eventData = createMockEventData();
     eventData.hidden = true;
 
-    const result = await processPublicEventData({
-      eventData: eventData as never,
-      metadata: null,
-      prisma: prismaMock,
-    });
+    const result = await processPublicEventData(getTestParams(eventData));
 
     expect(result).toHaveProperty("hidden");
     expect(result.hidden).toBe(true);
+  });
+
+  it("includes team-specific fields (owner, hosts, users, entity)", async () => {
+    const eventData = createMockEventData();
+
+    const result = await processPublicEventData(getTestParams(eventData));
+
+    expect(result).toHaveProperty("owner");
+    expect(result).toHaveProperty("subsetOfHosts");
+    expect(result).toHaveProperty("hosts");
+    expect(result).toHaveProperty("profile");
+    expect(result).toHaveProperty("subsetOfUsers");
+    expect(result).toHaveProperty("users");
+    expect(result).toHaveProperty("entity");
+    expect(result.entity).toHaveProperty("teamSlug");
+    expect(result.entity).toHaveProperty("orgSlug");
+    expect(result.entity).toHaveProperty("name");
   });
 });

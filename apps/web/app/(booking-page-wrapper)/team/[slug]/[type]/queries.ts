@@ -33,10 +33,24 @@ export async function processPublicEventData({
   eventData,
   metadata,
   prisma,
+  enrichedOwner,
+  subsetOfHosts,
+  hosts,
+  users,
+  teamData,
+  fromRedirectOfNonOrgLink,
+  orgSlug,
 }: {
   eventData: Prisma.EventTypeGetPayload<{ select: ReturnType<typeof getPublicEventSelect> }>;
   metadata: ReturnType<typeof eventTypeMetaDataSchemaWithTypedApps.parse>;
   prisma: PrismaClient;
+  enrichedOwner: Awaited<ReturnType<UserRepository["enrichUserWithItsProfile"]>> | null;
+  subsetOfHosts: Awaited<ReturnType<typeof getEventTypeHosts>>["subsetOfHosts"];
+  hosts: Awaited<ReturnType<typeof getEventTypeHosts>>["hosts"];
+  users: Awaited<ReturnType<typeof getUsersFromEvent>>;
+  teamData: NonNullable<Awaited<ReturnType<typeof getCachedTeamData>>>;
+  fromRedirectOfNonOrgLink: boolean;
+  orgSlug: string | null;
 }) {
   let showInstantEventConnectNowModal = eventData.isInstantEvent ?? false;
   if (eventData.isInstantEvent && eventData.instantMeetingSchedule?.id) {
@@ -48,6 +62,9 @@ export async function processPublicEventData({
       length: eventData.length,
     });
   }
+
+  const name = teamData.parent?.name ?? teamData.name ?? null;
+  const isUnpublished = teamData.parent ? !teamData.parent.slug : !teamData.slug;
 
   return {
     id: eventData.id,
@@ -92,6 +109,23 @@ export async function processPublicEventData({
       : null,
     isDynamic: false,
     showInstantEventConnectNowModal,
+    owner: enrichedOwner,
+    subsetOfHosts,
+    hosts,
+    profile: getProfileFromEvent({ ...eventData, owner: enrichedOwner, subsetOfHosts, hosts }),
+    subsetOfUsers: users,
+    users,
+    entity: {
+      fromRedirectOfNonOrgLink,
+      considerUnpublished: isUnpublished && !fromRedirectOfNonOrgLink,
+      orgSlug,
+      teamSlug: teamData.slug ?? null,
+      name,
+      hideProfileLink: false,
+      logoUrl: teamData.parent
+        ? getPlaceholderAvatar(teamData.parent.logoUrl, teamData.parent.name)
+        : getPlaceholderAvatar(teamData.logoUrl, teamData.name),
+    },
   };
 }
 
@@ -145,37 +179,21 @@ export async function getEnrichedEventType({
     : null;
   const users =
     (await getUsersFromEvent({ ...eventType, owner: enrichedOwner, subsetOfHosts, hosts }, prisma)) ?? [];
-  const name = teamData.parent?.name ?? teamData.name ?? null;
-  const isUnpublished = teamData.parent ? !teamData.parent.slug : !teamData.slug;
 
   const eventMetaData = eventTypeMetaDataSchemaWithTypedApps.parse(eventType.metadata);
 
-  const eventDataShared = await processPublicEventData({
+  return processPublicEventData({
     eventData: eventType,
     metadata: eventMetaData,
     prisma,
-  });
-
-  return {
-    ...eventDataShared,
-    owner: enrichedOwner,
+    enrichedOwner,
     subsetOfHosts,
     hosts,
-    profile: getProfileFromEvent({ ...eventType, owner: enrichedOwner, subsetOfHosts, hosts }),
-    subsetOfUsers: users,
     users,
-    entity: {
-      fromRedirectOfNonOrgLink,
-      considerUnpublished: isUnpublished && !fromRedirectOfNonOrgLink,
-      orgSlug,
-      teamSlug: teamData.slug ?? null,
-      name,
-      hideProfileLink: false,
-      logoUrl: teamData.parent
-        ? getPlaceholderAvatar(teamData.parent.logoUrl, teamData.parent.name)
-        : getPlaceholderAvatar(teamData.logoUrl, teamData.name),
-    },
-  };
+    teamData,
+    fromRedirectOfNonOrgLink,
+    orgSlug,
+  });
 }
 
 export async function shouldUseApiV2ForTeamSlots(teamId: number): Promise<boolean> {
