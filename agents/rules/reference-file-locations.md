@@ -33,7 +33,7 @@ tags: reference, navigation, file-locations
 
 ## Translations
 
-- English: `apps/web/public/static/locales/en/common.json`
+- English: `packages/config/locales/en/common.json`
 
 ## App Store
 
