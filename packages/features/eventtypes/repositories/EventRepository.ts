@@ -8,6 +8,7 @@ export type GetPublicEventInput = {
   org: string | null;
   fromRedirectOfNonOrgLink: boolean;
 };
+
 export class EventRepository {
   static async getPublicEvent(input: GetPublicEventInput, userId?: number) {
     const event = await getPublicEvent(
