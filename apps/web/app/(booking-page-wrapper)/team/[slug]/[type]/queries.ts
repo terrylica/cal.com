@@ -1,23 +1,99 @@
-import type { GetServerSidePropsContext } from "next";
-import { unstable_cache } from "next/cache";
-
+import process from "node:process";
+import type { LocationObject } from "@calcom/app-store/locations";
+import { privacyFilteredLocations } from "@calcom/app-store/locations";
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
+import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
 import { getTeamData } from "@calcom/features/ee/teams/lib/getTeamData";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
 import {
   getEventTypeHosts,
   getProfileFromEvent,
+  type getPublicEventSelect,
   getUsersFromEvent,
-  processEventDataShared,
+  isCurrentlyAvailable,
 } from "@calcom/features/eventtypes/lib/getPublicEvent";
 import { getTeamEventType } from "@calcom/features/eventtypes/lib/getTeamEventType";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { NEXTJS_CACHE_TTL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
+import { isRecurringEvent, parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
+import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import { prisma } from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
+import type { Prisma, PrismaClient } from "@calcom/prisma/client";
 import type { SchedulingType } from "@calcom/prisma/enums";
+import { bookerLayouts as bookerLayoutsSchema, customInputSchema } from "@calcom/prisma/zod-utils";
+import type { GetServerSidePropsContext } from "next";
+import { unstable_cache } from "next/cache";
+
+/**
+ * @internal - Exported for testing purposes only
+ */
+export async function processPublicEventData({
+  eventData,
+  metadata,
+  prisma,
+}: {
+  eventData: Prisma.EventTypeGetPayload<{ select: ReturnType<typeof getPublicEventSelect> }>;
+  metadata: ReturnType<typeof eventTypeMetaDataSchemaWithTypedApps.parse>;
+  prisma: PrismaClient;
+}) {
+  let showInstantEventConnectNowModal = eventData.isInstantEvent ?? false;
+  if (eventData.isInstantEvent && eventData.instantMeetingSchedule?.id) {
+    const { id, timeZone } = eventData.instantMeetingSchedule;
+    showInstantEventConnectNowModal = await isCurrentlyAvailable({
+      prisma,
+      instantMeetingScheduleId: id,
+      availabilityTimezone: timeZone ?? "Europe/London",
+      length: eventData.length,
+    });
+  }
+
+  return {
+    id: eventData.id,
+    title: eventData.title,
+    slug: eventData.slug,
+    schedulingType: eventData.schedulingType,
+    length: eventData.length,
+    enablePerHostLocations: eventData.enablePerHostLocations,
+    lockTimeZoneToggleOnBookingPage: eventData.lockTimeZoneToggleOnBookingPage,
+    lockedTimeZone: eventData.lockedTimeZone,
+    requiresConfirmation: eventData.requiresConfirmation,
+    requiresBookerEmailVerification: eventData.requiresBookerEmailVerification,
+    autoTranslateDescriptionEnabled: eventData.autoTranslateDescriptionEnabled,
+    fieldTranslations: eventData.fieldTranslations,
+    price: eventData.price,
+    currency: eventData.currency,
+    seatsPerTimeSlot: eventData.seatsPerTimeSlot,
+    seatsShowAvailabilityCount: eventData.seatsShowAvailabilityCount,
+    forwardParamsSuccessRedirect: eventData.forwardParamsSuccessRedirect,
+    successRedirectUrl: eventData.successRedirectUrl,
+    redirectUrlOnNoRoutingFormResponse: eventData.redirectUrlOnNoRoutingFormResponse,
+    disableGuests: eventData.disableGuests,
+    hidden: eventData.hidden,
+    team: eventData.team,
+    schedule: eventData.schedule,
+    isInstantEvent: eventData.isInstantEvent,
+    instantMeetingParameters: eventData.instantMeetingParameters,
+    aiPhoneCallConfig: eventData.aiPhoneCallConfig,
+    assignAllTeamMembers: eventData.assignAllTeamMembers,
+    disableCancelling: eventData.disableCancelling,
+    disableRescheduling: eventData.disableRescheduling,
+    allowReschedulingCancelledBookings: eventData.allowReschedulingCancelledBookings,
+    interfaceLanguage: eventData.interfaceLanguage,
+    bookerLayouts: bookerLayoutsSchema.parse(metadata?.bookerLayouts || null),
+    description: markdownToSafeHTML(eventData.description),
+    metadata,
+    customInputs: customInputSchema.array().parse(eventData.customInputs || []),
+    locations: privacyFilteredLocations((eventData.locations || []) as LocationObject[]),
+    bookingFields: getBookingFieldsWithSystemFields(eventData),
+    recurringEvent: isRecurringEvent(eventData.recurringEvent)
+      ? parseRecurringEvent(eventData.recurringEvent)
+      : null,
+    isDynamic: false,
+    showInstantEventConnectNowModal,
+  };
+}
 
 export async function getCachedTeamData(teamSlug: string, orgSlug: string | null) {
   return unstable_cache(async () => getTeamData(teamSlug, orgSlug), ["team-data", teamSlug, orgSlug ?? ""], {
@@ -74,7 +150,7 @@ export async function getEnrichedEventType({
 
   const eventMetaData = eventTypeMetaDataSchemaWithTypedApps.parse(eventType.metadata);
 
-  const eventDataShared = await processEventDataShared({
+  const eventDataShared = await processPublicEventData({
     eventData: eventType,
     metadata: eventMetaData,
     prisma,

@@ -9,16 +9,13 @@ import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/or
 import { getDefaultEvent, getUsernameList } from "@calcom/features/eventtypes/lib/defaultEvents";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
-import { MembershipRole } from "@calcom/prisma/enums";
-import { getOrgOrTeamAvatar } from "@calcom/lib/defaultAvatarImage";
-import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
+import { getOrgOrTeamAvatar, getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { isRecurringEvent, parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import type { PrismaClient } from "@calcom/prisma";
-import type { User as UserType } from "@calcom/prisma/client";
-import type { Prisma } from "@calcom/prisma/client";
-import type { Team } from "@calcom/prisma/client";
+import type { Prisma, Team, User as UserType } from "@calcom/prisma/client";
+import { MembershipRole } from "@calcom/prisma/enums";
 import type { BookerLayoutSettings } from "@calcom/prisma/zod-utils";
 import {
   BookerLayouts,
@@ -129,9 +126,9 @@ export const getPublicEventSelect = (fetchAllUsers: boolean) => {
         },
       },
     },
-        successRedirectUrl: true,
-        forwardParamsSuccessRedirect: true,
-        redirectUrlOnNoRoutingFormResponse: true,
+    successRedirectUrl: true,
+    forwardParamsSuccessRedirect: true,
+    redirectUrlOnNoRoutingFormResponse: true,
     workflows: {
       include: {
         workflow: {
@@ -688,7 +685,7 @@ export async function getUsersFromEvent(
     // getOwnerFromUsersArray is used here for backward compatibility when team event type has users[] but not hosts[]
     return eventHosts.length
       ? eventHosts.filter((host) => host.user.username).map(mapHostsToUsers)
-      : (await getOwnerFromUsersArray(prisma, id)) ?? [];
+      : ((await getOwnerFromUsersArray(prisma, id)) ?? []);
   }
   if (!owner) {
     return null;
@@ -759,69 +756,3 @@ function mapHostsToUsers(host: {
     profile: host.user.profile,
   };
 }
-
-export const processEventDataShared = async ({
-  eventData,
-  metadata,
-  prisma,
-}: {
-  eventData: Prisma.EventTypeGetPayload<{ select: ReturnType<typeof getPublicEventSelect> }>;
-  metadata: ReturnType<typeof eventTypeMetaDataSchemaWithTypedApps.parse>;
-  prisma: PrismaClient;
-}) => {
-  let showInstantEventConnectNowModal = eventData.isInstantEvent ?? false;
-  if (eventData.isInstantEvent && eventData.instantMeetingSchedule?.id) {
-    const { id, timeZone } = eventData.instantMeetingSchedule;
-    showInstantEventConnectNowModal = await isCurrentlyAvailable({
-      prisma,
-      instantMeetingScheduleId: id,
-      availabilityTimezone: timeZone ?? "Europe/London",
-      length: eventData.length,
-    });
-  }
-
-  return {
-    id: eventData.id,
-    title: eventData.title,
-    slug: eventData.slug,
-    schedulingType: eventData.schedulingType,
-    length: eventData.length,
-    enablePerHostLocations: eventData.enablePerHostLocations,
-    lockTimeZoneToggleOnBookingPage: eventData.lockTimeZoneToggleOnBookingPage,
-    lockedTimeZone: eventData.lockedTimeZone,
-    requiresConfirmation: eventData.requiresConfirmation,
-    requiresBookerEmailVerification: eventData.requiresBookerEmailVerification,
-    autoTranslateDescriptionEnabled: eventData.autoTranslateDescriptionEnabled,
-    fieldTranslations: eventData.fieldTranslations,
-    price: eventData.price,
-    currency: eventData.currency,
-    seatsPerTimeSlot: eventData.seatsPerTimeSlot,
-    seatsShowAvailabilityCount: eventData.seatsShowAvailabilityCount,
-    forwardParamsSuccessRedirect: eventData.forwardParamsSuccessRedirect,
-    successRedirectUrl: eventData.successRedirectUrl,
-    redirectUrlOnNoRoutingFormResponse: eventData.redirectUrlOnNoRoutingFormResponse,
-    disableGuests: eventData.disableGuests,
-    hidden: eventData.hidden,
-    team: eventData.team,
-    schedule: eventData.schedule,
-    isInstantEvent: eventData.isInstantEvent,
-    instantMeetingParameters: eventData.instantMeetingParameters,
-    aiPhoneCallConfig: eventData.aiPhoneCallConfig,
-    assignAllTeamMembers: eventData.assignAllTeamMembers,
-    disableCancelling: eventData.disableCancelling,
-    disableRescheduling: eventData.disableRescheduling,
-    allowReschedulingCancelledBookings: eventData.allowReschedulingCancelledBookings,
-    interfaceLanguage: eventData.interfaceLanguage,
-    bookerLayouts: bookerLayoutsSchema.parse(metadata?.bookerLayouts || null),
-    description: markdownToSafeHTML(eventData.description),
-    metadata,
-    customInputs: customInputSchema.array().parse(eventData.customInputs || []),
-    locations: privacyFilteredLocations((eventData.locations || []) as LocationObject[]),
-    bookingFields: getBookingFieldsWithSystemFields(eventData),
-    recurringEvent: isRecurringEvent(eventData.recurringEvent)
-      ? parseRecurringEvent(eventData.recurringEvent)
-      : null,
-    isDynamic: false,
-    showInstantEventConnectNowModal,
-  };
-};
