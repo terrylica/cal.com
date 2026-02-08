@@ -8,12 +8,12 @@ import type {
   getUsersFromEvent,
 } from "@calcom/features/eventtypes/lib/getPublicEvent";
 import { getProfileFromEvent, isCurrentlyAvailable } from "@calcom/features/eventtypes/lib/getPublicEvent";
-import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { isRecurringEvent, parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import type { Prisma, PrismaClient } from "@calcom/prisma/client";
 import { bookerLayouts as bookerLayoutsSchema, customInputSchema } from "@calcom/prisma/zod-utils";
+import type { UserProfile } from "@calcom/types/UserProfile";
 import type { getCachedTeamData } from "./queries";
 
 /**
@@ -35,7 +35,12 @@ export async function _processTeamEventData({
   eventData: Prisma.EventTypeGetPayload<{ select: ReturnType<typeof getPublicEventSelect> }>;
   metadata: ReturnType<typeof eventTypeMetaDataSchemaWithTypedApps.parse>;
   prisma: PrismaClient;
-  enrichedOwner: Awaited<ReturnType<UserRepository["enrichUserWithItsProfile"]>> | null;
+  enrichedOwner:
+    | (Prisma.EventTypeGetPayload<{ select: ReturnType<typeof getPublicEventSelect> }>["owner"] & {
+        nonProfileUsername: string | null;
+        profile: UserProfile;
+      })
+    | null;
   subsetOfHosts: Awaited<ReturnType<typeof getEventTypeHosts>>["subsetOfHosts"];
   hosts: Awaited<ReturnType<typeof getEventTypeHosts>>["hosts"];
   users: NonNullable<Awaited<ReturnType<typeof getUsersFromEvent>>>;
