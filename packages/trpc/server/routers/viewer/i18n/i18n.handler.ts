@@ -1,9 +1,6 @@
 import path from "node:path";
-
 import type { I18nInputSchema } from "./i18n.schema";
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const i18nConfig = require("@calcom/config/next-i18next.config");
+import i18nConfig from "@calcom/config/next-i18next.config";
 
 type I18nOptions = {
   input: I18nInputSchema;
@@ -12,10 +9,11 @@ type I18nOptions = {
 export const i18nHandler = async ({ input }: I18nOptions) => {
   const { locale } = input;
   const { serverSideTranslations } = await import("next-i18next/serverSideTranslations");
-  const i18n = await serverSideTranslations(locale, ["common", "vital"], {
+  const config = {
     ...i18nConfig,
     localePath: path.resolve("./public/static/locales"),
-  });
+  };
+  const i18n = await serverSideTranslations(locale, ["common", "vital"], config);
 
   return {
     i18n,
