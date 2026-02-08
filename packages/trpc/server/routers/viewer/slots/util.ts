@@ -57,6 +57,7 @@ import type { Logger } from "tslog";
 import { v4 as uuid } from "uuid";
 import type { TGetScheduleInputSchema } from "./getSchedule.schema";
 import type { GetScheduleOptions } from "./types";
+import type { OrgMembershipLookup } from "@calcom/trpc/server/routers/viewer/slots/util";
 
 const log = logger.getSubLogger({ prefix: ["[slots/util]"] });
 const DEFAULT_SLOTS_CACHE_TTL = 2000;
@@ -64,20 +65,12 @@ const DEFAULT_SLOTS_CACHE_TTL = 2000;
 type GetAvailabilityUserWithDelegationCredentials = Omit<NonNullable<GetAvailabilityUser>, "credentials"> & {
   credentials: CredentialForCalendarService[];
 };
-
-export type { IGetAvailableSlots } from "@calcom/features/bookings/Booker/hooks/useAvailableTimeSlots.ts";
+import type { IGetAvailableSlots } from "@calcom/features/bookings/Booker/hooks/useAvailableTimeSlots";
+export type { IGetAvailableSlots } from "@calcom/features/bookings/Booker/hooks/useAvailableTimeSlots";
 
 export type GetAvailableSlotsResponse = Awaited<
   ReturnType<(typeof AvailableSlotsService)["prototype"]["_getAvailableSlots"]>
 >;
-
-/**
- * Minimal capability interface for looking up a user's organization membership.
- * Used as a fallback when org context can't be determined from request or eventType.
- */
-export interface OrgMembershipLookup {
-  findFirstOrganizationIdForUser(args: { userId: number }): Promise<number | null>;
-}
 
 export interface IAvailableSlotsService {
   oooRepo: PrismaOOORepository;
