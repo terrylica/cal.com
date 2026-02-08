@@ -7,8 +7,6 @@ import type {
   CurrentSeats,
   EventType,
   GetAvailabilityUser,
-  IFromUser,
-  IToUser,
   UserAvailabilityService,
 } from "@calcom/features/availability/lib/getUserAvailability";
 import type { CheckBookingLimitsService } from "@calcom/features/bookings/lib/checkBookingLimits";
@@ -67,24 +65,7 @@ type GetAvailabilityUserWithDelegationCredentials = Omit<NonNullable<GetAvailabi
   credentials: CredentialForCalendarService[];
 };
 
-export interface IGetAvailableSlots {
-  slots: Record<
-    string,
-    {
-      time: string;
-      attendees?: number | undefined;
-      bookingUid?: string | undefined;
-      away?: boolean | undefined;
-      fromUser?: IFromUser | undefined;
-      toUser?: IToUser | undefined;
-      reason?: string | undefined;
-      emoji?: string | undefined;
-      showNotePublicly?: boolean | undefined;
-    }[]
-  >;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  troubleshooter?: any;
-}
+export type { IGetAvailableSlots } from "@calcom/features/bookings/Booker/hooks/useAvailableTimeSlots.ts";
 
 export type GetAvailableSlotsResponse = Awaited<
   ReturnType<(typeof AvailableSlotsService)["prototype"]["_getAvailableSlots"]>
