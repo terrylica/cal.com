@@ -204,7 +204,7 @@ jobs:
               - '!.github/CODEOWNERS'
               - '!docs/**'
               - '!help/**'
-              - '!apps/web/public/static/locales/**/common.json'
+              - '!packages/config/locales/**/common.json'
               - '!i18n.lock'
       - name: Check for specific path changes
         uses: dorny/paths-filter@v3
