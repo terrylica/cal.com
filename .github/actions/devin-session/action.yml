@@ -85,7 +85,8 @@ runs:
           const devinSessionPatterns = [
             'Devin AI is completing this stale PR',
             'Devin AI is addressing Cubic AI',
-            'Devin AI is resolving merge conflicts'
+            'Devin AI is resolving merge conflicts',
+            'Devin AI is fixing failing tests'
           ];
 
           const comments = await github.rest.issues.listComments({

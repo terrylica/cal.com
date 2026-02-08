@@ -1,0 +1,572 @@
+name: Devin Fix Failing Tests
+
+on:
+  pull_request_target:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to fix failing tests for'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  fix-failing-tests:
+    name: Trigger Devin to Fix Failing Tests
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    if: |
+      (github.event_name == 'pull_request_target' && github.event.label.name == 'devin-fix-failing-tests') ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Get PR details
+        id: get-pr
+        uses: actions/github-script@v7
+        env:
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            let prNumber;
+
+            if (context.eventName === 'workflow_dispatch') {
+              prNumber = parseInt(process.env.INPUT_PR_NUMBER, 10);
+              if (!prNumber) {
+                core.setFailed('PR number is required for manual dispatch');
+                return;
+              }
+            } else {
+              prNumber = context.payload.pull_request.number;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber
+            });
+
+            if (!pr) {
+              core.setFailed(`PR #${prNumber} not found`);
+              return;
+            }
+
+            const isFork = pr.head.repo?.fork || pr.head.repo?.full_name !== `${owner}/${repo}`;
+            const maintainerCanModify = pr.maintainer_can_modify;
+
+            core.setOutput('pr-number', prNumber.toString());
+            core.setOutput('pr-title', pr.title);
+            core.setOutput('pr-author', pr.user.login);
+            core.setOutput('pr-branch', pr.head.ref);
+            core.setOutput('pr-head-sha', pr.head.sha);
+            core.setOutput('is-fork', isFork.toString());
+            core.setOutput('head-repo-full-name', pr.head.repo?.full_name || `${owner}/${repo}`);
+            core.setOutput('maintainer-can-modify', maintainerCanModify.toString());
+            core.setOutput('needs-maintainer-access', (isFork && !maintainerCanModify).toString());
+            core.setOutput('author-association', pr.author_association);
+
+            console.log(`PR #${prNumber}: ${pr.title}`);
+            console.log(`Author: ${pr.user.login} (${pr.author_association})`);
+            console.log(`Head SHA: ${pr.head.sha}`);
+            console.log(`Is fork: ${isFork}`);
+
+      - name: Check if author is a core contributor
+        id: check-contributor
+        uses: actions/github-script@v7
+        env:
+          PR_AUTHOR: ${{ steps.get-pr.outputs.pr-author }}
+          AUTHOR_ASSOCIATION: ${{ steps.get-pr.outputs.author-association }}
+          PR_NUMBER: ${{ steps.get-pr.outputs.pr-number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prAuthor = process.env.PR_AUTHOR;
+            const authorAssociation = process.env.AUTHOR_ASSOCIATION;
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            const trustedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR'];
+
+            let isCoreContributor = trustedAssociations.includes(authorAssociation);
+
+            if (!isCoreContributor) {
+              try {
+                const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+                  owner,
+                  repo,
+                  username: prAuthor,
+                });
+                isCoreContributor = ['admin', 'maintain', 'write'].includes(permission.permission);
+              } catch (e) {
+                console.log(`Permission check failed for ${prAuthor}: ${e.message}`);
+              }
+            }
+
+            if (!isCoreContributor) {
+              console.log(`PR author ${prAuthor} is not a core contributor`);
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: `### Cannot Fix Failing Tests\n\nThe \`devin-fix-failing-tests\` label is only available for PRs authored by core contributors. PR author @${prAuthor} does not have the required permissions.\n\nThe label has been removed.`
+              });
+
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  name: 'devin-fix-failing-tests'
+                });
+              } catch (e) {
+                console.log(`Failed to remove label: ${e.message}`);
+              }
+
+              core.setFailed('PR author is not a core contributor');
+              return;
+            }
+
+            console.log(`PR author ${prAuthor} is a core contributor`);
+            core.setOutput('is-core-contributor', 'true');
+
+      - name: Request maintainer access for fork PR
+        if: steps.check-contributor.outputs.is-core-contributor == 'true' && steps.get-pr.outputs.needs-maintainer-access == 'true'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.get-pr.outputs.pr-number }}
+          PR_AUTHOR: ${{ steps.get-pr.outputs.pr-author }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            const prAuthor = process.env.PR_AUTHOR;
+
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber
+            });
+
+            const alreadyRequested = comments.data.some(comment =>
+              comment.body?.includes('### Maintainer Access Needed')
+            );
+
+            if (!alreadyRequested) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: [
+                  '### Maintainer Access Needed',
+                  '',
+                  `Hi @${prAuthor}! We'd like to help fix the failing tests on this PR, but "Allow edits from maintainers" isn't enabled.`,
+                  '',
+                  '**Could you please enable this setting?** Here\'s how:',
+                  '1. Scroll down to the bottom of this PR page',
+                  '2. In the right sidebar, check the box that says **"Allow edits and access to secrets by maintainers"**',
+                  '',
+                  'Once enabled, please remove and re-add the `devin-fix-failing-tests` label to trigger the fix.'
+                ].join('\n')
+              });
+            }
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number: prNumber,
+                name: 'devin-fix-failing-tests'
+              });
+            } catch (e) {
+              console.log(`Failed to remove label: ${e.message}`);
+            }
+
+            core.setFailed('Cannot proceed without maintainer access on fork PR');
+
+      - name: Find failing test jobs
+        if: steps.check-contributor.outputs.is-core-contributor == 'true' && steps.get-pr.outputs.needs-maintainer-access != 'true'
+        id: find-failures
+        uses: actions/github-script@v7
+        env:
+          PR_HEAD_SHA: ${{ steps.get-pr.outputs.pr-head-sha }}
+          PR_NUMBER: ${{ steps.get-pr.outputs.pr-number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const headSha = process.env.PR_HEAD_SHA;
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+
+            const testJobPatterns = [
+              /^Unit$/i,
+              /^API v2 Unit$/i,
+              /^Integration$/i,
+              /^E2E\b/i,
+              /^E2E App Store$/i,
+              /^E2E Embed Core$/i,
+              /^E2E Embed React$/i,
+              /^E2E API v2\b/i,
+              /^E2E Atoms$/i,
+              /^Production builds$/i,
+              /^Type Checks$/i,
+              /^Companion builds$/i,
+              /^Linters \/ Companion/i,
+              /^Type Checks \/ Companion/i,
+            ];
+
+            function isTestJob(jobName) {
+              return testJobPatterns.some(pattern => pattern.test(jobName));
+            }
+
+            const checkRuns = await github.paginate(github.rest.checks.listForRef, {
+              owner,
+              repo,
+              ref: headSha,
+              per_page: 100,
+            });
+
+            console.log(`Found ${checkRuns.length} total check runs for SHA ${headSha}`);
+
+            const failingTestJobs = checkRuns.filter(run =>
+              run.conclusion === 'failure' && isTestJob(run.name)
+            );
+
+            console.log(`Found ${failingTestJobs.length} failing test job(s):`);
+            failingTestJobs.forEach(job => {
+              console.log(`  - ${job.name} (ID: ${job.id})`);
+            });
+
+            if (failingTestJobs.length === 0) {
+              console.log('No failing test jobs found');
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: '### No Failing Tests Found\n\nNo failing test, build, or type-check jobs were detected for the latest commit on this PR. The `devin-fix-failing-tests` label has been removed.\n\nIf CI hasn\'t run yet, please wait for it to complete and then re-add the label.'
+              });
+
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  name: 'devin-fix-failing-tests'
+                });
+              } catch (e) {
+                console.log(`Failed to remove label: ${e.message}`);
+              }
+
+              core.setOutput('has-failures', 'false');
+              return;
+            }
+
+            core.setOutput('has-failures', 'true');
+            core.setOutput('failing-job-names', failingTestJobs.map(j => j.name).join(', '));
+
+            const fs = require('fs');
+            fs.writeFileSync('/tmp/failing-jobs.json', JSON.stringify(
+              failingTestJobs.map(j => ({
+                id: j.id,
+                name: j.name,
+                html_url: j.html_url,
+                details_url: j.details_url,
+              }))
+            ));
+
+      - name: Fetch failure logs
+        if: steps.find-failures.outputs.has-failures == 'true'
+        id: fetch-logs
+        uses: actions/github-script@v7
+        env:
+          PR_HEAD_SHA: ${{ steps.get-pr.outputs.pr-head-sha }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const headSha = process.env.PR_HEAD_SHA;
+            const failingJobs = JSON.parse(fs.readFileSync('/tmp/failing-jobs.json', 'utf8'));
+
+            const workflowRuns = await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+              owner,
+              repo,
+              head_sha: headSha,
+              per_page: 100,
+            });
+
+            const MAX_LOG_LENGTH = 3000;
+            const failureSummaries = [];
+
+            for (const failingJob of failingJobs) {
+              let logContent = '';
+
+              for (const run of workflowRuns) {
+                try {
+                  const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+                    owner,
+                    repo,
+                    run_id: run.id,
+                    per_page: 100,
+                  });
+
+                  const matchingJob = jobs.jobs.find(j =>
+                    j.name === failingJob.name && j.conclusion === 'failure'
+                  );
+
+                  if (matchingJob) {
+                    try {
+                      const { data: log } = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                        owner,
+                        repo,
+                        job_id: matchingJob.id,
+                      });
+
+                      const logStr = typeof log === 'string' ? log : log.toString();
+                      const lines = logStr.split('\n');
+                      const errorLines = lines.filter(line =>
+                        /error|fail|FAIL|Error|assert|Assert|✗|✕|×|FAILED|panic|exception/i.test(line)
+                      );
+
+                      logContent = errorLines.length > 0
+                        ? errorLines.slice(-100).join('\n')
+                        : lines.slice(-100).join('\n');
+
+                      if (logContent.length > MAX_LOG_LENGTH) {
+                        logContent = '...' + logContent.slice(-MAX_LOG_LENGTH);
+                      }
+                    } catch (logErr) {
+                      console.log(`Could not download logs for job ${matchingJob.id}: ${logErr.message}`);
+                      logContent = 'Could not retrieve logs for this job.';
+                    }
+                    break;
+                  }
+                } catch (e) {
+                  console.log(`Error checking workflow run ${run.id}: ${e.message}`);
+                }
+              }
+
+              failureSummaries.push({
+                name: failingJob.name,
+                url: failingJob.html_url || failingJob.details_url,
+                log: logContent || 'No log content available.',
+              });
+            }
+
+            fs.writeFileSync('/tmp/failure-summaries.json', JSON.stringify(failureSummaries));
+            console.log(`Collected failure summaries for ${failureSummaries.length} job(s)`);
+
+      - name: Checkout repository
+        if: steps.find-failures.outputs.has-failures == 'true'
+        uses: actions/checkout@v4
+
+      - name: Check for existing Devin session
+        if: steps.find-failures.outputs.has-failures == 'true'
+        id: check-session
+        uses: ./.github/actions/devin-session
+        with:
+          devin-api-key: ${{ secrets.DEVIN_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ steps.get-pr.outputs.pr-number }}
+
+      - name: Create or reuse Devin session
+        if: steps.find-failures.outputs.has-failures == 'true'
+        id: devin-session
+        uses: actions/github-script@v7
+        env:
+          DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+          PR_NUMBER: ${{ steps.get-pr.outputs.pr-number }}
+          PR_TITLE: ${{ steps.get-pr.outputs.pr-title }}
+          PR_AUTHOR: ${{ steps.get-pr.outputs.pr-author }}
+          PR_BRANCH: ${{ steps.get-pr.outputs.pr-branch }}
+          IS_FORK: ${{ steps.get-pr.outputs.is-fork }}
+          HEAD_REPO_FULL_NAME: ${{ steps.get-pr.outputs.head-repo-full-name }}
+          HAS_EXISTING_SESSION: ${{ steps.check-session.outputs.has-existing-session }}
+          EXISTING_SESSION_ID: ${{ steps.check-session.outputs.session-id }}
+          EXISTING_SESSION_URL: ${{ steps.check-session.outputs.session-url }}
+          FAILING_JOB_NAMES: ${{ steps.find-failures.outputs.failing-job-names }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            const prTitle = process.env.PR_TITLE;
+            const prBranch = process.env.PR_BRANCH;
+            const prAuthor = process.env.PR_AUTHOR;
+            const isFork = process.env.IS_FORK === 'true';
+            const headRepoFullName = process.env.HEAD_REPO_FULL_NAME;
+            const hasExistingSession = process.env.HAS_EXISTING_SESSION === 'true';
+            const existingSessionId = process.env.EXISTING_SESSION_ID;
+            const existingSessionUrl = process.env.EXISTING_SESSION_URL;
+            const failingJobNames = process.env.FAILING_JOB_NAMES;
+
+            const failureSummaries = JSON.parse(fs.readFileSync('/tmp/failure-summaries.json', 'utf8'));
+
+            let failureDetails = '';
+            for (const summary of failureSummaries) {
+              failureDetails += `\n### Failing Job: ${summary.name}\n`;
+              if (summary.url) {
+                failureDetails += `URL: ${summary.url}\n`;
+              }
+              failureDetails += `\nError logs (truncated):\n\`\`\`\n${summary.log}\n\`\`\`\n`;
+            }
+
+            const cloneInstructions = isFork
+              ? `This is a fork PR. Clone the fork repository: ${headRepoFullName}
+            - git clone https://github.com/${headRepoFullName}.git
+            - git checkout ${prBranch}
+            - git remote add upstream https://github.com/${owner}/${repo}.git
+
+            IMPORTANT - Pushing to Fork PRs:
+            Since this is a fork PR, you need to use the DEVIN_ACTIONS_PAT secret for authentication when pushing.`
+              : `Clone the repository ${owner}/${repo} and check out branch: ${prBranch}`;
+
+            const fixInstructions = `You are fixing failing tests on PR #${prNumber} in repository ${owner}/${repo}.
+
+            PR Title: ${prTitle}
+            PR Author: @${prAuthor}
+            PR Branch: ${prBranch}
+
+            The following CI jobs are failing: ${failingJobNames}
+
+            ${cloneInstructions}
+
+            Here are the failure details:
+            ${failureDetails}
+
+            Your tasks:
+            1. Clone the repository and check out the PR branch as described above.
+            2. Review the PR changes to understand the context.
+            3. Analyze each failing test/build/type-check and understand the root cause.
+            4. Prioritize fixes in this order:
+               a. Type errors first (run yarn type-check:ci --force) — type errors often cause downstream test failures.
+               b. Unit test failures.
+               c. Integration test failures.
+               d. E2E test failures.
+               e. Production build failures.
+            5. Fix the issues incrementally — one file at a time.
+            6. Run the relevant test/build commands locally before pushing:
+               - Type checks: yarn type-check:ci --force
+               - Unit tests: TZ=UTC yarn test
+               - Integration tests: VITEST_MODE=integration TZ=UTC yarn test
+               - If you see missing enum/type errors, run yarn prisma generate first.
+            7. Commit your fixes with clear commit messages.
+            8. Push your changes to the PR branch.
+            9. After successfully pushing, remove the \`devin-fix-failing-tests\` label from the PR using the GitHub API.
+            10. Post a summary comment on the PR explaining what was fixed.
+
+            Rules and Guidelines:
+            1. Make minimal, focused changes that fix the failing tests/builds without altering unrelated code.
+            2. Follow the existing code style and conventions in the repository.
+            3. Never modify test assertions to make them pass unless the test itself is clearly wrong.
+            4. If a fix seems too complex or risky, explain the situation in a PR comment instead.
+            5. Never ask for user confirmation. Never wait for user messages.
+            6. CRITICAL: If this is a fork PR and you encounter ANY error when pushing, you MUST fail the task immediately. Do NOT attempt to push to a new branch in the main ${owner}/${repo} repository as a workaround.`;
+
+            try {
+              let sessionUrl;
+              let isNewSession = false;
+
+              if (hasExistingSession) {
+                console.log(`Sending message to existing session ${existingSessionId} for PR #${prNumber}`);
+
+                const message = `PR #${prNumber} has failing tests that need to be fixed.
+
+            ${fixInstructions}
+
+            Continue working on the same PR branch and push your fixes.`;
+
+                const response = await fetch(`https://api.devin.ai/v1/sessions/${existingSessionId}/message`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.DEVIN_API_KEY}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ message })
+                });
+
+                if (!response.ok) {
+                  console.error(`Failed to send message to session ${existingSessionId}: ${response.status}`);
+                  throw new Error(`Failed to send message to existing session: ${response.status}`);
+                }
+
+                sessionUrl = existingSessionUrl;
+                console.log(`Message sent to existing session for PR #${prNumber}`);
+              } else {
+                console.log(`Creating new Devin session for PR #${prNumber}`);
+
+                const response = await fetch('https://api.devin.ai/v1/sessions', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.DEVIN_API_KEY}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    prompt: fixInstructions,
+                    title: `Fix Failing Tests: PR #${prNumber}`,
+                    tags: ['fix-failing-tests', `pr-${prNumber}`]
+                  })
+                });
+
+                if (!response.ok) {
+                  console.error(`Devin API error for PR #${prNumber}: ${response.status} ${response.statusText}`);
+                  throw new Error(`Failed to create Devin session: ${response.status}`);
+                }
+
+                const data = await response.json();
+                sessionUrl = data.url || data.session_url;
+                isNewSession = true;
+              }
+
+              if (sessionUrl) {
+                if (isNewSession) {
+                  console.log(`Devin session created for PR #${prNumber}: ${sessionUrl}`);
+                }
+
+                const sessionStatusMessage = isNewSession
+                  ? 'A Devin session has been created to fix them.'
+                  : 'The existing Devin session has been notified to fix them.';
+
+                const jobList = failureSummaries.map(s =>
+                  s.url ? `- [${s.name}](${s.url})` : `- ${s.name}`
+                ).join('\n');
+
+                const commentBody = `### Devin AI is fixing failing tests
+
+            This PR has failing CI jobs. ${sessionStatusMessage}
+
+            **Failing jobs:**
+            ${jobList}
+
+            [View Devin Session](${sessionUrl})
+
+            Devin will:
+            1. Analyze the test/build/type-check failures
+            2. Fix the root causes
+            3. Verify fixes locally
+            4. Push the resolved changes
+
+            If you prefer to fix these manually, you can close the Devin session and handle it yourself.`;
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  body: commentBody
+                });
+
+                console.log(`Posted comment to PR #${prNumber}`);
+                core.setOutput('session-url', sessionUrl);
+              } else {
+                throw new Error(`Failed to get session URL for PR #${prNumber}`);
+              }
+            } catch (error) {
+              console.error(`Error handling Devin session for PR #${prNumber}: ${error.message}`);
+              core.setFailed(error.message);
+            }
