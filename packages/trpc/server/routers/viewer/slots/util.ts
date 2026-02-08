@@ -58,6 +58,7 @@ import { v4 as uuid } from "uuid";
 import type { TGetScheduleInputSchema } from "./getSchedule.schema";
 import type { GetScheduleOptions } from "./types";
 import type { OrgMembershipLookup } from "@calcom/features/di/modules/OrgMembershipLookup";
+import type { IGetAvailableSlots } from "@calcom/features/bookings/Booker/hooks/useAvailableTimeSlots";
 
 const log = logger.getSubLogger({ prefix: ["[slots/util]"] });
 const DEFAULT_SLOTS_CACHE_TTL = 2000;
@@ -65,7 +66,6 @@ const DEFAULT_SLOTS_CACHE_TTL = 2000;
 type GetAvailabilityUserWithDelegationCredentials = Omit<NonNullable<GetAvailabilityUser>, "credentials"> & {
   credentials: CredentialForCalendarService[];
 };
-import type { IGetAvailableSlots } from "@calcom/features/bookings/Booker/hooks/useAvailableTimeSlots";
 
 export type GetAvailableSlotsResponse = Awaited<
   ReturnType<(typeof AvailableSlotsService)["prototype"]["_getAvailableSlots"]>
