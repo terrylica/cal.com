@@ -29,7 +29,7 @@ import { unstable_cache } from "next/cache";
 /**
  * @internal - Exported for testing purposes only
  */
-export async function processPublicEventData({
+export async function _processTeamEventData({
   eventData,
   metadata,
   prisma,
@@ -182,7 +182,7 @@ export async function getEnrichedEventType({
 
   const eventMetaData = eventTypeMetaDataSchemaWithTypedApps.parse(eventType.metadata);
 
-  return processPublicEventData({
+  return _processTeamEventData({
     eventData: eventType,
     metadata: eventMetaData,
     prisma,

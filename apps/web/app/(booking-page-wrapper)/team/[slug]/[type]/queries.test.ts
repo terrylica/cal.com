@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@calcom/prisma";
 import { describe, expect, it, vi } from "vitest";
-import { processPublicEventData } from "./queries";
+import { _processTeamEventData } from "./queries";
 
 // Mock all the dependencies
 vi.mock("@calcom/features/bookings/lib/getBookingFields", () => ({
@@ -236,7 +236,7 @@ const PROCESS_PUBLIC_EVENT_DATA_EXPECTED_KEYS = [
   "entity",
 ].sort();
 
-describe("processPublicEventData", () => {
+describe("_processTeamEventData", () => {
   const prismaMock = {
     schedule: {
       findUniqueOrThrow: vi.fn().mockResolvedValue({ availability: [] }),
@@ -295,7 +295,7 @@ describe("processPublicEventData", () => {
   it("returns exactly the expected set of keys", async () => {
     const eventData = createMockEventData();
 
-    const result = await processPublicEventData(getTestParams(eventData));
+    const result = await _processTeamEventData(getTestParams(eventData));
 
     const resultKeys = Object.keys(result).sort();
     expect(resultKeys).toEqual(PROCESS_PUBLIC_EVENT_DATA_EXPECTED_KEYS);
@@ -304,7 +304,7 @@ describe("processPublicEventData", () => {
   it("does not leak heavy fields that are queried but not needed client-side", async () => {
     const eventData = createMockEventData();
 
-    const result = await processPublicEventData(getTestParams(eventData));
+    const result = await _processTeamEventData(getTestParams(eventData));
 
     for (const field of FIELDS_EXCLUDED_FROM_CLIENT) {
       expect(result).not.toHaveProperty(field);
@@ -315,7 +315,7 @@ describe("processPublicEventData", () => {
     const eventData = createMockEventData();
     expect(eventData.workflows.length).toBeGreaterThan(0);
 
-    const result = await processPublicEventData(getTestParams(eventData));
+    const result = await _processTeamEventData(getTestParams(eventData));
 
     expect(result).not.toHaveProperty("workflows");
     const resultStr = JSON.stringify(result);
@@ -360,7 +360,7 @@ describe("processPublicEventData", () => {
 
     const eventData = createMockEventData();
 
-    const result = await processPublicEventData(getTestParams(eventData));
+    const result = await _processTeamEventData(getTestParams(eventData));
 
     for (const field of bookerEventFields) {
       expect(result).toHaveProperty(field);
@@ -371,7 +371,7 @@ describe("processPublicEventData", () => {
     const eventData = createMockEventData();
     eventData.hidden = true;
 
-    const result = await processPublicEventData(getTestParams(eventData));
+    const result = await _processTeamEventData(getTestParams(eventData));
 
     expect(result).toHaveProperty("hidden");
     expect(result.hidden).toBe(true);
@@ -380,7 +380,7 @@ describe("processPublicEventData", () => {
   it("includes team-specific fields (owner, hosts, users, entity)", async () => {
     const eventData = createMockEventData();
 
-    const result = await processPublicEventData(getTestParams(eventData));
+    const result = await _processTeamEventData(getTestParams(eventData));
 
     expect(result).toHaveProperty("owner");
     expect(result).toHaveProperty("subsetOfHosts");
