@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const copyLocales = () => {
-  const sourceDir = path.resolve(__dirname, "../../../packages/config/locales");
+  const sourceDir = path.resolve(__dirname, "../../../packages/config/i18n/locales");
   const destDir = path.resolve(__dirname, "../public/static/locales");
 
   // Remove existing destination directory if it exists
