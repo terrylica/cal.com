@@ -7,17 +7,21 @@ import {
 } from "./hideBranding";
 
 // Mock the dependencies
-vi.mock("@calcom/features/ee/teams/repositories/TeamRepository", () => ({
-  TeamRepository: vi.fn().mockImplementation(() => ({
-    findTeamWithParentHideBranding: vi.fn(),
-  })),
-}));
+vi.mock("@calcom/features/ee/teams/repositories/TeamRepository", () => {
+  return {
+    TeamRepository: class MockTeamRepository {
+      findTeamWithParentHideBranding = vi.fn();
+    },
+  };
+});
 
-vi.mock("@calcom/features/users/repositories/UserRepository", () => ({
-  UserRepository: vi.fn().mockImplementation(() => ({
-    findUserWithHideBranding: vi.fn(),
-  })),
-}));
+vi.mock("@calcom/features/users/repositories/UserRepository", () => {
+  return {
+    UserRepository: class MockUserRepository {
+      findUserWithHideBranding = vi.fn();
+    },
+  };
+});
 
 vi.mock("@calcom/features/profile/repositories/ProfileRepository", () => ({
   ProfileRepository: {
