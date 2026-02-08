@@ -38,7 +38,7 @@ export async function _processTeamEventData({
   enrichedOwner: Awaited<ReturnType<UserRepository["enrichUserWithItsProfile"]>> | null;
   subsetOfHosts: Awaited<ReturnType<typeof getEventTypeHosts>>["subsetOfHosts"];
   hosts: Awaited<ReturnType<typeof getEventTypeHosts>>["hosts"];
-  users: Awaited<ReturnType<typeof getUsersFromEvent>>;
+  users: NonNullable<Awaited<ReturnType<typeof getUsersFromEvent>>>;
   teamData: NonNullable<Awaited<ReturnType<typeof getCachedTeamData>>>;
   fromRedirectOfNonOrgLink: boolean;
   orgSlug: string | null;
