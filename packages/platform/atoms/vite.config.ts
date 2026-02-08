@@ -84,6 +84,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
+        "~": path.resolve(__dirname, "../../../apps/web/modules"),
         "@": path.resolve(__dirname, "./src"),
         "@calcom/lib/markdownToSafeHTML": path.resolve(__dirname, "./lib/markdownToSafeHTML"),
         "@calcom/lib/hooks/useLocale": path.resolve(__dirname, "./lib/useLocale"),
