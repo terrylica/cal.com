@@ -317,6 +317,11 @@
       "outputLogs": "new-only",
       "outputs": ["public/app-store/**"]
     },
+    "@calcom/web#copy-locales": {
+      "inputs": ["../../packages/config/i18n/locales/**/*"],
+      "outputLogs": "new-only",
+      "outputs": ["public/static/locales/**"]
+    },
     "@calcom/prisma#build": {
       "cache": false,
       "dependsOn": ["post-install"]
@@ -345,7 +350,7 @@
       "outputs": ["./types"]
     },
     "@calcom/web#build": {
-      "dependsOn": ["^build", "copy-app-store-static"],
+      "dependsOn": ["^build", "copy-app-store-static", "copy-locales"],
       "outputs": [".next/**"],
       "env": [
         "NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL",
