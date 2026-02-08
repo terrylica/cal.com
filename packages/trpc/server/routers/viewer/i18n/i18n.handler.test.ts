@@ -2,8 +2,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const i18nConfig = require("@calcom/config/next-i18next.config");
+import i18nConfig from "@calcom/config/next-i18next.config";
 
 describe("i18n handler", () => {
   it("serverSideTranslations throws without config because next-i18next.config.js no longer exists", async () => {
