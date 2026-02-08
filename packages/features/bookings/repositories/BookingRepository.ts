@@ -15,6 +15,8 @@ import {
 } from "@calcom/prisma/selects/booking";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 
+import { workflowSelect } from "../../ee/workflows/lib/getAllWorkflows";
+
 const workflowReminderSelect = {
   id: true,
   referenceId: true,
