@@ -5,10 +5,10 @@ import type { SWHMap } from "./__handler";
 import handler from "./_invoice.payment_succeeded";
 
 const onPaymentSucceeded = vi.fn().mockResolvedValue({ handled: true });
-const resolveBySubscriptionId = vi.fn().mockResolvedValue({ onPaymentSucceeded });
+const createBySubscriptionId = vi.fn().mockResolvedValue({ onPaymentSucceeded });
 
 vi.mock("@calcom/features/ee/billing/di/containers/Billing", () => ({
-  getSeatBillingStrategyResolver: () => ({ resolveBySubscriptionId }),
+  getSeatBillingStrategyFactory: () => ({ createBySubscriptionId }),
 }));
 
 describe("invoice.payment_succeeded webhook", () => {
@@ -32,7 +32,7 @@ describe("invoice.payment_succeeded webhook", () => {
 
     const result = await handler(data);
 
-    expect(resolveBySubscriptionId).toHaveBeenCalledWith("sub_123");
+    expect(createBySubscriptionId).toHaveBeenCalledWith("sub_123");
     expect(onPaymentSucceeded).toHaveBeenCalledWith({
       lines: data.object.lines,
     });
@@ -55,7 +55,7 @@ describe("invoice.payment_succeeded webhook", () => {
 
     const result = await handler(data);
 
-    expect(resolveBySubscriptionId).not.toHaveBeenCalled();
+    expect(createBySubscriptionId).not.toHaveBeenCalled();
     expect(result).toEqual({ success: true, message: "not a subscription invoice" });
   });
 

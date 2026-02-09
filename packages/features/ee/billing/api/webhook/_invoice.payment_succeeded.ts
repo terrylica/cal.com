@@ -1,4 +1,4 @@
-import { getSeatBillingStrategyResolver } from "@calcom/features/ee/billing/di/containers/Billing";
+import { getSeatBillingStrategyFactory } from "@calcom/features/ee/billing/di/containers/Billing";
 import logger from "@calcom/lib/logger";
 
 import type { SWHMap } from "./__handler";
@@ -18,8 +18,8 @@ const handler = async (data: Data) => {
     return { success: true, message: "not a subscription invoice" };
   }
 
-  const resolver = getSeatBillingStrategyResolver();
-  const strategy = await resolver.resolveBySubscriptionId(subscriptionId);
+  const factory = getSeatBillingStrategyFactory();
+  const strategy = await factory.createBySubscriptionId(subscriptionId);
   const { handled } = await strategy.onPaymentSucceeded({ lines: invoice.lines });
 
   if (handled) {

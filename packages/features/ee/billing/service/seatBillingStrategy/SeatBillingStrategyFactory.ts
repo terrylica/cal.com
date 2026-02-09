@@ -11,9 +11,9 @@ import { ImmediateUpdateStrategy } from "./ImmediateUpdateStrategy";
 import type { ISeatBillingStrategy } from "./ISeatBillingStrategy";
 import { MonthlyProrationStrategy } from "./MonthlyProrationStrategy";
 
-const log = logger.getSubLogger({ prefix: ["SeatBillingStrategyResolver"] });
+const log = logger.getSubLogger({ prefix: ["SeatBillingStrategyFactory"] });
 
-export interface ISeatBillingStrategyResolverDeps {
+export interface ISeatBillingStrategyFactoryDeps {
   billingPeriodService: BillingPeriodService;
   featuresRepository: IFeaturesRepository;
   billingProviderService: IBillingProviderService;
@@ -22,44 +22,45 @@ export interface ISeatBillingStrategyResolverDeps {
   monthlyProrationService: MonthlyProrationService;
 }
 
-export class SeatBillingStrategyResolver {
-  private readonly strategies: ISeatBillingStrategy[];
+export class SeatBillingStrategyFactory {
+  private readonly prorationStrategy: ISeatBillingStrategy;
+  private readonly hwmStrategy: ISeatBillingStrategy;
   private readonly fallback: ISeatBillingStrategy;
 
-  constructor(private readonly deps: ISeatBillingStrategyResolverDeps) {
+  constructor(private readonly deps: ISeatBillingStrategyFactoryDeps) {
     this.fallback = new ImmediateUpdateStrategy(deps.billingProviderService);
-    this.strategies = [
-      new MonthlyProrationStrategy({
-        featuresRepository: deps.featuresRepository,
-        monthlyProrationService: deps.monthlyProrationService,
-      }),
-      new HighWaterMarkStrategy({
-        featuresRepository: deps.featuresRepository,
-        highWaterMarkRepository: deps.highWaterMarkRepository,
-        highWaterMarkService: deps.highWaterMarkService,
-      }),
-      this.fallback,
-    ];
+    this.prorationStrategy = new MonthlyProrationStrategy({
+      monthlyProrationService: deps.monthlyProrationService,
+    });
+    this.hwmStrategy = new HighWaterMarkStrategy({
+      highWaterMarkRepository: deps.highWaterMarkRepository,
+      highWaterMarkService: deps.highWaterMarkService,
+    });
   }
 
-  async resolve(teamId: number): Promise<ISeatBillingStrategy> {
+  async create(teamId: number): Promise<ISeatBillingStrategy> {
     const info = await this.deps.billingPeriodService.getBillingPeriodInfo(teamId);
 
-    for (const strategy of this.strategies) {
-      if (await strategy.canHandle(info)) {
-        return strategy;
+    if (!info.isInTrial && info.subscriptionStart) {
+      if (info.billingPeriod === "ANNUALLY") {
+        const enabled = await this.deps.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
+        if (enabled) return this.prorationStrategy;
+      }
+      if (info.billingPeriod === "MONTHLY") {
+        const enabled = await this.deps.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
+        if (enabled) return this.hwmStrategy;
       }
     }
 
     return this.fallback;
   }
 
-  async resolveBySubscriptionId(subscriptionId: string): Promise<ISeatBillingStrategy> {
+  async createBySubscriptionId(subscriptionId: string): Promise<ISeatBillingStrategy> {
     const billing = await this.deps.highWaterMarkRepository.getBySubscriptionId(subscriptionId);
     if (!billing) {
       log.warn(`No billing record found for subscription ${subscriptionId}, using fallback strategy`);
       return this.fallback;
     }
-    return this.resolve(billing.teamId);
+    return this.create(billing.teamId);
   }
 }

@@ -5,7 +5,7 @@ import type { IBillingProviderService } from "../../billingProvider/IBillingProv
 import { HighWaterMarkStrategy } from "../HighWaterMarkStrategy";
 import { ImmediateUpdateStrategy } from "../ImmediateUpdateStrategy";
 import { MonthlyProrationStrategy } from "../MonthlyProrationStrategy";
-import { SeatBillingStrategyResolver } from "../SeatBillingStrategyResolver";
+import { SeatBillingStrategyFactory } from "../SeatBillingStrategyFactory";
 
 function createMockBillingPeriodService(info: BillingPeriodInfo) {
   return { getBillingPeriodInfo: vi.fn().mockResolvedValue(info) };
@@ -53,12 +53,12 @@ const baseBillingInfo: BillingPeriodInfo = {
   isOrganization: false,
 };
 
-function createResolver(
+function createFactory(
   info: BillingPeriodInfo,
   enabledFlags: Record<string, boolean>,
   overrides?: { highWaterMarkRepository?: ReturnType<typeof createMockHighWaterMarkRepository> }
-): SeatBillingStrategyResolver {
-  return new SeatBillingStrategyResolver({
+): SeatBillingStrategyFactory {
+  return new SeatBillingStrategyFactory({
     billingPeriodService: createMockBillingPeriodService(info),
     featuresRepository: createMockFeaturesRepository(enabledFlags),
     billingProviderService: createMockBillingProviderService(),
@@ -68,13 +68,13 @@ function createResolver(
   } as never);
 }
 
-describe("SeatBillingStrategyResolver", () => {
+describe("SeatBillingStrategyFactory", () => {
   it("returns MonthlyProrationStrategy for annual plan with proration enabled", async () => {
     const billingPeriodService = createMockBillingPeriodService({
       ...baseBillingInfo,
       billingPeriod: "ANNUALLY",
     });
-    const resolver = new SeatBillingStrategyResolver({
+    const factory = new SeatBillingStrategyFactory({
       billingPeriodService,
       featuresRepository: createMockFeaturesRepository({ "monthly-proration": true }),
       billingProviderService: createMockBillingProviderService(),
@@ -82,93 +82,93 @@ describe("SeatBillingStrategyResolver", () => {
       highWaterMarkService: createMockHighWaterMarkService(),
       monthlyProrationService: createMockMonthlyProrationService(),
     } as never);
-    const strategy = await resolver.resolve(1);
+    const strategy = await factory.create(1);
 
     expect(strategy).toBeInstanceOf(MonthlyProrationStrategy);
     expect(billingPeriodService.getBillingPeriodInfo).toHaveBeenCalledWith(1);
   });
 
   it("returns HighWaterMarkStrategy for monthly plan with HWM enabled", async () => {
-    const resolver = createResolver(
+    const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: "MONTHLY" },
       { "hwm-seating": true }
     );
-    const strategy = await resolver.resolve(1);
+    const strategy = await factory.create(1);
 
     expect(strategy).toBeInstanceOf(HighWaterMarkStrategy);
   });
 
   it("returns ImmediateUpdateStrategy for annual plan with proration disabled", async () => {
-    const resolver = createResolver(
+    const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: "ANNUALLY" },
       { "monthly-proration": false }
     );
-    const strategy = await resolver.resolve(1);
+    const strategy = await factory.create(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy for monthly plan with HWM disabled", async () => {
-    const resolver = createResolver(
+    const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: "MONTHLY" },
       { "hwm-seating": false }
     );
-    const strategy = await resolver.resolve(1);
+    const strategy = await factory.create(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy when team is in trial", async () => {
-    const resolver = createResolver(
+    const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: "ANNUALLY", isInTrial: true, trialEnd: new Date("2026-06-01") },
       { "monthly-proration": true }
     );
-    const strategy = await resolver.resolve(1);
+    const strategy = await factory.create(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy when subscriptionStart is null", async () => {
-    const resolver = createResolver(
+    const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: "ANNUALLY", subscriptionStart: null },
       { "monthly-proration": true }
     );
-    const strategy = await resolver.resolve(1);
+    const strategy = await factory.create(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy when billingPeriod is null", async () => {
-    const resolver = createResolver(
+    const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: null },
       { "monthly-proration": true, "hwm-seating": true }
     );
-    const strategy = await resolver.resolve(1);
+    const strategy = await factory.create(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
-  it("resolveBySubscriptionId looks up teamId and delegates to resolve", async () => {
+  it("createBySubscriptionId looks up teamId and delegates to create", async () => {
     const hwmRepo = createMockHighWaterMarkRepository();
     hwmRepo.getBySubscriptionId.mockResolvedValue({ teamId: 42 });
 
-    const resolver = createResolver(
+    const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: "MONTHLY" },
       { "hwm-seating": true },
       { highWaterMarkRepository: hwmRepo }
     );
-    const strategy = await resolver.resolveBySubscriptionId("sub_abc");
+    const strategy = await factory.createBySubscriptionId("sub_abc");
 
     expect(hwmRepo.getBySubscriptionId).toHaveBeenCalledWith("sub_abc");
     expect(strategy).toBeInstanceOf(HighWaterMarkStrategy);
   });
 
-  it("resolveBySubscriptionId returns fallback when no billing record found", async () => {
+  it("createBySubscriptionId returns fallback when no billing record found", async () => {
     const hwmRepo = createMockHighWaterMarkRepository();
     hwmRepo.getBySubscriptionId.mockResolvedValue(null);
 
-    const resolver = createResolver(baseBillingInfo, {}, { highWaterMarkRepository: hwmRepo });
-    const strategy = await resolver.resolveBySubscriptionId("sub_unknown");
+    const factory = createFactory(baseBillingInfo, {}, { highWaterMarkRepository: hwmRepo });
+    const strategy = await factory.createBySubscriptionId("sub_unknown");
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });

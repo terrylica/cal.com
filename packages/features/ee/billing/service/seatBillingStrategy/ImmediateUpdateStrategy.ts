@@ -1,4 +1,3 @@
-import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
 import { BaseSeatBillingStrategy } from "./ISeatBillingStrategy";
 import type { SeatChangeContext } from "./ISeatBillingStrategy";
@@ -6,10 +5,6 @@ import type { SeatChangeContext } from "./ISeatBillingStrategy";
 export class ImmediateUpdateStrategy extends BaseSeatBillingStrategy {
   constructor(private readonly billingProviderService: IBillingProviderService) {
     super();
-  }
-
-  async canHandle(_info: BillingPeriodInfo): Promise<boolean> {
-    return true;
   }
 
   async onSeatChange(context: SeatChangeContext): Promise<void> {

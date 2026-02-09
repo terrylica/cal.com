@@ -1,4 +1,4 @@
-import { getBillingProviderService, getSeatBillingStrategyResolver } from "@calcom/ee/billing/di/containers/Billing";
+import { getBillingProviderService, getSeatBillingStrategyFactory } from "@calcom/ee/billing/di/containers/Billing";
 import logger from "@calcom/lib/logger";
 
 import type { SWHMap } from "./__handler";
@@ -28,8 +28,8 @@ const handler = async (data: Data) => {
     failureReason = paymentFailureReason ?? failureReason;
   }
 
-  const resolver = getSeatBillingStrategyResolver();
-  const strategy = await resolver.resolveBySubscriptionId(subscriptionId);
+  const factory = getSeatBillingStrategyFactory();
+  const strategy = await factory.createBySubscriptionId(subscriptionId);
   const { handled } = await strategy.onPaymentFailed({ lines: invoice.lines }, failureReason);
 
   if (handled) {

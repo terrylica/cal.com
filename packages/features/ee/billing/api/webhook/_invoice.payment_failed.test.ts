@@ -5,14 +5,14 @@ import type { SWHMap } from "./__handler";
 import handler from "./_invoice.payment_failed";
 
 const onPaymentFailed = vi.fn().mockResolvedValue({ handled: true });
-const resolveBySubscriptionId = vi.fn().mockResolvedValue({ onPaymentFailed });
+const createBySubscriptionId = vi.fn().mockResolvedValue({ onPaymentFailed });
 const getPaymentIntentFailureReason = vi.fn().mockResolvedValue("card_declined");
 
 vi.mock("@calcom/ee/billing/di/containers/Billing", () => ({
   getBillingProviderService: () => ({
     getPaymentIntentFailureReason,
   }),
-  getSeatBillingStrategyResolver: () => ({ resolveBySubscriptionId }),
+  getSeatBillingStrategyFactory: () => ({ createBySubscriptionId }),
 }));
 
 describe("invoice.payment_failed webhook", () => {
@@ -39,7 +39,7 @@ describe("invoice.payment_failed webhook", () => {
     const result = await handler(data);
 
     expect(getPaymentIntentFailureReason).toHaveBeenCalledWith("pi_123");
-    expect(resolveBySubscriptionId).toHaveBeenCalledWith("sub_123");
+    expect(createBySubscriptionId).toHaveBeenCalledWith("sub_123");
     expect(onPaymentFailed).toHaveBeenCalledWith(
       { lines: data.object.lines },
       "card_declined"
@@ -59,7 +59,7 @@ describe("invoice.payment_failed webhook", () => {
 
     const result = await handler(data);
 
-    expect(resolveBySubscriptionId).not.toHaveBeenCalled();
+    expect(createBySubscriptionId).not.toHaveBeenCalled();
     expect(result).toEqual({ success: true, message: "not a subscription invoice" });
   });
 

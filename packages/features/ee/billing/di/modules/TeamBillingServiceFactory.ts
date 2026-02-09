@@ -4,7 +4,7 @@ import { DI_TOKENS } from "../tokens";
 import { billingProviderServiceModuleLoader } from "./BillingProviderService";
 import { billingRepositoryFactoryModuleLoader } from "./BillingRepositoryFactory";
 import { isTeamBillingEnabledModuleLoader } from "./IsTeamBillingEnabled";
-import { seatBillingStrategyResolverModuleLoader } from "./SeatBillingStrategyResolver.module";
+import { seatBillingStrategyFactoryModuleLoader } from "./SeatBillingStrategyFactory.module";
 import { teamBillingDataRepositoryModuleLoader } from "./TeamBillingDataRepositoryFactory";
 
 const teamBillingServiceFactoryModule = createModule();
@@ -20,7 +20,7 @@ const loadModule = bindModuleToClassOnToken({
     teamBillingDataRepository: teamBillingDataRepositoryModuleLoader,
     billingRepositoryFactory: billingRepositoryFactoryModuleLoader,
     isTeamBillingEnabled: isTeamBillingEnabledModuleLoader,
-    seatBillingStrategyResolver: seatBillingStrategyResolverModuleLoader,
+    seatBillingStrategyFactory: seatBillingStrategyFactoryModuleLoader,
   },
 });
 

@@ -1,5 +1,3 @@
-import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
-
 export type SeatChangeType = "addition" | "removal" | "sync";
 
 export interface SeatChangeContext {
@@ -19,7 +17,6 @@ export interface StripeInvoiceData {
 }
 
 export interface ISeatBillingStrategy {
-  canHandle(info: BillingPeriodInfo): Promise<boolean>;
   onSeatChange(context: SeatChangeContext): Promise<void>;
   onInvoiceUpcoming(subscriptionId: string): Promise<{ applied: boolean }>;
   onRenewalPaid(subscriptionId: string, periodStart: Date): Promise<{ reset: boolean }>;
@@ -28,7 +25,6 @@ export interface ISeatBillingStrategy {
 }
 
 export abstract class BaseSeatBillingStrategy implements ISeatBillingStrategy {
-  abstract canHandle(info: BillingPeriodInfo): Promise<boolean>;
   abstract onSeatChange(context: SeatChangeContext): Promise<void>;
 
   async onInvoiceUpcoming(_subscriptionId: string): Promise<{ applied: boolean }> {

@@ -16,7 +16,7 @@ import type {
 import type { ITeamBillingDataRepository } from "../../repository/teamBillingData/ITeamBillingDataRepository";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
 import type { SeatChangeType } from "../seatBillingStrategy/ISeatBillingStrategy";
-import type { SeatBillingStrategyResolver } from "../seatBillingStrategy/SeatBillingStrategyResolver";
+import type { SeatBillingStrategyFactory } from "../seatBillingStrategy/SeatBillingStrategyFactory";
 import {
   type ITeamBillingService,
   type TeamBillingInput,
@@ -34,26 +34,26 @@ export class TeamBillingService implements ITeamBillingService {
   private billingProviderService: IBillingProviderService;
   private billingRepository: IBillingRepository;
   private teamBillingDataRepository: ITeamBillingDataRepository;
-  private seatBillingStrategyResolver: SeatBillingStrategyResolver;
+  private seatBillingStrategyFactory: SeatBillingStrategyFactory;
 
   constructor({
     team,
     billingProviderService,
     teamBillingDataRepository,
     billingRepository,
-    seatBillingStrategyResolver,
+    seatBillingStrategyFactory,
   }: {
     team: TeamBillingInput;
     billingProviderService: IBillingProviderService;
     teamBillingDataRepository: ITeamBillingDataRepository;
     billingRepository: IBillingRepository;
-    seatBillingStrategyResolver: SeatBillingStrategyResolver;
+    seatBillingStrategyFactory: SeatBillingStrategyFactory;
   }) {
     this.team = team;
     this.billingProviderService = billingProviderService;
     this.teamBillingDataRepository = teamBillingDataRepository;
     this.billingRepository = billingRepository;
-    this.seatBillingStrategyResolver = seatBillingStrategyResolver;
+    this.seatBillingStrategyFactory = seatBillingStrategyFactory;
   }
   set team(team: TeamBillingInput) {
     const metadata = teamPaymentMetadataSchema.parse(team.metadata || {});
@@ -169,7 +169,7 @@ export class TeamBillingService implements ITeamBillingService {
       if (!subscriptionId) throw Error("missing subscriptionId");
       if (!subscriptionItemId) throw Error("missing subscriptionItemId");
 
-      const strategy = await this.seatBillingStrategyResolver.resolve(teamId);
+      const strategy = await this.seatBillingStrategyFactory.create(teamId);
       await strategy.onSeatChange({
         teamId,
         subscriptionId,

@@ -21,6 +21,6 @@ export const DI_TOKENS = {
   BILLING_PERIOD_REPOSITORY_MODULE: Symbol("BillingPeriodRepositoryModule"),
   BILLING_PERIOD_SERVICE: Symbol("BillingPeriodService"),
   BILLING_PERIOD_SERVICE_MODULE: Symbol("BillingPeriodServiceModule"),
-  SEAT_BILLING_STRATEGY_RESOLVER: Symbol("SeatBillingStrategyResolver"),
-  SEAT_BILLING_STRATEGY_RESOLVER_MODULE: Symbol("SeatBillingStrategyResolverModule"),
+  SEAT_BILLING_STRATEGY_FACTORY: Symbol("SeatBillingStrategyFactory"),
+  SEAT_BILLING_STRATEGY_FACTORY_MODULE: Symbol("SeatBillingStrategyFactoryModule"),
 };

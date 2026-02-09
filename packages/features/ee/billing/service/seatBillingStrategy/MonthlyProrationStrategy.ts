@@ -1,8 +1,6 @@
-import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
 
 import { findMonthlyProrationLineItem } from "../../lib/proration-utils";
-import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
 import type { MonthlyProrationService } from "../proration/MonthlyProrationService";
 import { BaseSeatBillingStrategy } from "./ISeatBillingStrategy";
 import type { SeatChangeContext, StripeInvoiceData } from "./ISeatBillingStrategy";
@@ -10,19 +8,12 @@ import type { SeatChangeContext, StripeInvoiceData } from "./ISeatBillingStrateg
 const log = logger.getSubLogger({ prefix: ["MonthlyProrationStrategy"] });
 
 export interface IMonthlyProrationStrategyDeps {
-  featuresRepository: IFeaturesRepository;
   monthlyProrationService: MonthlyProrationService;
 }
 
 export class MonthlyProrationStrategy extends BaseSeatBillingStrategy {
   constructor(private readonly deps: IMonthlyProrationStrategyDeps) {
     super();
-  }
-
-  async canHandle(info: BillingPeriodInfo): Promise<boolean> {
-    if (info.isInTrial || !info.subscriptionStart) return false;
-    if (info.billingPeriod !== "ANNUALLY") return false;
-    return this.deps.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
   }
 
   async onSeatChange(_context: SeatChangeContext): Promise<void> {

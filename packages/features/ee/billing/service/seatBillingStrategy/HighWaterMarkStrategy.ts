@@ -1,7 +1,5 @@
-import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
 
-import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
 import type { HighWaterMarkService } from "../highWaterMark/HighWaterMarkService";
 import type { HighWaterMarkRepository } from "../../repository/highWaterMark/HighWaterMarkRepository";
 import { BaseSeatBillingStrategy } from "./ISeatBillingStrategy";
@@ -10,7 +8,6 @@ import type { SeatChangeContext } from "./ISeatBillingStrategy";
 const log = logger.getSubLogger({ prefix: ["HighWaterMarkStrategy"] });
 
 export interface IHighWaterMarkStrategyDeps {
-  featuresRepository: IFeaturesRepository;
   highWaterMarkRepository: HighWaterMarkRepository;
   highWaterMarkService: HighWaterMarkService;
 }
@@ -18,12 +15,6 @@ export interface IHighWaterMarkStrategyDeps {
 export class HighWaterMarkStrategy extends BaseSeatBillingStrategy {
   constructor(private readonly deps: IHighWaterMarkStrategyDeps) {
     super();
-  }
-
-  async canHandle(info: BillingPeriodInfo): Promise<boolean> {
-    if (info.isInTrial || !info.subscriptionStart) return false;
-    if (info.billingPeriod !== "MONTHLY") return false;
-    return this.deps.featuresRepository.checkIfFeatureIsEnabledGlobally("hwm-seating");
   }
 
   async onSeatChange(context: SeatChangeContext): Promise<void> {
