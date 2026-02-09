@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { StringChangeSchema } from "../common/changeSchemas";
-import type { DataRequirements, EnrichmentDataStore } from "../service/EnrichmentDataStore";
+import type { DataRequirements } from "../service/EnrichmentDataStore";
 import { AuditActionServiceHelper } from "./AuditActionServiceHelper";
 import type {
   BaseStoredAuditData,
   DisplayField,
+  DisplayFieldValue,
   GetDisplayFieldsParams,
   GetDisplayJsonParams,
   GetDisplayTitleParams,
@@ -135,6 +136,9 @@ export class ReassignmentAuditActionService implements IAuditActionService {
     const typeTranslationKey = `booking_audit_action.assignment_type_${map[fields.reassignmentType]}`;
     const { previousHostUuid } = this.getHostUuids(fields);
     const previousUser = previousHostUuid ? dbStore.getUserByUuid(previousHostUuid) : null;
+    const previousAssigneeFieldValue: DisplayFieldValue = previousUser?.name
+      ? { type: "rawValue", value: previousUser.name }
+      : { type: "translationKey", valueKey: "booking_audit_action.unknown_user" };
     return [
       {
         labelKey: "booking_audit_action.assignment_type",
@@ -142,7 +146,7 @@ export class ReassignmentAuditActionService implements IAuditActionService {
       },
       {
         labelKey: "booking_audit_action.previous_assignee",
-        fieldValue: { type: "rawValue", value: previousUser?.name ?? "Unknown" },
+        fieldValue: previousAssigneeFieldValue,
       },
     ];
   }
