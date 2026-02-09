@@ -2,7 +2,7 @@ import type { BookingRepository } from "@calcom/features/bookings/repositories/B
 import type { getSpamCheckService } from "@calcom/features/di/watchlist/containers/SpamCheckService.container";
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import type { AppsStatus } from "@calcom/types/Calendar";
-import type { Logger } from "tslog";
+import type { ISimpleLogger } from "@calcom/features/di/shared/services/logger.service";
 import type { BookingFlowConfig, CreateRegularBookingData } from "../dto/types";
 import type { getBookingData } from "../handleNewBooking/getBookingData";
 import type { getEventTypeResponse } from "../handleNewBooking/getEventTypesFromDB";
@@ -112,7 +112,7 @@ export type PreparedBookingData = {
 };
 
 export interface IBookingDataPreparationServiceDependencies {
-  log: Logger<unknown>;
+  log: ISimpleLogger;
   bookingRepository: BookingRepository;
   userRepository: UserRepository;
 }

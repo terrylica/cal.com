@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import type { Logger as TsLogger } from "tslog";
 
 import { BookingDataPreparationService as BaseBookingDataPreparationService } from "@calcom/platform-libraries/bookings";
 
@@ -15,7 +14,7 @@ export class BookingDataPreparationService extends BaseBookingDataPreparationSer
     userRepository: PrismaUserRepository
   ) {
     super({
-      log: bridgeLogger as unknown as TsLogger<unknown>,
+      log: bridgeLogger,
       bookingRepository,
       userRepository,
     });

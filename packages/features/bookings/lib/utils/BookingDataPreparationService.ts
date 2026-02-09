@@ -4,8 +4,8 @@ import { getSpamCheckService } from "@calcom/features/di/watchlist/containers/Sp
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { shouldIgnoreContactOwner } from "@calcom/lib/bookings/routing/utils";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import { HttpError } from "@calcom/lib/http-error";
-import type { Logger } from "tslog";
 import type { BookingDataSchemaGetter, CreateBookingMeta, CreateRegularBookingData } from "../dto/types";
 import { checkActiveBookingsLimitForBooker } from "../handleNewBooking/checkActiveBookingsLimitForBooker";
 import { checkIfBookerEmailIsBlocked } from "../handleNewBooking/checkIfBookerEmailIsBlocked";
@@ -13,6 +13,7 @@ import { getBookingData } from "../handleNewBooking/getBookingData";
 import { getEventType } from "../handleNewBooking/getEventType";
 import { validateBookingTimeIsNotOutOfBounds } from "../handleNewBooking/validateBookingTimeIsNotOutOfBounds";
 import { validateEventLength } from "../handleNewBooking/validateEventLength";
+import { validateRescheduleRestrictions } from "../handleNewBooking/validateRescheduleRestrictions";
 import type {
   BookingData,
   BookingFormData,
@@ -67,7 +68,7 @@ export type {
 } from "./BookingDataPreparationService.types";
 
 export class BookingDataPreparationService {
-  private readonly log: Logger<unknown>;
+  private readonly log: IBookingDataPreparationServiceDependencies["log"];
   private readonly bookingRepository: BookingRepository;
   private readonly userRepository: UserRepository;
 
@@ -285,13 +286,20 @@ export class BookingDataPreparationService {
       throw new HttpError({ statusCode: 400, message: "recurring_event_seats_error" });
     }
 
-    await checkIfBookerEmailIsBlocked({
-      loggedInUserId: loggedInUser.id ?? undefined,
-      bookerEmail,
-      verificationCode: rawBookingData.verificationCode,
-      isReschedule: !!rawBookingData.rescheduleUid,
-      userRepository: this.userRepository,
-    });
+    try {
+      await checkIfBookerEmailIsBlocked({
+        loggedInUserId: loggedInUser.id ?? undefined,
+        bookerEmail,
+        verificationCode: rawBookingData.verificationCode,
+        isReschedule: !!rawBookingData.rescheduleUid,
+        userRepository: this.userRepository,
+      });
+    } catch (error) {
+      if (error instanceof ErrorWithCode) {
+        throw new HttpError({ statusCode: 403, message: error.message });
+      }
+      throw error;
+    }
 
     if (!rawBookingData.rescheduleUid) {
       await checkActiveBookingsLimitForBooker({
@@ -336,6 +344,17 @@ export class BookingDataPreparationService {
       eventTypeMultipleDuration: eventType.metadata?.multipleDuration,
       eventTypeLength: eventType.length,
       logger: this.log,
+    });
+
+    await validateRescheduleRestrictions({
+      rescheduleUid: rawBookingData.rescheduleUid,
+      userId: loggedInUser.id,
+      eventType: eventType
+        ? {
+            seatsPerTimeSlot: eventType.seatsPerTimeSlot,
+            minimumRescheduleNotice: eventType.minimumRescheduleNotice ?? null,
+          }
+        : null,
     });
   }
 

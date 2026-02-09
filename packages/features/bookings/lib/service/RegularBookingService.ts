@@ -127,8 +127,6 @@ import type { IEventTypePaymentCredentialType, Invitee, IsFixedAwareUser } from 
 import handleSeats from "../handleSeats/handleSeats";
 import type { IBookingService } from "../interfaces/IBookingService";
 import { getBookingAuditActorForNewBooking } from "../handleNewBooking/getBookingAuditActorForNewBooking";
-import { isWithinMinimumRescheduleNotice } from "../reschedule/isWithinMinimumRescheduleNotice";
-
 const translator = short();
 
 type IsFixedAwareUserWithCredentials = Omit<IsFixedAwareUser, "credentials"> & {
@@ -477,57 +475,6 @@ export interface IBookingServiceDependencies {
   bookingDataPreparationService: BookingDataPreparationService;
 }
 
-async function validateRescheduleRestrictions({
-  rescheduleUid,
-  userId,
-  eventType,
-}: {
-  rescheduleUid: string | null | undefined;
-  userId: number | null;
-  eventType: { seatsPerTimeSlot: number | null; minimumRescheduleNotice: number | null } | null;
-}): Promise<void> {
-  if (!rescheduleUid || !eventType) {
-    return; // Not a reschedule, skip validation
-  }
-
-  const bookingSeat = rescheduleUid ? await getSeatedBooking(rescheduleUid) : null;
-  const actualRescheduleUid = bookingSeat ? bookingSeat.booking.uid : rescheduleUid;
-
-  if (!actualRescheduleUid) {
-    return; // No valid reschedule UID
-  }
-
-  try {
-    const originalRescheduledBooking = await getOriginalRescheduledBooking(
-      actualRescheduleUid,
-      !!eventType.seatsPerTimeSlot
-    );
-
-    // Check if user is the organizer
-    const isUserOrganizer =
-      userId && originalRescheduledBooking.userId && userId === originalRescheduledBooking.userId;
-
-    // Check minimum reschedule notice (only for non-organizers)
-    const { minimumRescheduleNotice } = originalRescheduledBooking.eventType || {};
-    if (
-      !isUserOrganizer &&
-      isWithinMinimumRescheduleNotice(originalRescheduledBooking.startTime, minimumRescheduleNotice ?? null)
-    ) {
-      throw new HttpError({
-        statusCode: 403,
-        message: "Rescheduling is not allowed within the minimum notice period before the event",
-      });
-    }
-  } catch (error) {
-    // Re-throw HttpError (including our 403 validation error)
-    if (error instanceof HttpError) {
-      throw error;
-    }
-    // For other errors (like booking not found), let the service handle it later
-    // We don't want to fail early validation for these cases
-  }
-}
-
 async function handler(
   this: RegularBookingService,
   input: BookingHandlerInput,
@@ -592,17 +539,6 @@ async function handler(
   const bookingData = preparedData.bookingData;
   const spamCheckService = preparedData.spamCheckService;
   const eventOrganizationId = preparedData.eventOrganizationId;
-
-  await validateRescheduleRestrictions({
-    rescheduleUid: rawBookingData.rescheduleUid,
-    userId: userId ?? null,
-    eventType: eventType
-      ? {
-          seatsPerTimeSlot: eventType.seatsPerTimeSlot,
-          minimumRescheduleNotice: eventType.minimumRescheduleNotice ?? null,
-        }
-      : null,
-  });
 
   const {
     recurringCount,
@@ -721,8 +657,7 @@ async function handler(
     }
   }
 
-  const isTeamEventType =
-    !!eventType.schedulingType && ["COLLECTIVE", "ROUND_ROBIN"].includes(eventType.schedulingType);
+  const isTeamEventType = eventType.isTeamEventType;
 
   // Use "booking" mode to bypass cache for booking confirmation
   const calendarFetchMode = "booking" as const;
