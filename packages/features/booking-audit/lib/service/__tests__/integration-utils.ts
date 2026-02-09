@@ -159,8 +159,6 @@ export const cleanupTestData = async (testData: {
 
   if (testData.bookingUid) {
     cleanupLog("deleting booking", testData.bookingUid);
-    const bookingBefore = await prisma.booking.findFirst({ where: { uid: testData.bookingUid }, select: { id: true, uid: true } });
-    cleanupLog("booking exists before delete?", JSON.stringify(bookingBefore));
     await prisma.booking.deleteMany({
       where: { uid: testData.bookingUid },
     });
@@ -195,12 +193,6 @@ export const cleanupTestData = async (testData: {
 
   if (testData.userIds?.length) {
     cleanupLog("deleting users", JSON.stringify(testData.userIds));
-    for (const uid of testData.userIds) {
-      const userBookings = await prisma.booking.findMany({ where: { userId: uid }, select: { id: true, uid: true } });
-      if (userBookings.length > 0) {
-        cleanupLog(`user ${uid} still has bookings at delete time`, JSON.stringify(userBookings));
-      }
-    }
     await prisma.user.deleteMany({
       where: { id: { in: testData.userIds } },
     });
