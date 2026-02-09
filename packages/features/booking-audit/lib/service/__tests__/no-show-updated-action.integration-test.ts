@@ -1,6 +1,6 @@
 import { prisma } from "@calcom/prisma";
 import type { BookingStatus } from "@calcom/prisma/enums";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getBookingAuditTaskConsumer } from "../../../di/BookingAuditTaskConsumer.container";
 import { getBookingAuditViewerService } from "../../../di/BookingAuditViewerService.container";
 import { makeUserActor } from "../../makeActor";
@@ -17,11 +17,70 @@ import {
 } from "./integration-utils";
 
 const FILE_ID = `no-show-${process.pid}`;
+const DELETE_LOG_TABLE = `_debug_booking_deletes_${process.pid}`;
 
 function debugLog(testName: string, message: string, data?: Record<string, unknown>) {
   const timestamp = new Date().toISOString();
   const dataStr = data ? ` | ${JSON.stringify(data)}` : "";
   process.stderr.write(`[DEBUG][${FILE_ID}][${timestamp}][${testName}] ${message}${dataStr}\n`);
+}
+
+async function setupDeleteTrigger() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "${DELETE_LOG_TABLE}" (
+        id SERIAL PRIMARY KEY,
+        deleted_booking_id INTEGER,
+        deleted_booking_uid TEXT,
+        deleted_booking_user_id INTEGER,
+        deleted_at TIMESTAMP DEFAULT NOW(),
+        pg_backend_pid INTEGER DEFAULT pg_backend_pid(),
+        query_text TEXT
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION log_booking_delete_${process.pid}()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        INSERT INTO "${DELETE_LOG_TABLE}" (deleted_booking_id, deleted_booking_uid, deleted_booking_user_id)
+        VALUES (OLD.id, OLD.uid, OLD."userId");
+        RETURN OLD;
+      END;
+      $$ LANGUAGE plpgsql
+    `);
+    await prisma.$executeRawUnsafe(`
+      DROP TRIGGER IF EXISTS trg_log_booking_delete_${process.pid} ON "Booking"
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TRIGGER trg_log_booking_delete_${process.pid}
+      BEFORE DELETE ON "Booking"
+      FOR EACH ROW
+      EXECUTE FUNCTION log_booking_delete_${process.pid}()
+    `);
+    debugLog("setup", "PostgreSQL delete trigger installed");
+  } catch (err) {
+    debugLog("setup", "Failed to install delete trigger", { error: String(err) });
+  }
+}
+
+async function teardownDeleteTrigger() {
+  try {
+    await prisma.$executeRawUnsafe(`DROP TRIGGER IF EXISTS trg_log_booking_delete_${process.pid} ON "Booking"`);
+    await prisma.$executeRawUnsafe(`DROP FUNCTION IF EXISTS log_booking_delete_${process.pid}()`);
+    await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS "${DELETE_LOG_TABLE}"`);
+    debugLog("teardown", "PostgreSQL delete trigger removed");
+  } catch (err) {
+    debugLog("teardown", "Failed to remove delete trigger", { error: String(err) });
+  }
+}
+
+async function getDeleteLog(): Promise<unknown[]> {
+  try {
+    const rows = await prisma.$queryRawUnsafe(`SELECT * FROM "${DELETE_LOG_TABLE}" ORDER BY id`);
+    return rows as unknown[];
+  } catch {
+    return [];
+  }
 }
 
 async function checkBookingExists(bookingUid: string, context: string): Promise<boolean> {
@@ -38,6 +97,32 @@ async function checkUserExists(userId: number, context: string): Promise<boolean
   return exists;
 }
 
+async function dumpDiagnostics(testName: string, bookingUid: string, ownerId: number) {
+  debugLog(testName, "!!! BOOKING DISAPPEARED !!! Running full diagnostics...");
+  const ownerExists = await checkUserExists(ownerId, "disappeared-owner-check");
+  const bookingCount = await prisma.booking.count();
+  const userCount = await prisma.user.count();
+  const auditRecords = await prisma.bookingAudit.findMany({
+    where: { bookingUid },
+    select: { id: true, bookingUid: true, action: true },
+  });
+  const deleteLog = await getDeleteLog();
+  let pgActivity: unknown[] = [];
+  try {
+    pgActivity = (await prisma.$queryRawUnsafe(
+      `SELECT pid, state, query, query_start, backend_start FROM pg_stat_activity WHERE state != 'idle' AND pid != pg_backend_pid() ORDER BY query_start DESC LIMIT 10`
+    )) as unknown[];
+  } catch { /* ignore */ }
+  debugLog(testName, "DIAGNOSTICS", {
+    ownerExists,
+    totalBookings: bookingCount,
+    totalUsers: userCount,
+    auditRecordsForBooking: auditRecords,
+    bookingDeleteLog: deleteLog,
+    activePgQueries: pgActivity,
+  });
+}
+
 describe("No-Show Updated Action Integration", () => {
   let bookingAuditTaskConsumer: BookingAuditTaskConsumer;
   let bookingAuditViewerService: BookingAuditViewerService;
@@ -52,6 +137,16 @@ describe("No-Show Updated Action Integration", () => {
 
   const additionalAttendeeEmails: string[] = [];
   let currentTestName = "unknown";
+
+  beforeAll(async () => {
+    debugLog("beforeAll", "=== SUITE START ===");
+    await setupDeleteTrigger();
+  });
+
+  afterAll(async () => {
+    await teardownDeleteTrigger();
+    debugLog("afterAll", "=== SUITE END ===");
+  });
 
   beforeEach(async () => {
     debugLog("beforeEach", "=== START beforeEach ===");
@@ -184,14 +279,7 @@ describe("No-Show Updated Action Integration", () => {
       debugLog(currentTestName, "Pre-getAuditLogs verification", { bookingExistsAfterAction, ownerExistsAfterAction });
 
       if (!bookingExistsAfterAction) {
-        debugLog(currentTestName, "!!! BOOKING DISAPPEARED !!! Checking DB state...");
-        const bookingCount = await prisma.booking.count();
-        const userCount = await prisma.user.count();
-        const auditRecords = await prisma.bookingAudit.findMany({
-          where: { bookingUid: testData.booking.uid },
-          select: { id: true, bookingUid: true, action: true },
-        });
-        debugLog(currentTestName, "DB state after disappearance", { totalBookings: bookingCount, totalUsers: userCount, auditRecords });
+        await dumpDiagnostics(currentTestName, testData.booking.uid, testData.owner.id);
       }
 
       debugLog(currentTestName, "Calling getAuditLogsForBooking...");
@@ -247,10 +335,7 @@ describe("No-Show Updated Action Integration", () => {
       debugLog(currentTestName, "Pre-getAuditLogs verification", { bookingExistsAfterAction });
 
       if (!bookingExistsAfterAction) {
-        debugLog(currentTestName, "!!! BOOKING DISAPPEARED !!!");
-        const ownerExists = await checkUserExists(testData.owner.id, "booking-disappeared-check-owner");
-        const bookingCount = await prisma.booking.count();
-        debugLog(currentTestName, "DB state", { ownerExists, totalBookings: bookingCount });
+        await dumpDiagnostics(currentTestName, testData.booking.uid, testData.owner.id);
       }
 
       debugLog(currentTestName, "Calling getAuditLogsForBooking...");
@@ -333,14 +418,7 @@ describe("No-Show Updated Action Integration", () => {
       debugLog(currentTestName, "Pre-getAuditLogs verification", { bookingExistsAfterAction, ownerExistsAfterAction });
 
       if (!bookingExistsAfterAction) {
-        debugLog(currentTestName, "!!! BOOKING DISAPPEARED !!!");
-        const bookingCount = await prisma.booking.count();
-        const userCount = await prisma.user.count();
-        const auditRecords = await prisma.bookingAudit.findMany({
-          where: { bookingUid: testData.booking.uid },
-          select: { id: true, bookingUid: true, action: true },
-        });
-        debugLog(currentTestName, "DB state", { totalBookings: bookingCount, totalUsers: userCount, auditRecords });
+        await dumpDiagnostics(currentTestName, testData.booking.uid, testData.owner.id);
       }
 
       debugLog(currentTestName, "Calling getAuditLogsForBooking...");
@@ -469,9 +547,7 @@ describe("No-Show Updated Action Integration", () => {
       debugLog(currentTestName, "Pre-getAuditLogs verification", { bookingExistsAfterAction });
 
       if (!bookingExistsAfterAction) {
-        debugLog(currentTestName, "!!! BOOKING DISAPPEARED !!!");
-        const ownerExists = await checkUserExists(testData.owner.id, "booking-disappeared");
-        debugLog(currentTestName, "Owner exists?", { ownerExists });
+        await dumpDiagnostics(currentTestName, testData.booking.uid, testData.owner.id);
       }
 
       debugLog(currentTestName, "Calling getAuditLogsForBooking...");
