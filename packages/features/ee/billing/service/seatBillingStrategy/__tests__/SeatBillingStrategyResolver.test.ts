@@ -1,6 +1,7 @@
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { describe, expect, it, vi } from "vitest";
 import type { BillingPeriodInfo } from "../../billingPeriod/BillingPeriodService";
+import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
 import { HighWaterMarkStrategy } from "../HighWaterMarkStrategy";
 import { ImmediateUpdateStrategy } from "../ImmediateUpdateStrategy";
 import { MonthlyProrationStrategy } from "../MonthlyProrationStrategy";
@@ -16,6 +17,10 @@ function createMockFeaturesRepository(enabledFlags: Record<string, boolean>): IF
   } as unknown as IFeaturesRepository;
 }
 
+function createMockBillingProviderService(): IBillingProviderService {
+  return { handleSubscriptionUpdate: vi.fn() } as unknown as IBillingProviderService;
+}
+
 const baseBillingInfo: BillingPeriodInfo = {
   billingPeriod: null,
   subscriptionStart: new Date("2025-01-01"),
@@ -26,15 +31,28 @@ const baseBillingInfo: BillingPeriodInfo = {
   isOrganization: false,
 };
 
+function createResolver(
+  info: BillingPeriodInfo,
+  enabledFlags: Record<string, boolean>
+): SeatBillingStrategyResolver {
+  return new SeatBillingStrategyResolver({
+    billingPeriodService: createMockBillingPeriodService(info),
+    featuresRepository: createMockFeaturesRepository(enabledFlags),
+    billingProviderService: createMockBillingProviderService(),
+  } as never);
+}
+
 describe("SeatBillingStrategyResolver", () => {
   it("returns MonthlyProrationStrategy for annual plan with proration enabled", async () => {
     const billingPeriodService = createMockBillingPeriodService({
       ...baseBillingInfo,
       billingPeriod: "ANNUALLY",
     });
-    const featuresRepository = createMockFeaturesRepository({ "monthly-proration": true });
-
-    const resolver = new SeatBillingStrategyResolver({ billingPeriodService, featuresRepository } as never);
+    const resolver = new SeatBillingStrategyResolver({
+      billingPeriodService,
+      featuresRepository: createMockFeaturesRepository({ "monthly-proration": true }),
+      billingProviderService: createMockBillingProviderService(),
+    } as never);
     const strategy = await resolver.resolve(1);
 
     expect(strategy).toBeInstanceOf(MonthlyProrationStrategy);
@@ -42,84 +60,60 @@ describe("SeatBillingStrategyResolver", () => {
   });
 
   it("returns HighWaterMarkStrategy for monthly plan with HWM enabled", async () => {
-    const billingPeriodService = createMockBillingPeriodService({
-      ...baseBillingInfo,
-      billingPeriod: "MONTHLY",
-    });
-    const featuresRepository = createMockFeaturesRepository({ "hwm-seating": true });
-
-    const resolver = new SeatBillingStrategyResolver({ billingPeriodService, featuresRepository } as never);
+    const resolver = createResolver(
+      { ...baseBillingInfo, billingPeriod: "MONTHLY" },
+      { "hwm-seating": true }
+    );
     const strategy = await resolver.resolve(1);
 
     expect(strategy).toBeInstanceOf(HighWaterMarkStrategy);
   });
 
   it("returns ImmediateUpdateStrategy for annual plan with proration disabled", async () => {
-    const billingPeriodService = createMockBillingPeriodService({
-      ...baseBillingInfo,
-      billingPeriod: "ANNUALLY",
-    });
-    const featuresRepository = createMockFeaturesRepository({ "monthly-proration": false });
-
-    const resolver = new SeatBillingStrategyResolver({ billingPeriodService, featuresRepository } as never);
+    const resolver = createResolver(
+      { ...baseBillingInfo, billingPeriod: "ANNUALLY" },
+      { "monthly-proration": false }
+    );
     const strategy = await resolver.resolve(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy for monthly plan with HWM disabled", async () => {
-    const billingPeriodService = createMockBillingPeriodService({
-      ...baseBillingInfo,
-      billingPeriod: "MONTHLY",
-    });
-    const featuresRepository = createMockFeaturesRepository({ "hwm-seating": false });
-
-    const resolver = new SeatBillingStrategyResolver({ billingPeriodService, featuresRepository } as never);
+    const resolver = createResolver(
+      { ...baseBillingInfo, billingPeriod: "MONTHLY" },
+      { "hwm-seating": false }
+    );
     const strategy = await resolver.resolve(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy when team is in trial", async () => {
-    const billingPeriodService = createMockBillingPeriodService({
-      ...baseBillingInfo,
-      billingPeriod: "ANNUALLY",
-      isInTrial: true,
-      trialEnd: new Date("2026-06-01"),
-    });
-    const featuresRepository = createMockFeaturesRepository({ "monthly-proration": true });
-
-    const resolver = new SeatBillingStrategyResolver({ billingPeriodService, featuresRepository } as never);
+    const resolver = createResolver(
+      { ...baseBillingInfo, billingPeriod: "ANNUALLY", isInTrial: true, trialEnd: new Date("2026-06-01") },
+      { "monthly-proration": true }
+    );
     const strategy = await resolver.resolve(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy when subscriptionStart is null", async () => {
-    const billingPeriodService = createMockBillingPeriodService({
-      ...baseBillingInfo,
-      billingPeriod: "ANNUALLY",
-      subscriptionStart: null,
-    });
-    const featuresRepository = createMockFeaturesRepository({ "monthly-proration": true });
-
-    const resolver = new SeatBillingStrategyResolver({ billingPeriodService, featuresRepository } as never);
+    const resolver = createResolver(
+      { ...baseBillingInfo, billingPeriod: "ANNUALLY", subscriptionStart: null },
+      { "monthly-proration": true }
+    );
     const strategy = await resolver.resolve(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
   it("returns ImmediateUpdateStrategy when billingPeriod is null", async () => {
-    const billingPeriodService = createMockBillingPeriodService({
-      ...baseBillingInfo,
-      billingPeriod: null,
-    });
-    const featuresRepository = createMockFeaturesRepository({
-      "monthly-proration": true,
-      "hwm-seating": true,
-    });
-
-    const resolver = new SeatBillingStrategyResolver({ billingPeriodService, featuresRepository } as never);
+    const resolver = createResolver(
+      { ...baseBillingInfo, billingPeriod: null },
+      { "monthly-proration": true, "hwm-seating": true }
+    );
     const strategy = await resolver.resolve(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);

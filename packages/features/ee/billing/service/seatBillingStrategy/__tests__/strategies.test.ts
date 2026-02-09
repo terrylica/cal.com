@@ -1,6 +1,7 @@
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { describe, expect, it, vi } from "vitest";
 import type { BillingPeriodInfo } from "../../billingPeriod/BillingPeriodService";
+import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
 import { HighWaterMarkStrategy } from "../HighWaterMarkStrategy";
 import { ImmediateUpdateStrategy } from "../ImmediateUpdateStrategy";
 import type { SeatChangeContext } from "../ISeatBillingStrategy";
@@ -11,6 +12,7 @@ const mockContext: SeatChangeContext = {
   subscriptionId: "sub_123",
   subscriptionItemId: "si_456",
   membershipCount: 10,
+  changeType: "addition",
 };
 
 const baseBillingInfo: BillingPeriodInfo = {
@@ -29,20 +31,32 @@ function createMockFeaturesRepository(enabledFlags: Record<string, boolean>): IF
   } as unknown as IFeaturesRepository;
 }
 
+function createMockBillingProviderService(): IBillingProviderService {
+  return {
+    handleSubscriptionUpdate: vi.fn(),
+  } as unknown as IBillingProviderService;
+}
+
 describe("ImmediateUpdateStrategy", () => {
   it("canHandle always returns true", async () => {
-    const strategy = new ImmediateUpdateStrategy();
+    const billingProvider = createMockBillingProviderService();
+    const strategy = new ImmediateUpdateStrategy(billingProvider);
     expect(await strategy.canHandle(baseBillingInfo)).toBe(true);
     expect(await strategy.canHandle({ ...baseBillingInfo, isInTrial: true })).toBe(true);
     expect(await strategy.canHandle({ ...baseBillingInfo, billingPeriod: "ANNUALLY" })).toBe(true);
   });
 
-  it("returns handled: false so the caller proceeds with the Stripe update", async () => {
-    const strategy = new ImmediateUpdateStrategy();
-    const result = await strategy.onSeatChange(mockContext);
+  it("calls handleSubscriptionUpdate on seat change", async () => {
+    const billingProvider = createMockBillingProviderService();
+    const strategy = new ImmediateUpdateStrategy(billingProvider);
 
-    expect(result).toEqual({ handled: false });
-    expect(result.reason).toBeUndefined();
+    await strategy.onSeatChange(mockContext);
+
+    expect(billingProvider.handleSubscriptionUpdate).toHaveBeenCalledWith({
+      subscriptionId: "sub_123",
+      subscriptionItemId: "si_456",
+      membershipCount: 10,
+    });
   });
 });
 
@@ -89,15 +103,11 @@ describe("HighWaterMarkStrategy", () => {
     expect(featuresRepo.checkIfFeatureIsEnabledGlobally).not.toHaveBeenCalled();
   });
 
-  it("returns handled: true with high water mark reason", async () => {
+  it("does not call any external service on seat change", async () => {
     const featuresRepo = createMockFeaturesRepository({ "hwm-seating": true });
     const strategy = new HighWaterMarkStrategy(featuresRepo);
-    const result = await strategy.onSeatChange(mockContext);
 
-    expect(result).toEqual({
-      handled: true,
-      reason: "high water mark billing active for monthly plan",
-    });
+    await expect(strategy.onSeatChange(mockContext)).resolves.toBeUndefined();
   });
 });
 
@@ -144,14 +154,10 @@ describe("MonthlyProrationStrategy", () => {
     expect(featuresRepo.checkIfFeatureIsEnabledGlobally).not.toHaveBeenCalled();
   });
 
-  it("returns handled: true with monthly proration reason", async () => {
+  it("does not call any external service on seat change", async () => {
     const featuresRepo = createMockFeaturesRepository({ "monthly-proration": true });
     const strategy = new MonthlyProrationStrategy(featuresRepo);
-    const result = await strategy.onSeatChange(mockContext);
 
-    expect(result).toEqual({
-      handled: true,
-      reason: "monthly proration active for annual plan",
-    });
+    await expect(strategy.onSeatChange(mockContext)).resolves.toBeUndefined();
   });
 });

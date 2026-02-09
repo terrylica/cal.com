@@ -6,7 +6,7 @@ import type { IBillingRepository } from "../../repository/billing/IBillingReposi
 import { Plan, SubscriptionStatus } from "../../repository/billing/IBillingRepository";
 import type { ITeamBillingDataRepository } from "../../repository/teamBillingData/ITeamBillingDataRepository";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
-import type { ISeatBillingStrategy, SeatChangeContext } from "../seatBillingStrategy/ISeatBillingStrategy";
+import type { ISeatBillingStrategy } from "../seatBillingStrategy/ISeatBillingStrategy";
 import type { SeatBillingStrategyResolver } from "../seatBillingStrategy/SeatBillingStrategyResolver";
 import { TeamBillingPublishResponseStatus } from "./ITeamBillingService";
 import { TeamBillingService } from "./TeamBillingService";
@@ -69,8 +69,8 @@ const createMockBillingRepository = (): IBillingRepository => ({
   create: vi.fn(),
 });
 
-function createMockStrategy(result: { handled: boolean; reason?: string }): ISeatBillingStrategy {
-  return { canHandle: vi.fn().mockResolvedValue(true), onSeatChange: vi.fn().mockResolvedValue(result) };
+function createMockStrategy(): ISeatBillingStrategy {
+  return { canHandle: vi.fn().mockResolvedValue(true), onSeatChange: vi.fn() };
 }
 
 function createMockResolver(strategy: ISeatBillingStrategy): SeatBillingStrategyResolver {
@@ -88,7 +88,7 @@ describe("TeamBillingService", () => {
     mockBillingProviderService = createMockBillingProviderService();
     mockTeamBillingDataRepository = createMockTeamBillingDataRepository();
     mockBillingRepository = createMockBillingRepository();
-    defaultResolver = createMockResolver(createMockStrategy({ handled: false }));
+    defaultResolver = createMockResolver(createMockStrategy());
   });
 
   afterEach(() => {
@@ -173,40 +173,8 @@ describe("TeamBillingService", () => {
   });
 
   describe("updateQuantity", () => {
-    it("should update the subscription quantity when strategy returns handled: false", async () => {
-      const strategy = createMockStrategy({ handled: false });
-      const resolver = createMockResolver(strategy);
-      const mockTeamNotOrg = {
-        ...mockTeam,
-        isOrganization: false,
-      };
-      const teamBillingService = new TeamBillingService({
-        team: mockTeamNotOrg,
-        billingProviderService: mockBillingProviderService,
-        teamBillingDataRepository: mockTeamBillingDataRepository,
-        billingRepository: mockBillingRepository,
-        seatBillingStrategyResolver: resolver,
-      });
-
-      prismaMock.membership.count.mockResolvedValue(10);
-      vi.spyOn(teamBillingService, "checkIfTeamPaymentRequired").mockResolvedValue({
-        url: "http://checkout.url",
-        paymentId: "cs_789",
-        paymentRequired: false,
-      });
-
-      await teamBillingService.updateQuantity();
-
-      expect(resolver.resolve).toHaveBeenCalledWith(mockTeamNotOrg.id);
-      expect(mockBillingProviderService.handleSubscriptionUpdate).toHaveBeenCalledWith({
-        subscriptionId: "sub_123",
-        subscriptionItemId: "si_456",
-        membershipCount: 10,
-      });
-    });
-
-    it("should skip Stripe update when strategy returns handled: true", async () => {
-      const strategy = createMockStrategy({ handled: true, reason: "test strategy active" });
+    it("should resolve and delegate to the seat billing strategy", async () => {
+      const strategy = createMockStrategy();
       const resolver = createMockResolver(strategy);
       const mockTeamNotOrg = { ...mockTeam, isOrganization: false };
 
@@ -225,7 +193,7 @@ describe("TeamBillingService", () => {
         paymentRequired: false,
       });
 
-      await teamBillingService.updateQuantity();
+      await teamBillingService.updateQuantity("addition");
 
       expect(resolver.resolve).toHaveBeenCalledWith(mockTeamNotOrg.id);
       expect(strategy.onSeatChange).toHaveBeenCalledWith({
@@ -233,12 +201,12 @@ describe("TeamBillingService", () => {
         subscriptionId: "sub_123",
         subscriptionItemId: "si_456",
         membershipCount: 10,
+        changeType: "addition",
       });
-      expect(mockBillingProviderService.handleSubscriptionUpdate).not.toHaveBeenCalled();
     });
 
-    it("should pass correct context to strategy onSeatChange", async () => {
-      const strategy = createMockStrategy({ handled: true, reason: "handled" });
+    it("should pass correct membership count to strategy", async () => {
+      const strategy = createMockStrategy();
       const resolver = createMockResolver(strategy);
 
       const teamBillingService = new TeamBillingService({
@@ -256,15 +224,11 @@ describe("TeamBillingService", () => {
         paymentRequired: false,
       });
 
-      await teamBillingService.updateQuantity();
+      await teamBillingService.updateQuantity("removal");
 
-      const expectedContext: SeatChangeContext = {
-        teamId: mockTeam.id,
-        subscriptionId: "sub_123",
-        subscriptionItemId: "si_456",
-        membershipCount: 7,
-      };
-      expect(strategy.onSeatChange).toHaveBeenCalledWith(expectedContext);
+      expect(strategy.onSeatChange).toHaveBeenCalledWith(
+        expect.objectContaining({ membershipCount: 7, changeType: "removal" })
+      );
     });
   });
 

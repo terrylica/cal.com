@@ -9,14 +9,13 @@ import { prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { teamMetadataStrictSchema } from "@calcom/prisma/zod-utils";
 import type { z } from "zod";
-import { updateSubscriptionQuantity } from "../../lib/subscription-updates";
-// import billing from "../..";
 import type {
   IBillingRepository,
   IBillingRepositoryCreateArgs,
 } from "../../repository/billing/IBillingRepository";
 import type { ITeamBillingDataRepository } from "../../repository/teamBillingData/ITeamBillingDataRepository";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
+import type { SeatChangeType } from "../seatBillingStrategy/ISeatBillingStrategy";
 import type { SeatBillingStrategyResolver } from "../seatBillingStrategy/SeatBillingStrategyResolver";
 import {
   type ITeamBillingService,
@@ -146,7 +145,7 @@ export class TeamBillingService implements ITeamBillingService {
       this.logErrorFromUnknown(error);
     }
   }
-  async updateQuantity() {
+  async updateQuantity(changeType: SeatChangeType) {
     try {
       await this.getOrgIfNeeded();
       const { id: teamId, metadata, isOrganization } = this.team;
@@ -171,24 +170,14 @@ export class TeamBillingService implements ITeamBillingService {
       if (!subscriptionItemId) throw Error("missing subscriptionItemId");
 
       const strategy = await this.seatBillingStrategyResolver.resolve(teamId);
-      const result = await strategy.onSeatChange({
+      await strategy.onSeatChange({
         teamId,
         subscriptionId,
         subscriptionItemId,
         membershipCount,
+        changeType,
       });
-      if (result.handled) {
-        log.info(`Seat change handled by strategy: ${result.reason}`);
-        return;
-      }
-
-      await updateSubscriptionQuantity({
-        billingService: this.billingProviderService,
-        subscriptionId,
-        subscriptionItemId,
-        quantity: membershipCount,
-      });
-      log.info(`Updated subscription ${subscriptionId} for team ${teamId} to ${membershipCount} seats.`);
+      log.info(`Seat change processed for team ${teamId} (${membershipCount} seats).`);
     } catch (error) {
       this.logErrorFromUnknown(error);
     }

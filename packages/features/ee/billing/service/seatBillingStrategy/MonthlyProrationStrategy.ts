@@ -1,7 +1,7 @@
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 
 import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
-import type { ISeatBillingStrategy, SeatChangeContext, SeatChangeResult } from "./ISeatBillingStrategy";
+import type { ISeatBillingStrategy, SeatChangeContext } from "./ISeatBillingStrategy";
 
 export class MonthlyProrationStrategy implements ISeatBillingStrategy {
   constructor(private readonly featuresRepository: IFeaturesRepository) {}
@@ -12,7 +12,7 @@ export class MonthlyProrationStrategy implements ISeatBillingStrategy {
     return this.featuresRepository.checkIfFeatureIsEnabledGlobally("monthly-proration");
   }
 
-  async onSeatChange(_context: SeatChangeContext): Promise<SeatChangeResult> {
-    return { handled: true, reason: "monthly proration active for annual plan" };
+  async onSeatChange(_context: SeatChangeContext): Promise<void> {
+    // No immediate Stripe update -- proration is calculated and invoiced on a monthly cycle
   }
 }

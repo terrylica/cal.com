@@ -1,18 +1,16 @@
 import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
 
+export type SeatChangeType = "addition" | "removal" | "sync";
+
 export interface SeatChangeContext {
   teamId: number;
   subscriptionId: string;
   subscriptionItemId: string;
   membershipCount: number;
-}
-
-export interface SeatChangeResult {
-  handled: boolean;
-  reason?: string;
+  changeType: SeatChangeType;
 }
 
 export interface ISeatBillingStrategy {
   canHandle(info: BillingPeriodInfo): Promise<boolean>;
-  onSeatChange(context: SeatChangeContext): Promise<SeatChangeResult>;
+  onSeatChange(context: SeatChangeContext): Promise<void>;
 }

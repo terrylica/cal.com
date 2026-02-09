@@ -3,6 +3,7 @@ import { moduleLoader as featuresRepositoryModuleLoader } from "@calcom/features
 import { SeatBillingStrategyResolver } from "@calcom/features/ee/billing/service/seatBillingStrategy/SeatBillingStrategyResolver";
 import { DI_TOKENS } from "../tokens";
 import { billingPeriodServiceModuleLoader } from "./BillingPeriodService.module";
+import { billingProviderServiceModuleLoader } from "./BillingProviderService";
 
 const thisModule = createModule();
 const token = DI_TOKENS.SEAT_BILLING_STRATEGY_RESOLVER;
@@ -16,6 +17,7 @@ const loadModule = bindModuleToClassOnToken({
   depsMap: {
     billingPeriodService: billingPeriodServiceModuleLoader,
     featuresRepository: featuresRepositoryModuleLoader,
+    billingProviderService: billingProviderServiceModuleLoader,
   },
 });
 
