@@ -40,35 +40,59 @@ export const SkeletonLoader = () => {
         <Card className="rounded-b-none!">
           <CardPanel>
             <div className="flex flex-col gap-6">
-              <FieldSkeleton />
-              <Skeleton className="h-5 w-40" />
-              <FieldSkeleton className="h-10" />
-              <FieldSkeleton />
-              <FieldSkeleton className="h-9 w-32" />
-              <Skeleton className="h-5 w-48" />
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4.5 w-7.5 rounded-full" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-36 w-full" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-8 w-full" />
+              </div> 
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-8 w-30" />
+                <Skeleton className="h-3 my-0.5 w-40" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4.5 w-7.5 rounded-full" />
+                <Skeleton className="h-4 w-28" />
+              </div>              
             </div>
           </CardPanel>
         </Card>
-        <CardFrameFooter className="flex justify-end gap-2">
-          <Skeleton className="h-9 w-20" />
-          <Skeleton className="h-9 w-32" />
+        <CardFrameFooter className="flex items-center justify-end gap-4">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-8 w-32" />
         </CardFrameFooter>
       </CardFrame>
       <CardFrame>
         <CardFrameHeader>
           <div className="flex items-center justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <Skeleton className="h-5 w-28" />
-              <Skeleton className="h-4 w-52" />
+            <div>
+              <CardFrameTitle>{t("webhook_test")}</CardFrameTitle>
+              <CardFrameDescription>{t("test_webhook")}</CardFrameDescription>
             </div>
-            <Skeleton className="h-9 w-28" />
+            <Skeleton className="h-8 w-28" />
           </div>
         </CardFrameHeader>
         <Card>
           <CardPanel>
             <div className="flex flex-col gap-2">
-              <Skeleton className="h-5 w-36" />
-              <Skeleton className="h-24 w-full rounded-lg" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-13.5 w-full" />
             </div>
           </CardPanel>
         </Card>
@@ -76,12 +100,3 @@ export const SkeletonLoader = () => {
     </div>
   );
 };
-
-function FieldSkeleton({ className }: { className?: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Skeleton className="h-4 w-28" />
-      <Skeleton className={className ?? "h-9 w-full"} />
-    </div>
-  );
-}
