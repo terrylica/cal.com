@@ -2,6 +2,7 @@ import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import { useBookerStore } from "@calcom/features/bookings/Booker/store";
 import type { BookerEvent } from "@calcom/features/bookings/types";
+import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
 import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import { SchedulingType } from "@calcom/prisma/enums";
@@ -63,15 +64,15 @@ export const EventMembers = ({
     hideOrgTeamAvatar || isDynamic || (!profile.image && !entity.logoUrl) || !entity.teamSlug
       ? []
       : [
-          {
-            // We don't want booker to be able to see the list of other users or teams inside the embed
-            href:
-              isEmbed || isPlatform || isPrivateLink || entity.hideProfileLink ? null : getEntityBaseUrl(),
-            image: entity.logoUrl ?? profile.image ?? "",
-            alt: entity.name ?? profile.name ?? "",
-            title: entity.name ?? profile.name ?? "",
-          },
-        ];
+        {
+          // We don't want booker to be able to see the list of other users or teams inside the embed
+          href:
+            isEmbed || isPlatform || isPrivateLink || entity.hideProfileLink ? null : getEntityBaseUrl(),
+          image: entity.logoUrl ?? profile.image ?? "",
+          alt: entity.name ?? profile.name ?? "",
+          title: entity.name ?? profile.name ?? "",
+        },
+      ];
 
   return (
     <>
@@ -82,10 +83,10 @@ export const EventMembers = ({
           ...orgOrTeamAvatarItem,
           ...shownUsers.map((user) => {
             const org = user.profile?.organization;
-            const customDomain = org?.customDomain?.verified ? org.customDomain.slug : null;
-            const baseUrl = getOrgFullOrigin(customDomain ?? org?.slug ?? null, {
+            const customDomain = org?.customDomain?.slug ?? null;
+            const baseUrl = getBookerBaseUrlSync(org?.slug ?? null, {
               protocol: true,
-              isCustomDomain: !!customDomain,
+              customDomain,
             });
             return {
               href:
@@ -104,9 +105,9 @@ export const EventMembers = ({
         {showOnlyProfileName
           ? profile.name
           : shownUsers
-              .map((user) => user.name)
-              .filter((name) => name)
-              .join(", ")}
+            .map((user) => user.name)
+            .filter((name) => name)
+            .join(", ")}
       </p>
     </>
   );

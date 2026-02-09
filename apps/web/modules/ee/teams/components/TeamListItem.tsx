@@ -95,8 +95,8 @@ export default function TeamListItem(props: Props) {
 
   if (!team) return null;
   const teamUrl = team.isOrganization
-    ? getTeamUrlSync({ orgSlug: team.slug, teamSlug: null })
-    : getTeamUrlSync({ orgSlug: team.parent ? team.parent.slug : null, teamSlug: team.slug });
+    ? getTeamUrlSync({ orgSlug: team.slug, teamSlug: null, customDomain: team.customDomain?.slug })
+    : getTeamUrlSync({ orgSlug: team.parent ? team.parent.slug : null, teamSlug: team.slug, customDomain: team.parent?.customDomain?.slug });
   const teamInfo = (
     <div className="item-center flex truncate p-5">
       <Avatar
@@ -211,6 +211,7 @@ export default function TeamListItem(props: Props) {
                           `${getTeamUrlSync({
                             orgSlug: team.parent ? team.parent.slug : null,
                             teamSlug: team.slug,
+                            customDomain: team.parent?.customDomain?.slug,
                           })}`
                         );
                         showToast(t("link_copied"), "success");
@@ -250,6 +251,7 @@ export default function TeamListItem(props: Props) {
                           href={`${getTeamUrlSync({
                             orgSlug: team.parent ? team.parent.slug : null,
                             teamSlug: team.slug,
+                            customDomain: team.parent?.customDomain?.slug,
                           })}`}
                           StartIcon="external-link">
                           {t("preview_team") as string}

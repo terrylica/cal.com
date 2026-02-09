@@ -164,7 +164,8 @@ export const ChildrenEventTypeSelect = ({
                           variant="icon"
                           className={customClassNames?.selectedChildrenList?.listItem?.previewEventTypeButton}
                           href={`${getBookerBaseUrlSync(
-                            children.owner.profile?.organization?.slug ?? null
+                            children.owner.profile?.organization?.slug ?? null,
+                            { customDomain: children.owner.profile?.organization?.customDomain?.slug }
                           )}/${children.owner?.username}/${children.slug}`}
                           StartIcon="external-link"
                         />

@@ -2,7 +2,7 @@ import type { Team } from "@calcom/prisma/client";
 
 type OrganizationWithRequestedSlug = Pick<Team, "name" | "id" | "slug" | "calVideoLogo", "bannerUrl"> & {
   requestedSlug: string | null;
-  customDomain?: { slug: string; verified: boolean } | null;
+  customDomain?: { slug: string } | null;
 };
 
 export type OrgProfile = {

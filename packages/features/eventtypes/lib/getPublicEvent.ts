@@ -5,7 +5,7 @@ import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-util
 import dayjs from "@calcom/dayjs";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
 import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
-import { getOrgFullOrigin, getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getDefaultEvent, getUsernameList } from "@calcom/features/eventtypes/lib/defaultEvents";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
@@ -29,7 +29,6 @@ import {
   userMetadata as userMetadataSchema,
 } from "@calcom/prisma/zod-utils";
 import type { UserProfile } from "@calcom/types/UserProfile";
-import { profileRepositoryModule } from "~/users/di/Profile.module";
 
 const userSelect = {
   id: true,
@@ -289,7 +288,6 @@ export const getPublicEvent = async (
   org: string | null,
   prisma: PrismaClient,
   fromRedirectOfNonOrgLink: boolean,
-  isCustomDomain: boolean,
   currentUserId?: number,
   fetchAllUsers = false
 ) => {
@@ -327,19 +325,31 @@ export const getPublicEvent = async (
     const disableBookingTitle = !defaultEvent.isDynamic;
     const unPublishedOrgUser = users.find((user) => user.profile?.organization?.slug === null);
 
-    let orgDetails: Pick<Team, "logoUrl" | "name"> | undefined;
+    let orgDetails: Pick<Team, "logoUrl" | "name"> & { customDomain: { slug: string | null } | null } | undefined;
     if (org) {
       orgDetails = await prisma.team.findFirstOrThrow({
         where: {
-          slug: org,
+          OR: [
+            { slug: org },
+            { customDomain: { slug: org, verified: true } },
+          ]
         },
         select: {
           logoUrl: true,
           name: true,
+          customDomain: {
+            where: {
+              verified: true,
+            },
+            select: {
+              slug: true,
+            }
+          }
         },
       });
     }
 
+    const customDomain = orgDetails?.customDomain?.slug;
     return {
       ...defaultEvent,
       bookingFields: getBookingFieldsWithSystemFields({ ...defaultEvent, disableBookingTitle }),
@@ -347,13 +357,13 @@ export const getPublicEvent = async (
       subsetOfUsers: users.map((user) => ({
         ...user,
         metadata: undefined,
-        bookerUrl: getBookerBaseUrlSync(user.profile?.organization?.slug ?? null),
+        bookerUrl: getBookerBaseUrlSync(user.profile?.organization?.slug ?? null, { customDomain }),
       })),
       users: fetchAllUsers
         ? users.map((user) => ({
             ...user,
             metadata: undefined,
-            bookerUrl: getBookerBaseUrlSync(user.profile?.organization?.slug ?? null),
+            bookerUrl: getBookerBaseUrlSync(user.profile?.organization?.slug ?? null, { customDomain }),
           }))
         : undefined,
       locations: privacyFilteredLocations(locations),
@@ -377,7 +387,7 @@ export const getPublicEvent = async (
         considerUnpublished: !fromRedirectOfNonOrgLink && unPublishedOrgUser !== undefined,
         fromRedirectOfNonOrgLink,
         orgSlug: org,
-        isCustomDomain,
+        isCustomDomain: !!orgDetails?.customDomain?.slug,
         name: unPublishedOrgUser?.profile?.organization?.name ?? null,
         teamSlug: null,
         logoUrl: null,
@@ -571,7 +581,7 @@ export const getPublicEvent = async (
           eventWithUserProfiles.owner?.profile?.organization?.slug === null ||
           eventWithUserProfiles.team?.parent?.slug === null),
       orgSlug: org,
-      isCustomDomain,
+      isCustomDomain: !!eventWithUserProfiles.owner?.profile?.organization?.customDomain?.slug,
       teamSlug: (eventWithUserProfiles.team?.slug || teamMetadata?.requestedSlug) ?? null,
       name:
         (eventWithUserProfiles.owner?.profile?.organization?.name ||
@@ -680,7 +690,9 @@ export async function getUsersFromEvent(
       organizationId,
       avatarUrl,
       profile,
-      bookerUrl: getBookerBaseUrlSync(owner.profile?.organization?.slug ?? null),
+      bookerUrl: getBookerBaseUrlSync(owner.profile?.organization?.slug ?? null, {
+        customDomain: owner.profile?.organization?.customDomain?.slug,
+      }),
     },
   ];
 }
@@ -717,12 +729,12 @@ async function getOwnerFromUsersArray(
   }));
 
   const orgInfo = usersWithUserProfile[0].profile?.organization;
-  const customDomain = orgInfo?.verfied ? orgInfo?.customDomain : null;
+  const customDomain = orgInfo?.customDomain?.slug ?? null;
 
   return [
     {
       ...usersWithUserProfile[0],
-      bookerUrl: getOrgFullOrigin(customDomain ?? orgInfo?.slug, { isCustomDomain: !!customDomain })
+      bookerUrl: getBookerBaseUrlSync(orgInfo?.slug ?? null, { customDomain })
     },
   ];
 }
@@ -735,14 +747,14 @@ function mapHostsToUsers(
   },
 ) {
   const orgInfo = host.user.profile?.organization;
-  const customDomain = orgInfo?.verfied ? orgInfo?.customDomain : null;
+  const customDomain = orgInfo?.customDomain?.slug ?? null;
   return {
     username: host.user.username,
     name: host.user.name,
     avatarUrl: host.user.avatarUrl,
     weekStart: host.user.weekStart,
     organizationId: host.user.profile?.organizationId ?? null,
-    bookerUrl: getOrgFullOrigin(customDomain ?? orgInfo?.slug ?? null, { isCustomDomain: !!customDomain }),
+    bookerUrl: getBookerBaseUrlSync(orgInfo?.slug ?? null, { customDomain }),
     profile: host.user.profile,
   };
 }

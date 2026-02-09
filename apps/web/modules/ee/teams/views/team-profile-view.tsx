@@ -103,6 +103,7 @@ const ProfileView = () => {
     ? `${getTeamUrlSync({
         orgSlug: team.parent ? team.parent.slug : null,
         teamSlug: team.slug,
+        customDomain: team.parent?.customDomain?.slug,
       })}`
     : "";
 
@@ -417,7 +418,7 @@ const TeamProfileForm = ({ team, teamId }: TeamProfileFormProps) => {
                 data-testid="team-url"
                 addOnClassname="testid-leading-text-team-url"
                 addOnLeading={`${getTeamUrlSync(
-                  { orgSlug: team.parent ? team.parent.slug : null, teamSlug: null },
+                  { orgSlug: team.parent ? team.parent.slug : null, teamSlug: null, customDomain: team.parent?.customDomain?.slug },
                   {
                     protocol: false,
                   }

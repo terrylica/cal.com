@@ -91,17 +91,17 @@ export type State = {
 
 export type Action =
   | {
-      type:
-        | "SET_DELETE_ID"
-        | "SET_IMPERSONATE_ID"
-        | "EDIT_USER_SHEET"
-        | "TEAM_AVAILABILITY"
-        | "INVITE_MEMBER";
-      payload: Payload;
-    }
+    type:
+    | "SET_DELETE_ID"
+    | "SET_IMPERSONATE_ID"
+    | "EDIT_USER_SHEET"
+    | "TEAM_AVAILABILITY"
+    | "INVITE_MEMBER";
+    payload: Payload;
+  }
   | {
-      type: "CLOSE_MODAL";
-    };
+    type: "CLOSE_MODAL";
+  };
 
 const initialState: State = {
   deleteMember: {
@@ -185,6 +185,7 @@ function MemberListContent(props: Props) {
 
   const utils = trpc.useUtils();
   const orgBranding = useOrgBranding();
+  console.log("orgBranding: ", orgBranding);
   const domain = orgBranding?.fullDomain ?? WEBAPP_URL;
 
   const tableContainerRef = useRef<HTMLDivElement>(null);

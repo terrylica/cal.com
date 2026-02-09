@@ -278,7 +278,9 @@ export const getEventTypesByViewer = async (user: User, filters?: Filters, forRo
           return {
             teamId: team.id,
             parentId: team.parentId,
-            bookerUrl: getBookerBaseUrlSync(team.parent?.slug ?? teamParentMetadata?.requestedSlug ?? null),
+            bookerUrl: getBookerBaseUrlSync(team.parent?.slug ?? teamParentMetadata?.requestedSlug ?? null, {
+              customDomain: team.parent?.customDomain?.slug,
+            }),
             membershipRole:
               orgMembership && compareMembership(orgMembership, membership.role)
                 ? orgMembership

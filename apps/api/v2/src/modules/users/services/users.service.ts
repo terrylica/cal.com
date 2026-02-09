@@ -11,6 +11,7 @@ export type ProfileMinimal = {
     id: number;
     slug?: string | null;
     isPlatform: boolean;
+    customDomain?: { slug: string } | null;
   } | null;
 };
 

@@ -84,6 +84,7 @@ export async function createTeamEventGroup(
         slug: string | null;
         logoUrl: string | null;
         metadata: unknown;
+        customDomain?: { slug: string } | null;
       } | null;
       metadata: unknown;
     };
@@ -103,7 +104,9 @@ export async function createTeamEventGroup(
 
   const bookerUrl =
     orgBrand?.fullDomain ??
-    getBookerBaseUrlSync(team.parent?.slug ?? teamParentMetadata?.requestedSlug ?? null);
+    getBookerBaseUrlSync(team.parent?.slug ?? teamParentMetadata?.requestedSlug ?? null, {
+      customDomain: team.parent?.customDomain?.slug,
+    });
 
   return {
     teamId: team.id,

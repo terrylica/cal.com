@@ -43,6 +43,7 @@ const teamParentSelect = {
   logoUrl: true,
   parentId: true,
   metadata: true,
+  customDomain: { where: { verified: true }, select: { slug: true } },
 } satisfies Prisma.TeamSelect;
 
 const userSelect = {
