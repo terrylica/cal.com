@@ -895,12 +895,12 @@ function FieldLabel({ field }: { field: RhfFormField }) {
         <span
           dangerouslySetInnerHTML={{
             // Derive from field.label because label might change in b/w and field.labelAsSafeHtml will not be updated.
-            __html: markdownToSafeHTMLClient(field.label || t(field.defaultLabel || "") || ""),
+            __html: markdownToSafeHTMLClient(field.label?.trim() || t(field.defaultLabel || "") || ""),
           }}
         />
       );
     } else {
-      return <span>{field.label || t(field.defaultLabel || "")}</span>;
+      return <span>{field.label?.trim() || t(field.defaultLabel || "")}</span>;
     }
   }
   const variant = field.variant || defaultVariant;
