@@ -25,10 +25,17 @@ const ServerPage = async () => {
     return redirect("/auth/login");
   }
 
-  // If user has any team membership (pending or accepted), redirect them directly to personal onboarding
-  // This handles the case where users sign up with an invite token (membership is auto-accepted)
+  // If user has any team membership (pending or accepted), check their role.
+  // Invited members (MEMBER role) skip team onboarding and go directly to personal settings.
+  // Team owners are redirected to the main app since they've already gone through team creation.
   const hasTeamMembership = await MembershipRepository.hasAnyTeamMembershipByUserId({ userId: session.user.id });
   if (hasTeamMembership) {
+    const isTeamOwner = await MembershipRepository.hasAcceptedOwnerTeamMembership({
+      userId: session.user.id,
+    });
+    if (isTeamOwner) {
+      return redirect("/event-types");
+    }
     return redirect("/onboarding/personal/settings");
   }
 

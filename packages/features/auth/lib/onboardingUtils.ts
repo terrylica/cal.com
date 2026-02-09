@@ -69,6 +69,14 @@ export async function checkOnboardingRedirect(
   const hasTeamMembership = await MembershipRepository.hasAnyTeamMembershipByUserId({ userId });
 
   if (hasTeamMembership && onboardingV3Enabled) {
+    // If user is an accepted OWNER of any team, they have already gone through
+    // team creation and should not be forced back into onboarding.
+    // This prevents team owners from being stuck in an onboarding loop when
+    // they try to access the main app or create additional teams.
+    const isTeamOwner = await MembershipRepository.hasAcceptedOwnerTeamMembership({ userId });
+    if (isTeamOwner) {
+      return null;
+    }
     return "/onboarding/personal/settings";
   }
 

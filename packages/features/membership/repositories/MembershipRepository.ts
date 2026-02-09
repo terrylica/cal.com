@@ -613,4 +613,26 @@ export class MembershipRepository {
     });
     return !!membership;
   }
+
+  /**
+   * Checks if a user is an accepted OWNER of any team (non-organization).
+   * Used during onboarding to distinguish users who created a team themselves
+   * from users who were merely invited to a team.
+   */
+  static async hasAcceptedOwnerTeamMembership({ userId }: { userId: number }): Promise<boolean> {
+    const membership = await prisma.membership.findFirst({
+      where: {
+        userId,
+        role: MembershipRole.OWNER,
+        accepted: true,
+        team: {
+          isOrganization: false,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    return !!membership;
+  }
 }
