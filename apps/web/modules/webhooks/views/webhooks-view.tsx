@@ -14,8 +14,9 @@ import {
 } from "@coss/ui/components/empty";
 import { WebhookIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState } from "react";
 import { CreateNewWebhookButton, WebhookListItem } from "../components";
+import { WebhooksFilter } from "../components/WebhooksFilter";
 import { WebhooksHeader } from "./webhooks-header";
 
 type WebhooksByViewer = RouterOutputs["viewer"]["webhook"]["getByViewer"];
@@ -36,17 +37,35 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
   const { t } = useLocale();
   const router = useRouter();
   const { webhookGroups } = webhooksByViewer;
+  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
   const flat = webhookGroups.flatMap((group) => group.webhooks.map((webhook) => ({ webhook, group })));
+  const filtered =
+    selectedProfileIds.length > 0
+      ? flat.filter(({ group }) => selectedProfileIds.includes(group.profile.slug ?? ""))
+      : flat;
   const hasWebhooks = flat.length > 0;
 
   return (
     <CardFrame>
-      <WebhooksHeader actions={hasWebhooks ? <CreateNewWebhookButton /> : undefined} />
+      <WebhooksHeader
+        actions={
+          hasWebhooks ? (
+            <div className="flex items-center gap-2">
+              <WebhooksFilter
+                groups={webhookGroups}
+                selectedProfileIds={selectedProfileIds}
+                onSelectionChange={setSelectedProfileIds}
+              />
+              <CreateNewWebhookButton />
+            </div>
+          ) : undefined
+        }
+      />
       {hasWebhooks ? (
         <Card>
           <CardPanel className="p-0">
-            {flat.map(({ webhook, group }) => (
+            {filtered.map(({ webhook, group }) => (
               <WebhookListItem
                 key={webhook.id}
                 webhook={webhook}
