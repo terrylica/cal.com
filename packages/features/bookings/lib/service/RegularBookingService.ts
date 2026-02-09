@@ -1705,6 +1705,7 @@ async function handler(
           id: 0,
           email: bookerEmail,
           name: fullName,
+          createdAt: new Date(),
           timeZone: reqBody.timeZone,
           locale: null,
           phoneNumber: null,
