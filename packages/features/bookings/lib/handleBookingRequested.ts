@@ -74,16 +74,20 @@ export async function handleBookingRequested(args: {
     if (!evt.uid) {
       log.error("Cannot queue BOOKING_REQUESTED webhook: missing booking uid");
       return;
+    } else {
+      try {
+        const webhookProducer = getWebhookProducer();
+        await webhookProducer.queueBookingRequestedWebhook({
+          bookingUid: evt.uid,
+          userId: booking.userId ?? undefined,
+          eventTypeId: booking.eventTypeId ?? undefined,
+          teamId: booking.eventType?.teamId ?? undefined,
+          orgId,
+        });
+      } catch (error) {
+        log.error("Error queueing BOOKING_REQUESTED webhook", safeStringify(error));
+      }
     }
-
-    const webhookProducer = getWebhookProducer();
-    await webhookProducer.queueBookingRequestedWebhook({
-      bookingUid: evt.uid,
-      userId: booking.userId ?? undefined,
-      eventTypeId: booking.eventTypeId ?? undefined,
-      teamId: booking.eventType?.teamId ?? undefined,
-      orgId,
-    });
 
     const workflows = await getAllWorkflowsFromEventType(booking.eventType, booking.userId);
     if (workflows.length > 0) {
