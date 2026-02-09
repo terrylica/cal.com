@@ -1,6 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Expose, Type } from "class-transformer";
-import { IsEnum, ValidateNested, IsArray, IsNumber, IsString, IsTimeZone } from "class-validator";
+import {
+  IsArray,
+  IsEnum,
+  ValidateNested,
+  IsNumber,
+  IsString,
+  IsTimeZone,
+} from "class-validator";
 
 import { SUCCESS_STATUS, ERROR_STATUS } from "@calcom/platform-constants";
 
@@ -32,7 +39,10 @@ export class BookingAttendeeItem_2024_08_13 {
 }
 
 export class GetBookingAttendeesOutput_2024_08_13 {
-  @ApiProperty({ example: SUCCESS_STATUS, enum: [SUCCESS_STATUS, ERROR_STATUS] })
+  @ApiProperty({
+    example: SUCCESS_STATUS,
+    enum: [SUCCESS_STATUS, ERROR_STATUS],
+  })
   @IsEnum([SUCCESS_STATUS, ERROR_STATUS])
   status!: typeof SUCCESS_STATUS | typeof ERROR_STATUS;
 
@@ -41,4 +51,18 @@ export class GetBookingAttendeesOutput_2024_08_13 {
   @IsArray()
   @Type(() => BookingAttendeeItem_2024_08_13)
   data!: BookingAttendeeItem_2024_08_13[];
+}
+
+export class GetBookingAttendeeOutput_2024_08_13 {
+  @ApiProperty({
+    example: SUCCESS_STATUS,
+    enum: [SUCCESS_STATUS, ERROR_STATUS],
+  })
+  @IsEnum([SUCCESS_STATUS, ERROR_STATUS])
+  status!: typeof SUCCESS_STATUS | typeof ERROR_STATUS;
+
+  @ApiProperty({ type: BookingAttendeeItem_2024_08_13 })
+  @ValidateNested()
+  @Type(() => BookingAttendeeItem_2024_08_13)
+  data!: BookingAttendeeItem_2024_08_13;
 }

@@ -1,6 +1,9 @@
 import { BookingPbacGuard } from "@/ee/bookings/2024-08-13/guards/booking-pbac.guard";
 import { BookingUidGuard } from "@/ee/bookings/2024-08-13/guards/booking-uid.guard";
-import { GetBookingAttendeesOutput_2024_08_13 } from "@/ee/bookings/2024-08-13/outputs/get-booking-attendees.output";
+import {
+  GetBookingAttendeesOutput_2024_08_13,
+  GetBookingAttendeeOutput_2024_08_13,
+} from "@/ee/bookings/2024-08-13/outputs/get-booking-attendees.output";
 import { BookingAttendeesService_2024_08_13 } from "@/ee/bookings/2024-08-13/services/booking-attendees.service";
 import {
   VERSION_2024_08_13_VALUE,
@@ -10,7 +13,13 @@ import { API_KEY_OR_ACCESS_TOKEN_HEADER } from "@/lib/docs/headers";
 import { Permissions } from "@/modules/auth/decorators/permissions/permissions.decorator";
 import { ApiAuthGuard } from "@/modules/auth/guards/api-auth/api-auth.guard";
 import { PermissionsGuard } from "@/modules/auth/guards/permissions/permissions.guard";
-import { Controller, Get, UseGuards, Param } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Param,
+  ParseIntPipe,
+} from "@nestjs/common";
 import { ApiOperation, ApiTags as DocsTags, ApiHeader } from "@nestjs/swagger";
 
 import { BOOKING_READ, SUCCESS_STATUS } from "@calcom/platform-constants";
@@ -53,6 +62,32 @@ export class BookingAttendeesController_2024_08_13 {
     return {
       status: SUCCESS_STATUS,
       data: attendees,
+    };
+  }
+
+  @Get("/:attendeeId")
+  @Permissions([BOOKING_READ])
+  @UseGuards(ApiAuthGuard, BookingUidGuard, BookingPbacGuard)
+  @ApiHeader(API_KEY_OR_ACCESS_TOKEN_HEADER)
+  @ApiOperation({
+    summary: "Get a specific attendee for a booking",
+    description: `Retrieve a specific attendee by their ID for a booking identified by its UID.
+        
+      <Note>The cal-api-version header is required for this endpoint. Without it, the request will fail with a 404 error.</Note>
+      `,
+  })
+  async getBookingAttendee(
+    @Param("bookingUid") bookingUid: string,
+    @Param("attendeeId", ParseIntPipe) attendeeId: number
+  ): Promise<GetBookingAttendeeOutput_2024_08_13> {
+    const attendee = await this.bookingAttendeesService.getBookingAttendee(
+      bookingUid,
+      attendeeId
+    );
+
+    return {
+      status: SUCCESS_STATUS,
+      data: attendee,
     };
   }
 }

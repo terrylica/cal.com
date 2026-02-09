@@ -33,4 +33,35 @@ export class BookingAttendeesService_2024_08_13 {
       )
     );
   }
+
+  async getBookingAttendee(
+    bookingUid: string,
+    attendeeId: number
+  ): Promise<BookingAttendeeItem_2024_08_13> {
+    const booking = await this.bookingsRepository.getByUidWithAttendees(
+      bookingUid
+    );
+    if (!booking) {
+      throw new NotFoundException(`Booking with uid ${bookingUid} not found`);
+    }
+
+    const attendee = booking.attendees.find((a) => a.id === attendeeId);
+    if (!attendee) {
+      throw new NotFoundException(
+        `Attendee with id ${attendeeId} not found in booking ${bookingUid}`
+      );
+    }
+
+    return plainToClass(
+      BookingAttendeeItem_2024_08_13,
+      {
+        id: attendee.id,
+        bookingId: booking.id,
+        name: attendee.name,
+        email: attendee.email,
+        timeZone: attendee.timeZone,
+      },
+      { strategy: "excludeAll" }
+    );
+  }
 }
