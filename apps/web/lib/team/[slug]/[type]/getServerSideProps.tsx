@@ -33,7 +33,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const { slug: teamSlug, type: meetingSlug } = paramsSchema.parse(params);
   const { rescheduleUid, isInstantMeeting: queryIsInstantMeeting } = query;
   const allowRescheduleForCancelledBooking = query.allowRescheduleForCancelledBooking === "true";
-  const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(req, params?.orgSlug);
+  const { currentOrgDomain, isValidOrgDomain, customDomain } = orgDomainConfig(req, params?.orgSlug);
 
   const redirect = await handleOrgRedirect({
     slugs: [teamSlug],
@@ -158,6 +158,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
           orgSlug,
           teamSlug: team.slug ?? null,
           name,
+          isCustomDomain: !!customDomain,
         },
         length: eventData.length,
         metadata: EventTypeMetaDataSchema.parse(eventData.metadata),
