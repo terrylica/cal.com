@@ -4,17 +4,16 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsEnum,
   IsInt,
   IsObject,
   IsOptional,
   IsString,
-  IsEmail,
   IsTimeZone,
   IsUrl,
   ValidateNested,
 } from "class-validator";
-
 import type { BookingLanguageType } from "../inputs/language";
 import { BookingLanguage } from "../inputs/language";
 
@@ -63,6 +62,16 @@ export class SeatedAttendee extends BookingAttendee {
   @Expose()
   seatUid!: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    example: "2024-08-13T15:30:00Z",
+    description: "The date and time when the attendee joined the seated booking.",
+  })
+  @IsDateString()
+  @IsOptional()
+  @Expose()
+  createdAt?: string;
+
   @ApiProperty({
     type: Object,
     description:
@@ -100,7 +109,11 @@ class BookingHost {
   @Expose()
   email!: string;
 
-  @ApiProperty({ type: String, example: "jane100@example.com", description: "Clean email for display purposes" })
+  @ApiProperty({
+    type: String,
+    example: "jane100@example.com",
+    description: "Clean email for display purposes",
+  })
   @IsString()
   @Expose()
   displayEmail!: string;
@@ -406,7 +419,11 @@ class ReassignedToDto {
   @Expose()
   email!: string;
 
-  @ApiProperty({ type: String, example: "john.doe@example.com", description: "Clean email for display purposes" })
+  @ApiProperty({
+    type: String,
+    example: "john.doe@example.com",
+    description: "Clean email for display purposes",
+  })
   @IsString()
   @Expose()
   displayEmail!: string;

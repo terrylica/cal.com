@@ -211,7 +211,9 @@ describe("Bookings Endpoints 2024-08-13", () => {
                 ...body.bookingFieldsResponses,
               },
               metadata: body.metadata,
+              createdAt: expect.any(String),
             });
+            expect(data.attendees[0].createdAt).toBeDefined();
             expect(data.location).toBeDefined();
             expect(data.absentHost).toEqual(false);
             createdSeatedBooking = data;
@@ -287,7 +289,9 @@ describe("Bookings Endpoints 2024-08-13", () => {
                 ...createdSeatedBooking.attendees[0].bookingFieldsResponses,
               },
               metadata: createdSeatedBooking.attendees[0].metadata,
+              createdAt: expect.any(String),
             });
+            expect(firstAttendee?.createdAt).toBeDefined();
             const secondAttendee = data.attendees.find((attendee) => attendee.name === nameAttendeeTwo);
             expect(secondAttendee).toEqual({
               name: body.attendee.name,
@@ -303,7 +307,9 @@ describe("Bookings Endpoints 2024-08-13", () => {
                 ...body.bookingFieldsResponses,
               },
               metadata: body.metadata,
+              createdAt: expect.any(String),
             });
+            expect(secondAttendee?.createdAt).toBeDefined();
             expect(data.location).toBeDefined();
             expect(data.absentHost).toEqual(false);
             createdSeatedBooking = data;
@@ -609,7 +615,9 @@ describe("Bookings Endpoints 2024-08-13", () => {
                 ...attendee?.bookingFieldsResponses,
               },
               metadata: attendee?.metadata,
+              createdAt: expect.any(String),
             });
+            expect(data.attendees[0].createdAt).toBeDefined();
             expect(data.location).toBeDefined();
             expect(data.absentHost).toEqual(false);
             createdSeatedBooking = data;
@@ -876,6 +884,7 @@ describe("Bookings Endpoints 2024-08-13", () => {
               expect(data.attendees[0].name).toEqual(nameAttendeeOne);
               expect(data.attendees[0].language).toEqual("it");
               expect(data.attendees[0].seatUid).toBeDefined();
+              expect(data.attendees[0].createdAt).toBeDefined();
               expect(data.location).toBeDefined();
               expect(data.absentHost).toEqual(false);
               booking = data;
@@ -919,6 +928,7 @@ describe("Bookings Endpoints 2024-08-13", () => {
               expect(data.attendees[0].name).toEqual(nameAttendeeOne);
               expect(data.attendees[0].language).toEqual("it");
               expect(data.attendees[0].seatUid).toBeDefined();
+              expect(data.attendees[0].createdAt).toBeDefined();
               expect(data.location).toBeDefined();
               expect(data.absentHost).toEqual(false);
               await bookingsRepositoryFixture.deleteById(data.id);
@@ -1034,7 +1044,9 @@ describe("Bookings Endpoints 2024-08-13", () => {
                     ...body.bookingFieldsResponses,
                   },
                   metadata: body.metadata,
+                  createdAt: expect.any(String),
                 });
+                expect(data.attendees[0].createdAt).toBeDefined();
                 expect(data.location).toBeDefined();
                 expect(data.absentHost).toEqual(false);
                 createdSeatedBooking2 = data;
@@ -1103,13 +1115,11 @@ describe("Bookings Endpoints 2024-08-13", () => {
     });
 
     function responseDataIsCreateSeatedBooking(data: any): data is CreateSeatedBookingOutput_2024_08_13 {
-      return Object.prototype.hasOwnProperty.call(data, "seatUid");
+      return "seatUid" in data;
     }
 
     function responseDataIsGetSeatedBooking(data: any): data is GetSeatedBookingOutput_2024_08_13 {
-      return data?.attendees?.every((attendee: any) =>
-        Object.prototype.hasOwnProperty.call(attendee, "seatUid")
-      );
+      return data?.attendees?.every((attendee: any) => "seatUid" in attendee);
     }
 
     afterAll(async () => {
