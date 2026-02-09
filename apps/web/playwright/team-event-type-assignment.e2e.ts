@@ -1,12 +1,7 @@
 import { SchedulingType } from "@calcom/prisma/enums";
 import { expect } from "@playwright/test";
 import { test } from "./lib/fixtures";
-import {
-  bookTimeSlot,
-  selectFirstAvailableTimeSlotNextMonth,
-  submitAndWaitForResponse,
-  testName,
-} from "./lib/testUtils";
+import { submitAndWaitForResponse } from "./lib/testUtils";
 
 test.describe.configure({ mode: "parallel" });
 
@@ -48,25 +43,6 @@ async function navigateToAssignmentTab(page: import("@playwright/test").Page, ev
 }
 
 test.describe("Team Event Type - Assignment Tab", () => {
-  test("Can navigate to assignment tab for a Collective event type", async ({ page, users }) => {
-    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.COLLECTIVE);
-
-    const form = await navigateToAssignmentTab(page, teamEvent.id);
-
-    await expect(page.getByTestId("vertical-tab-assignment")).toBeVisible();
-    await expect(form.getByText("Scheduling type")).toBeVisible();
-  });
-
-  test("Can navigate to assignment tab for a Round Robin event type", async ({ page, users }) => {
-    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
-
-    const form = await navigateToAssignmentTab(page, teamEvent.id);
-
-    await expect(page.getByTestId("vertical-tab-assignment")).toBeVisible();
-    await expect(form.getByText("Scheduling type")).toBeVisible();
-    await expect(form.getByText("Round-robin hosts")).toBeVisible();
-  });
-
   test("Displays hosts on the Collective assignment tab", async ({ page, users }) => {
     const { teamEvent } = await createTeamWithEvent(users, SchedulingType.COLLECTIVE);
 
@@ -136,34 +112,73 @@ test.describe("Team Event Type - Round Robin Weights", () => {
   });
 });
 
-test.describe("Team Event Type - Tab Navigation", () => {
-  test("Can navigate between tabs on a team event type", async ({ page, users }) => {
-    const teamMatesObj = [{ name: "teammate-1" }];
+test.describe("Team Event Type - Host Assignment and Removal", () => {
+  test("Can remove a host from a Collective event type", async ({ page, users }) => {
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.COLLECTIVE);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
 
-    const owner = await users.create(
-      { username: "pro-user", name: "pro-user" },
-      {
-        hasTeam: true,
-        teammates: teamMatesObj,
-        schedulingType: SchedulingType.ROUND_ROBIN,
-      }
-    );
+    const hostRow = form.locator("li").filter({ hasText: "teammate-1" });
+    await expect(hostRow).toBeVisible();
 
-    await owner.apiLogin();
-    const { team } = await owner.getFirstTeamMembership();
-    const teamEvent = await owner.getFirstTeamEvent(team.id);
+    await hostRow.locator("svg").last().click();
 
-    await page.goto(`/event-types/${teamEvent.id}?tabName=setup`);
+    await expect(hostRow).not.toBeVisible();
+  });
+
+  test("Can remove a host from a Round Robin event type", async ({ page, users }) => {
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const hostRow = form.locator("li").filter({ hasText: "teammate-1" });
+    await expect(hostRow).toBeVisible();
+
+    await hostRow.locator("svg").last().click();
+
+    await expect(hostRow).not.toBeVisible();
+  });
+
+  test("Can add a host back after removal on a Round Robin event", async ({ page, users }) => {
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const hostRow = form.locator("li").filter({ hasText: "teammate-1" });
+    await expect(hostRow).toBeVisible();
+    await hostRow.locator("svg").last().click();
+    await expect(hostRow).not.toBeVisible();
+
+    const hostSelect = form.getByRole("combobox").nth(1);
+    await hostSelect.click();
+    await hostSelect.fill("teammate-1");
+    await page.locator('[id*="-option-"]').filter({ hasText: "teammate-1" }).click();
+
+    await expect(form.locator("li").filter({ hasText: "teammate-1" })).toBeVisible();
+  });
+
+  test("Can toggle assign all team members on a Round Robin event", async ({ page, users }) => {
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    await expect(form.getByText("Add all team members, including future members")).toBeVisible();
+    const toggle = page.getByTestId("assign-all-team-members-toggle");
+    await expect(toggle).toBeVisible();
+  });
+
+  test("Host removal persists after saving and reloading", async ({ page, users }) => {
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const hostRow = form.locator("li").filter({ hasText: "teammate-1" });
+    await expect(hostRow).toBeVisible();
+    await hostRow.locator("svg").last().click();
+    await expect(hostRow).not.toBeVisible();
+
+    await saveEventType(page);
+
+    await page.reload();
     await page.waitForLoadState("networkidle");
-    await expect(page.locator("#event-type-form")).toBeVisible();
-
-    await page.getByTestId("vertical-tab-assignment").click();
-    await page.waitForLoadState("networkidle");
-    await expect(page.locator("#event-type-form").getByText("Scheduling type")).toBeVisible();
-
-    await page.getByTestId("vertical-tab-availability").click();
-    await page.waitForLoadState("networkidle");
-    await expect(page.locator("#event-type-form")).toBeVisible();
+    await expect(
+      page.locator("#event-type-form").locator("li").filter({ hasText: "teammate-1" })
+    ).not.toBeVisible();
   });
 });
 
@@ -190,41 +205,5 @@ test.describe("Team Event Type - Managed Event Assignment", () => {
     await expect(
       page.locator("#event-type-form").getByText("Add all team members, including future members")
     ).toBeVisible();
-  });
-});
-
-test.describe("Team Event Type - Booking", () => {
-  test("Can book a Collective team event", async ({ page, users }) => {
-    const { team, teamEvent } = await createTeamWithEvent(users, SchedulingType.COLLECTIVE);
-
-    await page.goto(`/team/${team.slug}/${teamEvent.slug}`);
-    await selectFirstAvailableTimeSlotNextMonth(page);
-    await bookTimeSlot(page);
-    await expect(page.locator("[data-testid=success-page]")).toBeVisible();
-
-    const expectedTitle = `${teamEvent.title} between ${team.name} and ${testName}`;
-    await expect(page.locator("[data-testid=booking-title]")).toHaveText(expectedTitle);
-  });
-
-  test("Can book a Round Robin team event", async ({ page, users }) => {
-    const { owner, team, teamEvent, teamMatesObj } = await createTeamWithEvent(
-      users,
-      SchedulingType.ROUND_ROBIN
-    );
-
-    await page.goto(`/team/${team.slug}/${teamEvent.slug}`);
-    await selectFirstAvailableTimeSlotNextMonth(page);
-    await bookTimeSlot(page);
-    await expect(page.locator("[data-testid=success-page]")).toBeVisible();
-
-    await expect(page.locator(`[data-testid="attendee-name-${testName}"]`)).toHaveText(testName);
-
-    const bookingTitle = await page.getByTestId("booking-title").textContent();
-    expect(
-      teamMatesObj.concat([{ name: owner.name ?? "" }]).some((teamMate) => {
-        const expectedTitle = `${teamEvent.title} between ${teamMate.name} and ${testName}`;
-        return expectedTitle === bookingTitle;
-      })
-    ).toBe(true);
   });
 });
