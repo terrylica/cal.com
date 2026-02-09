@@ -254,6 +254,50 @@ export async function findUsersWithInviteStatus({
   }
 }
 
+const FREE_EMAIL_DOMAINS = [
+  "gmail.com",
+  "googlemail.com",
+  "yahoo.com",
+  "ymail.com",
+  "rocketmail.com",
+  "sbcglobal.net",
+  "att.net",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "msn.com",
+  "outlook.co",
+  "hotmail.co.uk",
+  "aol.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "mail.com",
+  "email.com",
+  "protonmail.com",
+  "proton.me",
+  "pm.me",
+  "protonmail.ch",
+  "zoho.com",
+  "yandex.com",
+  "gmx.com",
+  "gmx.de",
+  "fastmail.com",
+  "inbox.com",
+  "hushmail.com",
+  "rediffmail.com",
+  "tutanota.com",
+  "mail.ru",
+  "qq.com",
+  "163.com",
+  "naver.com",
+  "web.de",
+];
+
+export function isFreeEmailDomainSync(domain: string): boolean {
+  return FREE_EMAIL_DOMAINS.includes(domain.toLowerCase());
+}
+
 export function getOrgConnectionInfo({
   orgAutoAcceptDomain,
   orgVerified,
@@ -273,10 +317,11 @@ export function getOrgConnectionInfo({
   if (team.parentId || isOrg) {
     orgId = team.parentId || team.id;
     if (email.split("@")[1] == orgAutoAcceptDomain) {
-      // We discourage self-served organizations from being able to use auto-accept feature by having a barrier of a fixed number of paying teams in the account for creating the organization
-      // We can't put restriction of a published organization here because when we move teams during the onboarding of the organization, it isn't published at the moment and we really need those members to be auto-added
-      // Further, sensitive operations like member editing and impersonating are disabled by default, unless reviewed by the ADMIN team
-      autoAccept = !!orgVerified;
+      if (orgAutoAcceptDomain && isFreeEmailDomainSync(orgAutoAcceptDomain)) {
+        autoAccept = false;
+      } else {
+        autoAccept = !!orgVerified;
+      }
     } else {
       orgId = undefined;
       autoAccept = false;

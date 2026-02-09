@@ -8,10 +8,10 @@ export function extractDomainFromEmail(email: string) {
 }
 
 /**
- * Checks if an email is a company email (not a personal email provider)
+ * @deprecated Use checkIfFreeEmailDomain from @calcom/features/watchlist instead.
+ * Kept for backward compatibility in non-async contexts.
  */
 export function isCompanyEmail(email: string): boolean {
-  // A list of popular @domains that are personal email providers
   const personalEmailProviders = [
     "gmail.com",
     "googlemail.com",

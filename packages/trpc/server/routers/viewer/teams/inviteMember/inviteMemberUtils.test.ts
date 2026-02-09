@@ -15,6 +15,7 @@ import {
   getOrgConnectionInfo,
   getOrgState,
   getUniqueInvitationsOrThrowIfEmpty,
+  isFreeEmailDomainSync,
   INVITE_STATUS,
 } from "./utils";
 
@@ -306,7 +307,73 @@ describe("Invite Member Utils", () => {
       });
       expect(result).toEqual({ orgId: mockedRegularTeam.id, autoAccept: false });
     });
+
+    it("should return autoAccept:false when orgAutoAcceptDomain is a free email domain even if orgVerified is true", () => {
+      const result = getOrgConnectionInfo({
+        orgAutoAcceptDomain: "gmail.com",
+        orgVerified: true,
+        email: "user@gmail.com",
+        team: { ...mockedRegularTeam, parentId: null },
+        isOrg: true,
+      });
+      expect(result).toEqual({ orgId: mockedRegularTeam.id, autoAccept: false });
+    });
+
+    it("should return autoAccept:false for outlook.com as orgAutoAcceptDomain", () => {
+      const result = getOrgConnectionInfo({
+        orgAutoAcceptDomain: "outlook.com",
+        orgVerified: true,
+        email: "user@outlook.com",
+        team: { ...mockedRegularTeam, parentId: null },
+        isOrg: true,
+      });
+      expect(result).toEqual({ orgId: mockedRegularTeam.id, autoAccept: false });
+    });
+
+    it("should return autoAccept:false for yahoo.com as orgAutoAcceptDomain", () => {
+      const result = getOrgConnectionInfo({
+        orgAutoAcceptDomain: "yahoo.com",
+        orgVerified: true,
+        email: "user@yahoo.com",
+        team: { ...mockedRegularTeam, parentId: null },
+        isOrg: true,
+      });
+      expect(result).toEqual({ orgId: mockedRegularTeam.id, autoAccept: false });
+    });
+
+    it("should still allow autoAccept for company email domains when verified", () => {
+      const result = getOrgConnectionInfo({
+        orgAutoAcceptDomain: "acme.com",
+        orgVerified: true,
+        email: "user@acme.com",
+        team: { ...mockedRegularTeam, parentId: null },
+        isOrg: true,
+      });
+      expect(result).toEqual({ orgId: mockedRegularTeam.id, autoAccept: true });
+    });
   });
+
+  describe("isFreeEmailDomainSync", () => {
+    it("should return true for common free email domains", () => {
+      expect(isFreeEmailDomainSync("gmail.com")).toBe(true);
+      expect(isFreeEmailDomainSync("yahoo.com")).toBe(true);
+      expect(isFreeEmailDomainSync("outlook.com")).toBe(true);
+      expect(isFreeEmailDomainSync("hotmail.com")).toBe(true);
+      expect(isFreeEmailDomainSync("protonmail.com")).toBe(true);
+    });
+
+    it("should return false for company email domains", () => {
+      expect(isFreeEmailDomainSync("acme.com")).toBe(false);
+      expect(isFreeEmailDomainSync("cal.com")).toBe(false);
+      expect(isFreeEmailDomainSync("google.com")).toBe(false);
+    });
+
+    it("should be case-insensitive", () => {
+      expect(isFreeEmailDomainSync("Gmail.com")).toBe(true);
+      expect(isFreeEmailDomainSync("YAHOO.COM")).toBe(true);
+    });
+  });
+
   describe("getOrgState", () => {
     it("should return the correct values when isOrg is true and teamMetadata.orgAutoAcceptEmail is true", () => {
       const team = {

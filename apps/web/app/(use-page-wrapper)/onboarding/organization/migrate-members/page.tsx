@@ -1,5 +1,4 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { isCompanyEmail } from "@calcom/features/ee/organizations/lib/utils";
 import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { prisma } from "@calcom/prisma";
@@ -20,11 +19,7 @@ export default async function MigrateMembersPage() {
 
   const gettingStartedPath = await OnboardingPathService.getGettingStartedPath();
 
-  if (!isCompanyEmail(userEmail)) {
-    return redirect(gettingStartedPath);
-  }
-
-  const userRepository = new UserRepository(prisma);
+  const userRepository= new UserRepository(prisma);
   const isMemberOfOrganization = await userRepository.findIfAMemberOfSomeOrganization({
     user: { id: userId },
   });

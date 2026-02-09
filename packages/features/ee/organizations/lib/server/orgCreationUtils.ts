@@ -2,6 +2,7 @@ import { lookup } from "node:dns";
 import { type TFunction } from "i18next";
 
 import { sendAdminOrganizationNotification } from "@calcom/emails/organization-email-service";
+import { OrganizationSlugService } from "@calcom/features/ee/organizations/lib/service/OrganizationSlugService";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import {
@@ -19,10 +20,10 @@ import { UserPermissionRole } from "@calcom/prisma/enums";
 const log = logger.getSubLogger({ prefix: ["orgCreationUtils"] });
 
 /**
- * We can only say for sure that the email is not a company email. We can't say for sure if it is a company email.
+ * @deprecated Use OrganizationSlugService.isOwnerEmailFreeEmailDomain instead.
+ * Kept for backward compatibility in the legacy create.handler.ts flow.
  */
 export function isNotACompanyEmail(email: string) {
-  // A list of popular @domains that can't be used to allow automatic acceptance of memberships to organization
   const emailProviders = [
     "gmail.com",
     "googlemail.com",
@@ -214,9 +215,15 @@ export async function assertCanCreateOrg({
     throw new OrgCreationError("you_need_to_verify_your_email_before_creating_an_organization");
   }
 
-  if (isNotACompanyEmail(orgOwner.email) && !isPlatform) {
-    log.warn("use_company_email_to_create_an_organization", safeStringify({ email: orgOwner.email }));
-    throw new OrgCreationError("use_company_email_to_create_an_organization");
+  const slugService = new OrganizationSlugService();
+  const slugValidation = await slugService.validateSlugForOrgCreation({
+    slug,
+    ownerEmail: orgOwner.email,
+  });
+
+  if (!slugValidation.allowed && !isPlatform) {
+    log.warn("slug_validation_failed", safeStringify({ slug, email: orgOwner.email, reason: slugValidation.reason }));
+    throw new OrgCreationError(slugValidation.reason ?? "organization_slug_not_allowed");
   }
 
   const { conflictType: slugConflictType } = await assertSlugIsAvailable({

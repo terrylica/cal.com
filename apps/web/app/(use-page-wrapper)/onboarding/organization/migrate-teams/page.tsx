@@ -1,5 +1,4 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
-import { isCompanyEmail } from "@calcom/features/ee/organizations/lib/utils";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
 import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
@@ -25,11 +24,7 @@ export default async function MigrateTeamsPage({ searchParams }: PageProps) {
 
   const gettingStartedPath = await OnboardingPathService.getGettingStartedPath();
 
-  if (!isCompanyEmail(userEmail)) {
-    return redirect(gettingStartedPath);
-  }
-
-  const userRepository = new UserRepository(prisma);
+  const userRepository= new UserRepository(prisma);
   const { organizations } = await userRepository.findOrganizations({ userId });
 
   if (organizations.length > 0) {
