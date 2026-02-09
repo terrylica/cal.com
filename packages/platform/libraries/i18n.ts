@@ -5,8 +5,10 @@ import type { i18n as I18nInstance } from "i18next";
 import { createInstance } from "i18next";
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { i18n } = require("@calcom/config/i18n/next-i18next.config");
-const englishTranslations: Record<string, string> = require("@calcom/config/i18n/locales/en/common.json");
+const { i18n } = require("@calcom/config/next-i18next.config");
+const path = require("node:path");
+const translationsPath = path.resolve(__dirname, "../../../config/i18n/locales/en/common.json");
+const englishTranslations: Record<string, string> = require(translationsPath);
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const translationCache = new Map<string, Record<string, string>>([["en-common", englishTranslations]]);
