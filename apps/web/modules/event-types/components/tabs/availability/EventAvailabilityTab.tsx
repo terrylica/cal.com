@@ -20,8 +20,10 @@ import { Avatar } from "@calcom/ui/components/avatar";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
-import { Label, Select, SettingsToggle } from "@calcom/ui/components/form";
+import { CheckboxField as UICheckboxField, Label, Select, SettingsToggle } from "@calcom/ui/components/form";
 import { Icon, Spinner } from "@calcom/ui/components/icon";
+import { RadioField } from "@calcom/ui/components/radio";
+import * as RadioGroup from "@radix-ui/react-radio-group";
 import { SkeletonText } from "@calcom/ui/components/skeleton";
 import type { TeamMembers } from "@calcom/web/modules/event-types/components/EventType";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
@@ -1053,28 +1055,17 @@ const PreferredTimesSettings = ({
         title={t("highlight_preferred_times")}
         description={t("highlight_preferred_times_description")}>
         <div className="space-y-4">
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="preferredTimesMode"
-                checked={config?.mode === "auto"}
-                onChange={() => setMode("auto")}
-                className="text-emphasis"
-              />
-              <span className="text-default text-sm">{t("preferred_times_mode_auto")}</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="preferredTimesMode"
-                checked={config?.mode === "manual"}
-                onChange={() => setMode("manual")}
-                className="text-emphasis"
-              />
-              <span className="text-default text-sm">{t("preferred_times_mode_manual")}</span>
-            </label>
-          </div>
+          <RadioGroup.Root
+            value={config?.mode ?? "auto"}
+            onValueChange={(val) => setMode(val as "auto" | "manual")}
+            className="flex gap-4">
+            <RadioField label={t("preferred_times_mode_auto")} id="preferredTimesMode-auto" value="auto" />
+            <RadioField
+              label={t("preferred_times_mode_manual")}
+              id="preferredTimesMode-manual"
+              value="manual"
+            />
+          </RadioGroup.Root>
 
           {config?.mode === "auto" && (
             <div className="space-y-4">
@@ -1112,33 +1103,28 @@ const PreferredTimesSettings = ({
                   className="mt-1 block w-full text-sm"
                 />
               </div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!config.auto?.batchMeetings}
-                  onChange={(e) => {
-                    setValue(
-                      "metadata",
-                      {
-                        ...metadata,
-                        highlightPreferredTimes: {
-                          mode: "auto" as const,
-                          auto: {
-                            ...config.auto,
-                            batchMeetings: e.target.checked,
-                          },
+              <UICheckboxField
+                checked={!!config.auto?.batchMeetings}
+                description={t("batch_meetings_together")}
+                descriptionAsLabel
+                descriptionClassName="font-medium"
+                onChange={(e) => {
+                  setValue(
+                    "metadata",
+                    {
+                      ...metadata,
+                      highlightPreferredTimes: {
+                        mode: "auto" as const,
+                        auto: {
+                          ...config.auto,
+                          batchMeetings: e.target.checked,
                         },
                       },
-                      { shouldDirty: true }
-                    );
-                  }}
-                  className="text-emphasis"
-                />
-                <div>
-                  <span className="text-default text-sm font-medium">{t("batch_meetings_together")}</span>
-                  <p className="text-subtle text-xs">{t("batch_meetings_together_description")}</p>
-                </div>
-              </label>
+                    },
+                    { shouldDirty: true }
+                  );
+                }}
+              />
             </div>
           )}
 

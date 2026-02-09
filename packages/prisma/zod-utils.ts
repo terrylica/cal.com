@@ -266,11 +266,15 @@ const _eventTypeMetaDataSchemaWithoutApps = z.object({
       manual: z
         .object({
           ranges: z.array(
-            z.object({
-              day: z.number().min(0).max(6),
-              startTime: z.string(),
-              endTime: z.string(),
-            })
+            z
+              .object({
+                day: z.number().min(0).max(6),
+                startTime: z.string().regex(/^\d{2}:\d{2}$/),
+                endTime: z.string().regex(/^\d{2}:\d{2}$/),
+              })
+              .refine((r) => r.startTime < r.endTime, {
+                message: "startTime must be before endTime",
+              })
           ),
         })
         .optional(),

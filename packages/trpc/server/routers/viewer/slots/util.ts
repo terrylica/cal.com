@@ -216,8 +216,19 @@ export function applyPreferredFlagToSlots({
     const sorted = busyTimes
       .map((b) => ({ startMs: new Date(b.start).getTime(), endMs: new Date(b.end).getTime() }))
       .sort((a, b) => a.startMs - b.startMs);
-    sortedBusyStarts = sorted.map((b) => b.startMs);
-    sortedBusyEnds = sorted.map((b) => b.endMs);
+    const merged: { startMs: number; endMs: number }[] = [];
+    let current = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i].startMs <= current.endMs) {
+        current = { startMs: current.startMs, endMs: Math.max(current.endMs, sorted[i].endMs) };
+      } else {
+        merged.push(current);
+        current = sorted[i];
+      }
+    }
+    merged.push(current);
+    sortedBusyStarts = merged.map((b) => b.startMs);
+    sortedBusyEnds = merged.map((b) => b.endMs);
   }
 
   const eventLengthMs = eventLength * 60_000;
