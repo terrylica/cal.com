@@ -1,3 +1,4 @@
+import { getStrategyForTeam } from "@calcom/features/ee/billing/service/billingModelStrategy/BillingModelStrategyFactory";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
 import { WorkflowService } from "@calcom/features/ee/workflows/lib/service/WorkflowService";
@@ -12,13 +13,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TeamService } from "./teamService";
 
-const { MockSeatChangeTrackingService } = vi.hoisted(() => {
-  class MockSeatChangeTrackingService {
-    logSeatAddition = vi.fn().mockResolvedValue(undefined);
-    logSeatRemoval = vi.fn().mockResolvedValue(undefined);
-  }
-  return { MockSeatChangeTrackingService };
-});
+const mockStrategy = {
+  handleMemberAddition: vi.fn().mockResolvedValue(undefined),
+  handleMemberRemoval: vi.fn().mockResolvedValue(undefined),
+  syncBillingQuantity: vi.fn().mockResolvedValue(undefined),
+  handleInvoiceUpcoming: vi.fn().mockResolvedValue({ applied: false }),
+  handlePostRenewalReset: vi.fn().mockResolvedValue({ success: true }),
+};
 
 vi.mock("@calcom/ee/billing/di/containers/Billing");
 vi.mock("@calcom/features/ee/teams/repositories/TeamRepository");
@@ -27,8 +28,8 @@ vi.mock("@calcom/lib/domainManager/organization");
 vi.mock("@calcom/features/ee/teams/lib/removeMember");
 vi.mock("@calcom/features/profile/lib/createAProfileForAnExistingUser");
 vi.mock("@calcom/features/ee/teams/lib/queries");
-vi.mock("@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService", () => ({
-  SeatChangeTrackingService: MockSeatChangeTrackingService,
+vi.mock("@calcom/features/ee/billing/service/billingModelStrategy/BillingModelStrategyFactory", () => ({
+  getStrategyForTeam: vi.fn(),
 }));
 
 const mockTeamBilling = {
@@ -51,6 +52,12 @@ describe("TeamService", () => {
 
     const { getTeamBillingServiceFactory } = await import("@calcom/ee/billing/di/containers/Billing");
     vi.mocked(getTeamBillingServiceFactory).mockReturnValue(mockTeamBillingFactory);
+
+    vi.mocked(getStrategyForTeam).mockResolvedValue({
+      strategy: mockStrategy,
+      billingModel: "SEATS",
+      billingPeriod: "MONTHLY",
+    });
   });
 
   afterEach(() => {
@@ -115,7 +122,10 @@ describe("TeamService", () => {
           userId: 1,
         },
       });
-      expect(mockTeamBilling.updateQuantity).toHaveBeenCalled();
+      expect(mockStrategy.handleMemberAddition).toHaveBeenCalledWith(
+        { teamId: 1, userId: 1, triggeredBy: 1, seatCount: 1 },
+        expect.anything()
+      );
       expect(result).toBe("Test Team");
     });
   });

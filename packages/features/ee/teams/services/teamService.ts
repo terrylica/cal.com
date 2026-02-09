@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { getTeamBillingServiceFactory } from "@calcom/ee/billing/di/containers/Billing";
 import { getStrategyForTeam } from "@calcom/features/ee/billing/service/billingModelStrategy/BillingModelStrategyFactory";
-import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
 import { deleteWorkfowRemindersOfRemovedMember } from "@calcom/features/ee/teams/lib/deleteWorkflowRemindersOfRemovedMember";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { TeamRepository } from "@calcom/features/ee/teams/repositories/TeamRepository";
@@ -170,15 +169,6 @@ export class TeamService {
     }
 
     await Promise.all(deleteMembershipPromises);
-
-    // Seat removal logging already happened per-user inside removeMember.
-    // Sync billing quantity -- each strategy decides whether to update Stripe.
-    const billingPromises = teamIds.map(async (teamId) => {
-      const result = await getStrategyForTeam(teamId, undefined, log);
-      if (!result) return;
-      await result.strategy.syncBillingQuantity({ teamId }, log);
-    });
-    await Promise.allSettled(billingPromises);
   }
 
   static async inviteMemberByToken(token: string, userId: number) {
@@ -405,12 +395,16 @@ export class TeamService {
 
     await deleteWorkfowRemindersOfRemovedMember(team, userId, isOrg);
 
-    if (!team.parentId) {
-      const seatTracker = new SeatChangeTrackingService();
-      await seatTracker.logSeatRemoval({
-        teamId,
-        userId,
-      });
+    const strategyResult = await getStrategyForTeam(teamId, undefined, log);
+    if (strategyResult) {
+      if (!team.parentId) {
+        await strategyResult.strategy.handleMemberRemoval(
+          { teamId, userId, triggeredBy: userId, seatCount: 1 },
+          log
+        );
+      } else {
+        await strategyResult.strategy.syncBillingQuantity({ teamId }, log);
+      }
     }
 
     return { membership };
