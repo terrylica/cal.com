@@ -261,6 +261,7 @@ const _eventTypeMetaDataSchemaWithoutApps = z.object({
       auto: z
         .object({
           preferTimeOfDay: z.enum(["morning", "afternoon"]).optional(),
+          batchMeetings: z.boolean().optional(),
         })
         .optional(),
       manual: z

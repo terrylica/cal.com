@@ -411,6 +411,238 @@ describe("applyPreferredFlagToSlots", () => {
     });
   });
 
+  describe("auto mode - batch meetings together", () => {
+    const config = { mode: "auto" as const, auto: { batchMeetings: true } };
+
+    it("marks slots adjacent to busy times as preferred", () => {
+      const slots = {
+        "2026-03-10": [
+          { time: "2026-03-10T09:00:00.000Z" },
+          { time: "2026-03-10T09:30:00.000Z" },
+          { time: "2026-03-10T10:00:00.000Z" },
+          { time: "2026-03-10T14:00:00.000Z" },
+        ],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T10:30:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(false);
+      expect(result["2026-03-10"][1].preferred).toBe(true);
+      expect(result["2026-03-10"][2].preferred).toBe(true);
+      expect(result["2026-03-10"][3].preferred).toBe(false);
+    });
+
+    it("marks slots before a busy time as preferred when adjacent", () => {
+      const slots = {
+        "2026-03-10": [
+          { time: "2026-03-10T09:00:00.000Z" },
+          { time: "2026-03-10T09:30:00.000Z" },
+        ],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(false);
+      expect(result["2026-03-10"][1].preferred).toBe(true);
+    });
+
+    it("marks slots after a busy time as preferred when adjacent", () => {
+      const slots = {
+        "2026-03-10": [
+          { time: "2026-03-10T11:00:00.000Z" },
+          { time: "2026-03-10T11:30:00.000Z" },
+        ],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(true);
+      expect(result["2026-03-10"][1].preferred).toBe(false);
+    });
+
+    it("does not mark slots far from busy times as preferred", () => {
+      const slots = {
+        "2026-03-10": [
+          { time: "2026-03-10T08:00:00.000Z" },
+          { time: "2026-03-10T15:00:00.000Z" },
+        ],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T11:00:00.000Z"), end: new Date("2026-03-10T12:00:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(false);
+      expect(result["2026-03-10"][1].preferred).toBe(false);
+    });
+
+    it("handles multiple busy times", () => {
+      const slots = {
+        "2026-03-10": [
+          { time: "2026-03-10T09:30:00.000Z" },
+          { time: "2026-03-10T11:00:00.000Z" },
+          { time: "2026-03-10T14:30:00.000Z" },
+          { time: "2026-03-10T16:00:00.000Z" },
+        ],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
+        { start: new Date("2026-03-10T15:00:00.000Z"), end: new Date("2026-03-10T15:30:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(true);
+      expect(result["2026-03-10"][1].preferred).toBe(true);
+      expect(result["2026-03-10"][2].preferred).toBe(true);
+      expect(result["2026-03-10"][3].preferred).toBe(false);
+    });
+
+    it("handles no busy times gracefully", () => {
+      const slots = {
+        "2026-03-10": [{ time: "2026-03-10T09:00:00.000Z" }],
+      };
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes: [],
+      });
+
+      expect(result["2026-03-10"][0]).toEqual({ time: "2026-03-10T09:00:00.000Z" });
+      expect(result["2026-03-10"][0]).not.toHaveProperty("preferred");
+    });
+
+    it("handles longer event durations for adjacency", () => {
+      const slots = {
+        "2026-03-10": [
+          { time: "2026-03-10T08:00:00.000Z" },
+          { time: "2026-03-10T09:00:00.000Z" },
+        ],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 60,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(false);
+      expect(result["2026-03-10"][1].preferred).toBe(true);
+    });
+  });
+
+  describe("auto mode - batch meetings combined with time-of-day", () => {
+    it("requires both conditions when both are active", () => {
+      const config = {
+        mode: "auto" as const,
+        auto: { preferTimeOfDay: "morning" as const, batchMeetings: true },
+      };
+      const slots = {
+        "2026-03-10": [
+          { time: "2026-03-10T09:30:00.000Z" },
+          { time: "2026-03-10T14:30:00.000Z" },
+          { time: "2026-03-10T08:00:00.000Z" },
+        ],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
+        { start: new Date("2026-03-10T15:00:00.000Z"), end: new Date("2026-03-10T15:30:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(true);
+      expect(result["2026-03-10"][1].preferred).toBe(false);
+      expect(result["2026-03-10"][2].preferred).toBe(false);
+    });
+
+    it("marks afternoon adjacent slots as not preferred when preferring mornings", () => {
+      const config = {
+        mode: "auto" as const,
+        auto: { preferTimeOfDay: "morning" as const, batchMeetings: true },
+      };
+      const slots = {
+        "2026-03-10": [{ time: "2026-03-10T14:30:00.000Z" }],
+      };
+      const busyTimes = [
+        { start: new Date("2026-03-10T15:00:00.000Z"), end: new Date("2026-03-10T16:00:00.000Z") },
+      ];
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+        preferredDateRanges: null,
+        busyTimes,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(false);
+    });
+  });
+
   describe("edge cases", () => {
     it("handles empty slots object", () => {
       const config = { mode: "auto" as const, auto: { preferTimeOfDay: "morning" as const } };

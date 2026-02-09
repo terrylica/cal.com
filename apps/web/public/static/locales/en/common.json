@@ -2232,6 +2232,8 @@
   "preferred_times_schedule": "Preferred times schedule",
   "preferred_times_schedule_description": "Choose a schedule whose availability windows define your preferred times within your broader availability.",
   "preferred": "Preferred",
+  "batch_meetings_together": "Batch meetings together",
+  "batch_meetings_together_description": "Prefer times adjacent to existing bookings to keep meetings clustered together.",
   "choose_common_schedule_team_event": "Choose a common schedule",
   "choose_common_schedule_team_event_description": "Enable this if you want to use a common schedule between hosts. When disabled, each host will be booked based on their default schedule or their chosen schedule.",
   "reason": "Reason",

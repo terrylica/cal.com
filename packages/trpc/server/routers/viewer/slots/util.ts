@@ -161,7 +161,7 @@ type SlotRecord = Record<string, { time: string; [key: string]: unknown }[]>;
 
 interface HighlightPreferredTimesConfig {
   mode: "auto" | "manual";
-  auto?: { preferTimeOfDay?: "morning" | "afternoon" };
+  auto?: { preferTimeOfDay?: "morning" | "afternoon"; batchMeetings?: boolean };
   manual?: { scheduleId?: number };
 }
 
@@ -187,12 +187,14 @@ export function applyPreferredFlagToSlots({
   timeZone,
   eventLength,
   preferredDateRanges,
+  busyTimes,
 }: {
   slots: SlotRecord;
   config: HighlightPreferredTimesConfig;
   timeZone: string;
   eventLength: number;
   preferredDateRanges: { start: Dayjs; end: Dayjs }[] | null;
+  busyTimes?: { start: string | Date; end: string | Date }[];
 }): SlotRecord {
   let sortedRanges: { startMs: number; endMs: number }[] | null = null;
   let sortedStarts: number[] | null = null;
@@ -203,20 +205,50 @@ export function applyPreferredFlagToSlots({
     sortedStarts = sortedRanges.map((r) => r.startMs);
   }
 
+  let sortedBusyEnds: number[] | null = null;
+  let sortedBusyStarts: number[] | null = null;
+  if (config.mode === "auto" && config.auto?.batchMeetings && busyTimes && busyTimes.length > 0) {
+    const sorted = busyTimes
+      .map((b) => ({ startMs: new Date(b.start).getTime(), endMs: new Date(b.end).getTime() }))
+      .sort((a, b) => a.startMs - b.startMs);
+    sortedBusyStarts = sorted.map((b) => b.startMs);
+    sortedBusyEnds = sorted.map((b) => b.endMs);
+  }
+
+  const eventLengthMs = eventLength * 60_000;
+
   const result: SlotRecord = {};
   for (const [date, dateSlots] of Object.entries(slots)) {
     result[date] = dateSlots.map((slot) => {
-      if (config.mode === "auto" && config.auto?.preferTimeOfDay) {
-        const slotHour = dayjs.utc(slot.time).tz(timeZone).hour();
-        const isMorning = slotHour < 12;
-        return {
-          ...slot,
-          preferred: config.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning,
-        };
+      if (config.mode === "auto") {
+        let timeOfDayPreferred: boolean | null = null;
+        if (config.auto?.preferTimeOfDay) {
+          const slotHour = dayjs.utc(slot.time).tz(timeZone).hour();
+          const isMorning = slotHour < 12;
+          timeOfDayPreferred = config.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning;
+        }
+
+        let batchPreferred: boolean | null = null;
+        if (sortedBusyStarts && sortedBusyEnds) {
+          const slotStartMs = dayjs.utc(slot.time).valueOf();
+          const slotEndMs = slotStartMs + eventLengthMs;
+          const idx = binarySearchRangeIndex(sortedBusyStarts, slotEndMs);
+          batchPreferred = idx >= 0 && sortedBusyEnds[idx] >= slotStartMs;
+        }
+
+        if (timeOfDayPreferred === null && batchPreferred === null) {
+          return slot;
+        }
+        const preferred =
+          timeOfDayPreferred !== null && batchPreferred !== null
+            ? timeOfDayPreferred && batchPreferred
+            : (timeOfDayPreferred ?? batchPreferred) as boolean;
+
+        return { ...slot, preferred };
       }
       if (config.mode === "manual" && sortedRanges && sortedStarts) {
         const slotStartMs = dayjs.utc(slot.time).valueOf();
-        const slotEndMs = slotStartMs + eventLength * 60_000;
+        const slotEndMs = slotStartMs + eventLengthMs;
         const idx = binarySearchRangeIndex(sortedStarts, slotStartMs);
         let preferred = false;
         if (idx >= 0 && slotStartMs >= sortedRanges[idx].startMs && slotEndMs <= sortedRanges[idx].endMs) {
@@ -1677,12 +1709,17 @@ export class AvailableSlotsService {
       }
 
       const eventLength = input.duration || eventType.length;
+      const allBusyTimes =
+        preferredTimesConfig.mode === "auto" && preferredTimesConfig.auto?.batchMeetings
+          ? allUsersAvailability.flatMap((u) => u.busy)
+          : undefined;
       const updatedSlots = applyPreferredFlagToSlots({
         slots: filteredSlotsMappedToDate,
         config: preferredTimesConfig,
         timeZone: input.timeZone ?? "UTC",
         eventLength,
         preferredDateRanges,
+        busyTimes: allBusyTimes,
       });
       for (const [date, slots] of Object.entries(updatedSlots)) {
         filteredSlotsMappedToDate[date] = slots;

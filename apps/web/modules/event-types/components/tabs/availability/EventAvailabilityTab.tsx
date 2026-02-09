@@ -973,36 +973,68 @@ const PreferredTimesSettings = ({
           </div>
 
           {config?.mode === "auto" && (
-            <div>
-              <Label>{t("prefer_time_of_day")}</Label>
-              <Select
-                options={[
-                  { value: "morning", label: t("prefer_morning") },
-                  { value: "afternoon", label: t("prefer_afternoon") },
-                ]}
-                value={
-                  config.auto?.preferTimeOfDay === "afternoon"
-                    ? { value: "afternoon", label: t("prefer_afternoon") }
-                    : { value: "morning", label: t("prefer_morning") }
-                }
-                onChange={(selected) => {
-                  if (selected) {
+            <div className="space-y-4">
+              <div>
+                <Label>{t("prefer_time_of_day")}</Label>
+                <Select
+                  options={[
+                    { value: "morning", label: t("prefer_morning") },
+                    { value: "afternoon", label: t("prefer_afternoon") },
+                  ]}
+                  value={
+                    config.auto?.preferTimeOfDay === "afternoon"
+                      ? { value: "afternoon", label: t("prefer_afternoon") }
+                      : { value: "morning", label: t("prefer_morning") }
+                  }
+                  onChange={(selected) => {
+                    if (selected) {
+                      setValue(
+                        "metadata",
+                        {
+                          ...metadata,
+                          highlightPreferredTimes: {
+                            mode: "auto" as const,
+                            auto: {
+                              ...config.auto,
+                              preferTimeOfDay: selected.value as "morning" | "afternoon",
+                            },
+                          },
+                        },
+                        { shouldDirty: true }
+                      );
+                    }
+                  }}
+                  isSearchable={false}
+                  className="mt-1 block w-full text-sm"
+                />
+              </div>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!!config.auto?.batchMeetings}
+                  onChange={(e) => {
                     setValue(
                       "metadata",
                       {
                         ...metadata,
                         highlightPreferredTimes: {
                           mode: "auto" as const,
-                          auto: { preferTimeOfDay: selected.value as "morning" | "afternoon" },
+                          auto: {
+                            ...config.auto,
+                            batchMeetings: e.target.checked,
+                          },
                         },
                       },
                       { shouldDirty: true }
                     );
-                  }
-                }}
-                isSearchable={false}
-                className="mt-1 block w-full text-sm"
-              />
+                  }}
+                  className="text-emphasis"
+                />
+                <div>
+                  <span className="text-default text-sm font-medium">{t("batch_meetings_together")}</span>
+                  <p className="text-subtle text-xs">{t("batch_meetings_together_description")}</p>
+                </div>
+              </label>
             </div>
           )}
 
