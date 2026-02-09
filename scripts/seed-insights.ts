@@ -852,13 +852,16 @@ async function seedRoutingTraces() {
 		});
 	}
 
+	let skipped = 0;
 	if (traceData.length > 0) {
 		for (const data of traceData) {
-			await prisma.routingTrace.create({ data }).catch(() => {});
+			await prisma.routingTrace.create({ data }).catch(() => {
+				skipped++;
+			});
 		}
 	}
 
-	console.log(`Created ${traceData.length} routing traces`);
+	console.log(`Created ${traceData.length - skipped} routing traces (${skipped} skipped due to conflicts)`);
 }
 
 async function main() {
