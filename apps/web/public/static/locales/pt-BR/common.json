@@ -607,6 +607,7 @@
   "delegation_credential_error": "Erro de credencial de delegação",
   "event_triggers": "Gatilhos de eventos",
   "subscriber_url": "URL do assinante",
+  "subscriber_url_required": "URL do assinante é obrigatória",
   "create_new_webhook": "Criar um novo webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Webhooks da equipe",

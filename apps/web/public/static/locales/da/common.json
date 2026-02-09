@@ -607,6 +607,7 @@
   "delegation_credential_error": "Fejl i delegationslegitimation",
   "event_triggers": "Begivenheds Udløser",
   "subscriber_url": "Abonnent URL",
+  "subscriber_url_required": "Abonnent-URL er påkrævet",
   "create_new_webhook": "Opret en ny webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Team Webhooks",

@@ -607,6 +607,7 @@
   "delegation_credential_error": "Błąd poświadczenia delegacji",
   "event_triggers": "Wyzwalacze Zdarzeń",
   "subscriber_url": "Adres URL subskrybenta",
+  "subscriber_url_required": "Adres URL subskrybenta jest wymagany",
   "create_new_webhook": "Utwórz nowy webhook",
   "webhooks": "Webhooki",
   "team_webhooks": "Webhooki zespołu",

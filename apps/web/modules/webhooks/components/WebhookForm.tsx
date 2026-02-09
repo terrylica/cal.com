@@ -394,7 +394,7 @@ const WebhookForm = (props: {
         name="subscriberUrl"
         control={formMethods.control}
         rules={{
-          required: t("subscriber_url_required", "Subscriber URL is required"),
+          required: t("subscriber_url_required"),
         }}
         render={({
           field: { ref, name, value, onBlur, onChange },

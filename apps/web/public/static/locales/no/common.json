@@ -607,6 +607,7 @@
   "delegation_credential_error": "Feil med delegeringslegitimasjon",
   "event_triggers": "Hendelses Triggere",
   "subscriber_url": "Abonnent URL",
+  "subscriber_url_required": "Abonnent-URL er påkrevd",
   "create_new_webhook": "Opprett en ny webhook",
   "webhooks": "Webhook'er",
   "team_webhooks": "Team Webhooker",

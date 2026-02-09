@@ -607,6 +607,7 @@
   "delegation_credential_error": "Eskuordetze kredentzialen errorea",
   "event_triggers": "Gertaera aktibatzaileak",
   "subscriber_url": "Harpidedunaren URLa",
+  "subscriber_url_required": "Harpidedunaren URLa beharrezkoa da",
   "create_new_webhook": "Sortu webhook berria",
   "webhooks": "Webhook-ak",
   "team_webhooks": "Taldearen webhook-ak",

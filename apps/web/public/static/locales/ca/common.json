@@ -607,6 +607,7 @@
   "delegation_credential_error": "Error de credencial de delegació",
   "event_triggers": "Activadors d'esdeveniments",
   "subscriber_url": "URL del subscriptor",
+  "subscriber_url_required": "L'URL del subscriptor és obligatòria",
   "create_new_webhook": "Crea un nou webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Webhooks de l'equip",

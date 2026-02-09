@@ -607,6 +607,7 @@
   "delegation_credential_error": "Greška delegiranog kredencijala",
   "event_triggers": "Okidači Događaja",
   "subscriber_url": "URL pretplatnika",
+  "subscriber_url_required": "URL pretplatnika je obavezan",
   "create_new_webhook": "Napravite novi webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Timski Webhooks",

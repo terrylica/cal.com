@@ -618,6 +618,7 @@
   "delegation_credential_error": "Delegation credential error",
   "event_triggers": "Event triggers",
   "subscriber_url": "Subscriber URL",
+  "subscriber_url_required": "Subscriber URL is required",
   "create_new_webhook": "Create a new webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Team webhooks",

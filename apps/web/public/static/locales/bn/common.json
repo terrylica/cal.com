@@ -607,6 +607,7 @@
   "delegation_credential_error": "ডেলিগেশন ক্রেডেনশিয়াল ত্রুটি",
   "event_triggers": "ইভেন্ট ট্রিগার",
   "subscriber_url": "গ্রাহক ইউআরএল",
+  "subscriber_url_required": "গ্রাহক ইউআরএল প্রয়োজন",
   "create_new_webhook": "একটি নতুন ওয়েবহুক তৈরি করুন",
   "webhooks": "ওয়েবহুকস",
   "team_webhooks": "টিম ওয়েবহুকস",

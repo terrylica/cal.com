@@ -607,6 +607,7 @@
   "delegation_credential_error": "Σφάλμα διαπιστευτηρίου εξουσιοδότησης",
   "event_triggers": "Ενεργοποιητές συμβάντων",
   "subscriber_url": "URL συνδρομητή",
+  "subscriber_url_required": "Απαιτείται URL συνδρομητή",
   "create_new_webhook": "Δημιουργία νέου webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Webhooks ομάδας",

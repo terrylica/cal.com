@@ -607,6 +607,7 @@
   "delegation_credential_error": "Грешка в делегираните идентификационни данни",
   "event_triggers": "Тригери за събития",
   "subscriber_url": "URL на абоната",
+  "subscriber_url_required": "URL на абоната е задължителен",
   "create_new_webhook": "Създаване на нов уебхук",
   "webhooks": "Уебхуци",
   "team_webhooks": "Екипни уебхуци",

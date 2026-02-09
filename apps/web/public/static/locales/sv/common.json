@@ -607,6 +607,7 @@
   "delegation_credential_error": "Fel på delegationsautentiseringsuppgift",
   "event_triggers": "Händelseutlösare",
   "subscriber_url": "Prenumerantens URL",
+  "subscriber_url_required": "Prenumerantens URL krävs",
   "create_new_webhook": "Skapa en ny webhook",
   "webhooks": "Webbhookar",
   "team_webhooks": "Teamets webhooks",

@@ -607,6 +607,7 @@
   "delegation_credential_error": "Chyba delegovaného pověření",
   "event_triggers": "Spouštěče událostí",
   "subscriber_url": "URL pro odběry",
+  "subscriber_url_required": "URL pro odběry je povinná",
   "create_new_webhook": "Vytvořit nový webhook",
   "webhooks": "Webhooky",
   "team_webhooks": "Týmové webhooky",

@@ -607,6 +607,7 @@
   "delegation_credential_error": "Lỗi thông tin xác thực ủy quyền",
   "event_triggers": "Kích hoạt sự kiện",
   "subscriber_url": "URL người đăng ký",
+  "subscriber_url_required": "URL người đăng ký là bắt buộc",
   "create_new_webhook": "Tạo một webhook mới",
   "webhooks": "Webhooks",
   "team_webhooks": "Webhooks của nhóm",

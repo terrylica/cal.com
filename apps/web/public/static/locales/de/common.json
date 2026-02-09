@@ -607,6 +607,7 @@
   "delegation_credential_error": "Fehler beim Delegierungsnachweis",
   "event_triggers": "Event-Auslöser",
   "subscriber_url": "Subscriber-URL",
+  "subscriber_url_required": "Subscriber-URL ist erforderlich",
   "create_new_webhook": "Einen neuen Webhook erstellen",
   "webhooks": "Webhooks",
   "team_webhooks": "Team-Webhooks",

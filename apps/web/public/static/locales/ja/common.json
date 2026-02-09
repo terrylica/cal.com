@@ -607,6 +607,7 @@
   "delegation_credential_error": "委任認証情報エラー",
   "event_triggers": "イベントトリガー",
   "subscriber_url": "登録者の URL",
+  "subscriber_url_required": "登録者の URL は必須です",
   "create_new_webhook": "新しいウェブフックを作成",
   "webhooks": "ウェブフック",
   "team_webhooks": "チームのウェブフック",

@@ -607,6 +607,7 @@
   "delegation_credential_error": "Помилка облікових даних делегування",
   "event_triggers": "Тригери подій",
   "subscriber_url": "URL-адреса підписника",
+  "subscriber_url_required": "URL-адреса підписника обов'язкова",
   "create_new_webhook": "Створити новий вебгук",
   "webhooks": "Вебгуки",
   "team_webhooks": "Командні вебгуки",

@@ -607,6 +607,7 @@
   "delegation_credential_error": "위임 자격 증명 오류",
   "event_triggers": "이벤트 트리거",
   "subscriber_url": "구독자 URL",
+  "subscriber_url_required": "구독자 URL은 필수입니다",
   "create_new_webhook": "새 웹훅 만들기",
   "webhooks": "웹훅",
   "team_webhooks": "팀 웹훅",
