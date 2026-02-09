@@ -824,7 +824,11 @@ const WebhookForm = (props: {
         <div className="flex flex-col gap-4">
           {props.headerWrapper(formMethods, cardContent)}
           <CardFrame>
-            <WebhookTestDisclosure />
+            <Card>
+              <CardPanel>
+                <WebhookTestDisclosure />
+              </CardPanel>
+            </Card>
           </CardFrame>
         </div>
       </Form>
