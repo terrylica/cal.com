@@ -385,7 +385,7 @@ export class OAuthService {
         expiresInSeconds: tokens.refreshTokenExpiresIn,
       });
     } else {
-      throw new Error("Refresh token has neither userId nor teamId");
+      throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_grant", { reason: "invalid_refresh_token" });
     }
 
     return tokens;
