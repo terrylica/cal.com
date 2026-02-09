@@ -9,7 +9,6 @@ import SectionBottomActions from "@calcom/features/settings/SectionBottomActions
 import {
   WEBHOOK_VERSION_OPTIONS,
   getWebhookVersionDocsUrl,
-  getWebhookVersionLabel,
 } from "@calcom/features/webhooks/lib/constants";
 import customTemplate, { hasTemplateIntegration } from "@calcom/features/webhooks/lib/integrationTemplate";
 import { WebhookVersion } from "@calcom/features/webhooks/lib/interface/IWebhookRepository";
