@@ -64,7 +64,6 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
     safeStringify({
       action: event.event,
       orgId: organizationId,
-      userEmail,
       directoryId,
       active: eventData.active,
     })
@@ -96,7 +95,6 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
             action: "user.attributes_sync",
             orgId: organizationId,
             userId: user.id,
-            userEmail,
           })
         );
         await syncCustomAttributesToUser({
@@ -111,7 +109,6 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
             action: "user.invited_to_org",
             orgId: organizationId,
             userId: user.id,
-            userEmail,
           })
         );
         const addedUser = await inviteExistingUserToOrg({
@@ -142,7 +139,6 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
           action: "user.removed_from_org",
           orgId: organizationId,
           userId: user.id,
-          userEmail,
         })
       );
       await removeUserFromOrg({
@@ -156,7 +152,6 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
       safeStringify({
         action: "user.created_and_added_to_org",
         orgId: organizationId,
-        userEmail,
       })
     );
     const createUsersAndConnectToOrgProps = {
