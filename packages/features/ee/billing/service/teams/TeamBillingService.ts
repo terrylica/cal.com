@@ -16,8 +16,8 @@ import type {
   IBillingRepositoryCreateArgs,
 } from "../../repository/billing/IBillingRepository";
 import type { ITeamBillingDataRepository } from "../../repository/teamBillingData/ITeamBillingDataRepository";
-import { BillingPeriodService } from "../billingPeriod/BillingPeriodService";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
+import type { SeatBillingStrategyResolver } from "../seatBillingStrategy/SeatBillingStrategyResolver";
 import {
   type ITeamBillingService,
   type TeamBillingInput,
@@ -35,22 +35,26 @@ export class TeamBillingService implements ITeamBillingService {
   private billingProviderService: IBillingProviderService;
   private billingRepository: IBillingRepository;
   private teamBillingDataRepository: ITeamBillingDataRepository;
+  private seatBillingStrategyResolver: SeatBillingStrategyResolver;
 
   constructor({
     team,
     billingProviderService,
     teamBillingDataRepository,
     billingRepository,
+    seatBillingStrategyResolver,
   }: {
     team: TeamBillingInput;
     billingProviderService: IBillingProviderService;
     teamBillingDataRepository: ITeamBillingDataRepository;
     billingRepository: IBillingRepository;
+    seatBillingStrategyResolver: SeatBillingStrategyResolver;
   }) {
     this.team = team;
     this.billingProviderService = billingProviderService;
     this.teamBillingDataRepository = teamBillingDataRepository;
     this.billingRepository = billingRepository;
+    this.seatBillingStrategyResolver = seatBillingStrategyResolver;
   }
   set team(team: TeamBillingInput) {
     const metadata = teamPaymentMetadataSchema.parse(team.metadata || {});
@@ -166,20 +170,15 @@ export class TeamBillingService implements ITeamBillingService {
       if (!subscriptionId) throw Error("missing subscriptionId");
       if (!subscriptionItemId) throw Error("missing subscriptionItemId");
 
-      const billingPeriodService = new BillingPeriodService();
-      const shouldApplyMonthlyProration = await billingPeriodService.shouldApplyMonthlyProration(teamId);
-      if (shouldApplyMonthlyProration) {
-        log.info(`Skipping subscription update for team ${teamId} because monthly proration is enabled.`);
-        return;
-      }
-
-      // Skip immediate subscription update for monthly billing with high water mark
-      // The subscription quantity will be updated before renewal via invoice.upcoming webhook
-      const shouldApplyHighWaterMark = await billingPeriodService.shouldApplyHighWaterMark(teamId);
-      if (shouldApplyHighWaterMark) {
-        log.info(
-          `Skipping subscription update for team ${teamId} because high water mark billing is enabled for monthly plans.`
-        );
+      const strategy = await this.seatBillingStrategyResolver.resolve(teamId);
+      const result = await strategy.onSeatChange({
+        teamId,
+        subscriptionId,
+        subscriptionItemId,
+        membershipCount,
+      });
+      if (result.handled) {
+        log.info(`Seat change handled by strategy: ${result.reason}`);
         return;
       }
 

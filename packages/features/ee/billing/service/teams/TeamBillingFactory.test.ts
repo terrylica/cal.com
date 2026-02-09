@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import type { IBillingRepository } from "../../repository/billing/IBillingRepository";
 import type { ITeamBillingDataRepository } from "../../repository/teamBillingData/ITeamBillingDataRepository";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
+import type { SeatBillingStrategyResolver } from "../seatBillingStrategy/SeatBillingStrategyResolver";
 import { StubTeamBillingService } from "./StubTeamBillingService";
 import { TeamBillingService } from "./TeamBillingService";
 import { TeamBillingServiceFactory } from "./TeamBillingServiceFactory";
@@ -14,6 +14,7 @@ describe("TeamBilling", () => {
   let mockBillingProviderService: IBillingProviderService;
   let mockTeamBillingDataRepository: ITeamBillingDataRepository;
   let mockBillingRepository: IBillingRepository;
+  let mockSeatBillingStrategyResolver: SeatBillingStrategyResolver;
   let factory: TeamBillingServiceFactory;
 
   const createMockBillingProviderService = (): IBillingProviderService => ({
@@ -55,6 +56,7 @@ describe("TeamBilling", () => {
     mockBillingProviderService = createMockBillingProviderService();
     mockTeamBillingDataRepository = createMockTeamBillingDataRepository();
     mockBillingRepository = createMockBillingRepository();
+    mockSeatBillingStrategyResolver = { resolve: vi.fn() } as unknown as SeatBillingStrategyResolver;
   });
 
   afterEach(() => {
@@ -68,6 +70,7 @@ describe("TeamBilling", () => {
         teamBillingDataRepository: mockTeamBillingDataRepository,
         billingRepositoryFactory: () => mockBillingRepository,
         isTeamBillingEnabled: true,
+        seatBillingStrategyResolver: mockSeatBillingStrategyResolver,
       });
 
       const result = factory.init(mockTeam);
@@ -81,6 +84,7 @@ describe("TeamBilling", () => {
         teamBillingDataRepository: mockTeamBillingDataRepository,
         billingRepositoryFactory: () => mockBillingRepository,
         isTeamBillingEnabled: false,
+        seatBillingStrategyResolver: mockSeatBillingStrategyResolver,
       });
 
       const result = factory.init(mockTeam);
@@ -96,6 +100,7 @@ describe("TeamBilling", () => {
         teamBillingDataRepository: mockTeamBillingDataRepository,
         billingRepositoryFactory: () => mockBillingRepository,
         isTeamBillingEnabled: false,
+        seatBillingStrategyResolver: mockSeatBillingStrategyResolver,
       });
 
       const result = factory.initMany(mockTeams);
@@ -113,6 +118,7 @@ describe("TeamBilling", () => {
         teamBillingDataRepository: mockTeamBillingDataRepository,
         billingRepositoryFactory: () => mockBillingRepository,
         isTeamBillingEnabled: true,
+        seatBillingStrategyResolver: mockSeatBillingStrategyResolver,
       });
 
       vi.mocked(mockTeamBillingDataRepository.find).mockResolvedValue(mockTeam);
@@ -131,6 +137,7 @@ describe("TeamBilling", () => {
         teamBillingDataRepository: mockTeamBillingDataRepository,
         billingRepositoryFactory: () => mockBillingRepository,
         isTeamBillingEnabled: true,
+        seatBillingStrategyResolver: mockSeatBillingStrategyResolver,
       });
 
       vi.mocked(mockTeamBillingDataRepository.findMany).mockResolvedValue([mockTeam, { ...mockTeam, id: 2 }]);
