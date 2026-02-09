@@ -49,17 +49,14 @@ export async function sendWorkflowEmails(payload: string): Promise<void> {
       throw new Error("Booking not found");
     }
 
-    const bookingMetadata = bookingMetadataSchema.parse(booking.metadata || {});
-
-    const calendarEvent = (await CalendarEventBuilder.fromBooking(booking, {
-      platformClientId: bookingMetadata?.platformClientId,
-    })).build();
+    const calendarEvent = (await CalendarEventBuilder.fromBooking(booking, {})).build();
 
     if (!calendarEvent) {
       throw new Error("Calendar event could not be built");
     }
 
     // Check if videoCallUrl exists in booking metadata and add it to evt.metadata
+    const bookingMetadata = bookingMetadataSchema.parse(booking.metadata || {});
     const metadata = bookingMetadata?.videoCallUrl
     ? {
       videoCallUrl: bookingMetadata.videoCallUrl,

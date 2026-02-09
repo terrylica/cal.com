@@ -36,7 +36,7 @@ import customTemplate from "../lib/reminders/templates/customTemplate";
 import emailRatingTemplate from "../lib/reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "../lib/reminders/templates/emailReminderTemplate";
 
-async function handler(req: NextRequest) {
+export async function handler(req: NextRequest) {
   const apiKey = req.headers.get("authorization") || req.nextUrl.searchParams.get("apiKey");
 
   if (process.env.CRON_API_KEY !== apiKey) {
@@ -243,7 +243,9 @@ async function handler(req: NextRequest) {
             eventEndTimeInAttendeeTimezone: dayjs(reminder.booking?.endTime).tz(targetAttendee?.timeZone),
           };
           const emailLocale = locale || "en";
-          const brandingDisabled = shouldHideBranding(reminder.booking);
+          const brandingDisabled = reminder.booking.eventType?.team
+            ? !!reminder.booking.eventType?.team?.hideBranding
+            : !!reminder.booking.user?.hideBranding;
 
           const emailSubject = customTemplate(
             reminder.workflowStep.emailSubject || "",
@@ -269,7 +271,9 @@ async function handler(req: NextRequest) {
               getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat)
             ).text.length === 0;
         } else if (reminder.workflowStep.template === WorkflowTemplates.REMINDER) {
-          const brandingDisabled = shouldHideBranding(reminder.booking);
+          const brandingDisabled = reminder.booking.eventType?.team
+            ? !!reminder.booking.eventType?.team?.hideBranding
+            : !!reminder.booking.user?.hideBranding;
           emailContent = emailReminderTemplate({
             isEditingMode: false,
             locale: reminder.booking.user?.locale || "en",
@@ -297,7 +301,6 @@ async function handler(req: NextRequest) {
           const bookerUrl = await getBookerBaseUrl(
             reminder.booking.eventType?.team?.parentId ?? organizerOrganizationId ?? null
           );
-          const brandingDisabled = shouldHideBranding(reminder.booking);
           emailContent = emailRatingTemplate({
             isEditingMode: true,
             locale: reminder.booking.user?.locale || "en",
@@ -310,7 +313,6 @@ async function handler(req: NextRequest) {
             timeZone: timeZone || "",
             organizer: reminder.booking.user?.name || "",
             name: name || "",
-            isBrandingDisabled: brandingDisabled,
             ratingUrl: `${bookerUrl}/booking/${reminder.booking.uid}?rating`,
             noShowUrl: `${bookerUrl}/booking/${reminder.booking.uid}?noShow=true`,
           });
@@ -428,7 +430,9 @@ async function handler(req: NextRequest) {
 
         const emailBodyEmpty = false;
 
-        const brandingDisabled = shouldHideBranding(reminder.booking);
+        const brandingDisabled = reminder.booking.eventType?.team
+          ? !!reminder.booking.eventType?.team?.hideBranding
+          : !!reminder.booking.user?.hideBranding;
 
         emailContent = emailReminderTemplate({
           isEditingMode: false,
@@ -512,23 +516,3 @@ async function handler(req: NextRequest) {
 
   return NextResponse.json({ message: `${unscheduledReminders.length} Emails to schedule` }, { status: 200 });
 }
-
-function shouldHideBranding(booking: {
-  metadata: unknown;
-  eventType?: { team?: { hideBranding?: boolean } | null } | null;
-  user?: { hideBranding?: boolean } | null;
-}): boolean {
-  const bookingMetadata = bookingMetadataSchema.parse(booking.metadata || {});
-
-  if (bookingMetadata?.platformClientId) {
-    return true;
-  }
-
-  if (booking.eventType?.team) {
-    return !!booking.eventType.team.hideBranding;
-  }
-
-  return !!booking.user?.hideBranding;
-}
-
-export {handler};
