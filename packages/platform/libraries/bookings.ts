@@ -20,3 +20,5 @@ export { BookingEmailSmsHandler } from "@calcom/features/bookings/lib/BookingEma
 export { BookingAuditTaskerProducerService } from "@calcom/features/booking-audit/lib/service/BookingAuditTaskerProducerService";
 export { getAuditActorRepository } from "@calcom/features/booking-audit/di/AuditActorRepository.container";
 export { makeUserActor } from "@calcom/features/booking-audit/lib/makeActor";
+export type { IWebhookProducerService } from "@calcom/features/webhooks/lib/interface/WebhookProducerService";
+export { getWebhookProducer } from "@calcom/features/di/webhooks/containers/webhook";
