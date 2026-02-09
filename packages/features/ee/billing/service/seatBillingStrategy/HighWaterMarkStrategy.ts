@@ -2,6 +2,7 @@ import type { IFeaturesRepository } from "@calcom/features/flags/features.reposi
 import logger from "@calcom/lib/logger";
 
 import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
+import type { HighWaterMarkService } from "../highWaterMark/HighWaterMarkService";
 import type { HighWaterMarkRepository } from "../../repository/highWaterMark/HighWaterMarkRepository";
 import type { ISeatBillingStrategy, SeatChangeContext } from "./ISeatBillingStrategy";
 
@@ -10,6 +11,7 @@ const log = logger.getSubLogger({ prefix: ["HighWaterMarkStrategy"] });
 export interface IHighWaterMarkStrategyDeps {
   featuresRepository: IFeaturesRepository;
   highWaterMarkRepository: HighWaterMarkRepository;
+  highWaterMarkService: HighWaterMarkService;
 }
 
 export class HighWaterMarkStrategy implements ISeatBillingStrategy {
@@ -43,5 +45,18 @@ export class HighWaterMarkStrategy implements ISeatBillingStrategy {
         newHighWaterMark: context.membershipCount,
       });
     }
+  }
+
+  async onInvoiceUpcoming(subscriptionId: string): Promise<{ applied: boolean }> {
+    const applied = await this.deps.highWaterMarkService.applyHighWaterMarkToSubscription(subscriptionId);
+    return { applied };
+  }
+
+  async onRenewalPaid(subscriptionId: string, periodStart: Date): Promise<{ reset: boolean }> {
+    const reset = await this.deps.highWaterMarkService.resetSubscriptionAfterRenewal({
+      subscriptionId,
+      newPeriodStart: periodStart,
+    });
+    return { reset };
   }
 }

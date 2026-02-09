@@ -24,7 +24,15 @@ function createMockBillingProviderService(): IBillingProviderService {
 function createMockHighWaterMarkRepository() {
   return {
     getByTeamId: vi.fn(),
+    getBySubscriptionId: vi.fn(),
     updateIfHigher: vi.fn().mockResolvedValue({ updated: false, previousHighWaterMark: null }),
+  };
+}
+
+function createMockHighWaterMarkService() {
+  return {
+    applyHighWaterMarkToSubscription: vi.fn().mockResolvedValue(false),
+    resetSubscriptionAfterRenewal: vi.fn().mockResolvedValue(false),
   };
 }
 
@@ -40,13 +48,15 @@ const baseBillingInfo: BillingPeriodInfo = {
 
 function createResolver(
   info: BillingPeriodInfo,
-  enabledFlags: Record<string, boolean>
+  enabledFlags: Record<string, boolean>,
+  overrides?: { highWaterMarkRepository?: ReturnType<typeof createMockHighWaterMarkRepository> }
 ): SeatBillingStrategyResolver {
   return new SeatBillingStrategyResolver({
     billingPeriodService: createMockBillingPeriodService(info),
     featuresRepository: createMockFeaturesRepository(enabledFlags),
     billingProviderService: createMockBillingProviderService(),
-    highWaterMarkRepository: createMockHighWaterMarkRepository(),
+    highWaterMarkRepository: overrides?.highWaterMarkRepository ?? createMockHighWaterMarkRepository(),
+    highWaterMarkService: createMockHighWaterMarkService(),
   } as never);
 }
 
@@ -61,6 +71,7 @@ describe("SeatBillingStrategyResolver", () => {
       featuresRepository: createMockFeaturesRepository({ "monthly-proration": true }),
       billingProviderService: createMockBillingProviderService(),
       highWaterMarkRepository: createMockHighWaterMarkRepository(),
+      highWaterMarkService: createMockHighWaterMarkService(),
     } as never);
     const strategy = await resolver.resolve(1);
 
@@ -124,6 +135,31 @@ describe("SeatBillingStrategyResolver", () => {
       { "monthly-proration": true, "hwm-seating": true }
     );
     const strategy = await resolver.resolve(1);
+
+    expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
+  });
+
+  it("resolveBySubscriptionId looks up teamId and delegates to resolve", async () => {
+    const hwmRepo = createMockHighWaterMarkRepository();
+    hwmRepo.getBySubscriptionId.mockResolvedValue({ teamId: 42 });
+
+    const resolver = createResolver(
+      { ...baseBillingInfo, billingPeriod: "MONTHLY" },
+      { "hwm-seating": true },
+      { highWaterMarkRepository: hwmRepo }
+    );
+    const strategy = await resolver.resolveBySubscriptionId("sub_abc");
+
+    expect(hwmRepo.getBySubscriptionId).toHaveBeenCalledWith("sub_abc");
+    expect(strategy).toBeInstanceOf(HighWaterMarkStrategy);
+  });
+
+  it("resolveBySubscriptionId returns fallback when no billing record found", async () => {
+    const hwmRepo = createMockHighWaterMarkRepository();
+    hwmRepo.getBySubscriptionId.mockResolvedValue(null);
+
+    const resolver = createResolver(baseBillingInfo, {}, { highWaterMarkRepository: hwmRepo });
+    const strategy = await resolver.resolveBySubscriptionId("sub_unknown");
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });

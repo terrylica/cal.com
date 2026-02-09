@@ -2,6 +2,7 @@ import type { IFeaturesRepository } from "@calcom/features/flags/features.reposi
 import { describe, expect, it, vi } from "vitest";
 import type { BillingPeriodInfo } from "../../billingPeriod/BillingPeriodService";
 import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
+import type { HighWaterMarkService } from "../../highWaterMark/HighWaterMarkService";
 import type { HighWaterMarkRepository } from "../../../repository/highWaterMark/HighWaterMarkRepository";
 import { HighWaterMarkStrategy } from "../HighWaterMarkStrategy";
 import { ImmediateUpdateStrategy } from "../ImmediateUpdateStrategy";
@@ -45,6 +46,13 @@ function createMockHighWaterMarkRepository(): HighWaterMarkRepository {
   } as unknown as HighWaterMarkRepository;
 }
 
+function createMockHighWaterMarkService(): HighWaterMarkService {
+  return {
+    applyHighWaterMarkToSubscription: vi.fn().mockResolvedValue(false),
+    resetSubscriptionAfterRenewal: vi.fn().mockResolvedValue(false),
+  } as unknown as HighWaterMarkService;
+}
+
 describe("ImmediateUpdateStrategy", () => {
   it("canHandle always returns true", async () => {
     const billingProvider = createMockBillingProviderService();
@@ -66,17 +74,29 @@ describe("ImmediateUpdateStrategy", () => {
       membershipCount: 10,
     });
   });
+
+  it("returns no-op for onInvoiceUpcoming", async () => {
+    const strategy = new ImmediateUpdateStrategy(createMockBillingProviderService());
+    expect(await strategy.onInvoiceUpcoming("sub_123")).toEqual({ applied: false });
+  });
+
+  it("returns no-op for onRenewalPaid", async () => {
+    const strategy = new ImmediateUpdateStrategy(createMockBillingProviderService());
+    expect(await strategy.onRenewalPaid("sub_123", new Date())).toEqual({ reset: false });
+  });
 });
 
 describe("HighWaterMarkStrategy", () => {
   function createStrategy(flagOverrides?: Record<string, boolean>) {
     const featuresRepo = createMockFeaturesRepository({ "hwm-seating": true, ...flagOverrides });
     const hwmRepo = createMockHighWaterMarkRepository();
+    const hwmService = createMockHighWaterMarkService();
     const strategy = new HighWaterMarkStrategy({
       featuresRepository: featuresRepo,
       highWaterMarkRepository: hwmRepo,
+      highWaterMarkService: hwmService,
     });
-    return { strategy, featuresRepo, hwmRepo };
+    return { strategy, featuresRepo, hwmRepo, hwmService };
   }
 
   it("canHandle returns true for monthly plan with HWM flag enabled", async () => {
@@ -181,6 +201,30 @@ describe("HighWaterMarkStrategy", () => {
 
     expect(hwmRepo.updateIfHigher).not.toHaveBeenCalled();
   });
+
+  it("delegates onInvoiceUpcoming to HighWaterMarkService", async () => {
+    const { strategy, hwmService } = createStrategy();
+    vi.mocked(hwmService.applyHighWaterMarkToSubscription).mockResolvedValue(true);
+
+    const result = await strategy.onInvoiceUpcoming("sub_123");
+
+    expect(result).toEqual({ applied: true });
+    expect(hwmService.applyHighWaterMarkToSubscription).toHaveBeenCalledWith("sub_123");
+  });
+
+  it("delegates onRenewalPaid to HighWaterMarkService", async () => {
+    const { strategy, hwmService } = createStrategy();
+    vi.mocked(hwmService.resetSubscriptionAfterRenewal).mockResolvedValue(true);
+    const periodStart = new Date("2025-07-01");
+
+    const result = await strategy.onRenewalPaid("sub_123", periodStart);
+
+    expect(result).toEqual({ reset: true });
+    expect(hwmService.resetSubscriptionAfterRenewal).toHaveBeenCalledWith({
+      subscriptionId: "sub_123",
+      newPeriodStart: periodStart,
+    });
+  });
 });
 
 describe("MonthlyProrationStrategy", () => {
@@ -231,5 +275,15 @@ describe("MonthlyProrationStrategy", () => {
     const strategy = new MonthlyProrationStrategy(featuresRepo);
 
     await expect(strategy.onSeatChange(mockContext)).resolves.toBeUndefined();
+  });
+
+  it("returns no-op for onInvoiceUpcoming", async () => {
+    const strategy = new MonthlyProrationStrategy(createMockFeaturesRepository({}));
+    expect(await strategy.onInvoiceUpcoming("sub_123")).toEqual({ applied: false });
+  });
+
+  it("returns no-op for onRenewalPaid", async () => {
+    const strategy = new MonthlyProrationStrategy(createMockFeaturesRepository({}));
+    expect(await strategy.onRenewalPaid("sub_123", new Date())).toEqual({ reset: false });
   });
 });

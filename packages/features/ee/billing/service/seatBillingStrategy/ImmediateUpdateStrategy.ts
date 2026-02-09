@@ -16,4 +16,12 @@ export class ImmediateUpdateStrategy implements ISeatBillingStrategy {
       membershipCount: context.membershipCount,
     });
   }
+
+  async onInvoiceUpcoming(_subscriptionId: string): Promise<{ applied: boolean }> {
+    return { applied: false };
+  }
+
+  async onRenewalPaid(_subscriptionId: string, _periodStart: Date): Promise<{ reset: boolean }> {
+    return { reset: false };
+  }
 }

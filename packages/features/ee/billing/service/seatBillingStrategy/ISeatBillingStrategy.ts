@@ -13,4 +13,6 @@ export interface SeatChangeContext {
 export interface ISeatBillingStrategy {
   canHandle(info: BillingPeriodInfo): Promise<boolean>;
   onSeatChange(context: SeatChangeContext): Promise<void>;
+  onInvoiceUpcoming(subscriptionId: string): Promise<{ applied: boolean }>;
+  onRenewalPaid(subscriptionId: string, periodStart: Date): Promise<{ reset: boolean }>;
 }

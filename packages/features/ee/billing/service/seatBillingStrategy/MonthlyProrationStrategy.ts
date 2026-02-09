@@ -15,4 +15,12 @@ export class MonthlyProrationStrategy implements ISeatBillingStrategy {
   async onSeatChange(_context: SeatChangeContext): Promise<void> {
     // No immediate Stripe update -- proration is calculated and invoiced on a monthly cycle
   }
+
+  async onInvoiceUpcoming(_subscriptionId: string): Promise<{ applied: boolean }> {
+    return { applied: false };
+  }
+
+  async onRenewalPaid(_subscriptionId: string, _periodStart: Date): Promise<{ reset: boolean }> {
+    return { reset: false };
+  }
 }
