@@ -43,6 +43,7 @@ export class BookingAttendeesService_2024_08_13 {
         ],
       },
       emailsEnabled,
+      emailVariant: "attendee",
       actionSource: "API_V2",
     });
 
