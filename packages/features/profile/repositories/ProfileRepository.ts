@@ -52,9 +52,11 @@ const organizationSelect = {
   darkBrandColor: true,
   theme: true,
   customDomain: {
+    where: {
+      verified: true,
+    },
     select: {
       slug: true,
-      verified: true,
     },
   },
 };
@@ -577,8 +579,10 @@ export class ProfileRepository implements IProfileRepository {
               bannerUrl: true,
               isPrivate: true,
               customDomain: {
-                select: {
+                where: {
                   verified: true,
+                },
+                select: {
                   slug: true,
                 }
               },
@@ -777,8 +781,10 @@ export class ProfileRepository implements IProfileRepository {
               },
             },
             customDomain: {
-              select: {
+              where: {
                 verified: true,
+              },
+              select: {
                 slug: true,
               }
             },
@@ -1054,7 +1060,7 @@ export const normalizeProfile = <
     id: number;
     uid: string;
     organization: Pick<Team, Exclude<keyof typeof organizationSelect, "customDomain">> & {
-      customDomain?: { slug: string; verified: boolean } | null;
+      customDomain?: { slug: string } | null;
     };
     createdAt?: Date;
     updatedAt?: Date;

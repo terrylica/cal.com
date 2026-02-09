@@ -490,7 +490,8 @@ export class EventTypesAtomService {
         isTeamEvent,
         orgSlug,
         this.dbRead.prisma as unknown as PrismaClient,
-        true
+        true,
+        false
       );
 
       if (!event) {

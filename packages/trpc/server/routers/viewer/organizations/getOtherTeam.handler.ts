@@ -38,6 +38,7 @@ export const getOtherTeamHandler = async ({ input }: GetOptions) => {
         select: {
           id: true,
           slug: true,
+          customDomain: { where: { verified: true }, select: { slug: true } },
         },
       },
     },

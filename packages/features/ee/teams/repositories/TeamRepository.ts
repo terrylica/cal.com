@@ -310,6 +310,7 @@ export class TeamRepository {
             logoUrl: true,
             isOrganization: true,
             inviteTokens: true,
+            customDomain: { where: { verified: true }, select: { slug: true } },
             parent: {
               select: {
                 id: true,
@@ -317,6 +318,10 @@ export class TeamRepository {
                 logoUrl: true,
                 name: true,
                 isOrganization: true,
+                customDomain: {
+                  where: { verified: true },
+                  select: { slug: true },
+                },
               },
             },
             parentId: true,

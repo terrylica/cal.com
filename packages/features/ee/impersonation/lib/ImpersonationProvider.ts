@@ -73,7 +73,9 @@ const auditAndReturnNextUser = async (
         name: profileOrg.name,
         slug: profileOrg.slug || "",
         logoUrl: profileOrg.logoUrl,
-        fullDomain: getOrgFullOrigin(profileOrg.slug || ""),
+        fullDomain: getOrgFullOrigin(profileOrg.customDomain?.slug ?? profileOrg.slug ?? "", {
+          isCustomDomain: !!profileOrg.customDomain?.slug,
+        }),
         domainSuffix: subdomainSuffix(),
         role: profileOrg.members?.[0]?.role || MembershipRole.MEMBER,
       },

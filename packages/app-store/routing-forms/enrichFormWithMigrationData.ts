@@ -12,12 +12,14 @@ export const enrichFormWithMigrationData = <
       profile: {
         organization: {
           slug: string | null;
+          customDomain?: { slug: string } | null;
         } | null;
       };
     };
     team: {
       parent: {
         slug: string | null;
+        customDomain?: { slug: string } | null;
       } | null;
       metadata?: unknown;
     } | null;
@@ -28,6 +30,7 @@ export const enrichFormWithMigrationData = <
   const parsedUserMetadata = userMetadata.parse(form.user.metadata ?? null);
   const parsedTeamMetadata = teamMetadataSchema.parse(form.team?.metadata ?? null);
   const formOwnerOrgSlug = form.user.profile.organization?.slug ?? null;
+  const formOwnerOrgCustomDomain = form.user.profile.organization?.customDomain?.slug ?? null;
   const nonOrgUsername = parsedUserMetadata?.migratedToOrgFrom?.username ?? form.user.nonProfileUsername;
   const nonOrgTeamslug = parsedTeamMetadata?.migratedToOrgFrom?.teamSlug ?? null;
 
@@ -42,13 +45,15 @@ export const enrichFormWithMigrationData = <
       metadata: teamMetadataSchema.parse(form.team?.metadata ?? null),
     },
     userOrigin: formOwnerOrgSlug
-      ? getOrgFullOrigin(formOwnerOrgSlug, {
+      ? getOrgFullOrigin(formOwnerOrgCustomDomain ?? formOwnerOrgSlug, {
           protocol: true,
+          isCustomDomain: !!formOwnerOrgCustomDomain,
         })
       : WEBAPP_URL,
     teamOrigin: form.team?.parent?.slug
-      ? getOrgFullOrigin(form.team.parent.slug, {
+      ? getOrgFullOrigin(form.team.parent.customDomain?.slug ?? form.team.parent.slug, {
           protocol: true,
+          isCustomDomain: !!form.team.parent.customDomain?.slug,
         })
       : WEBAPP_URL,
     nonOrgUsername,

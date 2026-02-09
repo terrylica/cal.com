@@ -191,7 +191,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
           accepted: member.accepted,
           organizationId: member.organizationId,
           safeBio: markdownToSafeHTML(member.bio || ""),
-          bookerUrl: getBookerBaseUrlSync(member.organization?.slug || ""),
+          bookerUrl: getBookerBaseUrlSync(member.organization?.slug || "", {
+            customDomain: member.organization?.customDomain?.slug,
+          }),
         };
       })
     : [];

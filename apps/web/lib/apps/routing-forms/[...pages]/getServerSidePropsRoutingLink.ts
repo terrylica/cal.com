@@ -37,6 +37,14 @@ export const getServerSideProps = async function getServerSideProps(
           organization: {
             select: {
               slug: true,
+              customDomain: {
+                where: {
+                  verified: true,
+                },
+                select: {
+                  slug: true,
+                }
+              }
             },
           },
           username: true,
@@ -50,7 +58,10 @@ export const getServerSideProps = async function getServerSideProps(
         select: {
           slug: true,
           parent: {
-            select: { slug: true },
+            select: {
+              slug: true,
+              customDomain: { where: { verified: true }, select: { slug: true } },
+            },
           },
           parentId: true,
           metadata: true,
