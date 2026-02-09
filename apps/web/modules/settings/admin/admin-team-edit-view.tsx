@@ -85,7 +85,16 @@ export function AdminTeamEditView({ team }: { team: TeamData }) {
   const onSubmit = (values: TeamFormValues) => {
     mutation.mutate({
       id: team.id,
-      ...values,
+      name: values.name,
+      slug: values.slug ?? undefined,
+      bio: values.bio,
+      hideBranding: values.hideBranding,
+      hideBookATeamMember: values.hideBookATeamMember,
+      isPrivate: values.isPrivate,
+      timeZone: values.timeZone,
+      weekStart: values.weekStart,
+      brandColor: values.brandColor,
+      darkBrandColor: values.darkBrandColor,
     });
   };
 

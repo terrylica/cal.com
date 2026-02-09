@@ -1,7 +1,9 @@
 "use client";
 
-import { ErrorPage } from "@calcom/ui/components/errorBoundary";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { Alert } from "@calcom/ui/components/alert";
 
 export default function Error() {
-  return <ErrorPage />;
+  const { t } = useLocale();
+  return <Alert severity="error" title={t("something_went_wrong")} />;
 }
