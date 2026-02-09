@@ -5,8 +5,10 @@ import { useState, memo, useCallback } from "react";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
 import { Card } from "@calcom/ui/components/card";
-import { Dialog, DialogContent, DialogClose } from "@calcom/ui/components/dialog";
-import { Icon } from "@calcom/ui/components/icon";
+import {
+  YouTubePlayerModal,
+  extractYouTubeVideoId,
+} from "@calcom/ui/components/youtube-player-modal";
 
 import { GatedFeatures } from "./stores/gatedFeaturesStore";
 import { useGatedFeaturesStore } from "./stores/gatedFeaturesStore";
@@ -29,39 +31,9 @@ function Tips() {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
 
-  // Extract YouTube video ID from various URL formats
-  const getYouTubeVideoId = useCallback((url: string): string | null => {
-    // Handle youtu.be short URLs
-    const shortUrlMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-    if (shortUrlMatch) return shortUrlMatch[1];
-
-    // Handle youtube.com URLs (watch, embed, shorts)
-    const longUrlMatch = url.match(/youtube\.com\/(?:watch\?v=|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
-    if (longUrlMatch) return longUrlMatch[1];
-
-    // Handle youtube-nocookie.com URLs
-    const noCookieMatch = url.match(/youtube-nocookie\.com\/embed\/([a-zA-Z0-9_-]{11})/);
-    if (noCookieMatch) return noCookieMatch[1];
-
-    return null;
+  const getVideoIdFromTip = useCallback((tip: Tip): string | null => {
+    return extractYouTubeVideoId(tip.thumbnailUrl) ?? (tip.mediaLink ? extractYouTubeVideoId(tip.mediaLink) : null);
   }, []);
-
-  // Get video ID from tip's thumbnail URL (which contains the video ID) or mediaLink
-  const getVideoIdFromTip = useCallback(
-    (tip: Tip): string | null => {
-      // First try to extract from thumbnail URL (most reliable for YouTube videos)
-      const thumbnailMatch = tip.thumbnailUrl.match(/img\.youtube\.com\/vi\/([a-zA-Z0-9_-]{11})/);
-      if (thumbnailMatch) return thumbnailMatch[1];
-
-      // Fallback to mediaLink if available
-      if (tip.mediaLink) {
-        return getYouTubeVideoId(tip.mediaLink);
-      }
-
-      return null;
-    },
-    [getYouTubeVideoId]
-  );
 
   // Handle video click - open in modal instead of redirecting
   const handleVideoClick = useCallback(
@@ -351,42 +323,16 @@ function Tips() {
         })}
       </div>
 
-      {/* Video Modal */}
-      <Dialog
+      <YouTubePlayerModal
         open={videoModalOpen}
         onOpenChange={(open) => {
           setVideoModalOpen(open);
           if (!open) {
             setCurrentVideoId(null);
           }
-        }}>
-        <DialogContent
-          size="xl"
-          className="!max-w-4xl !rounded-xl !bg-black !p-0"
-          enableOverflow>
-          <div className="relative">
-            {/* Close button */}
-            <DialogClose
-              className="absolute -top-12 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition-all duration-200 hover:bg-black/90"
-              color="minimal">
-              <Icon name="x" className="h-5 w-5" />
-            </DialogClose>
-
-            {/* Video container with 16:9 aspect ratio */}
-            {currentVideoId && (
-              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                <iframe
-                  className="absolute left-0 top-0 h-full w-full rounded-xl"
-                  src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0`}
-                  title={t("video_player")}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        }}
+        videoId={currentVideoId}
+      />
     </>
   );
 }
