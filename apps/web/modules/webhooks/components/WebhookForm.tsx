@@ -710,8 +710,8 @@ const WebhookForm = (props: {
                   {t("custom_payload_template", "Custom Payload Template")}
                 </FieldLabel>
               </Field>
-              <CollapsiblePanel>
-                <div className="mt-4 flex flex-col items-start gap-2">
+              <CollapsiblePanel className="-mx-1">
+                <div className="px-1 mt-4 flex flex-col items-start gap-2">
                   <Textarea
                     className="font-mono"
                     placeholder={"{\n  \n}"}

@@ -78,9 +78,7 @@ export default function WebhookListItem(props: {
   });
 
   return (
-    <ListItem
-      data-testid="webhook-list-item"
-      className="not-last:border-b bg-clip-padding transition-[background-color] has-[[data-slot=list-item-title]:hover]:z-1 has-[[data-slot=list-item-title]:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-black)_2%)] dark:has-[[data-slot=list-item-title]:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-white)_2%)]">
+    <ListItem data-testid="webhook-list-item">
       <ListItemContent>
         <div className="flex items-center gap-2">
           {props.profile && (
@@ -96,7 +94,7 @@ export default function WebhookListItem(props: {
                     .slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
-              <span className="font-medium text-sm truncate max-w-[12rem]" title={props.profile.name || ""}>
+              <span className="font-medium text-sm truncate" title={props.profile.name || ""}>
                 {props.profile.name || ""}
               </span>
             </>
@@ -106,7 +104,7 @@ export default function WebhookListItem(props: {
         </div>
         <ListItemHeader>
           <h2
-            className="truncate font-semibold sm:text-sm"
+            className="truncate text-sm font-medium"
             data-slot="list-item-title"
             data-testid="webhook-url">
             {webhook.subscriberUrl}

@@ -14,6 +14,7 @@ import {
   CardFrameTitle,
   CardPanel,
 } from "@coss/ui/components/card";
+import { Label } from "@coss/ui/components/label";
 import { ActivityIcon } from "lucide-react";
 import { useWatch } from "react-hook-form";
 import { ZodError } from "zod";
@@ -67,15 +68,15 @@ export default function WebhookTestDisclosure() {
       <Card>
         <CardPanel>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-1 text-sm font-semibold">
-              {t("webhook_response")}
+            <div className="flex items-center gap-2">
+              <Label render={<div />}>{t("webhook_response")}</Label>
               {mutation.data && (
                 <Badge variant={mutation.data.ok ? "success" : "error"}>
                   {mutation.data.ok ? t("passed") : t("failed")}
                 </Badge>
               )}
             </div>
-            <div className="rounded-lg border border-input p-4 font-mono text-[13px] leading-4">
+            <div className="rounded-lg border p-4 font-mono text-sm">
               {!mutation.data && <p>{t("no_data_yet")}</p>}
               {mutation.status === "success" && mutation.data && (
                 <div>
