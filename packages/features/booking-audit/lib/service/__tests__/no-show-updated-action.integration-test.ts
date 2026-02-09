@@ -15,7 +15,7 @@ import {
   enableFeatureForOrganization,
 } from "./integration-utils";
 
-describe.skip("No-Show Updated Action Integration", () => {
+describe("No-Show Updated Action Integration", () => {
   let bookingAuditTaskConsumer: BookingAuditTaskConsumer;
   let bookingAuditViewerService: BookingAuditViewerService;
 
@@ -173,7 +173,7 @@ describe.skip("No-Show Updated Action Integration", () => {
       expect(storedAttendeesNoShow[0].noShow.new).toBe(true);
     });
 
-    it("should handle multiple attendees marked as no-show", async () => {
+    it.skip("should handle multiple attendees marked as no-show", async () => {
       const { prisma } = await import("@calcom/prisma");
       const secondAttendeeEmail = `second-attendee-${Date.now()}@example.com`;
       additionalAttendeeEmails.push(secondAttendeeEmail);
