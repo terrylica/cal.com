@@ -8,7 +8,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import { SkeletonContainer } from "@calcom/ui/components/skeleton";
-import { showToast } from "@calcom/ui/components/toast";
+import { toastManager } from "@coss/ui/components/toast";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
 import { Button } from "@coss/ui/components/button";
 import { CardFrame, CardFrameDescription, CardFrameHeader, CardFrameTitle } from "@coss/ui/components/card";
@@ -51,12 +51,12 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
     async onSuccess() {
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.webhook.get.invalidate({ webhookId: webhook?.id });
-      showToast(t("webhook_updated_successfully"), "success");
+      toastManager.add({ title: t("webhook_updated_successfully"), type: "success" });
       revalidateWebhooksList();
       router.push("/settings/developer/webhooks");
     },
     onError(error) {
-      showToast(`${error.message}`, "error");
+      toastManager.add({ title: error.message, type: "error" });
     },
   });
 
@@ -99,7 +99,7 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
             platform: webhook.platform ?? undefined,
           })
         ) {
-          showToast(t("webhook_subscriber_url_reserved"), "error");
+          toastManager.add({ title: t("webhook_subscriber_url_reserved"), type: "error" });
           return;
         }
 

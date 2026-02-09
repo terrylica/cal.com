@@ -4,7 +4,7 @@ import { getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants"
 import type { Webhook } from "@calcom/features/webhooks/lib/dto/types";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { showToast } from "@calcom/ui/components/toast";
+import { toastManager } from "@coss/ui/components/toast";
 import { revalidateEventTypeEditPage } from "@calcom/web/app/(use-page-wrapper)/event-types/[type]/actions";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@coss/ui/components/avatar";
@@ -54,14 +54,14 @@ export default function WebhookListItem(props: {
     async onSuccess() {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
       revalidateWebhooksList();
-      showToast(t("webhook_removed_successfully"), "success");
+      toastManager.add({ title: t("webhook_removed_successfully"), type: "success" });
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();
       setDeleteDialogOpen(false);
     },
     onError() {
-      showToast(t("something_went_wrong"), "error");
+      toastManager.add({ title: t("something_went_wrong"), type: "error" });
       setDeleteDialogOpen(false);
     },
   });
@@ -69,7 +69,7 @@ export default function WebhookListItem(props: {
     async onSuccess(data) {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
       revalidateWebhooksList();
-      showToast(t(data?.active ? "enabled" : "disabled"), "success");
+      toastManager.add({ title: t(data?.active ? "enabled" : "disabled"), type: "success" });
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();
