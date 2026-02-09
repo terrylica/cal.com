@@ -150,24 +150,17 @@ export default function WebhookListItem(props: {
             </Tooltip>
 
             <Menu>
-              <Tooltip>
-                <MenuTrigger
-                  render={
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          aria-label={t("options")}
-                          size="icon"
-                          variant="outline"
-                          data-testid="webhook-options">
-                          <EllipsisIcon />
-                        </Button>
-                      }
-                    />
-                  }
-                />
-                <TooltipPopup>{t("options")}</TooltipPopup>
-              </Tooltip>
+              <MenuTrigger
+                render={
+                  <Button
+                    aria-label={t("options")}
+                    size="icon"
+                    variant="outline"
+                    data-testid="webhook-options">
+                    <EllipsisIcon />
+                  </Button>
+                }
+              />
               <MenuPopup align="end">
                 {props.permissions.canEditWebhook && (
                   <MenuItem onClick={props.onEditWebhook} data-testid="webhook-edit-button">

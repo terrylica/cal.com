@@ -1,13 +1,8 @@
 "use client";
 
-import { APP_NAME } from "@calcom/lib/constants";
-import { useLocale } from "@calcom/lib/hooks/useLocale";
 import {
   Card,
   CardFrame,
-  CardFrameDescription,
-  CardFrameHeader,
-  CardFrameTitle,
   CardPanel,
 } from "@coss/ui/components/card";
 import {
@@ -18,17 +13,12 @@ import {
   ListItemHeader,
 } from "@coss/ui/components/list-item";
 import { Skeleton } from "@coss/ui/components/skeleton";
+import { WebhooksHeader } from "./webhooks-header";
 
 export const SkeletonLoader = () => {
-  const { t } = useLocale();
   return (
     <CardFrame>
-      <CardFrameHeader>
-        <div>
-          <CardFrameTitle>{t("webhooks")}</CardFrameTitle>
-          <CardFrameDescription>{t("add_webhook_description", { appName: APP_NAME })}</CardFrameDescription>
-        </div>
-      </CardFrameHeader>
+      <WebhooksHeader />
       <Card>
         <CardPanel className="p-0">
           <WebhookListItemSkeleton />

@@ -3,14 +3,7 @@
 import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
-import {
-  Card,
-  CardFrame,
-  CardFrameDescription,
-  CardFrameHeader,
-  CardFrameTitle,
-  CardPanel,
-} from "@coss/ui/components/card";
+import { Card, CardFrame, CardPanel } from "@coss/ui/components/card";
 import {
   Empty,
   EmptyContent,
@@ -23,6 +16,7 @@ import { WebhookIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { CreateNewWebhookButton, WebhookListItem } from "../components";
+import { WebhooksHeader } from "./webhooks-header";
 
 type WebhooksByViewer = RouterOutputs["viewer"]["webhook"]["getByViewer"];
 
@@ -48,15 +42,7 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
 
   return (
     <CardFrame>
-      <CardFrameHeader>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <CardFrameTitle>{t("webhooks")}</CardFrameTitle>
-            <CardFrameDescription>{t("add_webhook_description", { appName: APP_NAME })}</CardFrameDescription>
-          </div>
-          {hasWebhooks && <CreateNewWebhookButton />}
-        </div>
-      </CardFrameHeader>
+      <WebhooksHeader actions={hasWebhooks ? <CreateNewWebhookButton /> : undefined} />
       {hasWebhooks ? (
         <Card>
           <CardPanel className="p-0">

@@ -1,42 +1,20 @@
 "use client";
 
-import { APP_NAME } from "@calcom/lib/constants";
-import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { Button } from "@coss/ui/components/button";
 import {
   Card,
   CardFrame,
-  CardFrameDescription,
   CardFrameFooter,
-  CardFrameHeader,
-  CardFrameTitle,
   CardPanel,
 } from "@coss/ui/components/card";
 import { Skeleton } from "@coss/ui/components/skeleton";
-import { ArrowLeftIcon } from "lucide-react";
-import Link from "next/link";
+import { WebhookNewHeader } from "./webhook-new-header";
+import { WebhookTestHeader } from "./webhook-test-header";
 
 export const SkeletonLoader = () => {
-  const { t } = useLocale();
-
   return (
     <div className="flex flex-col gap-4">
       <CardFrame>
-        <CardFrameHeader>
-          <div className="flex min-w-0 items-start gap-3">
-            <Button
-              aria-label={t("go_back")}
-              render={<Link href="/settings/developer/webhooks" />}
-              size="icon-sm"
-              variant="ghost">
-              <ArrowLeftIcon />
-            </Button>
-            <div>
-              <CardFrameTitle>{t("add_webhook")}</CardFrameTitle>
-              <CardFrameDescription>{t("add_webhook_description", { appName: APP_NAME })}</CardFrameDescription>
-            </div>
-          </div>
-        </CardFrameHeader>
+        <WebhookNewHeader />
         <Card className="rounded-b-none!">
           <CardPanel>
             <div className="flex flex-col gap-6">
@@ -60,7 +38,7 @@ export const SkeletonLoader = () => {
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-4 w-28" />
                 <Skeleton className="h-8 w-full" />
-              </div> 
+              </div>
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-4 w-28" />
                 <Skeleton className="h-8 w-30" />
@@ -69,7 +47,7 @@ export const SkeletonLoader = () => {
               <div className="flex items-center gap-2">
                 <Skeleton className="h-4.5 w-7.5 rounded-full" />
                 <Skeleton className="h-4 w-28" />
-              </div>              
+              </div>
             </div>
           </CardPanel>
         </Card>
@@ -79,15 +57,7 @@ export const SkeletonLoader = () => {
         </CardFrameFooter>
       </CardFrame>
       <CardFrame>
-        <CardFrameHeader>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <CardFrameTitle>{t("webhook_test")}</CardFrameTitle>
-              <CardFrameDescription>{t("test_webhook")}</CardFrameDescription>
-            </div>
-            <Skeleton className="h-8 w-28" />
-          </div>
-        </CardFrameHeader>
+        <WebhookTestHeader actions={<Skeleton className="h-8 w-28" />} />
         <Card>
           <CardPanel>
             <div className="flex flex-col gap-2">

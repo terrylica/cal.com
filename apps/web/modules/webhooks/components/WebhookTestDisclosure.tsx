@@ -6,18 +6,12 @@ import { ZTestTriggerInputSchema } from "@calcom/trpc/server/routers/viewer/webh
 import { showToast } from "@calcom/ui/components/toast";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
-import {
-  Card,
-  CardFrame,
-  CardFrameDescription,
-  CardFrameHeader,
-  CardFrameTitle,
-  CardPanel,
-} from "@coss/ui/components/card";
+import { Card, CardFrame, CardPanel } from "@coss/ui/components/card";
 import { Label } from "@coss/ui/components/label";
 import { ActivityIcon } from "lucide-react";
 import { useWatch } from "react-hook-form";
 import { ZodError } from "zod";
+import { WebhookTestHeader } from "../views/webhook-test-header";
 
 export default function WebhookTestDisclosure() {
   const [subscriberUrl, webhookSecret]: [string, string] = useWatch({ name: ["subscriberUrl", "secret"] });
@@ -31,12 +25,8 @@ export default function WebhookTestDisclosure() {
 
   return (
     <CardFrame>
-      <CardFrameHeader>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <CardFrameTitle>{t("webhook_test")}</CardFrameTitle>
-            <CardFrameDescription>{t("test_webhook")}</CardFrameDescription>
-          </div>
+      <WebhookTestHeader
+        actions={
           <Button
             type="button"
             size="sm"
@@ -63,8 +53,8 @@ export default function WebhookTestDisclosure() {
             <ActivityIcon />
             {t("ping_test")}
           </Button>
-        </div>
-      </CardFrameHeader>
+        }
+      />
       <Card>
         <CardPanel>
           <div className="flex flex-col gap-2">

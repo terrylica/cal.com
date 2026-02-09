@@ -9,14 +9,12 @@ import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import { showToast } from "@calcom/ui/components/toast";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
-import { Button } from "@coss/ui/components/button";
-import { CardFrame, CardFrameDescription, CardFrameHeader, CardFrameTitle } from "@coss/ui/components/card";
-import { ArrowLeftIcon } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { CardFrame } from "@coss/ui/components/card";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
 import WebhookForm from "../components/WebhookForm";
+import { WebhookNewHeader } from "./webhook-new-header";
 
 type Props = {
   webhooks: RouterOutputs["viewer"]["webhook"]["list"];
@@ -87,23 +85,7 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
       apps={installedApps?.items.map((app) => app.slug)}
       headerWrapper={(_formMethods, children) => (
         <CardFrame>
-          <CardFrameHeader>
-            <div className="flex min-w-0 items-start gap-3">
-              <Button
-                aria-label={t("go_back")}
-                render={<Link href="/settings/developer/webhooks" />}
-                size="icon-sm"
-                variant="ghost">
-                <ArrowLeftIcon />
-              </Button>
-              <div>
-                <CardFrameTitle>{t("add_webhook")}</CardFrameTitle>
-                <CardFrameDescription>
-                  {t("add_webhook_description", { appName: APP_NAME })}
-                </CardFrameDescription>
-              </div>
-            </div>
-          </CardFrameHeader>
+          <WebhookNewHeader />
           {children}
         </CardFrame>
       )}
