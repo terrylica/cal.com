@@ -7,7 +7,7 @@ import { createInstance } from "i18next";
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { i18n } = require("@calcom/config/i18n/next-i18next.config");
-const englishTranslations: Record<string, string> = require("../../../config/i18n/locales/en/common.json");
+const englishTranslations: Record<string, string> = require("../../config/i18n/locales/en/common.json");
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const translationCache = new Map<string, Record<string, string>>([["en-common", englishTranslations]]);
