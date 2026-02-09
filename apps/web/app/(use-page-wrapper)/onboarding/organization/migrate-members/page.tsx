@@ -19,7 +19,7 @@ export default async function MigrateMembersPage() {
 
   const gettingStartedPath = await OnboardingPathService.getGettingStartedPath();
 
-  const userRepository= new UserRepository(prisma);
+  const userRepository = new UserRepository(prisma);
   const isMemberOfOrganization = await userRepository.findIfAMemberOfSomeOrganization({
     user: { id: userId },
   });

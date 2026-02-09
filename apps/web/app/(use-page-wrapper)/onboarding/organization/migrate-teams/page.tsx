@@ -24,7 +24,7 @@ export default async function MigrateTeamsPage({ searchParams }: PageProps) {
 
   const gettingStartedPath = await OnboardingPathService.getGettingStartedPath();
 
-  const userRepository= new UserRepository(prisma);
+  const userRepository = new UserRepository(prisma);
   const { organizations } = await userRepository.findOrganizations({ userId });
 
   if (organizations.length > 0) {

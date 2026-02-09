@@ -40,7 +40,6 @@ const PROTECTED_SLUGS = [
   "meta",
   "facebook",
   "homedepot",
-  "homedepot",
   "bank-of-america",
   "bankofamerica",
   "bofa",
