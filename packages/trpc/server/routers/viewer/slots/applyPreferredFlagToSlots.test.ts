@@ -1,7 +1,4 @@
-import { describe, it, expect } from "vitest";
-
-import dayjs from "@calcom/dayjs";
-
+import { describe, expect, it } from "vitest";
 import { applyPreferredFlagToSlots } from "./util";
 
 describe("applyPreferredFlagToSlots", () => {
@@ -22,7 +19,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(true);
@@ -44,7 +40,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(false);
@@ -54,10 +49,7 @@ describe("applyPreferredFlagToSlots", () => {
 
     it("handles timezone conversion correctly", () => {
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T16:00:00.000Z" },
-          { time: "2026-03-10T20:00:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T16:00:00.000Z" }, { time: "2026-03-10T20:00:00.000Z" }],
       };
 
       const result = applyPreferredFlagToSlots({
@@ -65,7 +57,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "America/New_York",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(false);
@@ -87,7 +78,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(true);
@@ -102,10 +92,7 @@ describe("applyPreferredFlagToSlots", () => {
 
     it("marks afternoon slots as preferred", () => {
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T12:00:00.000Z" },
-          { time: "2026-03-10T14:00:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T12:00:00.000Z" }, { time: "2026-03-10T14:00:00.000Z" }],
       };
 
       const result = applyPreferredFlagToSlots({
@@ -113,7 +100,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(true);
@@ -122,10 +108,7 @@ describe("applyPreferredFlagToSlots", () => {
 
     it("marks morning slots as not preferred", () => {
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T08:00:00.000Z" },
-          { time: "2026-03-10T10:00:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T08:00:00.000Z" }, { time: "2026-03-10T10:00:00.000Z" }],
       };
 
       const result = applyPreferredFlagToSlots({
@@ -133,7 +116,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(false);
@@ -150,7 +132,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
       expect(resultUTC["2026-03-10"][0].preferred).toBe(false);
 
@@ -159,23 +140,18 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "Asia/Tokyo",
         eventLength: 30,
-        preferredDateRanges: null,
       });
       expect(resultTokyo["2026-03-10"][0].preferred).toBe(true);
     });
   });
 
-  describe("manual mode", () => {
-    const config = { mode: "manual" as const, manual: { scheduleId: 1 } };
-
-    it("marks slots within preferred date ranges as preferred", () => {
-      const preferredDateRanges = [
-        {
-          start: dayjs.utc("2026-03-10T09:00:00.000Z"),
-          end: dayjs.utc("2026-03-10T12:00:00.000Z"),
-        },
-      ];
-
+  describe("manual mode - day-of-week ranges", () => {
+    it("marks slots on matching day within time range as preferred", () => {
+      // 2026-03-10 is a Tuesday (day=2)
+      const config = {
+        mode: "manual" as const,
+        manual: { ranges: [{ day: 2, startTime: "09:00", endTime: "12:00" }] },
+      };
       const slots = {
         "2026-03-10": [
           { time: "2026-03-10T09:00:00.000Z" },
@@ -189,7 +165,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(true);
@@ -197,14 +172,12 @@ describe("applyPreferredFlagToSlots", () => {
       expect(result["2026-03-10"][2].preferred).toBe(true);
     });
 
-    it("marks slots outside preferred date ranges as not preferred", () => {
-      const preferredDateRanges = [
-        {
-          start: dayjs.utc("2026-03-10T09:00:00.000Z"),
-          end: dayjs.utc("2026-03-10T12:00:00.000Z"),
-        },
-      ];
-
+    it("marks slots outside time range as not preferred", () => {
+      // 2026-03-10 is a Tuesday (day=2)
+      const config = {
+        mode: "manual" as const,
+        manual: { ranges: [{ day: 2, startTime: "09:00", endTime: "12:00" }] },
+      };
       const slots = {
         "2026-03-10": [
           { time: "2026-03-10T08:00:00.000Z" },
@@ -218,7 +191,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(false);
@@ -226,14 +198,33 @@ describe("applyPreferredFlagToSlots", () => {
       expect(result["2026-03-10"][2].preferred).toBe(false);
     });
 
-    it("handles slot that extends beyond the preferred range end", () => {
-      const preferredDateRanges = [
-        {
-          start: dayjs.utc("2026-03-10T09:00:00.000Z"),
-          end: dayjs.utc("2026-03-10T10:00:00.000Z"),
-        },
-      ];
+    it("marks slots on non-matching day as not preferred", () => {
+      // 2026-03-10 is Tuesday (day=2), but range is for Monday (day=1)
+      const config = {
+        mode: "manual" as const,
+        manual: { ranges: [{ day: 1, startTime: "09:00", endTime: "17:00" }] },
+      };
+      const slots = {
+        "2026-03-10": [{ time: "2026-03-10T10:00:00.000Z" }, { time: "2026-03-10T14:00:00.000Z" }],
+      };
 
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(false);
+      expect(result["2026-03-10"][1].preferred).toBe(false);
+    });
+
+    it("handles slot that extends beyond the preferred range end", () => {
+      // 2026-03-10 is Tuesday (day=2)
+      const config = {
+        mode: "manual" as const,
+        manual: { ranges: [{ day: 2, startTime: "09:00", endTime: "10:00" }] },
+      };
       const slots = {
         "2026-03-10": [{ time: "2026-03-10T09:45:00.000Z" }],
       };
@@ -243,24 +234,22 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(false);
     });
 
-    it("handles multiple preferred date ranges", () => {
-      const preferredDateRanges = [
-        {
-          start: dayjs.utc("2026-03-10T09:00:00.000Z"),
-          end: dayjs.utc("2026-03-10T10:00:00.000Z"),
+    it("handles multiple ranges on the same day", () => {
+      // 2026-03-10 is Tuesday (day=2)
+      const config = {
+        mode: "manual" as const,
+        manual: {
+          ranges: [
+            { day: 2, startTime: "09:00", endTime: "10:00" },
+            { day: 2, startTime: "14:00", endTime: "16:00" },
+          ],
         },
-        {
-          start: dayjs.utc("2026-03-10T14:00:00.000Z"),
-          end: dayjs.utc("2026-03-10T16:00:00.000Z"),
-        },
-      ];
-
+      };
       const slots = {
         "2026-03-10": [
           { time: "2026-03-10T09:00:00.000Z" },
@@ -274,7 +263,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(true);
@@ -282,7 +270,11 @@ describe("applyPreferredFlagToSlots", () => {
       expect(result["2026-03-10"][2].preferred).toBe(true);
     });
 
-    it("returns slots unchanged when preferredDateRanges is null", () => {
+    it("returns slots with preferred=false when ranges array is empty", () => {
+      const config = {
+        mode: "manual" as const,
+        manual: { ranges: [] },
+      };
       const slots = {
         "2026-03-10": [{ time: "2026-03-10T09:00:00.000Z" }],
       };
@@ -292,7 +284,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0]).toEqual({ time: "2026-03-10T09:00:00.000Z" });
@@ -300,13 +291,11 @@ describe("applyPreferredFlagToSlots", () => {
     });
 
     it("uses eventLength to compute slot end for boundary check", () => {
-      const preferredDateRanges = [
-        {
-          start: dayjs.utc("2026-03-10T09:00:00.000Z"),
-          end: dayjs.utc("2026-03-10T10:00:00.000Z"),
-        },
-      ];
-
+      // 2026-03-10 is Tuesday (day=2)
+      const config = {
+        mode: "manual" as const,
+        manual: { ranges: [{ day: 2, startTime: "09:00", endTime: "10:00" }] },
+      };
       const slots = {
         "2026-03-10": [{ time: "2026-03-10T09:00:00.000Z" }],
       };
@@ -316,7 +305,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges,
       });
       expect(result30["2026-03-10"][0].preferred).toBe(true);
 
@@ -325,19 +313,16 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 90,
-        preferredDateRanges,
       });
       expect(result90["2026-03-10"][0].preferred).toBe(false);
     });
 
     it("marks slot at exact range boundary as preferred", () => {
-      const preferredDateRanges = [
-        {
-          start: dayjs.utc("2026-03-10T09:00:00.000Z"),
-          end: dayjs.utc("2026-03-10T09:30:00.000Z"),
-        },
-      ];
-
+      // 2026-03-10 is Tuesday (day=2)
+      const config = {
+        mode: "manual" as const,
+        manual: { ranges: [{ day: 2, startTime: "09:00", endTime: "09:30" }] },
+      };
       const slots = {
         "2026-03-10": [{ time: "2026-03-10T09:00:00.000Z" }],
       };
@@ -347,10 +332,58 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(true);
+    });
+
+    it("handles timezone conversion for day-of-week matching", () => {
+      // 2026-03-10T22:00:00Z in UTC is Tuesday, but in Asia/Tokyo (+9) it's 2026-03-11T07:00 which is Wednesday (day=3)
+      const configWed = {
+        mode: "manual" as const,
+        manual: { ranges: [{ day: 3, startTime: "07:00", endTime: "12:00" }] },
+      };
+      const slots = {
+        "2026-03-10": [{ time: "2026-03-10T22:00:00.000Z" }],
+      };
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config: configWed,
+        timeZone: "Asia/Tokyo",
+        eventLength: 30,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(true);
+    });
+
+    it("handles ranges across multiple days of the week", () => {
+      // 2026-03-10 is Tuesday (day=2), 2026-03-11 is Wednesday (day=3)
+      const config = {
+        mode: "manual" as const,
+        manual: {
+          ranges: [
+            { day: 2, startTime: "09:00", endTime: "12:00" },
+            { day: 3, startTime: "14:00", endTime: "17:00" },
+          ],
+        },
+      };
+      const slots = {
+        "2026-03-10": [{ time: "2026-03-10T10:00:00.000Z" }, { time: "2026-03-10T15:00:00.000Z" }],
+        "2026-03-11": [{ time: "2026-03-11T10:00:00.000Z" }, { time: "2026-03-11T15:00:00.000Z" }],
+      };
+
+      const result = applyPreferredFlagToSlots({
+        slots,
+        config,
+        timeZone: "UTC",
+        eventLength: 30,
+      });
+
+      expect(result["2026-03-10"][0].preferred).toBe(true);
+      expect(result["2026-03-10"][1].preferred).toBe(false);
+      expect(result["2026-03-11"][0].preferred).toBe(false);
+      expect(result["2026-03-11"][1].preferred).toBe(true);
     });
   });
 
@@ -359,14 +392,8 @@ describe("applyPreferredFlagToSlots", () => {
       const config = { mode: "auto" as const, auto: { preferTimeOfDay: "morning" as const } };
 
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T08:00:00.000Z" },
-          { time: "2026-03-10T14:00:00.000Z" },
-        ],
-        "2026-03-11": [
-          { time: "2026-03-11T10:00:00.000Z" },
-          { time: "2026-03-11T16:00:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T08:00:00.000Z" }, { time: "2026-03-10T14:00:00.000Z" }],
+        "2026-03-11": [{ time: "2026-03-11T10:00:00.000Z" }, { time: "2026-03-11T16:00:00.000Z" }],
       };
 
       const result = applyPreferredFlagToSlots({
@@ -374,7 +401,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0].preferred).toBe(true);
@@ -389,9 +415,7 @@ describe("applyPreferredFlagToSlots", () => {
       const config = { mode: "auto" as const, auto: { preferTimeOfDay: "morning" as const } };
 
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T08:00:00.000Z", attendees: 3, bookingUid: "abc-123" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T08:00:00.000Z", attendees: 3, bookingUid: "abc-123" }],
       };
 
       const result = applyPreferredFlagToSlots({
@@ -399,7 +423,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0]).toEqual({
@@ -432,7 +455,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -444,10 +466,7 @@ describe("applyPreferredFlagToSlots", () => {
 
     it("marks slots before a busy time as preferred when adjacent", () => {
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T09:00:00.000Z" },
-          { time: "2026-03-10T09:30:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T09:00:00.000Z" }, { time: "2026-03-10T09:30:00.000Z" }],
       };
       const busyTimes = [
         { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
@@ -458,7 +477,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -468,10 +486,7 @@ describe("applyPreferredFlagToSlots", () => {
 
     it("marks slots after a busy time as preferred when adjacent", () => {
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T11:00:00.000Z" },
-          { time: "2026-03-10T11:30:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T11:00:00.000Z" }, { time: "2026-03-10T11:30:00.000Z" }],
       };
       const busyTimes = [
         { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
@@ -482,7 +497,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -492,10 +506,7 @@ describe("applyPreferredFlagToSlots", () => {
 
     it("does not mark slots far from busy times as preferred", () => {
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T08:00:00.000Z" },
-          { time: "2026-03-10T15:00:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T08:00:00.000Z" }, { time: "2026-03-10T15:00:00.000Z" }],
       };
       const busyTimes = [
         { start: new Date("2026-03-10T11:00:00.000Z"), end: new Date("2026-03-10T12:00:00.000Z") },
@@ -506,7 +517,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -533,7 +543,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -553,7 +562,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes: [],
       });
 
@@ -563,10 +571,7 @@ describe("applyPreferredFlagToSlots", () => {
 
     it("handles longer event durations for adjacency", () => {
       const slots = {
-        "2026-03-10": [
-          { time: "2026-03-10T08:00:00.000Z" },
-          { time: "2026-03-10T09:00:00.000Z" },
-        ],
+        "2026-03-10": [{ time: "2026-03-10T08:00:00.000Z" }, { time: "2026-03-10T09:00:00.000Z" }],
       };
       const busyTimes = [
         { start: new Date("2026-03-10T10:00:00.000Z"), end: new Date("2026-03-10T11:00:00.000Z") },
@@ -577,7 +582,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 60,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -609,7 +613,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -635,7 +638,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
         busyTimes,
       });
 
@@ -652,7 +654,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result).toEqual({});
@@ -666,7 +667,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"]).toEqual([]);
@@ -684,7 +684,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(result["2026-03-10"][0]).toEqual({ time: "2026-03-10T08:00:00.000Z" });
@@ -701,7 +700,6 @@ describe("applyPreferredFlagToSlots", () => {
         config,
         timeZone: "UTC",
         eventLength: 30,
-        preferredDateRanges: null,
       });
 
       expect(originalSlot).not.toHaveProperty("preferred");

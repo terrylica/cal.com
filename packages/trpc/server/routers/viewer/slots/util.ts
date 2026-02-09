@@ -159,10 +159,16 @@ function withSlotsCache(
 
 type SlotRecord = Record<string, { time: string; [key: string]: unknown }[]>;
 
+interface ManualPreferredRange {
+  day: number;
+  startTime: string;
+  endTime: string;
+}
+
 interface HighlightPreferredTimesConfig {
   mode: "auto" | "manual";
   auto?: { preferTimeOfDay?: "morning" | "afternoon"; batchMeetings?: boolean };
-  manual?: { scheduleId?: number };
+  manual?: { ranges: ManualPreferredRange[] };
 }
 
 function binarySearchRangeIndex(sortedStarts: number[], value: number): number {
@@ -181,28 +187,27 @@ function binarySearchRangeIndex(sortedStarts: number[], value: number): number {
   return result;
 }
 
+function parseHHMM(hhmm: string): { hours: number; minutes: number } {
+  const [h, m] = hhmm.split(":");
+  return { hours: parseInt(h, 10), minutes: parseInt(m, 10) };
+}
+
 export function applyPreferredFlagToSlots({
   slots,
   config,
   timeZone,
   eventLength,
-  preferredDateRanges,
   busyTimes,
 }: {
   slots: SlotRecord;
   config: HighlightPreferredTimesConfig;
   timeZone: string;
   eventLength: number;
-  preferredDateRanges: { start: Dayjs; end: Dayjs }[] | null;
   busyTimes?: { start: string | Date; end: string | Date }[];
 }): SlotRecord {
-  let sortedRanges: { startMs: number; endMs: number }[] | null = null;
-  let sortedStarts: number[] | null = null;
-  if (config.mode === "manual" && preferredDateRanges) {
-    sortedRanges = preferredDateRanges
-      .map((r) => ({ startMs: r.start.valueOf(), endMs: r.end.valueOf() }))
-      .sort((a, b) => a.startMs - b.startMs);
-    sortedStarts = sortedRanges.map((r) => r.startMs);
+  let manualRanges: ManualPreferredRange[] | null = null;
+  if (config.mode === "manual" && config.manual?.ranges && config.manual.ranges.length > 0) {
+    manualRanges = config.manual.ranges;
   }
 
   let sortedBusyEnds: number[] | null = null;
@@ -242,17 +247,26 @@ export function applyPreferredFlagToSlots({
         const preferred =
           timeOfDayPreferred !== null && batchPreferred !== null
             ? timeOfDayPreferred && batchPreferred
-            : (timeOfDayPreferred ?? batchPreferred) as boolean;
+            : ((timeOfDayPreferred ?? batchPreferred) as boolean);
 
         return { ...slot, preferred };
       }
-      if (config.mode === "manual" && sortedRanges && sortedStarts) {
-        const slotStartMs = dayjs.utc(slot.time).valueOf();
-        const slotEndMs = slotStartMs + eventLengthMs;
-        const idx = binarySearchRangeIndex(sortedStarts, slotStartMs);
+      if (config.mode === "manual" && manualRanges) {
+        const slotInTz = dayjs.utc(slot.time).tz(timeZone);
+        const slotDay = slotInTz.day();
+        const slotMinutes = slotInTz.hour() * 60 + slotInTz.minute();
+        const slotEndMinutes = slotMinutes + eventLength;
         let preferred = false;
-        if (idx >= 0 && slotStartMs >= sortedRanges[idx].startMs && slotEndMs <= sortedRanges[idx].endMs) {
-          preferred = true;
+        for (const range of manualRanges) {
+          if (range.day !== slotDay) continue;
+          const { hours: sh, minutes: sm } = parseHHMM(range.startTime);
+          const { hours: eh, minutes: em } = parseHHMM(range.endTime);
+          const rangeStartMin = sh * 60 + sm;
+          const rangeEndMin = eh * 60 + em;
+          if (slotMinutes >= rangeStartMin && slotEndMinutes <= rangeEndMin) {
+            preferred = true;
+            break;
+          }
         }
         return { ...slot, preferred };
       }
@@ -1413,7 +1427,7 @@ export class AvailableSlotsService {
 
         const restrictionTimezone = eventType.useBookerTimezone
           ? input.timeZone
-          : restrictionSchedule.timeZone ?? "UTC";
+          : (restrictionSchedule.timeZone ?? "UTC");
         const eventLength = input.duration || eventType.length;
 
         const restrictionAvailability = restrictionSchedule.availability.map((rule) => ({
@@ -1683,31 +1697,6 @@ export class AvailableSlotsService {
 
     const preferredTimesConfig = eventType.metadata?.highlightPreferredTimes;
     if (preferredTimesConfig) {
-      let preferredDateRanges: { start: Dayjs; end: Dayjs }[] | null = null;
-
-      if (preferredTimesConfig.mode === "manual" && preferredTimesConfig.manual?.scheduleId) {
-        const preferredSchedule = await this.dependencies.scheduleRepo.findScheduleByIdForBuildDateRanges({
-          scheduleId: preferredTimesConfig.manual.scheduleId,
-        });
-        if (preferredSchedule) {
-          const preferredTimezone = preferredSchedule.timeZone ?? eventTimeZone ?? "UTC";
-          const preferredAvailability = preferredSchedule.availability.map((rule) => ({
-            days: rule.days,
-            startTime: rule.startTime,
-            endTime: rule.endTime,
-            date: rule.date,
-          }));
-          const { dateRanges } = buildDateRanges({
-            availability: preferredAvailability,
-            timeZone: preferredTimezone,
-            dateFrom: startTime,
-            dateTo: endTime,
-            travelSchedules: [],
-          });
-          preferredDateRanges = dateRanges;
-        }
-      }
-
       const eventLength = input.duration || eventType.length;
       const allBusyTimes =
         preferredTimesConfig.mode === "auto" && preferredTimesConfig.auto?.batchMeetings
@@ -1718,7 +1707,6 @@ export class AvailableSlotsService {
         config: preferredTimesConfig,
         timeZone: input.timeZone ?? "UTC",
         eventLength,
-        preferredDateRanges,
         busyTimes: allBusyTimes,
       });
       for (const [date, slots] of Object.entries(updatedSlots)) {

@@ -1,20 +1,11 @@
-import { useAutoAnimate } from "@formkit/auto-animate/react";
-import type { UseQueryResult } from "@tanstack/react-query";
-import { useState, memo, useEffect } from "react";
-import { Controller, useFormContext } from "react-hook-form";
-import type { OptionProps, SingleValueProps } from "react-select";
-import { components } from "react-select";
-
-import type { GetAllSchedulesByUserIdQueryType } from "./EventAvailabilityTabWebWrapper";
 import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import dayjs from "@calcom/dayjs";
 import { SelectSkeletonLoader } from "@calcom/features/availability/components/SkeletonLoader";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
-import type { TeamMembers } from "@calcom/web/modules/event-types/components/EventType";
 import type {
   AvailabilityOption,
-  FormValues,
   EventTypeSetup,
+  FormValues,
   Host,
   SelectClassNames,
 } from "@calcom/features/eventtypes/lib/types";
@@ -28,13 +19,18 @@ import classNames from "@calcom/ui/classNames";
 import { Avatar } from "@calcom/ui/components/avatar";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
-import { Label } from "@calcom/ui/components/form";
-import { Select } from "@calcom/ui/components/form";
-import { SettingsToggle } from "@calcom/ui/components/form";
-import { Icon } from "@calcom/ui/components/icon";
-import { Spinner } from "@calcom/ui/components/icon";
-import { SkeletonText } from "@calcom/ui/components/skeleton";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
+import { Label, Select, SettingsToggle } from "@calcom/ui/components/form";
+import { Icon, Spinner } from "@calcom/ui/components/icon";
+import { SkeletonText } from "@calcom/ui/components/skeleton";
+import type { TeamMembers } from "@calcom/web/modules/event-types/components/EventType";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import type { UseQueryResult } from "@tanstack/react-query";
+import { memo, useEffect, useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import type { OptionProps, SingleValueProps } from "react-select";
+import { components } from "react-select";
+import type { GetAllSchedulesByUserIdQueryType } from "./EventAvailabilityTabWebWrapper";
 
 export type ScheduleQueryData = RouterOutputs["viewer"]["availability"]["schedule"]["get"];
 
@@ -479,15 +475,17 @@ const EventTypeSchedule = ({
 
   if (schedulesQueryData.length === 0) {
     return (
-        <EmptyScreen
-          Icon="clock"
-          headline={t("create_availability_schedule")}
-          description={t("no_schedules_created_yet")}
-          className="w-full"
-          buttonRaw={<Button href="/availability" StartIcon="plus">
+      <EmptyScreen
+        Icon="clock"
+        headline={t("create_availability_schedule")}
+        description={t("no_schedules_created_yet")}
+        className="w-full"
+        buttonRaw={
+          <Button href="/availability" StartIcon="plus">
             {t("create")}
-          </Button>}
-        />
+          </Button>
+        }
+      />
     );
   }
 
@@ -882,6 +880,102 @@ const UseTeamEventScheduleSettingsToggle = ({
   );
 };
 
+const DAYS_OF_WEEK = [0, 1, 2, 3, 4, 5, 6];
+const TIME_OPTIONS = (() => {
+  const opts: { value: string; label: string }[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const val = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      const hour12 = h % 12 || 12;
+      const ampm = h < 12 ? "am" : "pm";
+      const label12 = `${hour12}:${String(m).padStart(2, "0")}${ampm}`;
+      opts.push({ value: val, label: label12 });
+    }
+  }
+  opts.push({ value: "24:00", label: "12:00am" });
+  return opts;
+})();
+
+type ManualRange = { day: number; startTime: string; endTime: string };
+
+const ManualPreferredTimesEditor = ({
+  ranges,
+  onChange,
+}: {
+  ranges: ManualRange[];
+  onChange: (ranges: ManualRange[]) => void;
+}) => {
+  const { t, i18n } = useLocale();
+  const dayNames = weekdayNames(i18n.language, 0, "long");
+
+  const addRange = (day: number) => {
+    onChange([...ranges, { day, startTime: "09:00", endTime: "17:00" }]);
+  };
+
+  const removeRange = (index: number) => {
+    onChange(ranges.filter((_, i) => i !== index));
+  };
+
+  const updateRange = (index: number, field: "startTime" | "endTime", value: string) => {
+    const updated = ranges.map((r, i) => (i === index ? { ...r, [field]: value } : r));
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-subtle text-sm">{t("manually_choose_preferred_times_description")}</p>
+      {DAYS_OF_WEEK.map((day) => {
+        const dayRanges = ranges.map((r, idx) => ({ ...r, originalIndex: idx })).filter((r) => r.day === day);
+        return (
+          <div key={day} className="flex items-start gap-3">
+            <span className="text-default w-24 pt-2 text-sm font-medium capitalize">{dayNames[day]}</span>
+            <div className="flex flex-1 flex-col gap-1">
+              {dayRanges.map((range) => (
+                <div key={range.originalIndex} className="flex items-center gap-2">
+                  <Select
+                    options={TIME_OPTIONS}
+                    value={TIME_OPTIONS.find((o) => o.value === range.startTime)}
+                    onChange={(selected) => {
+                      if (selected) updateRange(range.originalIndex, "startTime", selected.value);
+                    }}
+                    isSearchable={false}
+                    className="w-[120px] text-sm"
+                  />
+                  <span className="text-subtle text-sm">-</span>
+                  <Select
+                    options={TIME_OPTIONS}
+                    value={TIME_OPTIONS.find((o) => o.value === range.endTime)}
+                    onChange={(selected) => {
+                      if (selected) updateRange(range.originalIndex, "endTime", selected.value);
+                    }}
+                    isSearchable={false}
+                    className="w-[120px] text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="icon"
+                    color="destructive"
+                    StartIcon="trash"
+                    onClick={() => removeRange(range.originalIndex)}
+                  />
+                </div>
+              ))}
+              <Button
+                type="button"
+                color="minimal"
+                StartIcon="plus"
+                className="w-fit text-sm"
+                onClick={() => addRange(day)}>
+                {t("add_time_availability")}
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const PreferredTimesSettings = ({
   schedulesQueryData,
 }: {
@@ -927,7 +1021,7 @@ const PreferredTimesSettings = ({
           ...metadata,
           highlightPreferredTimes: {
             mode: "manual" as const,
-            manual: { scheduleId: schedulesQueryData?.[0]?.id ?? 0 },
+            manual: { ranges: [] },
           },
         },
         { shouldDirty: true }
@@ -935,11 +1029,21 @@ const PreferredTimesSettings = ({
     }
   };
 
-  const scheduleOptions =
-    schedulesQueryData?.map((s) => ({
-      value: s.id,
-      label: s.name,
-    })) ?? [];
+  const manualRanges: ManualRange[] = config?.mode === "manual" ? (config.manual?.ranges ?? []) : [];
+
+  const updateManualRanges = (ranges: ManualRange[]) => {
+    setValue(
+      "metadata",
+      {
+        ...metadata,
+        highlightPreferredTimes: {
+          mode: "manual" as const,
+          manual: { ranges },
+        },
+      },
+      { shouldDirty: true }
+    );
+  };
 
   return (
     <div className="border-subtle mt-4 rounded-lg border p-6">
@@ -1039,31 +1143,7 @@ const PreferredTimesSettings = ({
           )}
 
           {config?.mode === "manual" && (
-            <div>
-              <Label>{t("preferred_times_schedule")}</Label>
-              <p className="text-subtle mb-2 text-sm">{t("preferred_times_schedule_description")}</p>
-              <Select
-                options={scheduleOptions}
-                value={scheduleOptions.find((o) => o.value === config.manual?.scheduleId)}
-                onChange={(selected) => {
-                  if (selected) {
-                    setValue(
-                      "metadata",
-                      {
-                        ...metadata,
-                        highlightPreferredTimes: {
-                          mode: "manual" as const,
-                          manual: { scheduleId: selected.value },
-                        },
-                      },
-                      { shouldDirty: true }
-                    );
-                  }
-                }}
-                isSearchable={false}
-                className="mt-1 block w-full text-sm"
-              />
-            </div>
+            <ManualPreferredTimesEditor ranges={manualRanges} onChange={updateManualRanges} />
           )}
         </div>
       </SettingsToggle>
