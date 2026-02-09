@@ -437,7 +437,7 @@ const WebhookForm = (props: {
         }) => (
           <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty}>
             <FieldLabel>
-              <Switch defaultChecked={value} onCheckedChange={(checked) => onChange(checked)} />
+              <Switch checked={value} onCheckedChange={(checked) => onChange(checked)} />
               {t("enable_webhook")}
             </FieldLabel>
           </Field>
