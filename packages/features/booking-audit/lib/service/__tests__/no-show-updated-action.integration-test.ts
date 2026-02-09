@@ -85,8 +85,16 @@ async function getDeleteLog(): Promise<unknown[]> {
 
 async function checkBookingExists(bookingUid: string, context: string): Promise<boolean> {
   const booking = await prisma.booking.findFirst({ where: { uid: bookingUid }, select: { id: true, uid: true, userId: true } });
+  const rawResult = await prisma.$queryRawUnsafe(
+    `SELECT id, uid, "userId" FROM "Booking" WHERE uid = $1 LIMIT 1`,
+    bookingUid
+  ) as Array<{ id: number; uid: string; userId: number }>;
   const exists = booking !== null;
-  debugLog("verify", `Booking check (${context}): exists=${exists}`, { bookingUid, booking: booking ?? "null" });
+  const rawExists = rawResult.length > 0;
+  if (exists !== rawExists) {
+    debugLog("verify", `!!! PRISMA/RAW MISMATCH (${context}) !!! prisma=${exists} raw=${rawExists}`, { bookingUid, booking: booking ?? "null", rawResult });
+  }
+  debugLog("verify", `Booking check (${context}): exists=${exists} raw=${rawExists}`, { bookingUid, booking: booking ?? "null" });
   return exists;
 }
 
@@ -97,11 +105,20 @@ async function checkUserExists(userId: number, context: string): Promise<boolean
   return exists;
 }
 
+async function getAllBookingsSummary(): Promise<unknown[]> {
+  try {
+    return (await prisma.$queryRawUnsafe(
+      `SELECT id, uid, "userId", status, "createdAt" FROM "Booking" ORDER BY id DESC LIMIT 20`
+    )) as unknown[];
+  } catch { return []; }
+}
+
 async function dumpDiagnostics(testName: string, bookingUid: string, ownerId: number) {
   debugLog(testName, "!!! BOOKING DISAPPEARED !!! Running full diagnostics...");
   const ownerExists = await checkUserExists(ownerId, "disappeared-owner-check");
   const bookingCount = await prisma.booking.count();
   const userCount = await prisma.user.count();
+  const allBookings = await getAllBookingsSummary();
   const auditRecords = await prisma.bookingAudit.findMany({
     where: { bookingUid },
     select: { id: true, bookingUid: true, action: true },
@@ -110,16 +127,24 @@ async function dumpDiagnostics(testName: string, bookingUid: string, ownerId: nu
   let pgActivity: unknown[] = [];
   try {
     pgActivity = (await prisma.$queryRawUnsafe(
-      `SELECT pid, state, query, query_start, backend_start FROM pg_stat_activity WHERE state != 'idle' AND pid != pg_backend_pid() ORDER BY query_start DESC LIMIT 10`
+      `SELECT pid, state, query, query_start, backend_start FROM pg_stat_activity WHERE state != 'idle' AND pid != pg_backend_pid() ORDER BY query_start DESC LIMIT 20`
+    )) as unknown[];
+  } catch { /* ignore */ }
+  let pgConnCount: unknown[] = [];
+  try {
+    pgConnCount = (await prisma.$queryRawUnsafe(
+      `SELECT count(*) as total, state FROM pg_stat_activity GROUP BY state`
     )) as unknown[];
   } catch { /* ignore */ }
   debugLog(testName, "DIAGNOSTICS", {
     ownerExists,
     totalBookings: bookingCount,
     totalUsers: userCount,
+    allRecentBookings: allBookings,
     auditRecordsForBooking: auditRecords,
     bookingDeleteLog: deleteLog,
     activePgQueries: pgActivity,
+    pgConnectionCounts: pgConnCount,
   });
 }
 
@@ -150,6 +175,7 @@ describe("No-Show Updated Action Integration", () => {
 
   beforeEach(async () => {
     debugLog("beforeEach", "=== START beforeEach ===");
+    const beforeEachStartMs = Date.now();
 
     bookingAuditTaskConsumer = getBookingAuditTaskConsumer();
     bookingAuditViewerService = getBookingAuditViewerService();
@@ -207,11 +233,21 @@ describe("No-Show Updated Action Integration", () => {
     await checkBookingExists(booking.uid, "end-of-beforeEach");
     await checkUserExists(owner.id, "end-of-beforeEach-owner");
 
+    const setupDurationMs = Date.now() - beforeEachStartMs;
     debugLog("beforeEach", "=== END beforeEach ===", {
       ownerId: owner.id,
       bookingUid: booking.uid,
       bookingId: booking.id,
+      setupDurationMs,
     });
+
+    debugLog("beforeEach", "Adding deliberate delay to widen race window...");
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const stillExists = await checkBookingExists(booking.uid, "after-delay");
+    if (!stillExists) {
+      await dumpDiagnostics("beforeEach-post-delay", booking.uid, owner.id);
+    }
+    debugLog("beforeEach", "Delay complete, booking still exists: " + stillExists);
   });
 
   afterEach(async () => {
