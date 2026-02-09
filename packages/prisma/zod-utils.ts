@@ -255,6 +255,21 @@ const _eventTypeMetaDataSchemaWithoutApps = z.object({
     })
     .optional(),
   bookerLayouts: bookerLayouts.optional(),
+  highlightPreferredTimes: z
+    .object({
+      mode: z.enum(["auto", "manual"]),
+      auto: z
+        .object({
+          preferTimeOfDay: z.enum(["morning", "afternoon"]).optional(),
+        })
+        .optional(),
+      manual: z
+        .object({
+          scheduleId: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export const eventTypeMetaDataSchemaWithUntypedApps = _eventTypeMetaDataSchemaWithoutApps.merge(

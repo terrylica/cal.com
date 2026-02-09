@@ -80,6 +80,7 @@ export interface IGetAvailableSlots {
       reason?: string | undefined;
       emoji?: string | undefined;
       showNotePublicly?: boolean | undefined;
+      preferred?: boolean | undefined;
     }[]
   >;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1574,6 +1575,53 @@ export class AvailableSlotsService {
       endTime: input.endTime,
       timeZone: input.timeZone,
     });
+
+    const preferredTimesConfig = eventType.metadata?.highlightPreferredTimes;
+    if (preferredTimesConfig) {
+      let preferredDateRanges: { start: Dayjs; end: Dayjs }[] | null = null;
+
+      if (preferredTimesConfig.mode === "manual" && preferredTimesConfig.manual?.scheduleId) {
+        const preferredSchedule = await this.dependencies.scheduleRepo.findScheduleByIdForBuildDateRanges({
+          scheduleId: preferredTimesConfig.manual.scheduleId,
+        });
+        if (preferredSchedule) {
+          const preferredTimezone = preferredSchedule.timeZone ?? eventTimeZone ?? "UTC";
+          const preferredAvailability = preferredSchedule.availability.map((rule) => ({
+            days: rule.days,
+            startTime: rule.startTime,
+            endTime: rule.endTime,
+            date: rule.date,
+          }));
+          const { dateRanges } = buildDateRanges({
+            availability: preferredAvailability,
+            timeZone: preferredTimezone,
+            dateFrom: startTime,
+            dateTo: endTime,
+          });
+          preferredDateRanges = dateRanges;
+        }
+      }
+
+      const eventLength = input.duration || eventType.length;
+      for (const slots of Object.values(filteredSlotsMappedToDate)) {
+        for (const slot of slots) {
+          if (preferredTimesConfig.mode === "auto" && preferredTimesConfig.auto?.preferTimeOfDay) {
+            const slotHour = dayjs.utc(slot.time).tz(input.timeZone).hour();
+            const isMorning = slotHour < 12;
+            slot.preferred =
+              preferredTimesConfig.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning;
+          } else if (preferredTimesConfig.mode === "manual" && preferredDateRanges) {
+            const slotStart = dayjs.utc(slot.time);
+            const slotEnd = slotStart.add(eventLength, "minute");
+            slot.preferred = preferredDateRanges.some(
+              (range) =>
+                (slotStart.isAfter(range.start) || slotStart.isSame(range.start)) &&
+                (slotEnd.isBefore(range.end) || slotEnd.isSame(range.end))
+            );
+          }
+        }
+      }
+    }
 
     // We only want to run this on single targeted events and not dynamic
     if (!Object.keys(filteredSlotsMappedToDate).length && input.usernameList?.length === 1) {

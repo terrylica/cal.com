@@ -882,14 +882,176 @@ const UseTeamEventScheduleSettingsToggle = ({
   );
 };
 
+const PreferredTimesSettings = ({
+  schedulesQueryData,
+}: {
+  schedulesQueryData?: EventTypeScheduleProps["schedulesQueryData"];
+}) => {
+  const { t } = useLocale();
+  const formMethods = useFormContext<FormValues>();
+  const { watch, setValue } = formMethods;
+  const metadata = watch("metadata");
+  const config = metadata?.highlightPreferredTimes;
+  const enabled = !!config;
+
+  const toggleEnabled = (checked: boolean) => {
+    if (checked) {
+      setValue(
+        "metadata",
+        {
+          ...metadata,
+          highlightPreferredTimes: { mode: "auto" as const, auto: { preferTimeOfDay: "morning" as const } },
+        },
+        { shouldDirty: true }
+      );
+    } else {
+      const { highlightPreferredTimes: _, ...rest } = metadata ?? {};
+      setValue("metadata", rest as typeof metadata, { shouldDirty: true });
+    }
+  };
+
+  const setMode = (mode: "auto" | "manual") => {
+    if (mode === "auto") {
+      setValue(
+        "metadata",
+        {
+          ...metadata,
+          highlightPreferredTimes: { mode: "auto" as const, auto: { preferTimeOfDay: "morning" as const } },
+        },
+        { shouldDirty: true }
+      );
+    } else {
+      setValue(
+        "metadata",
+        {
+          ...metadata,
+          highlightPreferredTimes: {
+            mode: "manual" as const,
+            manual: { scheduleId: schedulesQueryData?.[0]?.id ?? 0 },
+          },
+        },
+        { shouldDirty: true }
+      );
+    }
+  };
+
+  const scheduleOptions =
+    schedulesQueryData?.map((s) => ({
+      value: s.id,
+      label: s.name,
+    })) ?? [];
+
+  return (
+    <div className="border-subtle mt-4 rounded-lg border p-6">
+      <SettingsToggle
+        checked={enabled}
+        onCheckedChange={toggleEnabled}
+        title={t("highlight_preferred_times")}
+        description={t("highlight_preferred_times_description")}>
+        <div className="space-y-4">
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="preferredTimesMode"
+                checked={config?.mode === "auto"}
+                onChange={() => setMode("auto")}
+                className="text-emphasis"
+              />
+              <span className="text-default text-sm">{t("preferred_times_mode_auto")}</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="preferredTimesMode"
+                checked={config?.mode === "manual"}
+                onChange={() => setMode("manual")}
+                className="text-emphasis"
+              />
+              <span className="text-default text-sm">{t("preferred_times_mode_manual")}</span>
+            </label>
+          </div>
+
+          {config?.mode === "auto" && (
+            <div>
+              <Label>{t("prefer_time_of_day")}</Label>
+              <Select
+                options={[
+                  { value: "morning", label: t("prefer_morning") },
+                  { value: "afternoon", label: t("prefer_afternoon") },
+                ]}
+                value={
+                  config.auto?.preferTimeOfDay === "afternoon"
+                    ? { value: "afternoon", label: t("prefer_afternoon") }
+                    : { value: "morning", label: t("prefer_morning") }
+                }
+                onChange={(selected) => {
+                  if (selected) {
+                    setValue(
+                      "metadata",
+                      {
+                        ...metadata,
+                        highlightPreferredTimes: {
+                          mode: "auto" as const,
+                          auto: { preferTimeOfDay: selected.value as "morning" | "afternoon" },
+                        },
+                      },
+                      { shouldDirty: true }
+                    );
+                  }
+                }}
+                isSearchable={false}
+                className="mt-1 block w-full text-sm"
+              />
+            </div>
+          )}
+
+          {config?.mode === "manual" && (
+            <div>
+              <Label>{t("preferred_times_schedule")}</Label>
+              <p className="text-subtle mb-2 text-sm">{t("preferred_times_schedule_description")}</p>
+              <Select
+                options={scheduleOptions}
+                value={scheduleOptions.find((o) => o.value === config.manual?.scheduleId)}
+                onChange={(selected) => {
+                  if (selected) {
+                    setValue(
+                      "metadata",
+                      {
+                        ...metadata,
+                        highlightPreferredTimes: {
+                          mode: "manual" as const,
+                          manual: { scheduleId: selected.value },
+                        },
+                      },
+                      { shouldDirty: true }
+                    );
+                  }
+                }}
+                isSearchable={false}
+                className="mt-1 block w-full text-sm"
+              />
+            </div>
+          )}
+        </div>
+      </SettingsToggle>
+    </div>
+  );
+};
+
 export const EventAvailabilityTab = ({ eventType, isTeamEvent, ...rest }: EventAvailabilityTabProps) => {
-  return isTeamEvent && eventType.schedulingType !== SchedulingType.MANAGED ? (
-    <UseTeamEventScheduleSettingsToggle eventType={eventType} {...rest} />
-  ) : (
-    <EventTypeSchedule
-      eventType={eventType}
-      {...rest}
-      customClassNames={rest?.customClassNames?.userAvailability}
-    />
+  return (
+    <div>
+      {isTeamEvent && eventType.schedulingType !== SchedulingType.MANAGED ? (
+        <UseTeamEventScheduleSettingsToggle eventType={eventType} {...rest} />
+      ) : (
+        <EventTypeSchedule
+          eventType={eventType}
+          {...rest}
+          customClassNames={rest?.customClassNames?.userAvailability}
+        />
+      )}
+      <PreferredTimesSettings schedulesQueryData={rest.schedulesQueryData} />
+    </div>
   );
 };
