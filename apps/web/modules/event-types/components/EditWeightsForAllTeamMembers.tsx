@@ -1,7 +1,9 @@
 "use client";
 
-import { useFetchMoreOnScroll } from "@calcom/features/eventtypes/lib/useFetchMoreOnScroll";
-import { useSearchTeamMembers } from "@calcom/features/eventtypes/lib/useSearchTeamMembers";
+import { keepPreviousData } from "@tanstack/react-query";
+
+import { useHosts } from "@calcom/features/eventtypes/lib/HostsContext";
+import { usePaginatedAssignmentHosts } from "@calcom/features/eventtypes/lib/usePaginatedAssignmentHosts";
 import type { Host } from "@calcom/features/eventtypes/lib/types";
 import ServerTrans from "@calcom/lib/components/ServerTrans";
 import { downloadAsCsv } from "@calcom/lib/csvUtils";
@@ -123,86 +125,97 @@ export const EditWeightsForAllTeamMembers = ({
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLocale();
   const [searchQuery, setSearchQuery] = useState("");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const { pendingChanges } = useHosts();
 
-  // When segment filtering is active, query for matching member IDs
-  const { data: segmentData } = trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useQuery(
-    {
-      teamId: teamId || 0,
-      attributesQueryValue: queryValue as AttributesQueryValue,
-      _enablePerf: true,
-    },
-    {
-      enabled: assignRRMembersUsingSegment && !!queryValue && !!teamId && isOpen,
-    }
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // When segment filtering is active, load all matching members at once (no limit).
+  const isSegmentQueryEnabled = assignRRMembersUsingSegment && !!queryValue && !!teamId && isOpen;
+  const { data: segmentData, isPending: isSegmentPending } =
+    trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useQuery(
+      {
+        teamId: teamId || 0,
+        attributesQueryValue: queryValue as AttributesQueryValue,
+        _enablePerf: true,
+      },
+      {
+        enabled: isSegmentQueryEnabled,
+        placeholderData: keepPreviousData,
+      }
+    );
+
+  const hasSegmentResults = isSegmentQueryEnabled && !!segmentData?.result;
+
+  const segmentMembers = useMemo(
+    () => (hasSegmentResults ? segmentData!.result! : []),
+    [hasSegmentResults, segmentData]
   );
 
-  // Derive segment user IDs for server-side filtering
-  const segmentUserIds = useMemo(() => {
-    if (!assignRRMembersUsingSegment || !segmentData?.result) return undefined;
-    return segmentData.result.map((m) => m.id);
-  }, [assignRRMembersUsingSegment, segmentData]);
-
-  // Keep Set form for CSV upload validation
   const segmentMemberIds = useMemo(() => {
-    if (!segmentUserIds) return null;
-    return new Set(segmentUserIds);
-  }, [segmentUserIds]);
+    if (!hasSegmentResults) return null;
+    return new Set(segmentMembers.map((m) => m.id));
+  }, [hasSegmentResults, segmentMembers]);
 
-  // Wait for segment data before fetching paginated results (when segment is active)
-  const segmentReady = !assignRRMembersUsingSegment || segmentUserIds !== undefined;
-  const segmentHasNoMembers = assignRRMembersUsingSegment && segmentUserIds?.length === 0;
-  const activeMemberUserIds = assignRRMembersUsingSegment ? segmentUserIds : undefined;
-
-  // When assignAllTeamMembers is on (possibly unsaved), query all team members
+  // When assignAllTeamMembers ON + NO segment: load all team members.
+  const searchQueryEnabled = isOpen && assignAllTeamMembers && !!teamId && !hasSegmentResults;
   const {
-    members: allTeamMembers,
-    fetchNextPage: fetchNextTeamMembersPage,
-    hasNextPage: hasNextTeamMembersPage,
-    isFetchingNextPage: isFetchingNextTeamMembersPage,
-  } = useSearchTeamMembers({
-    teamId: teamId ?? 0,
-    search: searchQuery,
-    enabled: isOpen && assignAllTeamMembers && !!teamId && segmentReady && !segmentHasNoMembers,
-    memberUserIds: activeMemberUserIds,
+    data: searchData,
+    fetchNextPage: fetchNextSearchPage,
+    hasNextPage: hasNextSearchPage,
+    isFetchingNextPage: isFetchingNextSearchPage,
+    isPending: isSearchPending,
+  } = trpc.viewer.eventTypes.searchTeamMembers.useInfiniteQuery(
+    {
+      teamId: teamId ?? 0,
+      limit: 50,
+      search: debouncedSearch || undefined,
+    },
+    {
+      enabled: searchQueryEnabled,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      placeholderData: keepPreviousData,
+    }
+  );
+  const searchMembers = useMemo(
+    () => searchData?.pages.flatMap((page) => page.members) ?? [],
+    [searchData]
+  );
+
+  // When assignAllTeamMembers OFF: load all assigned hosts
+  const {
+    hosts: assignmentHosts,
+    fetchNextPage: fetchNextAssignmentPage,
+    hasNextPage: hasNextAssignmentPage,
+    isFetchingNextPage: isFetchingNextAssignmentPage,
+    isLoading: isLoadingAssignment,
+  } = usePaginatedAssignmentHosts({
+    eventTypeId,
+    pendingChanges,
+    search: debouncedSearch,
+    enabled: isOpen && !assignAllTeamMembers,
   });
 
-  // When assignAllTeamMembers is off, query only saved hosts
-  const {
-    data: hostsData,
-    fetchNextPage: fetchNextHostsPage,
-    hasNextPage: hasNextHostsPage,
-    isFetchingNextPage: isFetchingNextHostsPage,
-  } = trpc.viewer.eventTypes.getHostsForAssignment.useInfiniteQuery(
-    {
-      eventTypeId,
-      limit: 20,
-      search: searchQuery || undefined,
-      memberUserIds: activeMemberUserIds?.length ? activeMemberUserIds : undefined,
-    },
-    {
-      enabled: isOpen && !assignAllTeamMembers && eventTypeId > 0 && segmentReady && !segmentHasNoMembers,
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
+  // Auto-fetch all remaining pages so the dialog shows every member
+  useEffect(() => {
+    if (searchQueryEnabled && hasNextSearchPage && !isFetchingNextSearchPage) {
+      fetchNextSearchPage();
     }
-  );
+  }, [searchQueryEnabled, hasNextSearchPage, isFetchingNextSearchPage, fetchNextSearchPage]);
 
-  const savedHosts = useMemo(() => {
-    return hostsData?.pages.flatMap((page) => page.hosts) ?? [];
-  }, [hostsData]);
+  useEffect(() => {
+    if (isOpen && !assignAllTeamMembers && hasNextAssignmentPage && !isFetchingNextAssignmentPage) {
+      fetchNextAssignmentPage();
+    }
+  }, [isOpen, assignAllTeamMembers, hasNextAssignmentPage, isFetchingNextAssignmentPage, fetchNextAssignmentPage]);
 
-  // Unified pagination values based on mode
-  const fetchNextPage = assignAllTeamMembers ? fetchNextTeamMembersPage : fetchNextHostsPage;
-  const hasNextPage = assignAllTeamMembers ? hasNextTeamMembersPage : hasNextHostsPage;
-  const isFetchingNextPage = assignAllTeamMembers
-    ? isFetchingNextTeamMembersPage
-    : isFetchingNextHostsPage;
-
-  useFetchMoreOnScroll(
-    scrollContainerRef as React.RefObject<HTMLDivElement>,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage
-  );
+  const isLoading = assignAllTeamMembers
+    ? (isSegmentQueryEnabled && isSegmentPending) ||
+      (searchQueryEnabled && (isSearchPending || hasNextSearchPage))
+    : isLoadingAssignment || hasNextAssignmentPage;
 
   // Build a map of current RR host weights from form state for quick lookup
   const hostWeightsMap = useMemo(() => {
@@ -249,40 +262,63 @@ export const EditWeightsForAllTeamMembers = ({
     setIsOpen(false);
   };
 
-  // Normalize both data sources into WeightMember for display
-  // Segment filtering is now handled server-side via memberUserIds
+  // Normalize data into WeightMember for display
   const displayMembers = useMemo((): WeightMember[] => {
+    let members: WeightMember[];
+
     if (assignAllTeamMembers) {
-      return allTeamMembers
-        .filter((m) => hostWeightsMap.has(m.userId))
-        .map((m) => ({
+      if (hasSegmentResults) {
+        // Segment loads all at once — filter client-side by search
+        members = segmentMembers.map((m) => ({
+          value: String(m.id),
+          label: m.name || m.email || "",
+          avatar: "",
+          email: m.email,
+          weight: localWeights[String(m.id)] ?? hostWeightsMap.get(m.id) ?? 100,
+        }));
+      } else {
+        // No segment — searchTeamMembers handles search server-side
+        members = searchMembers.map((m) => ({
           value: String(m.userId),
           label: m.name || m.email || "",
           avatar: m.avatarUrl || "",
           email: m.email,
           weight: localWeights[String(m.userId)] ?? hostWeightsMap.get(m.userId) ?? 100,
         }));
-    }
-
-    return savedHosts
-      .filter((h) => !h.isFixed)
-      .map((h) => ({
+      }
+    } else {
+      // assignAllTeamMembers OFF: assignmentHosts handles search server-side
+      const rrHosts = assignmentHosts.filter((h) => !h.isFixed);
+      members = rrHosts.map((h) => ({
         value: String(h.userId),
         label: h.name || h.email || "",
         avatar: h.avatarUrl || "",
-        email: h.email,
+        email: h.email || "",
         weight: localWeights[String(h.userId)] ?? h.weight ?? 100,
       }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignAllTeamMembers, allTeamMembers, savedHosts, hostWeightsMap, localWeights]);
+    }
+
+    // Client-side search for segment path (loaded all at once)
+    if (hasSegmentResults && debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      return members.filter((m) => m.label.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
+    }
+
+    return members;
+  }, [assignAllTeamMembers, hasSegmentResults, segmentMembers, searchMembers, assignmentHosts, hostWeightsMap, localWeights, debouncedSearch]);
 
   // Unified list for CSV upload lookup
   const loadedMembers = useMemo(() => {
     if (assignAllTeamMembers) {
-      return allTeamMembers.map((m) => ({ userId: m.userId, email: m.email }));
+      if (hasSegmentResults) {
+        return segmentMembers.map((m) => ({ userId: m.id, email: m.email }));
+      }
+      return searchMembers.map((m) => ({ userId: m.userId, email: m.email }));
     }
-    return savedHosts.map((h) => ({ userId: h.userId, email: h.email }));
-  }, [assignAllTeamMembers, allTeamMembers, savedHosts]);
+    return assignmentHosts
+      .filter((h) => !h.isFixed)
+      .map((h) => ({ userId: h.userId, email: h.email }));
+  }, [assignAllTeamMembers, hasSegmentResults, segmentMembers, searchMembers, assignmentHosts]);
 
   const utils = trpc.useUtils();
   const [isDownloading, setIsDownloading] = useState(false);
@@ -378,7 +414,7 @@ export const EditWeightsForAllTeamMembers = ({
         {t("edit_team_member_weights")}
       </Button>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <form className="flex h-full flex-col">
+        <div className="flex h-full flex-col">
           <SheetContent>
             <SheetHeader>
               <SheetTitle>{t("edit_team_member_weights")}</SheetTitle>
@@ -399,7 +435,7 @@ export const EditWeightsForAllTeamMembers = ({
               </div>
             </SheetHeader>
 
-            <SheetBody className="mt-4 flex h-full flex-col stack-y-6 p-1">
+            <SheetBody className="mt-4 flex flex-col stack-y-6 p-1">
               <div className="flex justify-start gap-2">
                 <label className={buttonClasses({ color: "secondary" })}>
                   <Icon name="upload" className="mr-2 h-4 w-4" />
@@ -424,16 +460,14 @@ export const EditWeightsForAllTeamMembers = ({
                 }
               />
 
-              <div
-                ref={scrollContainerRef}
-                className="flex max-h-[80dvh] flex-col overflow-y-auto rounded-md border">
+              <div className="flex flex-col rounded-md border">
                 {displayMembers.map((member) => (
                   <TeamMemberItem key={member.value} member={member} onWeightChange={handleWeightChange} />
                 ))}
-                {isFetchingNextPage && (
+                {isLoading && (
                   <div className="text-subtle py-2 text-center text-sm">{t("loading")}</div>
                 )}
-                {displayMembers.length === 0 && !isFetchingNextPage && (
+                {displayMembers.length === 0 && !isLoading && (
                   <div className="text-subtle py-4 text-center text-sm">{t("no_members_found")}</div>
                 )}
               </div>
@@ -477,7 +511,7 @@ export const EditWeightsForAllTeamMembers = ({
               <Button onClick={handleSave}>{t("done")}</Button>
             </SheetFooter>
           </SheetContent>
-        </form>
+        </div>
       </Sheet>
     </>
   );
