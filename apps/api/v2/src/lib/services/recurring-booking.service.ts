@@ -1,15 +1,21 @@
 import { BookingEventHandlerService } from "@/lib/services/booking-event-handler.service";
 import { RegularBookingService } from "@/lib/services/regular-booking.service";
+import { PrismaFeaturesRepository } from "@/lib/repositories/prisma-features.repository";
 import { Injectable } from "@nestjs/common";
 
 import { RecurringBookingService as BaseRecurringBookingService } from "@calcom/platform-libraries/bookings";
 
 @Injectable()
 export class RecurringBookingService extends BaseRecurringBookingService {
-  constructor(regularBookingService: RegularBookingService, bookingEventHandler: BookingEventHandlerService) {
+  constructor(
+    regularBookingService: RegularBookingService,
+    bookingEventHandler: BookingEventHandlerService,
+    featuresRepository: PrismaFeaturesRepository
+  ) {
     super({
       regularBookingService,
       bookingEventHandler,
+      featuresRepository,
     });
   }
 }
