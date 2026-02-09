@@ -12,6 +12,7 @@ export const apiHandlers = {
   campfire: import("./campfire/api"),
   closecom: import("./closecom/api"),
   databuddy: import("./databuddy/api"),
+  deel: import("./deel/api"),
   demodesk: import("./demodesk/api"),
   dialpad: import("./dialpad/api"),
   discord: import("./discord/api"),

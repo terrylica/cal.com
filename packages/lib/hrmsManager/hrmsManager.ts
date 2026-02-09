@@ -55,9 +55,4 @@ export default class HrmsManager {
     const hrmsService = await this.getHrmsService();
     return hrmsService.listOOOReasons(userEmail);
   }
-
-  async uninstall(): Promise<void> {
-    const hrmsService = await this.getHrmsService();
-    return hrmsService.uninstall();
-  }
 }

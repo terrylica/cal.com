@@ -10,7 +10,6 @@ export const REDIRECT_APPS = [
   "chatbase",
   "clic",
   "cron",
-  "deel",
   "elevenlabs",
   "fonio-ai",
   "framer",
