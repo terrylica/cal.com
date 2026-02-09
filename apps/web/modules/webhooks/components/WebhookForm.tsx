@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import Link from "next/link";
+import { ExternalLinkIcon, TrashIcon } from "lucide-react";
 
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
+import {
+  WEBHOOK_VERSION_OPTIONS,
+  getWebhookVersionDocsUrl,
+  getWebhookVersionLabel,
+} from "@calcom/features/webhooks/lib/constants";
 import customTemplate, { hasTemplateIntegration } from "@calcom/features/webhooks/lib/integrationTemplate";
 import { WebhookVersion } from "@calcom/features/webhooks/lib/interface/IWebhookRepository";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -11,15 +18,46 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { TimeUnit, WebhookTriggerEvents } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
-import { Select } from "@calcom/ui/components/form";
-import { TextArea } from "@calcom/ui/components/form";
 import { ToggleGroup } from "@calcom/ui/components/form";
 import { Form } from "@calcom/ui/components/form";
 import { Label } from "@calcom/ui/components/form";
-import { TextField } from "@calcom/ui/components/form";
-import { Switch } from "@calcom/ui/components/form";
 
-import { TimeTimeUnitInput } from "~/ee/workflows/components/TimeTimeUnitInput";
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxPopup,
+  ComboboxValue,
+  ComboboxClear,
+} from "@coss/ui/components/combobox";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@coss/ui/components/field";
+import { Button as CossButton } from "@coss/ui/components/button";
+import {
+  Collapsible,
+  CollapsiblePanel,
+  CollapsibleTrigger,
+} from "@coss/ui/components/collapsible";
+import { Group, GroupSeparator } from "@coss/ui/components/group";
+import { Input } from "@coss/ui/components/input";
+import {
+  NumberField,
+  NumberFieldGroup,
+  NumberFieldInput,
+} from "@coss/ui/components/number-field";
+import { ScrollArea } from "@coss/ui/components/scroll-area";
+import {
+  Select,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
+} from "@coss/ui/components/select";
+import { Textarea } from "@coss/ui/components/textarea";
+import { Switch } from "@coss/ui/components/switch";
 
 import WebhookTestDisclosure from "./WebhookTestDisclosure";
 
@@ -264,6 +302,15 @@ const WebhookForm = (props: {
   const { t } = useLocale();
   const webhookVariables = getWebhookVariables(t);
 
+  const webhookVersionItems = useMemo(
+    () =>
+      WEBHOOK_VERSION_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+      })),
+    []
+  );
+
   const triggerOptions = overrideTriggerOptions
     ? [...overrideTriggerOptions]
     : [...WEBHOOK_TRIGGER_EVENTS_GROUPED_BY_APP_V2["core"]];
@@ -317,9 +364,6 @@ const WebhookForm = (props: {
   const hasUrl = !!subscriberUrl;
   const showTimeSection = needsTime;
 
-  const [useCustomTemplate, setUseCustomTemplate] = useState(
-    props?.webhook?.payloadTemplate !== undefined && props?.webhook?.payloadTemplate !== null
-  );
 
   function insertVariableIntoTemplate(current: string, name: string, value: string): string {
     try {
@@ -342,6 +386,9 @@ const WebhookForm = (props: {
     }
   }
 
+  const [customPayloadOpen, setCustomPayloadOpen] = useState(
+    props?.webhook?.payloadTemplate !== undefined && props?.webhook?.payloadTemplate !== null
+  );
   const [showVariables, setShowVariables] = useState(false);
   const [newSecret, setNewSecret] = useState("");
   const [changeSecret, setChangeSecret] = useState<boolean>(false);
@@ -368,72 +415,61 @@ const WebhookForm = (props: {
     <Form
       form={formMethods}
       handleSubmit={(values) => props.onSubmit({ ...values, changeSecret, newSecret })}>
-      <div className="border-subtle border p-6">
+      <div className="flex flex-col gap-6">
         <Controller
           name="subscriberUrl"
           control={formMethods.control}
           render={({ field: { value } }) => (
-            <>
-              <TextField
-                name="subscriberUrl"
-                label={t("subscriber_url")}
-                labelClassName="font-medium text-emphasis font-sm"
+            <Field name="subscriberUrl">
+              <FieldLabel>{t("subscriber_url")}</FieldLabel>
+              <Input
+                placeholder="https://example.com/webhook"
+                type="url"
                 value={value}
                 required
-                type="url"
                 onChange={(e) => {
                   formMethods.setValue("subscriberUrl", e?.target.value, { shouldDirty: true });
                   if (hasTemplateIntegration({ url: e.target.value })) {
-                    setUseCustomTemplate(true);
+                    setCustomPayloadOpen(true);
                     formMethods.setValue("payloadTemplate", customTemplate({ url: e.target.value }), {
                       shouldDirty: true,
                     });
                   }
                 }}
               />
-            </>
+            </Field>
           )}
         />
         <Controller
           name="active"
           control={formMethods.control}
           render={({ field: { value } }) => (
-            <div className="font-sm text-emphasis mt-6 font-medium">
-              <Switch
-                label={t("enable_webhook")}
-                checked={value}
-                // defaultChecked={props?.webhook?.active ? props?.webhook?.active : true}
-                onCheckedChange={(value) => {
-                  formMethods.setValue("active", value, { shouldDirty: true });
-                }}
-              />
-            </div>
+            <Field>
+              <FieldLabel>
+                <Switch
+                  checked={value}
+                  onCheckedChange={(value) => {
+                    formMethods.setValue("active", value, { shouldDirty: true });
+                  }}
+                />
+                {t("enable_webhook")}
+              </FieldLabel>
+            </Field>
           )}
         />
         <Controller
           name="eventTriggers"
           control={formMethods.control}
           render={({ field: { onChange, value } }) => {
-            const selectValue = translatedTriggerOptions.filter((option) => value.includes(option.value));
+            const selectedItems = translatedTriggerOptions.filter((option) => value.includes(option.value));
             return (
-              <div className="mt-6">
-                <Label className="font-sm text-emphasis font-medium">
-                  <>{t("event_triggers")}</>
-                </Label>
-                <Select
-                  grow
-                  options={translatedTriggerOptions}
-                  isMulti
-                  styles={{
-                    indicatorsContainer: (base) =>
-                      Object.assign({}, base, {
-                        alignItems: "flex-start",
-                      }),
-                  }}
-                  value={selectValue}
-                  onChange={(event) => {
-                    onChange(event.map((selection) => selection.value));
-                    const noShowWebhookTriggerExists = !!event.find(
+              <Field>
+                <FieldLabel>{t("event_triggers")}</FieldLabel>
+                <Combobox
+                  value={selectedItems}
+                  onValueChange={(newValue) => {
+                    onChange(newValue.map((item) => item.value));
+                    const noShowWebhookTriggerExists = !!newValue.find(
                       (trigger) =>
                         trigger.value === WebhookTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW ||
                         trigger.value === WebhookTriggerEvents.AFTER_GUESTS_CAL_VIDEO_NO_SHOW
@@ -449,158 +485,333 @@ const WebhookForm = (props: {
                       formMethods.setValue("timeUnit", undefined, { shouldDirty: true });
                     }
                   }}
-                />
-              </div>
+                  items={translatedTriggerOptions}
+                  multiple
+                >
+                  <ComboboxChips>
+                    <ComboboxValue>
+                      {(selectedValues: { value: WebhookTriggerEvents; label: string }[]) => (
+                        <>
+                          {selectedValues?.map((item) => (
+                            <ComboboxChip aria-label={item.label} key={item.value}>
+                              {item.label}
+                            </ComboboxChip>
+                          ))}
+                          <ComboboxChipsInput
+                            aria-label={t("event_triggers")}
+                            placeholder={
+                              selectedValues.length > 0
+                                ? undefined
+                                : t("select_event_triggers", "Select event triggers…")
+                            }
+                          />
+                        </>
+                      )}
+                    </ComboboxValue>
+                  </ComboboxChips>
+                  <ComboboxPopup>
+                    <ComboboxEmpty>{t("no_event_triggers_found", "No event triggers found.")}</ComboboxEmpty>
+                    <ComboboxList>
+                      {(item: { value: WebhookTriggerEvents; label: string }) => (
+                        <ComboboxItem key={item.value} value={item}>
+                          {item.label}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxPopup>
+                  <ComboboxClear render={<CossButton size="xs" variant="outline" />}>
+                    <TrashIcon />
+                    Clear all triggers
+                  </ComboboxClear>
+                </Combobox>
+              </Field>
             );
           }}
         />
 
         {showTimeSection && (
-          <div className="mt-5">
-            <Label>{t("how_long_after_user_no_show_minutes")}</Label>
-            <TimeTimeUnitInput disabled={false} defaultTime={5} />
-          </div>
+          <Controller
+            name="time"
+            control={formMethods.control}
+            render={({ field: { value: timeValue, onChange: onTimeChange } }) => (
+              <Controller
+                name="timeUnit"
+                control={formMethods.control}
+                render={({ field: { value: timeUnitValue, onChange: onTimeUnitChange } }) => {
+                  const TIME_UNITS = [TimeUnit.MINUTE, TimeUnit.HOUR, TimeUnit.DAY] as const;
+                  const timeUnitItems = useMemo(
+                    () =>
+                      TIME_UNITS.map((unit) => ({
+                        value: unit,
+                        label: t(`${unit.toLowerCase()}_timeUnit`),
+                      })),
+                    [t]
+                  );
+
+                  const selectedTimeUnitItem = useMemo(
+                    () => timeUnitItems.find((item) => item.value === timeUnitValue) ?? timeUnitItems[2],
+                    [timeUnitItems, timeUnitValue]
+                  );
+
+                  return (
+                    <Field>
+                      <FieldLabel>
+                        How long after the users don&apos;t show up on cal video meeting?
+                      </FieldLabel>
+                      <Group
+                        aria-label="How long after the users don't show up on cal video meeting?"
+                        className="w-full"
+                      >
+                        <NumberField
+                          aria-label="Duration"
+                          className="gap-0"
+                          value={timeValue ?? 5}
+                          min={0}
+                          onValueChange={(newValue) => {
+                            const value = newValue ?? 5;
+                            onTimeChange(value);
+                            formMethods.setValue("time", value, { shouldDirty: true });
+                          }}
+                          render={<NumberFieldGroup />}
+                        >
+                          <NumberFieldInput className="text-left" />
+                        </NumberField>
+                        <GroupSeparator />
+                        <Select
+                          value={selectedTimeUnitItem}
+                          onValueChange={(newValue) => {
+                            if (!newValue) return;
+                            onTimeUnitChange(newValue.value);
+                            formMethods.setValue("timeUnit", newValue.value, { shouldDirty: true });
+                          }}
+                          items={timeUnitItems}
+                        >
+                          <SelectTrigger className="w-fit min-w-none">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectPopup>
+                            {timeUnitItems.map((item) => (
+                              <SelectItem key={item.value} value={item}>
+                                {item.label}
+                              </SelectItem>
+                            ))}
+                          </SelectPopup>
+                        </Select>
+                      </Group>
+                    </Field>
+                  );
+                }}
+              />
+            )}
+          />
         )}
 
         <Controller
           name="secret"
           control={formMethods.control}
           render={({ field: { value } }) => (
-            <div className="mt-6">
-              {!!hasSecretKey && !changeSecret && (
-                <>
-                  <Label className="font-sm text-emphasis font-medium">Secret</Label>
-                  <div className="bg-default stack-y-0 rounded-md border-0 border-neutral-200 sm:mx-0 md:border">
-                    <div className="text-emphasis rounded-sm border-b p-2 text-sm">
-                      {t("forgotten_secret_description")}
-                    </div>
-                    <div className="p-2">
-                      <Button
-                        color="secondary"
-                        type="button"
-                        onClick={() => {
+            <div>
+              {!!hasSecretKey ? (
+                <Field>
+                  <FieldLabel>{t("secret")}</FieldLabel>
+                  <div className="flex w-full gap-2">
+                    <Input
+                      autoComplete="off"
+                      type={changeSecret ? "text" : "password"}
+                      value={changeSecret ? newSecret : "••••••••••••"}
+                      readOnly={!changeSecret}
+                      disabled={!changeSecret}
+                      onChange={
+                        changeSecret
+                          ? (event) => {
+                              setNewSecret(event.currentTarget.value);
+                              formMethods.setValue("secret", event.currentTarget.value, { shouldDirty: true });
+                            }
+                          : undefined
+                      }
+                      placeholder={changeSecret ? t("leave_blank_to_remove_secret") : undefined}
+                      className="flex-1"
+                    />
+                    <CossButton
+                      variant="outline"
+                      onClick={() => {
+                        if (changeSecret) {
+                          setChangeSecret(false);
+                          setNewSecret("");
+                        } else {
+                          const currentSecret = value || props?.webhook?.secret || "";
+                          setNewSecret(currentSecret);
                           setChangeSecret(true);
-                        }}>
-                        {t("change_secret")}
-                      </Button>
-                    </div>
+                        }
+                      }}>
+                      {changeSecret ? t("cancel") : t("edit")}
+                    </CossButton>
                   </div>
-                </>
-              )}
-              {!!hasSecretKey && changeSecret && (
-                <>
-                  <TextField
-                    autoComplete="off"
-                    label={t("secret")}
-                    labelClassName="font-medium text-emphasis font-sm"
-                    {...formMethods.register("secret")}
-                    value={newSecret}
-                    onChange={(event) => setNewSecret(event.currentTarget.value)}
+                  <FieldDescription>{t("forgotten_secret_description")}</FieldDescription>
+                </Field>
+              ) : (
+                <Field>
+                  <FieldLabel>{t("secret")}</FieldLabel>
+                  <Input
                     type="text"
-                    placeholder={t("leave_blank_to_remove_secret")}
+                    value={value ?? ""}
+                    onChange={(e) => {
+                      formMethods.setValue("secret", e?.target.value, { shouldDirty: true });
+                    }}
                   />
-                  <Button
-                    color="secondary"
-                    type="button"
-                    className="py-1 text-xs"
-                    onClick={() => {
-                      setChangeSecret(false);
-                    }}>
-                    {t("cancel")}
-                  </Button>
-                </>
-              )}
-              {!hasSecretKey && (
-                <TextField
-                  name="secret"
-                  label={t("secret")}
-                  labelClassName="font-medium text-emphasis font-sm"
-                  value={value ?? ""}
-                  onChange={(e) => {
-                    formMethods.setValue("secret", e?.target.value, { shouldDirty: true });
-                  }}
-                />
+                </Field>
               )}
             </div>
           )}
         />
 
         <Controller
+          name="version"
+          control={formMethods.control}
+          render={({ field: { value, onChange } }) => {
+            const selectedVersionItem =
+              webhookVersionItems.find((item) => item.value === value) ?? webhookVersionItems[0];
+
+            return (
+              <Field>
+                <FieldLabel>{t("webhook_version")}</FieldLabel>
+                <div className="flex items-center gap-2">
+                  <Select
+                    aria-label={t("webhook_version")}
+                    value={selectedVersionItem}
+                    onValueChange={(newValue) => {
+                      if (!newValue) return;
+                      onChange(newValue.value);
+                      formMethods.setValue("version", newValue.value, { shouldDirty: true });
+                    }}
+                    items={webhookVersionItems}
+                  >
+                    <SelectTrigger className="w-fit min-w-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      {webhookVersionItems.map((item) => (
+                        <SelectItem key={item.value} value={item}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </div>
+                <FieldDescription className="flex items-center gap-1">
+                  <Link href={getWebhookVersionDocsUrl(value)} target="_blank" rel="noopener noreferrer">
+                    {t("view_payload_docs_for_this_version", "View payload docs for this version")}
+                  </Link>
+                  <ExternalLinkIcon aria-hidden="true" className="size-3" />
+                </FieldDescription>
+              </Field>
+            );
+          }}
+        />
+
+        <Controller
           name="payloadTemplate"
           control={formMethods.control}
-          render={({ field: { value } }) => (
-            <>
-              <Label className="font-sm text-emphasis mt-6">
-                <>{t("payload_template")}</>
-              </Label>
-              <div className="mb-2">
-                <ToggleGroup
-                  onValueChange={(val) => {
-                    if (val === "default") {
-                      setUseCustomTemplate(false);
-                      formMethods.setValue("payloadTemplate", undefined, { shouldDirty: true });
-                    } else {
-                      setUseCustomTemplate(true);
-                    }
-                  }}
-                  value={useCustomTemplate ? "custom" : "default"}
-                  options={[
-                    { value: "default", label: t("default") },
-                    { value: "custom", label: t("custom") },
-                  ]}
-                  isFullWidth={true}
-                />
-              </div>
-              {useCustomTemplate && (
-                <div className="stack-y-3">
-                  <TextArea
-                    name="customPayloadTemplate"
-                    rows={8}
-                    value={value || ""}
-                    placeholder={`{\n\n}`}
-                    onChange={(e) =>
-                      formMethods.setValue("payloadTemplate", e?.target.value, { shouldDirty: true })
-                    }
-                  />
+          render={({ field: { value } }) => {
+            // Flatten webhookVariables into a single array for payloadVariables
+            const payloadVariables = webhookVariables.flatMap(({ variables }) =>
+              variables.map(({ name, variable, description }) => ({
+                name,
+                variable: `{{${variable}}}`,
+                description,
+              }))
+            );
 
-                  <Button type="button" color="secondary" onClick={() => setShowVariables(!showVariables)}>
-                    {showVariables ? t("webhook_hide_variables") : t("webhook_show_variable")}
-                  </Button>
-
-                  {showVariables && (
-                    <div className="border-muted max-h-80 overflow-y-auto rounded-md border p-3">
-                      {webhookVariables.map(({ category, variables }) => (
-                        <div key={category} className="mb-4">
-                          <h4 className="mb-2 text-sm font-medium">{category}</h4>
-                          <div className="stack-y-2">
-                            {variables.map(({ name, variable, description }) => (
-                              <div
-                                key={name}
-                                className="hover:bg-cal-muted cursor-pointer rounded p-2 text-sm transition-colors"
-                                onClick={() => {
-                                  const currentValue = formMethods.getValues("payloadTemplate") || "{}";
-                                  const updatedValue = insertVariableIntoTemplate(
-                                    currentValue,
-                                    name,
-                                    variable
-                                  );
-                                  formMethods.setValue("payloadTemplate", updatedValue, {
-                                    shouldDirty: true,
-                                  });
-                                }}>
-                                <div className="text-emphasis font-mono">{variable}</div>
-                                <div className="text-muted mt-1 text-xs">{description}</div>
+            return (
+              <Collapsible onOpenChange={setCustomPayloadOpen} open={customPayloadOpen}>
+                <Field>
+                  <FieldLabel>
+                    <CollapsibleTrigger
+                      nativeButton={false}
+                      render={
+                        <Switch
+                          checked={customPayloadOpen}
+                          onCheckedChange={(checked) => {
+                            setCustomPayloadOpen(checked);
+                            if (!checked) {
+                              formMethods.setValue("payloadTemplate", undefined, { shouldDirty: true });
+                            }
+                          }}
+                        />
+                      }
+                    />
+                    {t("custom_payload_template", "Custom Payload Template")}
+                  </FieldLabel>
+                </Field>
+                <CollapsiblePanel>
+                  <div className="mt-4 flex flex-col items-start gap-2">
+                    <Textarea
+                      className="font-mono"
+                      placeholder={"{\n  \n}"} rows={4}
+                      value={value || ""}
+                      onChange={(e) =>
+                        formMethods.setValue("payloadTemplate", e?.target.value, { shouldDirty: true })
+                      }
+                    />
+                    <Collapsible className="w-full" onOpenChange={setShowVariables} open={showVariables}>
+                      <CollapsibleTrigger
+                        render={
+                          <CossButton size="sm" variant="outline">
+                            {showVariables
+                              ? t("webhook_hide_variables", "Hide available variables")
+                              : t("webhook_show_variable", "Show available variables")}
+                          </CossButton>
+                        }
+                      />
+                      <CollapsiblePanel>
+                        <ScrollArea
+                          className="mt-4 h-64 rounded-lg border border-input"
+                          scrollbarGutter
+                          scrollFade
+                        >
+                          <div className="p-2">
+                            {webhookVariables.map(({ category, variables }) => (
+                              <div key={category}>
+                                <p className="my-1 px-[calc(--spacing(2)+1px)] font-medium text-sm">
+                                  {category}
+                                </p>
+                                <ul>
+                                  {variables.map(({ name, variable, description }) => (
+                                    <li key={name}>
+                                      <CossButton
+                                        className="h-auto! w-full flex-col items-start gap-0.5 px-2 py-1.5 text-left"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          const currentValue = formMethods.getValues("payloadTemplate") || "{}";
+                                          const updatedValue = insertVariableIntoTemplate(
+                                            currentValue,
+                                            name,
+                                            variable
+                                          );
+                                          formMethods.setValue("payloadTemplate", updatedValue, {
+                                            shouldDirty: true,
+                                          });
+                                        }}
+                                      >
+                                        <span className="font-mono text-xs">{variable}</span>
+                                        <span className="font-normal text-muted-foreground text-xs">
+                                          {description}
+                                        </span>
+                                      </CossButton>
+                                    </li>
+                                  ))}
+                                </ul>
                               </div>
                             ))}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
+                        </ScrollArea>
+                      </CollapsiblePanel>
+                    </Collapsible>
+                  </div>
+                </CollapsiblePanel>
+              </Collapsible>
+            );
+          }}
         />
       </div>
       <SectionBottomActions align="end" className="gap-2">
