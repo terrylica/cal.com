@@ -10,7 +10,7 @@ import { TimeUnit, WebhookTriggerEvents } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { Form } from "@calcom/ui/components/form";
 import { Button } from "@coss/ui/components/button";
-import { Card, CardFrame, CardFrameFooter, CardPanel } from "@coss/ui/components/card";
+import { Card, CardFrameFooter, CardPanel } from "@coss/ui/components/card";
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@coss/ui/components/collapsible";
 import {
   Combobox,
@@ -823,13 +823,7 @@ const WebhookForm = (props: {
         handleSubmit={(values) => props.onSubmit({ ...values, changeSecret, newSecret })}>
         <div className="flex flex-col gap-4">
           {props.headerWrapper(formMethods, cardContent)}
-          <CardFrame>
-            <Card>
-              <CardPanel>
-                <WebhookTestDisclosure />
-              </CardPanel>
-            </Card>
-          </CardFrame>
+          <WebhookTestDisclosure />
         </div>
       </Form>
     );
