@@ -19,7 +19,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   const { slug: teamSlug, type: meetingSlug } = paramsSchema.parse(context.params);
   const { duration: queryDuration } = context.query;
 
-  const { currentOrgDomain, isValidOrgDomain } = orgDomainConfig(context.req, context.params?.orgSlug);
+  const { currentOrgDomain, isValidOrgDomain, customDomain } = orgDomainConfig(context.req, context.params?.orgSlug);
 
   const team = await prisma.team.findFirst({
     where: {
@@ -58,6 +58,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       isTeamEvent: true,
       org,
       fromRedirectOfNonOrgLink: context.query.orgRedirection === "true",
+      isCustomDomain: !!customDomain,
     },
     session?.user?.id
   );
