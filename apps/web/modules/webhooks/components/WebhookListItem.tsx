@@ -16,7 +16,6 @@ import {
   ListItemBadges,
   ListItemContent,
   ListItemHeader,
-  ListItemTitle,
 } from "@coss/ui/components/list-item";
 import {
   Menu,
@@ -33,7 +32,7 @@ import { EllipsisIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
 import { useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 
-const MAX_BADGES_TWO_ROWS = 8;
+const MAX_BADGES_TWO_ROWS = 7;
 
 export default function WebhookListItem(props: {
   webhook: Webhook;
