@@ -11,6 +11,7 @@ vi.mock("@calcom/lib/logger", () => ({
   default: {
     getSubLogger: () => ({
       debug: vi.fn(),
+      info: vi.fn(),
       error: vi.fn(),
       warn: vi.fn(),
     }),
