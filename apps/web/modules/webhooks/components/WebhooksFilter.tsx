@@ -14,7 +14,7 @@ import {
   ComboboxTrigger,
 } from "@coss/ui/components/combobox";
 import { Group, GroupSeparator } from "@coss/ui/components/group";
-import { FilterIcon, ListFilterIcon, SearchIcon, XIcon } from "lucide-react";
+import { ListFilterIcon, SearchIcon, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type WebhookGroup = RouterOutputs["viewer"]["webhook"]["getByViewer"]["webhookGroups"][number];
@@ -80,21 +80,12 @@ export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }
   };
 
   const renderTriggerContent = () => {
-    if (selectedProfiles.length === 0) {
-      return <ListFilterIcon />;
-    }
-    const firstProfile = selectedProfiles[0];
-    const remainingCount = selectedProfiles.length - 1;
-
-    if (!firstProfile) return null;
-
     return (
       <>
-        <FilterIcon />
-        <span className="truncate">{firstProfile.label}</span>
-        {remainingCount > 0 && (
+        <ListFilterIcon />
+        {selectedProfiles.length > 0 && (
           <Badge className="tabular-nums" variant="secondary">
-            +{remainingCount}
+            {selectedProfiles.length}
           </Badge>
         )}
       </>
@@ -111,9 +102,7 @@ export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }
       open={open}
       value={selectedProfiles}>
       <ComboboxTrigger
-        render={
-          <Button size={selectedProfiles.length === 0 ? "icon" : "default"} variant="outline" />
-        }>
+        render={<Button size={selectedProfiles.length === 0 ? "icon" : "default"} variant="outline" />}>
         {renderTriggerContent()}
       </ComboboxTrigger>
       <ComboboxPopup align="end" aria-label="Select user">
