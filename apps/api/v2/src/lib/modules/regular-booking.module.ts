@@ -21,8 +21,6 @@ import { TaskerService } from "@/lib/services/tasker.service";
 import { PrismaModule } from "@/modules/prisma/prisma.module";
 import { Module, Scope } from "@nestjs/common";
 
-import { getWebhookProducer } from "@calcom/platform-libraries";
-
 /**
  * Injection token for IWebhookProducerService.
  * Used to bridge the Cal.com DI container into NestJS.
@@ -47,7 +45,10 @@ export const WEBHOOK_PRODUCER = "WEBHOOK_PRODUCER";
     },
     {
       provide: WEBHOOK_PRODUCER,
-      useFactory: () => getWebhookProducer(),
+      useFactory: () => {
+        const { getWebhookProducer } = require("@calcom/platform-libraries");
+        return getWebhookProducer();
+      },
     },
     BookingAuditProducerService,
     BookingEventHandlerService,
