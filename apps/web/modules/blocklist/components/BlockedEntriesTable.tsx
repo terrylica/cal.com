@@ -12,7 +12,7 @@ import { Button } from "@calcom/ui/components/button";
 import { ConfirmationDialogContent, Dialog } from "@calcom/ui/components/dialog";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 
-import type { BlocklistEntry, BlocklistPermissions, BlocklistScope } from "../types";
+import type { BlocklistEntry, BlocklistPermissions, BlocklistScope } from "@calcom/features/blocklist/types";
 import { useBlockedEntriesColumns } from "./BlockedEntriesColumns";
 import { BlocklistEntryDetailsSheet } from "./BlocklistEntryDetailsSheet";
 

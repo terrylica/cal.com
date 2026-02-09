@@ -10,7 +10,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { WatchlistType } from "@calcom/prisma/enums";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 
-import type { GroupedBookingReport, BlocklistScope } from "../types";
+import type { GroupedBookingReport, BlocklistScope } from "@calcom/features/blocklist/types";
 import { BookingReportDetailsModal } from "./BookingReportDetailsModal";
 import { usePendingReportsColumns } from "./PendingReportsColumns";
 
