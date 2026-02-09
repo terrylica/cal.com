@@ -492,7 +492,8 @@ export class EventTypesAtomService {
         isTeamEvent,
         orgSlug,
         this.dbRead.prisma as unknown as PrismaClient,
-        true
+        true,
+        false
       );
 
       const usernamePossiblyNotFromProfile = username && orgId && !event;

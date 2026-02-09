@@ -98,6 +98,7 @@ export class PrismaRoutingFormRepository {
             organization: {
               select: {
                 slug: true,
+                customDomain: { where: { verified: true }, select: { slug: true } },
               },
             },
           },
@@ -108,6 +109,7 @@ export class PrismaRoutingFormRepository {
             parent: {
               select: {
                 slug: true,
+                customDomain: { where: { verified: true }, select: { slug: true } },
               },
             },
             slug: true,

@@ -130,6 +130,7 @@ export const listMembersHandler = async ({ ctx, input }: ListMembersHandlerOptio
       if (member.customRoleId && customRoles[member.customRoleId]) {
         customRole = customRoles[member.customRoleId];
       }
+
       return {
         ...restUser,
         username: profile?.username ?? restUser.username,
@@ -141,7 +142,7 @@ export const listMembersHandler = async ({ ctx, input }: ListMembersHandlerOptio
         organization: profile?.organization,
         accepted: member.accepted,
         disableImpersonation: user.disableImpersonation,
-        bookerUrl: getBookerBaseUrlSync(profile?.organization?.slug || ""),
+        bookerUrl: getBookerBaseUrlSync(profile?.organization?.slug || "", { customDomain: profile?.organization?.customDomain?.slug }),
         teamId: member.teamId,
         lastActiveAt: member.user.lastActiveAt
           ? new Intl.DateTimeFormat(ctx.user.locale, {

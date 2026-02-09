@@ -105,6 +105,7 @@ const ProfileView = () => {
     ? `${getTeamUrlSync({
         orgSlug: team.parent ? team.parent.slug : null,
         teamSlug: team.slug,
+        customDomain: team.parent?.customDomain?.slug,
       })}`
     : "";
 
@@ -422,7 +423,7 @@ type FormValues = z.infer<typeof teamProfileFormSchema>;
                 data-testid="team-url"
                 addOnClassname="testid-leading-text-team-url"
                 addOnLeading={`${getTeamUrlSync(
-                  { orgSlug: team.parent ? team.parent.slug : null, teamSlug: null },
+                  { orgSlug: team.parent ? team.parent.slug : null, teamSlug: null, customDomain: team.parent?.customDomain?.slug },
                   {
                     protocol: false,
                   }

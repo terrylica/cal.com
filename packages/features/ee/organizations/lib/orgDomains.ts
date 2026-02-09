@@ -18,9 +18,10 @@ function isCustomDomainHostname(hostname: string): boolean {
     return false;
   }
 
-  const matchesAllowedHost = ALLOWED_HOSTNAMES.some(
-    (allowedHost) => host === allowedHost || host.endsWith(`.${allowedHost}`)
-  );
+  const matchesAllowedHost = ALLOWED_HOSTNAMES.some((allowedHost) => {
+    const allowedHostWithoutPort = allowedHost.split(":")[0].toLowerCase();
+    return host === allowedHostWithoutPort || host.endsWith(`.${allowedHostWithoutPort}`);
+  });
 
   return !matchesAllowedHost;
 }

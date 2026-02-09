@@ -226,7 +226,9 @@ export async function getTeamWithMembers(args: {
             .filter((membership) => membership.team.id !== teamOrOrg.id)
             .map((membership) => membership.team.slug)
         : null,
-      bookerUrl: getBookerBaseUrlSync(profile?.organization?.slug || ""),
+      bookerUrl: getBookerBaseUrlSync(profile?.organization?.slug || "", {
+        customDomain: profile?.organization?.customDomain?.slug,
+      }),
       connectedApps: !isTeamView
         ? credentials?.map((cred) => {
             const appSlug = cred.app?.slug;
@@ -348,6 +350,10 @@ export async function getTeamWithoutMembers(args: {
           isOrganization: true,
           logoUrl: true,
           metadata: true,
+          customDomain: {
+            where: { verified: true },
+            select: { slug: true },
+          },
         },
       },
       parentId: true,

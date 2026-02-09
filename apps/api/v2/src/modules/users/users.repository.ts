@@ -7,9 +7,13 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { CreationSource } from "@calcom/platform-libraries";
 import type { Profile, User, Team, Prisma } from "@calcom/prisma/client";
 
+type OrgWithCustomDomain = Pick<Team, "isPlatform" | "id" | "slug" | "name"> & {
+  customDomain?: { slug: string } | null;
+};
+
 export type UserWithProfile = User & {
-  movedToProfile?: (Profile & { organization: Pick<Team, "isPlatform" | "id" | "slug" | "name"> }) | null;
-  profiles?: (Profile & { organization: Pick<Team, "isPlatform" | "id" | "slug" | "name"> })[];
+  movedToProfile?: (Profile & { organization: OrgWithCustomDomain }) | null;
+  profiles?: (Profile & { organization: OrgWithCustomDomain })[];
 };
 
 @Injectable()
@@ -75,10 +79,10 @@ export class UsersRepository {
       },
       include: {
         movedToProfile: {
-          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true } } },
+          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true, customDomain: { where: { verified: true }, select: { slug: true } } } } },
         },
         profiles: {
-          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true } } },
+          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true, customDomain: { where: { verified: true }, select: { slug: true } } } } },
         },
       },
     });
@@ -96,10 +100,10 @@ export class UsersRepository {
       },
       include: {
         movedToProfile: {
-          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true } } },
+          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true, customDomain: { where: { verified: true }, select: { slug: true } } } } },
         },
         profiles: {
-          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true } } },
+          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true, customDomain: { where: { verified: true }, select: { slug: true } } } } },
         },
       },
     });
@@ -155,10 +159,10 @@ export class UsersRepository {
       },
       include: {
         movedToProfile: {
-          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true } } },
+          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true, customDomain: { where: { verified: true }, select: { slug: true } } } } },
         },
         profiles: {
-          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true } } },
+          include: { organization: { select: { isPlatform: true, name: true, slug: true, id: true, customDomain: { where: { verified: true }, select: { slug: true } } } } },
         },
       },
     });

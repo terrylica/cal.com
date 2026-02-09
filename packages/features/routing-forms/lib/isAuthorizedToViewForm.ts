@@ -6,7 +6,11 @@ type FormUser = {
   metadata: Prisma.JsonValue;
   movedToProfileId: number | null;
   profile: {
-    organization: { slug: string | null; requestedSlug: string | null } | null;
+    organization: {
+      slug: string | null;
+      requestedSlug: string | null;
+      customDomain?: { slug: string } | null;
+    } | null;
   };
   id: number;
 };
@@ -14,6 +18,7 @@ type FormUser = {
 type FormTeam = {
   parent: {
     slug: string | null;
+    customDomain?: { slug: string } | null;
   } | null;
 } | null;
 
@@ -31,15 +36,21 @@ export function isAuthorizedToViewFormOnOrgDomain({
     metadata: userMetadata.parse(user.metadata),
   };
   const orgSlug = formUser.profile.organization?.slug ?? formUser.profile.organization?.requestedSlug ?? null;
+  const orgCustomDomain = formUser.profile.organization?.customDomain?.slug ?? null;
   const teamOrgSlug = team?.parent?.slug ?? null;
+  const teamOrgCustomDomain = team?.parent?.customDomain?.slug ?? null;
 
   if (!currentOrgDomain) {
-    // If not on org domain, let's allow serving any form belong to any organization so that even if the form owner is migrate to an organization, old links for the form keep working
     return true;
-  } else if (currentOrgDomain === orgSlug || currentOrgDomain === teamOrgSlug) {
+  } else if (
     // If on org domain, allow if:
-    // 1. The form belongs to a user who is part of the organization (orgSlug matches)
-    // 2. The form belongs to a team that is part of the organization (teamOrgSlug matches)
+    // 1. The form belongs to a user who is part of the organization (orgSlug or orgCustomDomain matches)
+    // 2. The form belongs to a team that is part of the organization (teamOrgSlug or teamOrgCustomDomain matches)
+    currentOrgDomain === orgSlug ||
+    currentOrgDomain === teamOrgSlug ||
+    currentOrgDomain === orgCustomDomain ||
+    currentOrgDomain === teamOrgCustomDomain
+  ) {
     return true;
   }
   return false;

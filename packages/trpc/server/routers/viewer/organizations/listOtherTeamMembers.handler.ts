@@ -150,7 +150,9 @@ export const listOtherTeamMembers = async ({ ctx, input }: ListOptions) => {
     rows: enrichedMemberships.map((m) => {
       return {
         ...m,
-        bookerUrl: getBookerBaseUrlSync(m.user.profile?.organization?.slug || ""),
+        bookerUrl: getBookerBaseUrlSync(m.user.profile?.organization?.slug || "", {
+          customDomain: m.user.profile?.organization?.customDomain?.slug,
+        }),
       };
     }),
     nextCursor,

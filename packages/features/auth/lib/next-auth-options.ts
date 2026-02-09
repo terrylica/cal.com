@@ -644,7 +644,7 @@ export const getOptions = ({
                 name: profileOrg.name,
                 slug: profileOrg.slug ?? profileOrg.requestedSlug ?? "",
                 logoUrl: profileOrg.logoUrl,
-                fullDomain: getOrgFullOrigin(profileOrg.slug ?? profileOrg.requestedSlug ?? ""),
+                fullDomain: getOrgFullOrigin(profileOrg.customDomain?.slug ?? profileOrg.slug ?? profileOrg.requestedSlug ?? "", { isCustomDomain: !!profileOrg.customDomain?.slug }),
                 domainSuffix: subdomainSuffix(),
                 role: orgRole as MembershipRole, // It can't be undefined if we have a profileOrg
               }
