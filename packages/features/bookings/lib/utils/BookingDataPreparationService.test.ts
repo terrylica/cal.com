@@ -31,6 +31,10 @@ vi.mock("../handleNewBooking/validateEventLength", () => ({
   validateEventLength: vi.fn(),
 }));
 
+vi.mock("../handleNewBooking/validateRescheduleRestrictions", () => ({
+  validateRescheduleRestrictions: vi.fn(),
+}));
+
 vi.mock("@calcom/features/auth/lib/verifyCodeUnAuthenticated", () => ({
   verifyCodeUnAuthenticated: vi.fn(),
 }));
