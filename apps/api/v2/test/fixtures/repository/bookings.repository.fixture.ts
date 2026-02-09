@@ -1,8 +1,7 @@
+import type { Booking, Prisma, User } from "@calcom/prisma/client";
+import { TestingModule } from "@nestjs/testing";
 import { PrismaReadService } from "@/modules/prisma/prisma-read.service";
 import { PrismaWriteService } from "@/modules/prisma/prisma-write.service";
-import { TestingModule } from "@nestjs/testing";
-
-import type { Booking, User, Prisma } from "@calcom/prisma/client";
 
 export class BookingsRepositoryFixture {
   private prismaReadClient: PrismaReadService["prisma"];
@@ -39,5 +38,12 @@ export class BookingsRepositoryFixture {
 
   async deleteAllBookings(userId: User["id"], userEmail: User["email"]) {
     return this.prismaWriteClient.booking.deleteMany({ where: { userId, userPrimaryEmail: userEmail } });
+  }
+
+  async getAttendeesByBookingId(bookingId: Booking["id"]) {
+    return this.prismaReadClient.attendee.findMany({
+      where: { bookingId },
+      orderBy: { id: "asc" },
+    });
   }
 }
