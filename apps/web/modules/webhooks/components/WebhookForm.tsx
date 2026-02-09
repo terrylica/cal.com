@@ -16,10 +16,7 @@ import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { TimeUnit, WebhookTriggerEvents } from "@calcom/prisma/enums";
 import type { RouterOutputs } from "@calcom/trpc/react";
-import { Button } from "@calcom/ui/components/button";
-import { ToggleGroup } from "@calcom/ui/components/form";
 import { Form } from "@calcom/ui/components/form";
-import { Label } from "@calcom/ui/components/form";
 
 import {
   Combobox,
@@ -34,7 +31,7 @@ import {
   ComboboxClear,
 } from "@coss/ui/components/combobox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@coss/ui/components/field";
-import { Button as CossButton } from "@coss/ui/components/button";
+import { Button } from "@coss/ui/components/button";
 import {
   Collapsible,
   CollapsiblePanel,
@@ -57,6 +54,7 @@ import {
 } from "@coss/ui/components/select";
 import { Textarea } from "@coss/ui/components/textarea";
 import { Switch } from "@coss/ui/components/switch";
+import { Spinner } from "@coss/ui/components/spinner";
 
 import WebhookTestDisclosure from "./WebhookTestDisclosure";
 
@@ -518,7 +516,7 @@ const WebhookForm = (props: {
                       )}
                     </ComboboxList>
                   </ComboboxPopup>
-                  <ComboboxClear render={<CossButton size="xs" variant="outline" />}>
+                  <ComboboxClear render={<Button size="xs" variant="outline" />}>
                     <TrashIcon />
                     Clear all triggers
                   </ComboboxClear>
@@ -631,7 +629,7 @@ const WebhookForm = (props: {
                       placeholder={changeSecret ? t("leave_blank_to_remove_secret") : undefined}
                       className="flex-1"
                     />
-                    <CossButton
+                    <Button
                       variant="outline"
                       onClick={() => {
                         if (changeSecret) {
@@ -644,7 +642,7 @@ const WebhookForm = (props: {
                         }
                       }}>
                       {changeSecret ? t("cancel") : t("edit")}
-                    </CossButton>
+                    </Button>
                   </div>
                   <FieldDescription>{t("forgotten_secret_description")}</FieldDescription>
                 </Field>
@@ -755,11 +753,11 @@ const WebhookForm = (props: {
                     <Collapsible className="w-full" onOpenChange={setShowVariables} open={showVariables}>
                       <CollapsibleTrigger
                         render={
-                          <CossButton size="sm" variant="outline">
+                          <Button size="sm" variant="outline">
                             {showVariables
                               ? t("webhook_hide_variables", "Hide available variables")
                               : t("webhook_show_variable", "Show available variables")}
-                          </CossButton>
+                          </Button>
                         }
                       />
                       <CollapsiblePanel>
@@ -777,7 +775,7 @@ const WebhookForm = (props: {
                                 <ul>
                                   {variables.map(({ name, variable, description }) => (
                                     <li key={name}>
-                                      <CossButton
+                                      <Button
                                         className="h-auto! w-full flex-col items-start gap-0.5 px-2 py-1.5 text-left"
                                         variant="ghost"
                                         onClick={() => {
@@ -796,7 +794,7 @@ const WebhookForm = (props: {
                                         <span className="font-normal text-muted-foreground text-xs">
                                           {description}
                                         </span>
-                                      </CossButton>
+                                      </Button>
                                     </li>
                                   ))}
                                 </ul>
@@ -816,17 +814,19 @@ const WebhookForm = (props: {
       <SectionBottomActions align="end" className="gap-2">
         <Button
           type="button"
-          color="minimal"
+          variant="ghost"
           onClick={props.onCancel}
-          {...(!props.onCancel ? { href: `${WEBAPP_URL}/settings/developer/webhooks` } : {})}>
+          {...(!props.onCancel ? { href: `${WEBAPP_URL}/settings/developer/webhooks` } : {})}
+        >
           {t("cancel")}
         </Button>
         <Button
           type="submit"
           data-testid="create_webhook"
-          disabled={!canSubmit}
-          loading={formMethods.formState.isSubmitting}>
-          {props?.webhook?.id ? t("save") : t("create_webhook")}
+          disabled={!canSubmit || formMethods.formState.isSubmitting}
+        >
+          {formMethods.formState.isSubmitting && <Spinner className="absolute" />}
+          <span className={formMethods.formState.isSubmitting ? "invisible" : undefined}>{props?.webhook?.id ? t("save") : t("create_webhook")}</span>
         </Button>
       </SectionBottomActions>
 
