@@ -130,7 +130,7 @@ export default function WebhookListItem(props: {
               <TooltipTrigger
                 render={
                   <Switch
-                    checked={webhook.active}
+                    defaultChecked={webhook.active}
                     data-testid="webhook-switch"
                     disabled={!props.permissions.canEditWebhook}
                     onCheckedChange={(checked) =>
