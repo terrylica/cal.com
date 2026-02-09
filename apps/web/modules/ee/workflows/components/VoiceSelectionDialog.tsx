@@ -3,8 +3,8 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState, useCallback } from "react";
 
 import { DataTableProvider } from "@calcom/features/data-table";
-import { DataTableWrapper } from "~/data-table/components";
-import { useSegments } from "~/data-table/hooks/useSegments";
+import { DataTableWrapper } from "@calcom/web/modules/data-table/components";
+import { useSegments } from "@calcom/web/modules/data-table/hooks/useSegments";
 import { useVoicePreview } from "@calcom/features/ee/workflows/hooks/useVoicePreview";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";

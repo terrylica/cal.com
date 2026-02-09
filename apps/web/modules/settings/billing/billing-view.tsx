@@ -10,8 +10,8 @@ import { showToast } from "@calcom/ui/components/toast";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
-import BillingCredits from "~/settings/billing/components/BillingCredits";
-import { InvoicesTable } from "~/settings/billing/components/InvoicesTable";
+import BillingCredits from "@calcom/web/modules/settings/billing/components/BillingCredits";
+import { InvoicesTable } from "@calcom/web/modules/settings/billing/components/InvoicesTable";
 
 interface CtaRowProps {
   title: string;

@@ -1,6 +1,6 @@
 import { _generateMetadata, getTranslate } from "app/_utils";
 
-import SystemBlocklistView from "~/ee/organizations/admin/views/SystemBlocklistView";
+import SystemBlocklistView from "@calcom/web/modules/ee/organizations/admin/views/SystemBlocklistView";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
 export const generateMetadata = async () =>

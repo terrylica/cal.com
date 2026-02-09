@@ -13,7 +13,7 @@ import {
   ZDateRangeFilterValue,
   type FilterableColumn,
 } from "@calcom/features/data-table";
-import { useSegments } from "~/data-table/hooks/useSegments";
+import { useSegments } from "@calcom/web/modules/data-table/hooks/useSegments";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import type { FilterType } from "@calcom/types/data-table";
@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@calcom/ui/components/table/TableNew";
 
-import { DateRangeFilter } from "~/data-table/components";
+import { DateRangeFilter } from "@calcom/web/modules/data-table/components";
 
 import { InvoicesTableSkeleton } from "./InvoicesTableSkeleton";
 

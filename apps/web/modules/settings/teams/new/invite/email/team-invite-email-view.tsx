@@ -11,13 +11,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import { EmailInviteForm } from "~/onboarding/components/EmailInviteForm";
-import { OnboardingCard } from "~/onboarding/components/OnboardingCard";
-import { OnboardingLayout } from "~/onboarding/components/OnboardingLayout";
-import { OnboardingInviteBrowserView } from "~/onboarding/components/onboarding-invite-browser-view";
-import { RoleSelector } from "~/onboarding/components/RoleSelector";
-import { useCreateTeam } from "~/onboarding/hooks/useCreateTeam";
-import { type InviteRole, useOnboardingStore } from "~/onboarding/store/onboarding-store";
+import { EmailInviteForm } from "@calcom/web/modules/onboarding/components/EmailInviteForm";
+import { OnboardingCard } from "@calcom/web/modules/onboarding/components/OnboardingCard";
+import { OnboardingLayout } from "@calcom/web/modules/onboarding/components/OnboardingLayout";
+import { OnboardingInviteBrowserView } from "@calcom/web/modules/onboarding/components/onboarding-invite-browser-view";
+import { RoleSelector } from "@calcom/web/modules/onboarding/components/RoleSelector";
+import { useCreateTeam } from "@calcom/web/modules/onboarding/hooks/useCreateTeam";
+import { type InviteRole, useOnboardingStore } from "@calcom/web/modules/onboarding/store/onboarding-store";
 
 type TeamInviteEmailViewProps = {
   userEmail: string;

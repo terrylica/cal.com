@@ -10,7 +10,7 @@ import { Icon } from "@calcom/ui/components/icon";
 import { Logo } from "@calcom/ui/components/logo";
 import { showToast } from "@calcom/ui/components/toast";
 
-import { useOnboardingStore, type Invite } from "~/onboarding/store/onboarding-store";
+import { useOnboardingStore, type Invite } from "@calcom/web/modules/onboarding/store/onboarding-store";
 
 /**
  * Parse a CSV line handling quoted fields that may contain commas.

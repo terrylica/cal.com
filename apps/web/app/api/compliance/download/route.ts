@@ -6,7 +6,7 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
-import { COMPLIANCE_DOCUMENTS } from "~/settings/security/compliance/compliance-documents";
+import { COMPLIANCE_DOCUMENTS } from "@calcom/web/modules/settings/security/compliance/compliance-documents";
 
 const b2 = new B2({
   applicationKeyId: process.env.B2_APPLICATION_KEY_ID || "",

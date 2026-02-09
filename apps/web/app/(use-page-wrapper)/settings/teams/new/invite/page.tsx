@@ -7,7 +7,7 @@ import { APP_NAME } from "@calcom/lib/constants";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
-import { TeamInviteView } from "~/settings/teams/new/invite/team-invite-view";
+import { TeamInviteView } from "@calcom/web/modules/settings/teams/new/invite/team-invite-view";
 
 export const generateMetadata = async () => {
   return await _generateMetadata(

@@ -3,7 +3,7 @@ import { getTranslate } from "app/_utils";
 
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
-import ComplianceView from "~/settings/security/compliance-view";
+import ComplianceView from "@calcom/web/modules/settings/security/compliance-view";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

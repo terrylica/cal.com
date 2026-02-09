@@ -8,7 +8,7 @@ import {
 import { useBookerStoreContext } from "@calcom/features/bookings/Booker/BookerStoreProvider";
 import type { IUseBookingLoadingStates } from "../hooks/useBookings";
 import type { BookerEvent } from "@calcom/features/bookings/types";
-import type { Slot } from "~/schedules/lib/types";
+import type { Slot } from "@calcom/web/modules/schedules/lib/types";
 import { useNonEmptyScheduleDays } from "@calcom/web/modules/schedules/hooks/useNonEmptyScheduleDays";
 import { useSlotsForAvailableDates } from "@calcom/web/modules/schedules/hooks/useSlotsForDate";
 import { PUBLIC_INVALIDATE_AVAILABLE_SLOTS_ON_BOOKING_FORM } from "@calcom/lib/constants";

@@ -13,13 +13,13 @@ import { WipeMyCalActionButton } from "@calcom/web/components/apps/wipemycalothe
 import { getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useBookingFilters } from "~/bookings/hooks/useBookingFilters";
-import { useBookingListColumns } from "~/bookings/hooks/useBookingListColumns";
-import { useBookingListData } from "~/bookings/hooks/useBookingListData";
-import { useBookingStatusTab } from "~/bookings/hooks/useBookingStatusTab";
-import { useFacetedUniqueValues } from "~/bookings/hooks/useFacetedUniqueValues";
-import { useListAutoSelector } from "~/bookings/hooks/useListAutoSelector";
-import { DataTableFilters, DataTableSegment } from "~/data-table/components";
+import { useBookingFilters } from "@calcom/web/modules/bookings/hooks/useBookingFilters";
+import { useBookingListColumns } from "@calcom/web/modules/bookings/hooks/useBookingListColumns";
+import { useBookingListData } from "@calcom/web/modules/bookings/hooks/useBookingListData";
+import { useBookingStatusTab } from "@calcom/web/modules/bookings/hooks/useBookingStatusTab";
+import { useFacetedUniqueValues } from "@calcom/web/modules/bookings/hooks/useFacetedUniqueValues";
+import { useListAutoSelector } from "@calcom/web/modules/bookings/hooks/useListAutoSelector";
+import { DataTableFilters, DataTableSegment } from "@calcom/web/modules/data-table/components";
 import {
   BookingDetailsSheetStoreProvider,
   useBookingDetailsSheetStore,

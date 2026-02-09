@@ -7,7 +7,7 @@ import { prisma } from "@calcom/prisma";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { OrganizationMigrateTeamsView } from "~/onboarding/organization/migrate-teams/organization-migrate-teams-view";
+import { OrganizationMigrateTeamsView } from "@calcom/web/modules/onboarding/organization/migrate-teams/organization-migrate-teams-view";
 
 type PageProps = {
   searchParams: Promise<{ migrate?: string }>;

@@ -1,11 +1,11 @@
 "use client";
 
-import { FeaturesSettings } from "~/feature-opt-in/components/FeaturesSettings";
+import { FeaturesSettings } from "@calcom/web/modules/feature-opt-in/components/FeaturesSettings";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { ReactElement } from "react";
 
-import { useUserFeatureOptIn } from "~/feature-opt-in/hooks/useUserFeatureOptIn";
+import { useUserFeatureOptIn } from "@calcom/web/modules/feature-opt-in/hooks/useUserFeatureOptIn";
 
 const FeaturesView = (): ReactElement => {
   const { t } = useLocale();

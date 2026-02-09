@@ -1,11 +1,11 @@
 "use client";
 
-import { FeaturesSettings } from "~/feature-opt-in/components/FeaturesSettings";
+import { FeaturesSettings } from "@calcom/web/modules/feature-opt-in/components/FeaturesSettings";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { ReactElement } from "react";
 
-import { useTeamFeatureOptIn } from "~/feature-opt-in/hooks/useTeamFeatureOptIn";
+import { useTeamFeatureOptIn } from "@calcom/web/modules/feature-opt-in/hooks/useTeamFeatureOptIn";
 
 interface TeamFeaturesViewProps {
   teamId: number;

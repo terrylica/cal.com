@@ -12,12 +12,12 @@ import { Label, TextField, TextArea } from "@calcom/ui/components/form";
 import { ImageUploader } from "@calcom/ui/components/image-uploader";
 import { showToast } from "@calcom/ui/components/toast";
 
-import { OnboardingCard } from "~/onboarding/components/OnboardingCard";
-import { OnboardingLayout } from "~/onboarding/components/OnboardingLayout";
-import { OnboardingBrowserView } from "~/onboarding/components/onboarding-browser-view";
-import { useCreateTeam } from "~/onboarding/hooks/useCreateTeam";
-import { useOnboardingStore } from "~/onboarding/store/onboarding-store";
-import { ValidatedTeamSlug } from "~/onboarding/teams/details/validated-team-slug";
+import { OnboardingCard } from "@calcom/web/modules/onboarding/components/OnboardingCard";
+import { OnboardingLayout } from "@calcom/web/modules/onboarding/components/OnboardingLayout";
+import { OnboardingBrowserView } from "@calcom/web/modules/onboarding/components/onboarding-browser-view";
+import { useCreateTeam } from "@calcom/web/modules/onboarding/hooks/useCreateTeam";
+import { useOnboardingStore } from "@calcom/web/modules/onboarding/store/onboarding-store";
+import { ValidatedTeamSlug } from "@calcom/web/modules/onboarding/teams/details/validated-team-slug";
 
 type CreateNewTeamViewProps = {
   userEmail: string;

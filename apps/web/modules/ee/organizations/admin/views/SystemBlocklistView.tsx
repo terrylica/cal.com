@@ -12,7 +12,7 @@ import {
   type SortByOption,
 } from "@calcom/features/blocklist";
 import { DataTableProvider, useDataTable } from "@calcom/features/data-table";
-import { DataTableToolbar } from "~/data-table/components";
+import { DataTableToolbar } from "@calcom/web/modules/data-table/components";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";

@@ -10,8 +10,8 @@ import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppD
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { validStatuses } from "~/bookings/lib/validStatuses";
-import BookingsList from "~/bookings/views/bookings-view";
+import { validStatuses } from "@calcom/web/modules/bookings/lib/validStatuses";
+import BookingsList from "@calcom/web/modules/bookings/views/bookings-view";
 
 const querySchema = z.object({
   status: z.enum(validStatuses),

@@ -6,7 +6,7 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
-import { CreateNewTeamView, LayoutWrapper } from "~/settings/teams/new/create-new-team-view";
+import { CreateNewTeamView, LayoutWrapper } from "@calcom/web/modules/settings/teams/new/create-new-team-view";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

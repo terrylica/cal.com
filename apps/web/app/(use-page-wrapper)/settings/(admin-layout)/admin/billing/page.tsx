@@ -2,7 +2,7 @@ import { _generateMetadata, getTranslate } from "app/_utils";
 
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
-import AdminBillingView from "~/settings/admin/billing-view";
+import AdminBillingView from "@calcom/web/modules/settings/admin/billing-view";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

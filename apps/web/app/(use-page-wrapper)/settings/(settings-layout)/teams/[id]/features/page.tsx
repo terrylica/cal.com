@@ -12,7 +12,7 @@ import prisma from "@calcom/prisma";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
-import TeamFeaturesView from "~/settings/teams/[id]/features-view";
+import TeamFeaturesView from "@calcom/web/modules/settings/teams/[id]/features-view";
 
 type PageParams = { params: Promise<{ id: string }> };
 

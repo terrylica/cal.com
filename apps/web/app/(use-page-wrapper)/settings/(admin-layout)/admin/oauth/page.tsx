@@ -6,7 +6,7 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
-import OAuthClientsAdminView from "~/settings/admin/oauth-clients-admin-view";
+import OAuthClientsAdminView from "@calcom/web/modules/settings/admin/oauth-clients-admin-view";
 
 const Page = async () => {
   const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });

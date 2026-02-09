@@ -21,7 +21,7 @@ import { ProgressBar } from "@calcom/ui/components/progress-bar";
 import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 
-import { MemberInvitationModalWithoutMembers } from "~/ee/teams/components/MemberInvitationModal";
+import { MemberInvitationModalWithoutMembers } from "@calcom/web/modules/ee/teams/components/MemberInvitationModal";
 import { LearnMoreLink } from "@calcom/features/eventtypes/components/LearnMoreLink";
 
 import { BillingCreditsSkeleton } from "./BillingCreditsSkeleton";

@@ -9,7 +9,7 @@ import useMeQuery from "@calcom/trpc/react/hooks/useMeQuery";
 import { Button } from "@calcom/ui/components/button";
 import { hideProgressToast, showProgressToast, showToast } from "@calcom/ui/components/toast";
 import { useState } from "react";
-import { useBookingFilters } from "~/bookings/hooks/useBookingFilters";
+import { useBookingFilters } from "@calcom/web/modules/bookings/hooks/useBookingFilters";
 import type { BookingListingStatus } from "../types";
 
 type BookingOutput = RouterOutputs["viewer"]["bookings"]["get"]["bookings"][number];

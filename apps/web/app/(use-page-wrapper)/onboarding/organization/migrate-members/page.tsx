@@ -6,7 +6,7 @@ import { prisma } from "@calcom/prisma";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { OrganizationMigrateMembersView } from "~/onboarding/organization/migrate-members/organization-migrate-members-view";
+import { OrganizationMigrateMembersView } from "@calcom/web/modules/onboarding/organization/migrate-members/organization-migrate-members-view";
 
 export default async function MigrateMembersPage() {
   const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });

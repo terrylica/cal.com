@@ -6,8 +6,8 @@ import { _generateMetadata } from "app/_utils";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { getOrgMembersPageData } from "~/members/getOrgMembersPageData";
-import { MembersView } from "~/members/members-view";
+import { getOrgMembersPageData } from "@calcom/web/modules/members/getOrgMembersPageData";
+import { MembersView } from "@calcom/web/modules/members/members-view";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

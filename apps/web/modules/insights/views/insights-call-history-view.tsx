@@ -19,8 +19,8 @@ import {
   DataTableWrapper,
   DataTableToolbar,
   DataTableFilters,
-} from "~/data-table/components";
-import { useSegments } from "~/data-table/hooks/useSegments";
+} from "@calcom/web/modules/data-table/components";
+import { useSegments } from "@calcom/web/modules/data-table/hooks/useSegments";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import type {
   CallDetailsState,

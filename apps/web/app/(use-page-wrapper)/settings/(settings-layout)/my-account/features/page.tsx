@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 
 import { _generateMetadata } from "app/_utils";
 
-import FeaturesView from "~/settings/my-account/features-view";
+import FeaturesView from "@calcom/web/modules/settings/my-account/features-view";
 
 const generateMetadata = async (): Promise<Metadata> =>
   await _generateMetadata(

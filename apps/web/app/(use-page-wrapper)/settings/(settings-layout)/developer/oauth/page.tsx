@@ -6,7 +6,7 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 
-import OAuthClientsView from "~/settings/developer/oauth-clients-view";
+import OAuthClientsView from "@calcom/web/modules/settings/developer/oauth-clients-view";
 
 export const generateMetadata = async () =>
   await _generateMetadata(

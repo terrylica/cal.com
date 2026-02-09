@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { BookerLayoutSelector } from "~/settings/components/BookerLayoutSelector";
+import { BookerLayoutSelector } from "@calcom/web/modules/settings/components/BookerLayoutSelector";
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
 import ThemeLabel from "@calcom/features/settings/ThemeLabel";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
@@ -27,7 +27,7 @@ import { SettingsToggle, ColorPicker, Form } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
 import { useCalcomTheme } from "@calcom/ui/styles";
 
-import { UpgradeTeamsBadgeWebWrapper } from "~/billing/components/UpgradeTeamsBadgeWebWrapper";
+import { UpgradeTeamsBadgeWebWrapper } from "@calcom/web/modules/billing/components/UpgradeTeamsBadgeWebWrapper";
 
 const useBrandColors = (
   currentTheme: string | null,

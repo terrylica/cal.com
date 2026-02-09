@@ -19,7 +19,7 @@ import { Label } from "@coss/ui/components/label";
 import { useIsMobile } from "@coss/ui/hooks/use-mobile";
 import { useState } from "react";
 import type { UseFormSetValue } from "react-hook-form";
-import type { FormValues } from "~/settings/my-account/general-view";
+import type { FormValues } from "@calcom/web/modules/settings/my-account/general-view";
 
 interface TravelScheduleModalProps {
   open: boolean;

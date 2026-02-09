@@ -9,7 +9,7 @@ import {
   useColumnFilters,
   useDataTable,
 } from "@calcom/features/data-table";
-import { useSegments } from "~/data-table/hooks/useSegments";
+import { useSegments } from "@calcom/web/modules/data-table/hooks/useSegments";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import type { MemberPermissions } from "@calcom/features/pbac/lib/team-member-permissions";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -51,7 +51,7 @@ import {
   DataTableSelectionBar,
   DataTableToolbar,
   DataTableWrapper,
-} from "~/data-table/components";
+} from "@calcom/web/modules/data-table/components";
 import { DeleteBulkUsers } from "./BulkActions/DeleteBulkUsers";
 import { DynamicLink } from "./BulkActions/DynamicLink";
 import { EventTypesList } from "./BulkActions/EventTypesList";

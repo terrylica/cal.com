@@ -8,12 +8,12 @@ import { useFlags } from "@calcom/web/modules/feature-flags/hooks/useFlags";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 
-import { InviteOptions } from "~/onboarding/components/InviteOptions";
-import { OnboardingCard } from "~/onboarding/components/OnboardingCard";
-import { OnboardingLayout } from "~/onboarding/components/OnboardingLayout";
-import { OnboardingInviteBrowserView } from "~/onboarding/components/onboarding-invite-browser-view";
-import { useCreateTeam } from "~/onboarding/hooks/useCreateTeam";
-import { useOnboardingStore } from "~/onboarding/store/onboarding-store";
+import { InviteOptions } from "@calcom/web/modules/onboarding/components/InviteOptions";
+import { OnboardingCard } from "@calcom/web/modules/onboarding/components/OnboardingCard";
+import { OnboardingLayout } from "@calcom/web/modules/onboarding/components/OnboardingLayout";
+import { OnboardingInviteBrowserView } from "@calcom/web/modules/onboarding/components/onboarding-invite-browser-view";
+import { useCreateTeam } from "@calcom/web/modules/onboarding/hooks/useCreateTeam";
+import { useOnboardingStore } from "@calcom/web/modules/onboarding/store/onboarding-store";
 
 import { CSVUploadModal } from "./csv-upload-modal";
 

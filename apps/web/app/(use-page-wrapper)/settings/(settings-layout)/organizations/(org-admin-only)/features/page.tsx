@@ -7,7 +7,7 @@ import { Resource } from "@calcom/features/pbac/domain/types/permission-registry
 import { getResourcePermissions } from "@calcom/features/pbac/lib/resource-permissions";
 import { MembershipRole } from "@calcom/prisma/enums";
 
-import OrganizationFeaturesView from "~/ee/organizations/features-view";
+import OrganizationFeaturesView from "@calcom/web/modules/ee/organizations/features-view";
 
 import { validateUserHasOrg } from "../../actions/validateUserHasOrg";
 
