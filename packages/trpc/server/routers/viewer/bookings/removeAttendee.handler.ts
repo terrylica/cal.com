@@ -154,7 +154,6 @@ async function sendCancelledEmailToAttendee(
   } catch (error) {
     logger.error("Failed to send cancellation email to removed attendee", {
       error,
-      attendeeEmail: attendee.email,
     });
   }
 }
