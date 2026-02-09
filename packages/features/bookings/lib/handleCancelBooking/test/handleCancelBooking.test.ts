@@ -141,6 +141,9 @@ describe("Cancel Booking", () => {
       organizer,
       location: BookingLocations.CalVideo,
       subscriberUrl: "http://my-webhook.example.com",
+      metadata: {
+        videoCallUrl: "https://existing-daily-video-call-url.example.com",
+      },
       payload: {
         cancelledBy: organizer.email,
         organizer: {
@@ -271,6 +274,9 @@ describe("Cancel Booking", () => {
       organizer,
       location: BookingLocations.CalVideo,
       subscriberUrl: "http://my-webhook.example.com",
+      metadata: {
+        videoCallUrl: "https://existing-daily-video-call-url.example.com",
+      },
       payload: {
         cancelledBy: organizer.email,
         organizer: {
@@ -375,6 +381,9 @@ describe("Cancel Booking", () => {
             status: BookingStatus.ACCEPTED,
             startTime: `${plus1DateString}T05:00:00.000Z`,
             endTime: `${plus1DateString}T05:30:00.000Z`,
+            metadata: {
+              myCustomKey: "myCustomValue",
+            },
             attendees: [
               {
                 email: hostAttendee.email,
@@ -423,6 +432,9 @@ describe("Cancel Booking", () => {
       organizer,
       location: BookingLocations.CalVideo,
       subscriberUrl: "http://my-webhook.example.com",
+      metadata: {
+        myCustomKey: "myCustomValue",
+      },
       payload: {
         cancelledBy: organizer.email,
         organizer: {
@@ -1180,6 +1192,9 @@ describe("Cancel Booking", () => {
       },
       location: BookingLocations.CalVideo,
       subscriberUrl: "http://my-webhook.example.com",
+      metadata: {
+        videoCallUrl: "https://existing-daily-video-call-url.example.com",
+      },
       payload: {
         cancelledBy: organizer.email,
         organizer: {

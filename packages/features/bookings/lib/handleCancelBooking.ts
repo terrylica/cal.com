@@ -423,6 +423,8 @@ async function handler(input: CancelBookingInput, dependencies?: Dependencies) {
       isPlatformManagedUserBooking: bookingToDelete.user.isPlatformManaged,
     } satisfies HandleCancelBookingResponse;
 
+  const parsedMetadata = bookingMetadataSchema.safeParse(bookingToDelete.metadata || {});
+
   const promises = webhooks.map((webhook) =>
     sendPayload(webhook.secret, eventTrigger, new Date().toISOString(), webhook, {
       ...evt,
@@ -431,6 +433,7 @@ async function handler(input: CancelBookingInput, dependencies?: Dependencies) {
       smsReminderNumber: bookingToDelete.smsReminderNumber || undefined,
       cancelledBy: cancelledBy,
       requestReschedule: false,
+      ...(parsedMetadata.success && parsedMetadata.data ? { metadata: parsedMetadata.data } : {}),
     }).catch((e) => {
       logger.error(
         `Error executing webhook for event: ${eventTrigger}, URL: ${webhook.subscriberUrl}, bookingId: ${evt.bookingId}, bookingUid: ${evt.uid}`,
@@ -441,7 +444,6 @@ async function handler(input: CancelBookingInput, dependencies?: Dependencies) {
   await Promise.all(promises);
 
   const workflows = await getAllWorkflowsFromEventType(bookingToDelete.eventType, bookingToDelete.userId);
-  const parsedMetadata = bookingMetadataSchema.safeParse(bookingToDelete.metadata || {});
 
   const creditService = new CreditService();
 
