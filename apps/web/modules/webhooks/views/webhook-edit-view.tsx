@@ -67,28 +67,26 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
       noRoutingFormTriggers={false}
       webhook={webhook}
       headerWrapper={(_formMethods, children) => (
-        <div className="flex flex-col gap-4">
-          <CardFrame>
-            <CardFrameHeader>
-              <div className="flex min-w-0 items-start gap-3">
-                <Button
-                  aria-label={t("go_back")}
-                  render={<Link href="/settings/developer/webhooks" />}
-                  size="icon-sm"
-                  variant="ghost">
-                  <ArrowLeftIcon />
-                </Button>
-                <div>
-                  <CardFrameTitle>{t("edit_webhook")}</CardFrameTitle>
-                  <CardFrameDescription>
-                    {t("add_webhook_description", { appName: APP_NAME })}
-                  </CardFrameDescription>
-                </div>
+        <CardFrame>
+          <CardFrameHeader>
+            <div className="flex min-w-0 items-start gap-3">
+              <Button
+                aria-label={t("go_back")}
+                render={<Link href="/settings/developer/webhooks" />}
+                size="icon-sm"
+                variant="ghost">
+                <ArrowLeftIcon />
+              </Button>
+              <div>
+                <CardFrameTitle>{t("edit_webhook")}</CardFrameTitle>
+                <CardFrameDescription>
+                  {t("add_webhook_description", { appName: APP_NAME })}
+                </CardFrameDescription>
               </div>
-            </CardFrameHeader>
-            {children}
-          </CardFrame>
-        </div>
+            </div>
+          </CardFrameHeader>
+          {children}
+        </CardFrame>
       )}
       onSubmit={(values: WebhookFormSubmitData) => {
         if (
