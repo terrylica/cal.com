@@ -1,6 +1,5 @@
-import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
-import { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
-import { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
+import type { HighWaterMarkRepository } from "@calcom/features/ee/billing/repository/highWaterMark/HighWaterMarkRepository";
+import type { MonthlyProrationTeamRepository } from "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository";
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
 import type { Logger } from "tslog";
@@ -17,10 +16,10 @@ export interface HighWaterMarkUpdateResult {
 
 export interface HighWaterMarkServiceDeps {
   logger?: Logger<unknown>;
-  repository?: HighWaterMarkRepository;
-  teamRepository?: MonthlyProrationTeamRepository;
+  repository: HighWaterMarkRepository;
+  teamRepository: MonthlyProrationTeamRepository;
   billingService?: IBillingProviderService;
-  featuresRepository?: IFeaturesRepository;
+  featuresRepository: IFeaturesRepository;
 }
 
 export class HighWaterMarkService {
@@ -30,12 +29,12 @@ export class HighWaterMarkService {
   private billingService?: IBillingProviderService;
   private featuresRepository: IFeaturesRepository;
 
-  constructor(deps?: HighWaterMarkServiceDeps) {
-    this.logger = deps?.logger || log;
-    this.repository = deps?.repository || new HighWaterMarkRepository();
-    this.teamRepository = deps?.teamRepository || new MonthlyProrationTeamRepository();
-    this.billingService = deps?.billingService;
-    this.featuresRepository = deps?.featuresRepository || getFeaturesRepository();
+  constructor(deps: HighWaterMarkServiceDeps) {
+    this.logger = deps.logger || log;
+    this.repository = deps.repository;
+    this.teamRepository = deps.teamRepository;
+    this.billingService = deps.billingService;
+    this.featuresRepository = deps.featuresRepository;
   }
 
   async shouldApplyHighWaterMark(teamId: number): Promise<boolean> {

@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@calcom/prisma";
-import { prisma as defaultPrisma } from "@calcom/prisma";
 import type { BillingPeriod } from "@calcom/prisma/enums";
 
 export interface HighWaterMarkData {
@@ -32,8 +31,8 @@ export interface HighWaterMarkBySubscriptionData {
 export class HighWaterMarkRepository {
   private prisma: PrismaClient;
 
-  constructor(prisma?: PrismaClient) {
-    this.prisma = prisma || defaultPrisma;
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
   }
 
   async getByTeamId(teamId: number): Promise<HighWaterMarkData | null> {

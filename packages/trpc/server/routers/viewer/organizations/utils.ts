@@ -1,5 +1,5 @@
 import { TeamRepository } from "@calcom/ee/teams/repositories/TeamRepository";
-import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
+import { getSeatChangeTrackingService } from "@calcom/features/ee/billing/di/containers/SeatChangeTrackingService";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
 import { prisma } from "@calcom/prisma";
@@ -124,7 +124,7 @@ export const addMembersToTeams = async ({ user, input }: AddBulkToTeamProps) => 
   });
 
   if (topLevelTeamIds.size > 0 && membershipData.length > 0) {
-    const seatTracker = new SeatChangeTrackingService();
+    const seatTracker = getSeatChangeTrackingService();
     const additionsByTeam = Array.from(topLevelTeamIds)
       .map((teamId) => ({
         teamId,

@@ -4,6 +4,10 @@ import { moduleLoader as triggerDevLoggerServiceModule } from "@calcom/features/
 import { MonthlyProrationService } from "@calcom/features/ee/billing/service/proration/MonthlyProrationService";
 
 import { DI_TOKENS } from "../tokens";
+import { billingProviderServiceModuleLoader } from "./BillingProviderService";
+import { monthlyProrationRepositoryModuleLoader } from "./MonthlyProrationRepository";
+import { monthlyProrationTeamRepositoryModuleLoader } from "./MonthlyProrationTeamRepository";
+import { seatChangeTrackingServiceModuleLoader } from "./SeatChangeTrackingService";
 
 const thisModule = createModule();
 const token = DI_TOKENS.MONTHLY_PRORATION_SERVICE;
@@ -17,6 +21,10 @@ const loadModule = bindModuleToClassOnToken({
   depsMap: {
     logger: triggerDevLoggerServiceModule,
     featuresRepository: featuresRepositoryModuleLoader,
+    billingService: billingProviderServiceModuleLoader,
+    teamRepository: monthlyProrationTeamRepositoryModuleLoader,
+    prorationRepository: monthlyProrationRepositoryModuleLoader,
+    seatChangeTrackingService: seatChangeTrackingServiceModuleLoader,
   },
 });
 

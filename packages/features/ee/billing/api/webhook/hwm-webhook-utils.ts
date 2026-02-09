@@ -1,5 +1,4 @@
-import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
-import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
+import { getHighWaterMarkService } from "@calcom/features/ee/billing/di/containers/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
 import type { Logger } from "tslog";
 
@@ -56,11 +55,7 @@ export async function handleHwmResetAfterRenewal(
   }
 
   const newPeriodStart = new Date(periodStartTimestamp * 1000);
-  const billingProviderService = getBillingProviderService();
-  const highWaterMarkService = new HighWaterMarkService({
-    logger: log,
-    billingService: billingProviderService,
-  });
+  const highWaterMarkService = getHighWaterMarkService();
 
   try {
     const updated = await highWaterMarkService.resetSubscriptionAfterRenewal({

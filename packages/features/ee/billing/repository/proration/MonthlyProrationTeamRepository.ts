@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@calcom/prisma";
-import { prisma as defaultPrisma } from "@calcom/prisma";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
 export interface BillingInfo {
@@ -25,8 +24,8 @@ export interface TeamWithBilling {
 export class MonthlyProrationTeamRepository {
   private prisma: PrismaClient;
 
-  constructor(prisma?: PrismaClient) {
-    this.prisma = prisma || defaultPrisma;
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
   }
 
   async getTeamWithBilling(teamId: number): Promise<TeamWithBilling | null> {

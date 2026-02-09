@@ -5,7 +5,7 @@ import { safeStringify } from "@calcom/lib/safeStringify";
 import { prisma } from "@calcom/prisma";
 
 import { getUserAndTeamWithBillingPermission } from "../../helpers/getUserAndTeamWithBillingPermission";
-import { MonthlyProrationRepository } from "../../repository/proration/MonthlyProrationRepository";
+import type { MonthlyProrationRepository } from "../../repository/proration/MonthlyProrationRepository";
 
 const log = logger.getSubLogger({ prefix: ["ProrationEmailService"] });
 
@@ -30,8 +30,8 @@ export interface SendReminderEmailParams {
 export class ProrationEmailService {
   private prorationRepository: MonthlyProrationRepository;
 
-  constructor() {
-    this.prorationRepository = new MonthlyProrationRepository();
+  constructor(prorationRepository: MonthlyProrationRepository) {
+    this.prorationRepository = prorationRepository;
   }
 
   async sendInvoiceEmail(params: SendInvoiceEmailParams): Promise<void> {

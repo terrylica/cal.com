@@ -1,20 +1,16 @@
+import { getMonthlyProrationService } from "@calcom/features/ee/billing/di/containers/MonthlyProrationService";
+import { getProrationEmailService } from "@calcom/features/ee/billing/di/containers/ProrationEmailService";
 import { nanoid } from "nanoid";
-import type { Logger } from "tslog";
 
-import { MonthlyProrationService } from "../MonthlyProrationService";
-import { ProrationEmailService } from "../ProrationEmailService";
 import type { IMonthlyProrationTasker } from "./types";
 
 export class MonthlyProrationSyncTasker implements IMonthlyProrationTasker {
-  constructor(private readonly logger: Logger<unknown>) {}
-
   async processBatch(payload: Parameters<IMonthlyProrationTasker["processBatch"]>[0]) {
     const runId = `sync_${nanoid(10)}`;
-    const prorationService = new MonthlyProrationService(this.logger);
+    const prorationService = getMonthlyProrationService();
     const prorationResults = await prorationService.processMonthlyProrations(payload);
 
-    // Send invoice emails for eligible prorations
-    const emailService = new ProrationEmailService();
+    const emailService = getProrationEmailService();
     for (const proration of prorationResults) {
       const isAutoCharge = proration.status === "INVOICE_CREATED";
       const isPending = proration.status === "PENDING";

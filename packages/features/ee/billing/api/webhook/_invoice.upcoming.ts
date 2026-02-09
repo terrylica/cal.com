@@ -1,5 +1,4 @@
-import { getBillingProviderService } from "@calcom/features/ee/billing/di/containers/Billing";
-import { HighWaterMarkService } from "@calcom/features/ee/billing/service/highWaterMark/HighWaterMarkService";
+import { getHighWaterMarkService } from "@calcom/features/ee/billing/di/containers/HighWaterMarkService";
 import logger from "@calcom/lib/logger";
 
 import type { SWHMap } from "./__handler";
@@ -26,11 +25,7 @@ const handler = async (data: Data) => {
     customerId: typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id,
   });
 
-  const billingService = getBillingProviderService();
-  const highWaterMarkService = new HighWaterMarkService({
-    logger: log,
-    billingService,
-  });
+  const highWaterMarkService = getHighWaterMarkService();
 
   try {
     const applied = await highWaterMarkService.applyHighWaterMarkToSubscription(subscriptionId);

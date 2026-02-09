@@ -18,11 +18,11 @@ export async function sendProrationInvoiceEmail(payload: string): Promise<void> 
 
     log.debug(`Processing sendProrationInvoiceEmail task for prorationId ${prorationId}, teamId ${teamId}`);
 
-    const { ProrationEmailService } = await import(
-      "@calcom/features/ee/billing/service/proration/ProrationEmailService"
+    const { getProrationEmailService } = await import(
+      "@calcom/features/ee/billing/di/containers/ProrationEmailService"
     );
 
-    const emailService = new ProrationEmailService();
+    const emailService = getProrationEmailService();
     await emailService.sendInvoiceEmail({ prorationId, teamId, isAutoCharge });
   } catch (error) {
     log.error(

@@ -1,18 +1,15 @@
-import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import type { ISimpleLogger } from "@calcom/features/di/shared/services/logger.service";
-import stripe from "@calcom/features/ee/payments/server/stripe";
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import logger from "@calcom/lib/logger";
-import type { Logger } from "tslog";
+
 import { buildMonthlyProrationMetadata } from "../../lib/proration-utils";
 import { extractBillingDataFromStripeSubscription } from "../../lib/stripe-subscription-utils";
 import { updateSubscriptionQuantity } from "../../lib/subscription-updates";
-import { MonthlyProrationRepository } from "../../repository/proration/MonthlyProrationRepository";
+import type { MonthlyProrationRepository } from "../../repository/proration/MonthlyProrationRepository";
 import type { BillingInfo } from "../../repository/proration/MonthlyProrationTeamRepository";
-import { MonthlyProrationTeamRepository } from "../../repository/proration/MonthlyProrationTeamRepository";
+import type { MonthlyProrationTeamRepository } from "../../repository/proration/MonthlyProrationTeamRepository";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
-import { StripeBillingService } from "../billingProvider/StripeBillingService";
-import { SeatChangeTrackingService } from "../seatTracking/SeatChangeTrackingService";
+import type { SeatChangeTrackingService } from "../seatTracking/SeatChangeTrackingService";
 
 const log = logger.getSubLogger({ prefix: ["MonthlyProrationService"] });
 
@@ -34,7 +31,10 @@ interface ProcessMonthlyProrationsParams {
 export interface MonthlyProrationServiceDeps {
   logger: ISimpleLogger;
   featuresRepository: IFeaturesRepository;
-  billingService?: IBillingProviderService;
+  billingService: IBillingProviderService;
+  teamRepository: MonthlyProrationTeamRepository;
+  prorationRepository: MonthlyProrationRepository;
+  seatChangeTrackingService: SeatChangeTrackingService;
 }
 
 export class MonthlyProrationService {
@@ -43,24 +43,15 @@ export class MonthlyProrationService {
   private prorationRepository: MonthlyProrationRepository;
   private billingService: IBillingProviderService;
   private featuresRepository: IFeaturesRepository;
+  private seatChangeTrackingService: SeatChangeTrackingService;
 
-  constructor(deps: MonthlyProrationServiceDeps);
-  constructor(customLogger?: Logger<unknown>, billingService?: IBillingProviderService);
-  constructor(
-    depsOrLogger?: MonthlyProrationServiceDeps | Logger<unknown>,
-    billingService?: IBillingProviderService
-  ) {
-    if (depsOrLogger && typeof depsOrLogger === "object" && "logger" in depsOrLogger) {
-      this.logger = depsOrLogger.logger;
-      this.featuresRepository = depsOrLogger.featuresRepository;
-      this.billingService = depsOrLogger.billingService || new StripeBillingService(stripe);
-    } else {
-      this.logger = (depsOrLogger as Logger<unknown>) || log;
-      this.featuresRepository = getFeaturesRepository();
-      this.billingService = billingService || new StripeBillingService(stripe);
-    }
-    this.teamRepository = new MonthlyProrationTeamRepository();
-    this.prorationRepository = new MonthlyProrationRepository();
+  constructor(deps: MonthlyProrationServiceDeps) {
+    this.logger = deps.logger;
+    this.featuresRepository = deps.featuresRepository;
+    this.billingService = deps.billingService;
+    this.teamRepository = deps.teamRepository;
+    this.prorationRepository = deps.prorationRepository;
+    this.seatChangeTrackingService = deps.seatChangeTrackingService;
   }
 
   async processMonthlyProrations(params: ProcessMonthlyProrationsParams) {
@@ -109,9 +100,7 @@ export class MonthlyProrationService {
 
     this.logger.info(`[${teamId}] starting monthly proration`, { monthKey });
 
-    const seatTracker = new SeatChangeTrackingService();
-
-    const changes = await seatTracker.getMonthlyChanges({ teamId, monthKey });
+    const changes = await this.seatChangeTrackingService.getMonthlyChanges({ teamId, monthKey });
 
     this.logger.info(`[${teamId}] seat changes`, {
       additions: changes.additions,
@@ -206,7 +195,7 @@ export class MonthlyProrationService {
       status: proration.status,
     });
 
-    await seatTracker.markAsProcessed({
+    await this.seatChangeTrackingService.markAsProcessed({
       teamId,
       monthKey,
       prorationId: proration.id,

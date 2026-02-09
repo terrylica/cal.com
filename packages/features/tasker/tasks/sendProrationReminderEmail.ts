@@ -15,11 +15,11 @@ export async function sendProrationReminderEmail(payload: string): Promise<void>
 
     log.debug(`Processing sendProrationReminderEmail task for prorationId ${prorationId}, teamId ${teamId}`);
 
-    const { ProrationEmailService } = await import(
-      "@calcom/features/ee/billing/service/proration/ProrationEmailService"
+    const { getProrationEmailService } = await import(
+      "@calcom/features/ee/billing/di/containers/ProrationEmailService"
     );
 
-    const emailService = new ProrationEmailService();
+    const emailService = getProrationEmailService();
     await emailService.sendReminderEmail({ prorationId, teamId });
   } catch (error) {
     log.error(

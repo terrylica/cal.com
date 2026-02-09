@@ -1,3 +1,4 @@
+import { getProrationEmailService } from "@calcom/features/ee/billing/di/containers/ProrationEmailService";
 import { nanoid } from "nanoid";
 import type { Logger } from "tslog";
 
@@ -9,8 +10,7 @@ export class ProrationEmailSyncTasker implements IProrationEmailTasker {
   async sendInvoiceEmail(payload: Parameters<IProrationEmailTasker["sendInvoiceEmail"]>[0]) {
     const runId = `sync_${nanoid(10)}`;
     this.logger.info(`[ProrationEmailSyncTasker] sendInvoiceEmail runId=${runId}`);
-    const { ProrationEmailService } = await import("../ProrationEmailService");
-    const emailService = new ProrationEmailService();
+    const emailService = getProrationEmailService();
     await emailService.sendInvoiceEmail(payload);
     return { runId };
   }
@@ -18,8 +18,7 @@ export class ProrationEmailSyncTasker implements IProrationEmailTasker {
   async sendReminderEmail(payload: Parameters<IProrationEmailTasker["sendReminderEmail"]>[0]) {
     const runId = `sync_${nanoid(10)}`;
     this.logger.info(`[ProrationEmailSyncTasker] sendReminderEmail runId=${runId}`);
-    const { ProrationEmailService } = await import("../ProrationEmailService");
-    const emailService = new ProrationEmailService();
+    const emailService = getProrationEmailService();
     await emailService.sendReminderEmail(payload);
     return { runId };
   }

@@ -16,11 +16,11 @@ export const scheduleMonthlyProration = schedules.task({
     const { formatMonthKey, isValidMonthKey } = await import(
       "@calcom/features/ee/billing/lib/month-key"
     );
-    const { MonthlyProrationTeamRepository } = await import(
-      "@calcom/features/ee/billing/repository/proration/MonthlyProrationTeamRepository"
-    );
     const { getFeaturesRepository } = await import(
       "@calcom/features/di/containers/FeaturesRepository"
+    );
+    const { getMonthlyProrationTeamRepository } = await import(
+      "@calcom/features/ee/billing/di/containers/MonthlyProrationTeamRepository"
     );
     const triggerDevLogger = new TriggerDevLogger();
     const log = triggerDevLogger.getSubLogger({
@@ -57,7 +57,7 @@ export const scheduleMonthlyProration = schedules.task({
 
     log.info(`Starting monthly proration for ${monthKey}`);
 
-    const teamRepository = new MonthlyProrationTeamRepository();
+    const teamRepository = getMonthlyProrationTeamRepository();
     const teamIdsList = await teamRepository.getAnnualTeamsWithSeatChanges(
       monthKey
     );

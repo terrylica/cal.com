@@ -8,8 +8,10 @@ export const sendProrationInvoiceEmail = schemaTask({
   ...prorationEmailTaskConfig,
   schema: sendInvoiceEmailSchema,
   run: async (payload) => {
-    const { ProrationEmailService } = await import("../../ProrationEmailService");
-    const emailService = new ProrationEmailService();
+    const { getProrationEmailService } = await import(
+      "@calcom/features/ee/billing/di/containers/ProrationEmailService"
+    );
+    const emailService = getProrationEmailService();
     await emailService.sendInvoiceEmail(payload);
     return { success: true };
   },

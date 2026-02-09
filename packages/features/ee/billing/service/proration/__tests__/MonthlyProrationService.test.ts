@@ -1,22 +1,7 @@
-import { prisma } from "@calcom/prisma";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildMonthlyProrationMetadata } from "../../../lib/proration-utils";
 import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
 import { MonthlyProrationService } from "../MonthlyProrationService";
-
-vi.mock("@calcom/prisma", () => ({
-  prisma: {
-    team: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-    },
-    monthlyProration: {
-      create: vi.fn(),
-      update: vi.fn(),
-      findUnique: vi.fn(),
-    },
-  },
-}));
 
 vi.mock("@calcom/lib/logger", () => ({
   default: {
@@ -25,33 +10,6 @@ vi.mock("@calcom/lib/logger", () => ({
       debug: vi.fn(),
       error: vi.fn(),
     }),
-  },
-}));
-
-vi.mock("@calcom/features/ee/payments/server/stripe", () => ({
-  default: {
-    invoiceItems: {
-      create: vi.fn(),
-    },
-    invoices: {
-      create: vi.fn(),
-      finalizeInvoice: vi.fn(),
-    },
-    subscriptions: {
-      retrieve: vi.fn(),
-      update: vi.fn(),
-    },
-  },
-}));
-
-vi.mock("../../seatTracking/SeatChangeTrackingService", () => ({
-  SeatChangeTrackingService: class {
-    async getMonthlyChanges() {
-      return { additions: 5, removals: 2, netChange: 3 };
-    }
-    async markAsProcessed() {
-      return 3;
-    }
   },
 }));
 
@@ -66,6 +24,22 @@ const mockProrationRepository = {
   createProration: vi.fn(),
   findById: vi.fn(),
   updateProrationStatus: vi.fn(),
+};
+
+const mockSeatChangeTrackingService = {
+  getMonthlyChanges: vi.fn().mockResolvedValue({ additions: 5, removals: 2, netChange: 3 }),
+  markAsProcessed: vi.fn().mockResolvedValue(3),
+};
+
+const mockFeaturesRepository = {
+  checkIfFeatureIsEnabledGlobally: vi.fn().mockResolvedValue(true),
+};
+
+const mockLogger = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
 };
 
 const mockBillingService: IBillingProviderService = {
@@ -105,42 +79,35 @@ const mockBillingService: IBillingProviderService = {
   voidInvoice: vi.fn().mockResolvedValue(undefined),
 } as IBillingProviderService;
 
-vi.mock("../../../repository/proration/MonthlyProrationTeamRepository", () => ({
-  MonthlyProrationTeamRepository: class {
-    getTeamWithBilling = mockTeamRepository.getTeamWithBilling;
-    getAnnualTeamsWithSeatChanges = mockTeamRepository.getAnnualTeamsWithSeatChanges;
-    updatePaidSeats = mockTeamRepository.updatePaidSeats;
-    getTeamMemberCount = mockTeamRepository.getTeamMemberCount;
-  },
-}));
-
-vi.mock("../../../repository/proration/MonthlyProrationRepository", () => ({
-  MonthlyProrationRepository: class {
-    createProration = mockProrationRepository.createProration;
-    findById = mockProrationRepository.findById;
-    updateProrationStatus = mockProrationRepository.updateProrationStatus;
-  },
-}));
-
 describe("MonthlyProrationService", () => {
   let service: MonthlyProrationService;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new MonthlyProrationService(undefined, mockBillingService);
+    service = new MonthlyProrationService({
+      // @ts-expect-error - mock logger
+      logger: mockLogger,
+      // @ts-expect-error - mock features repository
+      featuresRepository: mockFeaturesRepository,
+      billingService: mockBillingService,
+      // @ts-expect-error - mock team repository
+      teamRepository: mockTeamRepository,
+      // @ts-expect-error - mock proration repository
+      prorationRepository: mockProrationRepository,
+      // @ts-expect-error - mock seat change tracking service
+      seatChangeTrackingService: mockSeatChangeTrackingService,
+    });
   });
 
   describe("createProrationForTeam", () => {
     it("should create proration with $0 amount when seat count equals paid seats", async () => {
-      const { SeatChangeTrackingService } = await import("../../seatTracking/SeatChangeTrackingService");
-
-      vi.spyOn(SeatChangeTrackingService.prototype, "getMonthlyChanges").mockResolvedValueOnce({
+      mockSeatChangeTrackingService.getMonthlyChanges.mockResolvedValueOnce({
         additions: 5,
         removals: 5,
         netChange: 0,
       });
 
-      vi.spyOn(SeatChangeTrackingService.prototype, "markAsProcessed").mockResolvedValueOnce(0);
+      mockSeatChangeTrackingService.markAsProcessed.mockResolvedValueOnce(0);
 
       mockTeamRepository.getTeamWithBilling.mockResolvedValueOnce({
         id: 1,
@@ -196,8 +163,7 @@ describe("MonthlyProrationService", () => {
       const subscriptionStart = new Date("2026-01-01");
       const subscriptionEnd = new Date("2027-01-01");
 
-      const { SeatChangeTrackingService } = await import("../../seatTracking/SeatChangeTrackingService");
-      vi.spyOn(SeatChangeTrackingService.prototype, "markAsProcessed").mockResolvedValueOnce(3);
+      mockSeatChangeTrackingService.markAsProcessed.mockResolvedValueOnce(3);
 
       mockTeamRepository.getTeamWithBilling.mockResolvedValueOnce({
         id: 1,
@@ -249,13 +215,12 @@ describe("MonthlyProrationService", () => {
       const subscriptionStart = new Date("2026-01-01");
       const subscriptionEnd = new Date("2027-01-01");
 
-      const { SeatChangeTrackingService } = await import("../../seatTracking/SeatChangeTrackingService");
-      vi.spyOn(SeatChangeTrackingService.prototype, "getMonthlyChanges").mockResolvedValueOnce({
+      mockSeatChangeTrackingService.getMonthlyChanges.mockResolvedValueOnce({
         additions: 20,
         removals: 10,
         netChange: 10,
       });
-      vi.spyOn(SeatChangeTrackingService.prototype, "markAsProcessed").mockResolvedValueOnce(10);
+      mockSeatChangeTrackingService.markAsProcessed.mockResolvedValueOnce(10);
 
       mockTeamRepository.getTeamWithBilling.mockResolvedValueOnce({
         id: 1,
@@ -317,8 +282,7 @@ describe("MonthlyProrationService", () => {
       const subscriptionStart = new Date("2026-01-01");
       const subscriptionEnd = new Date("2027-01-01");
 
-      const { SeatChangeTrackingService } = await import("../../seatTracking/SeatChangeTrackingService");
-      vi.spyOn(SeatChangeTrackingService.prototype, "markAsProcessed").mockResolvedValueOnce(2);
+      mockSeatChangeTrackingService.markAsProcessed.mockResolvedValueOnce(2);
       vi.mocked(mockBillingService.hasDefaultPaymentMethod).mockResolvedValueOnce(false);
 
       mockTeamRepository.getTeamWithBilling.mockResolvedValueOnce({
@@ -375,8 +339,7 @@ describe("MonthlyProrationService", () => {
     });
 
     it("should use organization billing for organizations", async () => {
-      const { SeatChangeTrackingService } = await import("../../seatTracking/SeatChangeTrackingService");
-      vi.spyOn(SeatChangeTrackingService.prototype, "markAsProcessed").mockResolvedValueOnce(3);
+      mockSeatChangeTrackingService.markAsProcessed.mockResolvedValueOnce(3);
 
       mockTeamRepository.getTeamWithBilling.mockResolvedValueOnce({
         id: 1,

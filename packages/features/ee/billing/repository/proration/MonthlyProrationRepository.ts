@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@calcom/prisma";
-import { prisma as defaultPrisma } from "@calcom/prisma";
 import type { MonthlyProration } from "@calcom/prisma/client";
 import type { ProrationStatus } from "@calcom/prisma/enums";
 
@@ -28,8 +27,8 @@ export interface CreateProrationData {
 export class MonthlyProrationRepository {
   private prisma: PrismaClient;
 
-  constructor(prisma?: PrismaClient) {
-    this.prisma = prisma || defaultPrisma;
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
   }
 
   async createProration(data: CreateProrationData): Promise<MonthlyProration> {

@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@calcom/prisma";
-import { prisma as defaultPrisma } from "@calcom/prisma";
 import type { Prisma, SeatChangeLog } from "@calcom/prisma/client";
 import type { SeatChangeType } from "@calcom/prisma/enums";
 
@@ -24,8 +23,8 @@ export interface MonthlyChangesResult {
 export class SeatChangeLogRepository {
   private prisma: PrismaClient;
 
-  constructor(prisma?: PrismaClient) {
-    this.prisma = prisma || defaultPrisma;
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
   }
 
   async create(data: CreateSeatChangeLogData): Promise<SeatChangeLog> {
