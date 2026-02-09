@@ -1,5 +1,4 @@
 import type { DirectorySyncEvent, Group } from "@boxyhq/saml-jackson";
-
 import { addNewMembersToEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import logger from "@calcom/lib/logger";
@@ -9,10 +8,9 @@ import prisma from "@calcom/prisma";
 import { IdentityProvider, MembershipRole } from "@calcom/prisma/enums";
 import {
   getTeamOrThrow,
-  sendSignupToOrganizationEmail,
   sendExistingUserTeamInviteEmails,
+  sendSignupToOrganizationEmail,
 } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/utils";
-
 import createUsersAndConnectToOrg from "./users/createUsersAndConnectToOrg";
 
 const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: number) => {
@@ -21,11 +19,11 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
   });
 
   log.info(
-    "called",
     safeStringify({
-      event: event.event,
-      tenant: event.tenant,
-      product: event.product,
+      action: event.event,
+      orgId: organizationId,
+      directoryId: event.directory_id,
+      groupName: (event.data as Group).name,
     })
   );
   // Find the group name associated with the event
@@ -35,7 +33,13 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
     return;
   }
 
-  log.info(`Event contains ${eventData.raw.members.length} members`);
+  log.info(
+    safeStringify({
+      action: event.event,
+      orgId: organizationId,
+      memberCount: eventData.raw.members.length,
+    })
+  );
 
   const groupNames = await prisma.dSyncTeamGroupMapping.findMany({
     where: {
@@ -77,7 +81,13 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
     userEmails = eventData.raw.members.map((member: { display: string }) => member.display);
   }
 
-  log.info(`Event contains ${userEmails.length} emails`);
+  log.info(
+    safeStringify({
+      action: event.event,
+      orgId: organizationId,
+      emailCount: userEmails.length,
+    })
+  );
 
   // Find existing users
   const users = await prisma.user.findMany({
@@ -110,7 +120,14 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
   const newUserEmails = userEmails.filter((email) => !users.find((user) => user.email === email));
   let newUsers;
 
-  log.info(`Event processing ${newUserEmails.length} new users and ${users.length} existing users`);
+  log.info(
+    safeStringify({
+      action: event.event,
+      orgId: organizationId,
+      newUserCount: newUserEmails.length,
+      existingUserCount: users.length,
+    })
+  );
 
   // For each team linked to the dsync group name provision members
   for (const group of groupNames) {
@@ -160,26 +177,24 @@ const handleGroupEvents = async (event: DirectorySyncEvent, organizationId: numb
     // For existing users create membership for team and org if needed
     await prisma.membership.createMany({
       data: [
-        ...users
-          .map((user) => {
-            return [
-              {
-                createdAt: new Date(),
-                userId: user.id,
-                teamId: group.teamId,
-                role: MembershipRole.MEMBER,
-                accepted: true,
-              },
-              {
-                createdAt: new Date(),
-                userId: user.id,
-                teamId: organizationId,
-                role: MembershipRole.MEMBER,
-                accepted: true,
-              },
-            ];
-          })
-          .flat(),
+        ...users.flatMap((user) => {
+          return [
+            {
+              createdAt: new Date(),
+              userId: user.id,
+              teamId: group.teamId,
+              role: MembershipRole.MEMBER,
+              accepted: true,
+            },
+            {
+              createdAt: new Date(),
+              userId: user.id,
+              teamId: organizationId,
+              role: MembershipRole.MEMBER,
+              accepted: true,
+            },
+          ];
+        }),
       ],
       skipDuplicates: true,
     });

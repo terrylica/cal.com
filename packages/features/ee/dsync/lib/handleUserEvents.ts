@@ -1,5 +1,4 @@
 import type { DirectorySyncEvent, User } from "@boxyhq/saml-jackson";
-
 import removeUserFromOrg from "@calcom/features/ee/dsync/lib/removeUserFromOrg";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import logger from "@calcom/lib/logger";
@@ -7,11 +6,12 @@ import { safeStringify } from "@calcom/lib/safeStringify";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import prisma from "@calcom/prisma";
 import { IdentityProvider } from "@calcom/prisma/enums";
-import { getTeamOrThrow } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/utils";
 import type { UserWithMembership } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/utils";
-import { sendExistingUserTeamInviteEmails } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/utils";
-import { sendSignupToOrganizationEmail } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/utils";
-
+import {
+  getTeamOrThrow,
+  sendExistingUserTeamInviteEmails,
+  sendSignupToOrganizationEmail,
+} from "@calcom/trpc/server/routers/viewer/teams/inviteMember/utils";
 import { assignValueToUserInOrgBulk } from "./assignValueToUser";
 import getAttributesFromScimPayload from "./getAttributesFromScimPayload";
 import createUsersAndConnectToOrg from "./users/createUsersAndConnectToOrg";
@@ -57,10 +57,18 @@ async function syncCustomAttributesToUser({
 }
 
 const handleUserEvents = async (event: DirectorySyncEvent, organizationId: number) => {
-  log.debug("called", safeStringify(event));
   const directoryId = event.directory_id;
   const eventData = event.data as User;
   const userEmail = eventData.email;
+  log.info(
+    safeStringify({
+      action: event.event,
+      orgId: organizationId,
+      userEmail,
+      directoryId,
+      active: eventData.active,
+    })
+  );
   // Check if user exists in DB
   const user = await prisma.user.findUnique({
     where: {
@@ -83,6 +91,14 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
     }
     if (eventData.active) {
       if (await new UserRepository(prisma).isAMemberOfOrganization({ user, organizationId })) {
+        log.info(
+          safeStringify({
+            action: "user.attributes_sync",
+            orgId: organizationId,
+            userId: user.id,
+            userEmail,
+          })
+        );
         await syncCustomAttributesToUser({
           event,
           userEmail,
@@ -90,7 +106,14 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
           directoryId,
         });
       } else {
-        // If data.active is true then provision the user into the org
+        log.info(
+          safeStringify({
+            action: "user.invited_to_org",
+            orgId: organizationId,
+            userId: user.id,
+            userEmail,
+          })
+        );
         const addedUser = await inviteExistingUserToOrg({
           user: user as UserWithMembership,
           org,
@@ -114,7 +137,14 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
         });
       }
     } else {
-      // If data.active is false then remove the user from the org
+      log.info(
+        safeStringify({
+          action: "user.removed_from_org",
+          orgId: organizationId,
+          userId: user.id,
+          userEmail,
+        })
+      );
       await removeUserFromOrg({
         userId: user.id,
         orgId: organizationId,
@@ -122,6 +152,13 @@ const handleUserEvents = async (event: DirectorySyncEvent, organizationId: numbe
     }
     // If user is not in DB, create user and add to the org
   } else {
+    log.info(
+      safeStringify({
+        action: "user.created_and_added_to_org",
+        orgId: organizationId,
+        userEmail,
+      })
+    );
     const createUsersAndConnectToOrgProps = {
       emailsToCreate: [userEmail],
       identityProvider: IdentityProvider.CAL,

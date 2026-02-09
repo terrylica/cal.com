@@ -1,10 +1,4 @@
 import type { DirectorySyncEvent, DirectorySyncRequest } from "@boxyhq/saml-jackson";
-import type { Params } from "app/_types";
-import { defaultResponderForAppDir } from "app/api/defaultResponderForAppDir";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { z } from "zod";
-
 import handleGroupEvents from "@calcom/features/ee/dsync/lib/handleGroupEvents";
 import handleUserEvents from "@calcom/features/ee/dsync/lib/handleUserEvents";
 import jackson from "@calcom/features/ee/sso/lib/jackson";
@@ -12,6 +6,11 @@ import { DIRECTORY_IDS_TO_LOG } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
+import type { Params } from "app/_types";
+import { defaultResponderForAppDir } from "app/api/defaultResponderForAppDir";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 const log = logger.getSubLogger({ prefix: ["[scim]"] });
 
@@ -23,7 +22,6 @@ const extractAuthToken = (req: NextRequest): string | null => {
 
 // Handle the SCIM events
 const handleEvents = async (event: DirectorySyncEvent) => {
-  log.debug("handleEvents", safeStringify(event));
   const dSyncData = await prisma.dSyncData.findFirst({
     where: {
       directoryId: event.directory_id,
@@ -43,6 +41,14 @@ const handleEvents = async (event: DirectorySyncEvent) => {
   if (!organizationId) {
     throw new Error(`Org ID not found for dsync ${dSyncData.id}`);
   }
+
+  log.info(
+    safeStringify({
+      action: event.event,
+      orgId: organizationId,
+      directoryId: event.directory_id,
+    })
+  );
 
   if (event.event.includes("group")) {
     handleGroupEvents(event, organizationId);
@@ -109,7 +115,7 @@ async function handleScimRequest(request: NextRequest, method: string, params: P
     );
   }
 
-  let body: object | undefined = undefined;
+  let body: object | undefined;
   try {
     body = await request.json().catch(() => undefined);
   } catch (e) {
