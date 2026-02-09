@@ -3,7 +3,7 @@ import { _generateMetadata, getTranslate } from "app/_utils";
 import { Resource } from "@calcom/features/pbac/domain/types/permission-registry";
 import { getResourcePermissions } from "@calcom/features/pbac/lib/resource-permissions";
 import { MembershipRole } from "@calcom/prisma/enums";
-import SettingsHeader from "@calcom/web/modules/settings/components/SettingsHeader";
+import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 
 import OrgCustomDomainView from "~/ee/organizations/custom-domain";
 
