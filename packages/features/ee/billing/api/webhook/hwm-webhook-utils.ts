@@ -45,7 +45,7 @@ export async function handlePostRenewalReset(
     return { success: false, error: "No period start timestamp" };
   }
 
-  const result = await getStrategyForSubscription(subscriptionId, undefined, log);
+  const result = await getStrategyForSubscription(subscriptionId, log);
 
   if (!result) {
     log.warn(`No billing record found for subscription ${subscriptionId}, skipping post-renewal reset`);

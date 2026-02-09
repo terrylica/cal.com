@@ -1,8 +1,8 @@
 import logger from "@calcom/lib/logger";
 import type { BillingModel, BillingPeriod } from "@calcom/prisma/enums";
 import type { Logger } from "tslog";
+import { getBillingModelRepository } from "../../di/containers/Billing";
 import { ActiveUsersBillingStrategy } from "./ActiveUsersBillingStrategy";
-import { BillingModelRepository } from "./BillingModelRepository";
 import type { IBillingModelStrategy } from "./IBillingModelStrategy";
 import { SeatsHwmBillingStrategy } from "./SeatsHwmBillingStrategy";
 import { SeatsProrationBillingStrategy } from "./SeatsProrationBillingStrategy";
@@ -15,8 +15,6 @@ const defaultLog = logger.getSubLogger({
 const seatsHwm = new SeatsHwmBillingStrategy();
 const seatsProration = new SeatsProrationBillingStrategy();
 const activeUsers = new ActiveUsersBillingStrategy();
-
-const defaultRepository = new BillingModelRepository();
 
 export interface StrategyLookupResult {
   strategy: IBillingModelStrategy;
@@ -40,9 +38,9 @@ function resolveStrategy(
 
 export async function getStrategyForSubscription(
   subscriptionId: string,
-  repository: BillingModelRepository = defaultRepository,
   log: Logger<unknown> = defaultLog
 ): Promise<StrategyLookupResult | null> {
+  const repository = getBillingModelRepository();
   const record = await repository.findBySubscriptionId(subscriptionId);
 
   if (!record) {
@@ -66,9 +64,9 @@ export async function getStrategyForSubscription(
 
 export async function getStrategyForTeam(
   teamId: number,
-  repository: BillingModelRepository = defaultRepository,
   log: Logger<unknown> = defaultLog
 ): Promise<StrategyLookupResult | null> {
+  const repository = getBillingModelRepository();
   const record = await repository.findByTeamId(teamId);
 
   if (!record) {

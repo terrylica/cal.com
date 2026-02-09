@@ -25,7 +25,7 @@ const handler = async (data: Data) => {
   });
 
   try {
-    const result = await getStrategyForSubscription(subscriptionId, undefined, log);
+    const result = await getStrategyForSubscription(subscriptionId, log);
 
     if (!result) {
       log.debug("No billing record found, skipping", { subscriptionId });

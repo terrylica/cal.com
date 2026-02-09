@@ -81,7 +81,7 @@ export const createUsersAndConnectToOrg = async ({
 
   if (membershipResult.count > 0) {
     const log = logger.getSubLogger({ prefix: ["dsync-createUsersAndConnectToOrg"] });
-    const result = await getStrategyForTeam(org.id, undefined, log);
+    const result = await getStrategyForTeam(org.id, log);
     if (result) {
       await result.strategy.handleMemberAddition({ teamId: org.id, seatCount: membershipResult.count }, log);
     }

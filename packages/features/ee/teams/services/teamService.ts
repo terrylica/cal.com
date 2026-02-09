@@ -213,7 +213,7 @@ export class TeamService {
       } else throw e;
     }
 
-    const strategyResult = await getStrategyForTeam(verificationToken.teamId, undefined, log);
+    const strategyResult = await getStrategyForTeam(verificationToken.teamId, log);
     if (strategyResult) {
       if (!verificationToken.team.parentId) {
         await strategyResult.strategy.handleMemberAddition(
@@ -305,7 +305,7 @@ export class TeamService {
         });
       }
 
-      const strategyResult = await getStrategyForTeam(teamId, undefined, log);
+      const strategyResult = await getStrategyForTeam(teamId, log);
       if (strategyResult) {
         if (!membership.team.parentId) {
           await strategyResult.strategy.handleMemberRemoval(
@@ -395,7 +395,7 @@ export class TeamService {
 
     await deleteWorkfowRemindersOfRemovedMember(team, userId, isOrg);
 
-    const strategyResult = await getStrategyForTeam(teamId, undefined, log);
+    const strategyResult = await getStrategyForTeam(teamId, log);
     if (strategyResult) {
       if (!team.parentId) {
         await strategyResult.strategy.handleMemberRemoval(

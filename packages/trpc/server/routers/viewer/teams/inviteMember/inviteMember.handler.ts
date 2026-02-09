@@ -232,7 +232,7 @@ export const inviteMembersWithNoInviterPermissionCheck = async (
 
   // Seat tracking already logged by invite utils.
   // Sync billing quantity -- the strategy decides whether to update Stripe.
-  const strategyResult = await getStrategyForTeam(team.id, undefined, log);
+  const strategyResult = await getStrategyForTeam(team.id, log);
   if (strategyResult) {
     await strategyResult.strategy.syncBillingQuantity({ teamId: team.id }, log);
   }
