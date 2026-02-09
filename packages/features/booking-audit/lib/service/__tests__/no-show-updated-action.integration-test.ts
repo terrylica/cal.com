@@ -1,4 +1,3 @@
-import { prisma } from "@calcom/prisma";
 import type { BookingStatus } from "@calcom/prisma/enums";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getBookingAuditTaskConsumer } from "../../../di/BookingAuditTaskConsumer.container";
@@ -16,12 +15,6 @@ import {
   enableFeatureForOrganization,
 } from "./integration-utils";
 
-const FILE_ID = `no-show-${process.pid}`;
-
-function debugLog(msg: string) {
-  process.stderr.write(`[${FILE_ID}][${new Date().toISOString()}] ${msg}\n`);
-}
-
 describe("No-Show Updated Action Integration", () => {
   let bookingAuditTaskConsumer: BookingAuditTaskConsumer;
   let bookingAuditViewerService: BookingAuditViewerService;
@@ -35,11 +28,8 @@ describe("No-Show Updated Action Integration", () => {
   };
 
   const additionalAttendeeEmails: string[] = [];
-  let currentTestName = "unknown";
 
   beforeEach(async () => {
-    debugLog("beforeEach START");
-
     bookingAuditTaskConsumer = getBookingAuditTaskConsumer();
     bookingAuditViewerService = getBookingAuditViewerService();
 
@@ -73,16 +63,10 @@ describe("No-Show Updated Action Integration", () => {
         status: booking.status,
       },
     };
-
-    debugLog(`beforeEach END | owner=${owner.id} booking=${booking.uid} bookingId=${booking.id}`);
   });
 
   afterEach(async () => {
-    debugLog(`afterEach START (${currentTestName})`);
-    if (!testData) {
-      debugLog("afterEach: no testData, skipping");
-      return;
-    }
+    if (!testData) return;
 
     await cleanupTestData({
       bookingUid: testData.booking?.uid,
@@ -97,40 +81,10 @@ describe("No-Show Updated Action Integration", () => {
       featureSlug: "booking-audit",
     });
     additionalAttendeeEmails.length = 0;
-    debugLog(`afterEach END (${currentTestName})`);
   });
 
-  async function getAuditLogsWithDiagnostics(bookingUid: string, userId: number, userEmail: string, organizationId: number) {
-    try {
-      return await bookingAuditViewerService.getAuditLogsForBooking({
-        bookingUid,
-        userId,
-        userEmail,
-        userTimeZone: "UTC",
-        organizationId,
-      });
-    } catch (err) {
-      const booking = await prisma.booking.findFirst({ where: { uid: bookingUid }, select: { id: true, uid: true, userId: true } });
-      const owner = await prisma.user.findFirst({ where: { id: userId }, select: { id: true, email: true } });
-      const eventType = await prisma.eventType.findFirst({ where: { userId }, select: { id: true, userId: true } });
-      const membership = await prisma.membership.findFirst({ where: { userId, teamId: organizationId } });
-      const bookingCount = await prisma.booking.count();
-      const userCount = await prisma.user.count();
-      debugLog(`!!! FAILURE (${currentTestName}) !!! error=${err}`);
-      debugLog(`  booking: ${JSON.stringify(booking)}`);
-      debugLog(`  owner: ${JSON.stringify(owner)}`);
-      debugLog(`  eventType: ${JSON.stringify(eventType)}`);
-      debugLog(`  membership: ${JSON.stringify(membership)}`);
-      debugLog(`  counts: bookings=${bookingCount} users=${userCount}`);
-      throw err;
-    }
-  }
-
   describe("when host is marked as no-show", () => {
-    it("should create audit record with host field containing userUuid and noShow", { repeats: 50 }, async () => {
-      currentTestName = "host-no-show";
-      debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
-
+    it("should create audit record with host field containing userUuid and noShow", async () => {
       const actor = makeUserActor(testData.owner.uuid);
 
       await bookingAuditTaskConsumer.onBookingAction({
@@ -140,6 +94,7 @@ describe("No-Show Updated Action Integration", () => {
         source: "WEBAPP",
         operationId: `op-${Date.now()}`,
         data: {
+          // New schema: host contains userUuid and noShow change
           host: {
             userUuid: testData.owner.uuid,
             noShow: { old: null, new: true },
@@ -148,9 +103,13 @@ describe("No-Show Updated Action Integration", () => {
         timestamp: Date.now(),
       });
 
-      const result = await getAuditLogsWithDiagnostics(
-        testData.booking.uid, testData.owner.id, testData.owner.email, testData.organization.id
-      );
+      const result = await bookingAuditViewerService.getAuditLogsForBooking({
+        bookingUid: testData.booking.uid,
+        userId: testData.owner.id,
+        userEmail: testData.owner.email,
+        userTimeZone: "UTC",
+        organizationId: testData.organization.id,
+      });
 
       expect(result.bookingUid).toBe(testData.booking.uid);
       expect(result.auditLogs).toHaveLength(1);
@@ -164,16 +123,13 @@ describe("No-Show Updated Action Integration", () => {
       expect(displayData).toBeDefined();
       expect(displayData.hostNoShow).toBe(true);
       expect(displayData.previousHostNoShow).toBe(null);
-      debugLog(`TEST END: ${currentTestName}`);
     });
   });
 
   describe("when attendees are marked as no-show", () => {
-    it("should create audit record with attendeesNoShow array", { repeats: 50 }, async () => {
-      currentTestName = "attendees-no-show";
-      debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
-
+    it("should create audit record with attendeesNoShow array", async () => {
       const actor = makeUserActor(testData.owner.uuid);
+
       const attendeesNoShow = [{ attendeeEmail: testData.attendee.email, noShow: { old: null, new: true } }];
 
       await bookingAuditTaskConsumer.onBookingAction({
@@ -182,13 +138,19 @@ describe("No-Show Updated Action Integration", () => {
         action: "NO_SHOW_UPDATED",
         source: "WEBAPP",
         operationId: `op-${Date.now()}`,
-        data: { attendeesNoShow },
+        data: {
+          attendeesNoShow,
+        },
         timestamp: Date.now(),
       });
 
-      const result = await getAuditLogsWithDiagnostics(
-        testData.booking.uid, testData.owner.id, testData.owner.email, testData.organization.id
-      );
+      const result = await bookingAuditViewerService.getAuditLogsForBooking({
+        bookingUid: testData.booking.uid,
+        userId: testData.owner.id,
+        userEmail: testData.owner.email,
+        userTimeZone: "UTC",
+        organizationId: testData.organization.id,
+      });
 
       expect(result.bookingUid).toBe(testData.booking.uid);
       expect(result.auditLogs).toHaveLength(1);
@@ -209,16 +171,12 @@ describe("No-Show Updated Action Integration", () => {
       expect(storedAttendeesNoShow[0].attendeeEmail).toBe(testData.attendee.email);
       expect(storedAttendeesNoShow[0].noShow.old).toBe(null);
       expect(storedAttendeesNoShow[0].noShow.new).toBe(true);
-      debugLog(`TEST END: ${currentTestName}`);
     });
 
-    it("should handle multiple attendees marked as no-show", { repeats: 50 }, async () => {
-      currentTestName = "multiple-attendees-no-show";
-      debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid} bookingId=${testData.booking.id}`);
-
+    it("should handle multiple attendees marked as no-show", async () => {
+      const { prisma } = await import("@calcom/prisma");
       const secondAttendeeEmail = `second-attendee-${Date.now()}@example.com`;
       additionalAttendeeEmails.push(secondAttendeeEmail);
-
       await prisma.attendee.create({
         data: {
           email: secondAttendeeEmail,
@@ -229,6 +187,7 @@ describe("No-Show Updated Action Integration", () => {
       });
 
       const actor = makeUserActor(testData.owner.uuid);
+
       const attendeesNoShow = [
         { attendeeEmail: testData.attendee.email, noShow: { old: null, new: true } },
         { attendeeEmail: secondAttendeeEmail, noShow: { old: false, new: true } },
@@ -240,13 +199,19 @@ describe("No-Show Updated Action Integration", () => {
         action: "NO_SHOW_UPDATED",
         source: "WEBAPP",
         operationId: `op-${Date.now()}`,
-        data: { attendeesNoShow },
+        data: {
+          attendeesNoShow,
+        },
         timestamp: Date.now(),
       });
 
-      const result = await getAuditLogsWithDiagnostics(
-        testData.booking.uid, testData.owner.id, testData.owner.email, testData.organization.id
-      );
+      const result = await bookingAuditViewerService.getAuditLogsForBooking({
+        bookingUid: testData.booking.uid,
+        userId: testData.owner.id,
+        userEmail: testData.owner.email,
+        userTimeZone: "UTC",
+        organizationId: testData.organization.id,
+      });
 
       expect(result.auditLogs).toHaveLength(1);
 
@@ -261,15 +226,11 @@ describe("No-Show Updated Action Integration", () => {
       const secondAttendeeData = storedAttendeesNoShow.find((a) => a.attendeeEmail === secondAttendeeEmail);
       expect(firstAttendee?.noShow).toEqual({ old: null, new: true });
       expect(secondAttendeeData?.noShow).toEqual({ old: false, new: true });
-      debugLog(`TEST END: ${currentTestName}`);
     });
   });
 
   describe("when both host and attendees are marked as no-show", () => {
-    it("should create single audit record with both host and attendeesNoShow fields", { repeats: 50 }, async () => {
-      currentTestName = "both-host-and-attendees";
-      debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
-
+    it("should create single audit record with both host and attendeesNoShow fields", async () => {
       const actor = makeUserActor(testData.owner.uuid);
 
       await bookingAuditTaskConsumer.onBookingAction({
@@ -288,9 +249,13 @@ describe("No-Show Updated Action Integration", () => {
         timestamp: Date.now(),
       });
 
-      const result = await getAuditLogsWithDiagnostics(
-        testData.booking.uid, testData.owner.id, testData.owner.email, testData.organization.id
-      );
+      const result = await bookingAuditViewerService.getAuditLogsForBooking({
+        bookingUid: testData.booking.uid,
+        userId: testData.owner.id,
+        userEmail: testData.owner.email,
+        userTimeZone: "UTC",
+        organizationId: testData.organization.id,
+      });
 
       expect(result.auditLogs).toHaveLength(1);
 
@@ -310,16 +275,13 @@ describe("No-Show Updated Action Integration", () => {
       expect(storedAttendeesNoShow).toHaveLength(1);
       expect(storedAttendeesNoShow[0].attendeeEmail).toBe(testData.attendee.email);
       expect(storedAttendeesNoShow[0].noShow).toEqual({ old: null, new: true });
-      debugLog(`TEST END: ${currentTestName}`);
     });
   });
 
   describe("schema validation with array format", () => {
-    it("should accept attendeesNoShow data with array format", { repeats: 50 }, async () => {
-      currentTestName = "schema-validation";
-      debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
-
+    it("should accept attendeesNoShow data with array format", async () => {
       const actor = makeUserActor(testData.owner.uuid);
+
       const dataWithArrayFormat = {
         attendeesNoShow: [{ attendeeEmail: testData.attendee.email, noShow: { old: null, new: true } }],
       };
@@ -334,9 +296,13 @@ describe("No-Show Updated Action Integration", () => {
         timestamp: Date.now(),
       });
 
-      const result = await getAuditLogsWithDiagnostics(
-        testData.booking.uid, testData.owner.id, testData.owner.email, testData.organization.id
-      );
+      const result = await bookingAuditViewerService.getAuditLogsForBooking({
+        bookingUid: testData.booking.uid,
+        userId: testData.owner.id,
+        userEmail: testData.owner.email,
+        userTimeZone: "UTC",
+        organizationId: testData.organization.id,
+      });
 
       expect(result.auditLogs).toHaveLength(1);
 
@@ -349,7 +315,6 @@ describe("No-Show Updated Action Integration", () => {
       }>;
       expect(storedAttendeesNoShow).toHaveLength(1);
       expect(storedAttendeesNoShow[0].attendeeEmail).toBe(testData.attendee.email);
-      debugLog(`TEST END: ${currentTestName}`);
     });
   });
 });
