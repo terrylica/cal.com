@@ -127,7 +127,7 @@ describe("No-Show Updated Action Integration", () => {
   }
 
   describe("when host is marked as no-show", () => {
-    it("should create audit record with host field containing userUuid and noShow", async () => {
+    it("should create audit record with host field containing userUuid and noShow", { repeats: 20 }, async () => {
       currentTestName = "host-no-show";
       debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
 
@@ -169,7 +169,7 @@ describe("No-Show Updated Action Integration", () => {
   });
 
   describe("when attendees are marked as no-show", () => {
-    it("should create audit record with attendeesNoShow array", async () => {
+    it("should create audit record with attendeesNoShow array", { repeats: 20 }, async () => {
       currentTestName = "attendees-no-show";
       debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
 
@@ -212,7 +212,7 @@ describe("No-Show Updated Action Integration", () => {
       debugLog(`TEST END: ${currentTestName}`);
     });
 
-    it("should handle multiple attendees marked as no-show", async () => {
+    it("should handle multiple attendees marked as no-show", { repeats: 20 }, async () => {
       currentTestName = "multiple-attendees-no-show";
       debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid} bookingId=${testData.booking.id}`);
 
@@ -266,7 +266,7 @@ describe("No-Show Updated Action Integration", () => {
   });
 
   describe("when both host and attendees are marked as no-show", () => {
-    it("should create single audit record with both host and attendeesNoShow fields", async () => {
+    it("should create single audit record with both host and attendeesNoShow fields", { repeats: 20 }, async () => {
       currentTestName = "both-host-and-attendees";
       debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
 
@@ -315,7 +315,7 @@ describe("No-Show Updated Action Integration", () => {
   });
 
   describe("schema validation with array format", () => {
-    it("should accept attendeesNoShow data with array format", async () => {
+    it("should accept attendeesNoShow data with array format", { repeats: 20 }, async () => {
       currentTestName = "schema-validation";
       debugLog(`TEST START: ${currentTestName} | bookingUid=${testData.booking.uid}`);
 
