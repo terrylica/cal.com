@@ -62,7 +62,6 @@ export default function EventTypeWebhookListItem(props: {
   const toggleWebhook = trpc.viewer.webhook.edit.useMutation({
     async onSuccess(data) {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
-      toastManager.add({ title: t(data?.active ? "enabled" : "disabled"), type: "success" });
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();

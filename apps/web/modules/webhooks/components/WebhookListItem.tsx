@@ -69,7 +69,6 @@ export default function WebhookListItem(props: {
     async onSuccess(data) {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
       revalidateWebhooksList();
-      toastManager.add({ title: t(data?.active ? "enabled" : "disabled"), type: "success" });
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();
