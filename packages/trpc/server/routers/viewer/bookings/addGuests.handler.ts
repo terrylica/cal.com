@@ -1,3 +1,4 @@
+import process from "node:process";
 import { getUsersCredentialsIncludeServiceAccountKey } from "@calcom/app-store/delegationCredential";
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
 import dayjs from "@calcom/dayjs";
@@ -18,14 +19,14 @@ import { MembershipRole } from "@calcom/prisma/enums";
 import type { BookingResponses } from "@calcom/prisma/zod-utils";
 import { eventTypeBookingFields } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent } from "@calcom/types/Calendar";
-
 import { TRPCError } from "@trpc/server";
-
 import type { TrpcSessionUser } from "../../../types";
 import type { TAddGuestsInputSchema } from "./addGuests.schema";
 
 type TUser = Pick<NonNullable<TrpcSessionUser>, "id" | "email" | "organizationId" | "uuid"> &
   Partial<Pick<NonNullable<TrpcSessionUser>, "profile">>;
+
+type EmailVariant = "guest" | "attendee";
 
 type AddGuestsOptions = {
   ctx: {
@@ -33,6 +34,7 @@ type AddGuestsOptions = {
   };
   input: TAddGuestsInputSchema;
   emailsEnabled?: boolean;
+  emailVariant?: EmailVariant;
   actionSource: ActionSource;
 };
 
@@ -43,6 +45,7 @@ export const addGuestsHandler = async ({
   ctx,
   input,
   emailsEnabled = true,
+  emailVariant = "guest",
   actionSource,
 }: AddGuestsOptions) => {
   const { user } = ctx;
@@ -84,7 +87,7 @@ export const addGuestsHandler = async ({
   await updateCalendarEvent(booking, evt);
 
   if (emailsEnabled) {
-    await sendGuestNotifications(evt, booking, uniqueGuestEmails);
+    await sendGuestNotifications(evt, booking, uniqueGuestEmails, emailVariant);
   }
 
   const bookingEventHandlerService = getBookingEventHandlerService();
@@ -347,18 +350,25 @@ async function updateCalendarEvent(booking: Booking, evt: CalendarEvent): Promis
 async function sendGuestNotifications(
   evt: CalendarEvent,
   booking: Booking,
-  uniqueGuests: string[]
+  uniqueGuests: string[],
+  emailVariant: EmailVariant
 ): Promise<void> {
   const emailsAndSmsHandler = new BookingEmailSmsHandler({
     logger: logger,
   });
 
-  await emailsAndSmsHandler.handleAddGuests({
+  const payload = {
     evt,
     eventType: {
       metadata: eventTypeMetaDataSchemaWithTypedApps.parse(booking?.eventType?.metadata),
       schedulingType: booking.eventType?.schedulingType || null,
     },
     newGuests: uniqueGuests,
-  });
+  };
+
+  if (emailVariant === "attendee") {
+    await emailsAndSmsHandler.handleAddAttendee(payload);
+  } else {
+    await emailsAndSmsHandler.handleAddGuests(payload);
+  }
 }
