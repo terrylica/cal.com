@@ -385,7 +385,7 @@ export class OAuthService {
         expiresInSeconds: tokens.refreshTokenExpiresIn,
       });
     } else {
-      logger.error("OAuthService - refresh token has neither userId nor teamId", { clientId });
+      throw new Error("Refresh token has neither userId nor teamId");
     }
 
     return tokens;
