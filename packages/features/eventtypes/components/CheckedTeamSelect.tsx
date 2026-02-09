@@ -143,23 +143,6 @@ export const CheckedTeamSelect = ({
         onMenuScrollToBottom={onMenuScrollToBottom}
         isLoading={isLoadingMore}
       />
-      {onAssignedSearchChange && (
-        <div className="mt-3">
-          <TextField
-            type="search"
-            placeholder={t("search")}
-            value={assignedSearchValue ?? ""}
-            onChange={(e) => onAssignedSearchChange(e.target.value)}
-            addOnLeading={
-              isSearchingAssigned ? (
-                <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
-              ) : (
-                <Icon name="search" className="text-subtle h-4 w-4" />
-              )
-            }
-          />
-        </div>
-      )}
       {valueFromGroup.length >= 1 && (
         <div
           ref={scrollContainerRef}

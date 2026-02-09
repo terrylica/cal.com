@@ -9,7 +9,8 @@ import { useSearchTeamMembers } from "@calcom/features/eventtypes/lib/useSearchT
 import { Segment } from "@calcom/features/Segment";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { AttributesQueryValue } from "@calcom/lib/raqb/types";
-import { Label, SettingsToggle } from "@calcom/ui/components/form";
+import { Label, SettingsToggle, TextField } from "@calcom/ui/components/form";
+import { Icon } from "@calcom/ui/components/icon";
 import { type ComponentProps, type Dispatch, type SetStateAction, useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { Options } from "react-select";
@@ -379,6 +380,23 @@ export function AddMembersWithSwitch({
               />
             )}
           </div>
+          {rest.onAssignedSearchChange && (
+            <div className="mb-2">
+              <TextField
+                type="search"
+                placeholder={t("search")}
+                value={rest.assignedSearchValue ?? ""}
+                onChange={(e) => rest.onAssignedSearchChange!(e.target.value)}
+                addOnLeading={
+                  rest.isSearchingAssigned ? (
+                    <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
+                  ) : (
+                    <Icon name="search" className="text-subtle h-4 w-4" />
+                  )
+                }
+              />
+            </div>
+          )}
           <div className="mb-2">
             <CheckedHostField
               data-testid={rest["data-testid"]}
@@ -404,8 +422,6 @@ export function AddMembersWithSwitch({
               hasNextPageSelected={hasNextPageSelected}
               isFetchingNextPageSelected={isFetchingNextPageSelected}
               fetchNextPageSelected={fetchNextPageSelected}
-              assignedSearchValue={rest.assignedSearchValue}
-              onAssignedSearchChange={rest.onAssignedSearchChange}
             />
           </div>
         </>
