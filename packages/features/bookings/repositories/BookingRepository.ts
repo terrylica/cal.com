@@ -8,14 +8,13 @@ import {
   bookingMinimalSelect,
 } from "@calcom/prisma/selects/booking";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
-
-import type {
-  BookingWhereInput,
-  IBookingRepository,
-  BookingUpdateData,
-  BookingWhereUniqueInput,
-} from "./IBookingRepository";
 import { workflowSelect } from "../../ee/workflows/lib/getAllWorkflows";
+import type {
+  BookingUpdateData,
+  BookingWhereInput,
+  BookingWhereUniqueInput,
+  IBookingRepository,
+} from "./IBookingRepository";
 
 const workflowReminderSelect = {
   id: true,
@@ -927,6 +926,31 @@ export class BookingRepository implements IBookingRepository {
       },
       include: {
         eventType: true,
+      },
+    });
+  }
+
+  async findByUidIncludeEventTypeAndWorkflowReminders({ bookingUid }: { bookingUid: string }) {
+    return await this.prismaClient.booking.findUnique({
+      where: { uid: bookingUid },
+      select: {
+        id: true,
+        uid: true,
+        title: true,
+        status: true,
+        startTime: true,
+        endTime: true,
+        iCalSequence: true,
+        eventType: {
+          select: {
+            id: true,
+            disableCancelling: true,
+            disableRescheduling: true,
+          },
+        },
+        workflowReminders: {
+          select: workflowReminderSelect,
+        },
       },
     });
   }

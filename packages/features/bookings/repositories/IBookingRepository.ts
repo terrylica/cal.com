@@ -1,4 +1,4 @@
-import { Booking } from "@calcom/prisma/client";
+import type { Booking } from "@calcom/prisma/client";
 import type { BookingStatus, WorkflowMethods } from "@calcom/prisma/enums";
 
 export interface BookingWhereInput {
@@ -12,17 +12,20 @@ export interface BookingWhereInput {
 
 export type BookingWhereUniqueInput =
   | {
-    id: number;
-  }
+      id: number;
+    }
   | {
-    uid: string;
-  };
+      uid: string;
+    };
 
 export interface BookingUpdateData {
   status?: BookingStatus;
   cancellationReason?: string | null;
   cancelledBy?: string | null;
   iCalSequence?: number;
+  title?: string;
+  startTime?: Date;
+  endTime?: Date;
 }
 
 interface BookingWithWorkflowReminders {
