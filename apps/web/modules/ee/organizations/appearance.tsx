@@ -1,6 +1,8 @@
 "use client";
 
 import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
+import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
+import ThemeLabel from "@calcom/features/settings/ThemeLabel";
 import { APP_NAME, DEFAULT_DARK_BRAND_COLOR, DEFAULT_LIGHT_BRAND_COLOR } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
@@ -9,8 +11,6 @@ import { Button } from "@calcom/ui/components/button";
 import { ConfirmationDialogContent, Dialog } from "@calcom/ui/components/dialog";
 import { Form, SettingsToggle } from "@calcom/ui/components/form";
 import { showToast } from "@calcom/ui/components/toast";
-import SectionBottomActions from "@calcom/web/modules/settings/components/SectionBottomActions";
-import ThemeLabel from "@calcom/web/modules/settings/components/ThemeLabel";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
