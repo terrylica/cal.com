@@ -18,7 +18,7 @@ const ComboboxContext = React.createContext<{
 
 function Combobox<Value, Multiple extends boolean | undefined = false>(
   props: ComboboxPrimitive.Root.Props<Value, Multiple>,
-): React.JSX.Element {
+) {
   const chipsRef = React.useRef<Element | null>(null);
   return (
     <ComboboxContext.Provider value={{ chipsRef, multiple: !!props.multiple }}>
@@ -142,21 +142,24 @@ function ComboboxPopup({
   sideOffset = 4,
   alignOffset,
   align = "start",
+  anchor: anchorProp,
   ...props
 }: ComboboxPrimitive.Popup.Props & {
   align?: ComboboxPrimitive.Positioner.Props["align"];
   sideOffset?: ComboboxPrimitive.Positioner.Props["sideOffset"];
   alignOffset?: ComboboxPrimitive.Positioner.Props["alignOffset"];
   side?: ComboboxPrimitive.Positioner.Props["side"];
+  anchor?: ComboboxPrimitive.Positioner.Props["anchor"];
 }) {
   const { chipsRef } = React.useContext(ComboboxContext);
+  const anchor = anchorProp ?? chipsRef;
 
   return (
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
-        anchor={chipsRef}
+        anchor={anchor}
         className="z-50 select-none"
         data-slot="combobox-positioner"
         side={side}

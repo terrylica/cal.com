@@ -15,7 +15,7 @@ import {
 } from "@coss/ui/components/combobox";
 import { Group, GroupSeparator } from "@coss/ui/components/group";
 import { ListFilterIcon, SearchIcon, XIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type WebhookGroup = RouterOutputs["viewer"]["webhook"]["getByViewer"]["webhookGroups"][number];
 
@@ -66,7 +66,7 @@ export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }
   );
 
   const [open, setOpen] = useState(false);
-
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const handleValueChange = (value: ProfileOption | ProfileOption[] | null) => {
     let newSelection: ProfileOption[];
     if (Array.isArray(value)) {
@@ -105,7 +105,7 @@ export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }
         render={<Button size={selectedProfiles.length === 0 ? "icon" : "default"} variant="outline" />}>
         {renderTriggerContent()}
       </ComboboxTrigger>
-      <ComboboxPopup align="end" aria-label="Select user">
+      <ComboboxPopup align="end" aria-label="Select user" anchor={wrapperRef}>
         <div className="border-b p-2">
           <ComboboxInput
             className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
@@ -132,17 +132,19 @@ export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }
     </Combobox>
   );
 
-  if (selectedProfileIds.length === 0) {
-    return comboboxContent;
-  }
-
   return (
-    <Group>
-      {comboboxContent}
-      <GroupSeparator />
-      <Button aria-label="Remove filter" onClick={() => onSelectionChange([])} size="icon" variant="outline">
-        <XIcon />
-      </Button>
-    </Group>
+    <div ref={wrapperRef}>
+      <Group>
+        {comboboxContent}
+        {selectedProfileIds.length > 0 && (
+          <>
+            <GroupSeparator />
+            <Button aria-label="Remove filter" onClick={() => onSelectionChange([])} size="icon" variant="outline">
+              <XIcon />
+            </Button>
+          </>
+        )}
+      </Group>
+    </div>
   );
 }
