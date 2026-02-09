@@ -1,28 +1,20 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-import SettingsHeaderWithBackButton from "@calcom/features/settings/appDir/SettingsHeaderWithBackButton";
-import {
-  WEBHOOK_TRIGGER_EVENTS,
-  WEBHOOK_VERSION_OPTIONS,
-  getWebhookVersionLabel,
-  getWebhookVersionDocsUrl,
-} from "@calcom/features/webhooks/lib/constants";
+import { WEBHOOK_TRIGGER_EVENTS } from "@calcom/features/webhooks/lib/constants";
 import { subscriberUrlReserved } from "@calcom/features/webhooks/lib/subscriberUrlReserved";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { trpc } from "@calcom/trpc/react";
 import type { RouterOutputs } from "@calcom/trpc/react";
-import { Select } from "@calcom/ui/components/form";
-import { Icon } from "@calcom/ui/components/icon";
+import { trpc } from "@calcom/trpc/react";
 import { showToast } from "@calcom/ui/components/toast";
-import { Tooltip } from "@calcom/ui/components/tooltip";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
-
+import { Button } from "@coss/ui/components/button";
+import { CardFrame, CardFrameDescription, CardFrameHeader, CardFrameTitle } from "@coss/ui/components/card";
+import { ArrowLeftIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
 import WebhookForm from "../components/WebhookForm";
 
@@ -74,9 +66,9 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
 
     createWebhookMutation.mutate({
       subscriberUrl: values.subscriberUrl,
-      eventTriggers: (values.eventTriggers.filter((trigger) =>
+      eventTriggers: values.eventTriggers.filter((trigger) =>
         WEBHOOK_TRIGGER_EVENTS.includes(trigger as (typeof WEBHOOK_TRIGGER_EVENTS)[number])
-      ) as unknown) as Parameters<typeof createWebhookMutation.mutate>[0]["eventTriggers"],
+      ) as unknown as Parameters<typeof createWebhookMutation.mutate>[0]["eventTriggers"],
       active: values.active,
       payloadTemplate: values.payloadTemplate,
       secret: values.secret,
@@ -93,45 +85,29 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
       noRoutingFormTriggers={false}
       onSubmit={onCreateWebhook}
       apps={installedApps?.items.map((app) => app.slug)}
-      headerWrapper={(formMethods, children) => (
-        <SettingsHeaderWithBackButton
-          title={t("add_webhook")}
-          description={t("add_webhook_description", { appName: APP_NAME })}
-          borderInShellHeader={true}
-          CTA={
-            <div className="flex items-center gap-2">
-              <Tooltip content={t("webhook_version")}>
+      headerWrapper={(_formMethods, children) => (
+        <div className="flex flex-col gap-4">
+          <CardFrame>
+            <CardFrameHeader>
+              <div className="flex min-w-0 items-start gap-3">
+                <Button
+                  aria-label={t("go_back")}
+                  render={<Link href="/settings/developer/webhooks" />}
+                  size="icon-sm"
+                  variant="ghost">
+                  <ArrowLeftIcon />
+                </Button>
                 <div>
-                  <Select
-                    className="min-w-36"
-                    options={WEBHOOK_VERSION_OPTIONS}
-                    value={{
-                      value: formMethods.watch("version"),
-                      label: getWebhookVersionLabel(formMethods.watch("version")),
-                    }}
-                    onChange={(option) => {
-                      if (option) {
-                        formMethods.setValue("version", option.value, { shouldDirty: true });
-                      }
-                    }}
-                  />
+                  <CardFrameTitle>{t("add_webhook")}</CardFrameTitle>
+                  <CardFrameDescription>
+                    {t("add_webhook_description", { appName: APP_NAME })}
+                  </CardFrameDescription>
                 </div>
-              </Tooltip>
-              <Tooltip
-                content={t("webhook_version_docs", {
-                  version: getWebhookVersionLabel(formMethods.watch("version")),
-                })}>
-                <Link
-                  href={getWebhookVersionDocsUrl(formMethods.watch("version"))}
-                  target="_blank"
-                  className="text-subtle hover:text-emphasis flex items-center">
-                  <Icon name="external-link" className="h-4 w-4" />
-                </Link>
-              </Tooltip>
-            </div>
-          }>
-          {children}
-        </SettingsHeaderWithBackButton>
+              </div>
+            </CardFrameHeader>
+            {children}
+          </CardFrame>
+        </div>
       )}
     />
   );
