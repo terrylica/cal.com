@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import SettingsHeaderWithBackButton from "@calcom/features/settings/appDir/SettingsHeaderWithBackButton";
 import {
+  WEBHOOK_TRIGGER_EVENTS,
   WEBHOOK_VERSION_OPTIONS,
   getWebhookVersionLabel,
   getWebhookVersionDocsUrl,
@@ -73,7 +74,9 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
 
     createWebhookMutation.mutate({
       subscriberUrl: values.subscriberUrl,
-      eventTriggers: values.eventTriggers,
+      eventTriggers: (values.eventTriggers.filter((trigger) =>
+        WEBHOOK_TRIGGER_EVENTS.includes(trigger as (typeof WEBHOOK_TRIGGER_EVENTS)[number])
+      ) as unknown) as Parameters<typeof createWebhookMutation.mutate>[0]["eventTriggers"],
       active: values.active,
       payloadTemplate: values.payloadTemplate,
       secret: values.secret,

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import SettingsHeaderWithBackButton from "@calcom/features/settings/appDir/SettingsHeaderWithBackButton";
 import {
+  WEBHOOK_TRIGGER_EVENTS,
   WEBHOOK_VERSION_OPTIONS,
   getWebhookVersionLabel,
   getWebhookVersionDocsUrl,
@@ -78,38 +79,7 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
           title={t("edit_webhook")}
           description={t("add_webhook_description", { appName: APP_NAME })}
           borderInShellHeader={true}
-          CTA={
-            <div className="flex items-center gap-2">
-              <Tooltip content={t("webhook_version")}>
-                <div>
-                  <Select
-                    className="min-w-36"
-                    options={WEBHOOK_VERSION_OPTIONS}
-                    value={{
-                      value: formMethods.watch("version"),
-                      label: getWebhookVersionLabel(formMethods.watch("version")),
-                    }}
-                    onChange={(option) => {
-                      if (option) {
-                        formMethods.setValue("version", option.value, { shouldDirty: true });
-                      }
-                    }}
-                  />
-                </div>
-              </Tooltip>
-              <Tooltip
-                content={t("webhook_version_docs", {
-                  version: getWebhookVersionLabel(formMethods.watch("version")),
-                })}>
-                <Link
-                  href={getWebhookVersionDocsUrl(formMethods.watch("version"))}
-                  target="_blank"
-                  className="text-subtle hover:text-emphasis flex items-center">
-                  <Icon name="external-link" className="h-4 w-4" />
-                </Link>
-              </Tooltip>
-            </div>
-          }>
+        >
           {children}
         </SettingsHeaderWithBackButton>
       )}
@@ -139,7 +109,9 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
         editWebhookMutation.mutate({
           id: webhook.id,
           subscriberUrl: values.subscriberUrl,
-          eventTriggers: values.eventTriggers,
+          eventTriggers: (values.eventTriggers.filter((trigger) =>
+            WEBHOOK_TRIGGER_EVENTS.includes(trigger as (typeof WEBHOOK_TRIGGER_EVENTS)[number])
+          ) as unknown) as Parameters<typeof editWebhookMutation.mutate>[0]["eventTriggers"],
           active: values.active,
           payloadTemplate: values.payloadTemplate,
           secret: values.secret,
