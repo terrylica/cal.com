@@ -4,6 +4,7 @@ import logger from "@calcom/lib/logger";
 import type { BillingPeriodService } from "../billingPeriod/BillingPeriodService";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
 import type { HighWaterMarkService } from "../highWaterMark/HighWaterMarkService";
+import type { MonthlyProrationService } from "../proration/MonthlyProrationService";
 import type { HighWaterMarkRepository } from "../../repository/highWaterMark/HighWaterMarkRepository";
 import { HighWaterMarkStrategy } from "./HighWaterMarkStrategy";
 import { ImmediateUpdateStrategy } from "./ImmediateUpdateStrategy";
@@ -18,6 +19,7 @@ export interface ISeatBillingStrategyResolverDeps {
   billingProviderService: IBillingProviderService;
   highWaterMarkRepository: HighWaterMarkRepository;
   highWaterMarkService: HighWaterMarkService;
+  monthlyProrationService: MonthlyProrationService;
 }
 
 export class SeatBillingStrategyResolver {
@@ -27,7 +29,10 @@ export class SeatBillingStrategyResolver {
   constructor(private readonly deps: ISeatBillingStrategyResolverDeps) {
     this.fallback = new ImmediateUpdateStrategy(deps.billingProviderService);
     this.strategies = [
-      new MonthlyProrationStrategy(deps.featuresRepository),
+      new MonthlyProrationStrategy({
+        featuresRepository: deps.featuresRepository,
+        monthlyProrationService: deps.monthlyProrationService,
+      }),
       new HighWaterMarkStrategy({
         featuresRepository: deps.featuresRepository,
         highWaterMarkRepository: deps.highWaterMarkRepository,

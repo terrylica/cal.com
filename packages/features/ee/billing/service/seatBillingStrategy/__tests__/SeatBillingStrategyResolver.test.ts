@@ -36,6 +36,13 @@ function createMockHighWaterMarkService() {
   };
 }
 
+function createMockMonthlyProrationService() {
+  return {
+    handleProrationPaymentSuccess: vi.fn(),
+    handleProrationPaymentFailure: vi.fn(),
+  };
+}
+
 const baseBillingInfo: BillingPeriodInfo = {
   billingPeriod: null,
   subscriptionStart: new Date("2025-01-01"),
@@ -57,6 +64,7 @@ function createResolver(
     billingProviderService: createMockBillingProviderService(),
     highWaterMarkRepository: overrides?.highWaterMarkRepository ?? createMockHighWaterMarkRepository(),
     highWaterMarkService: createMockHighWaterMarkService(),
+    monthlyProrationService: createMockMonthlyProrationService(),
   } as never);
 }
 
@@ -72,6 +80,7 @@ describe("SeatBillingStrategyResolver", () => {
       billingProviderService: createMockBillingProviderService(),
       highWaterMarkRepository: createMockHighWaterMarkRepository(),
       highWaterMarkService: createMockHighWaterMarkService(),
+      monthlyProrationService: createMockMonthlyProrationService(),
     } as never);
     const strategy = await resolver.resolve(1);
 

@@ -1,9 +1,12 @@
 import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
-import type { ISeatBillingStrategy, SeatChangeContext } from "./ISeatBillingStrategy";
+import { BaseSeatBillingStrategy } from "./ISeatBillingStrategy";
+import type { SeatChangeContext } from "./ISeatBillingStrategy";
 
-export class ImmediateUpdateStrategy implements ISeatBillingStrategy {
-  constructor(private readonly billingProviderService: IBillingProviderService) {}
+export class ImmediateUpdateStrategy extends BaseSeatBillingStrategy {
+  constructor(private readonly billingProviderService: IBillingProviderService) {
+    super();
+  }
 
   async canHandle(_info: BillingPeriodInfo): Promise<boolean> {
     return true;
@@ -15,13 +18,5 @@ export class ImmediateUpdateStrategy implements ISeatBillingStrategy {
       subscriptionItemId: context.subscriptionItemId,
       membershipCount: context.membershipCount,
     });
-  }
-
-  async onInvoiceUpcoming(_subscriptionId: string): Promise<{ applied: boolean }> {
-    return { applied: false };
-  }
-
-  async onRenewalPaid(_subscriptionId: string, _periodStart: Date): Promise<{ reset: boolean }> {
-    return { reset: false };
   }
 }

@@ -4,7 +4,8 @@ import logger from "@calcom/lib/logger";
 import type { BillingPeriodInfo } from "../billingPeriod/BillingPeriodService";
 import type { HighWaterMarkService } from "../highWaterMark/HighWaterMarkService";
 import type { HighWaterMarkRepository } from "../../repository/highWaterMark/HighWaterMarkRepository";
-import type { ISeatBillingStrategy, SeatChangeContext } from "./ISeatBillingStrategy";
+import { BaseSeatBillingStrategy } from "./ISeatBillingStrategy";
+import type { SeatChangeContext } from "./ISeatBillingStrategy";
 
 const log = logger.getSubLogger({ prefix: ["HighWaterMarkStrategy"] });
 
@@ -14,8 +15,10 @@ export interface IHighWaterMarkStrategyDeps {
   highWaterMarkService: HighWaterMarkService;
 }
 
-export class HighWaterMarkStrategy implements ISeatBillingStrategy {
-  constructor(private readonly deps: IHighWaterMarkStrategyDeps) {}
+export class HighWaterMarkStrategy extends BaseSeatBillingStrategy {
+  constructor(private readonly deps: IHighWaterMarkStrategyDeps) {
+    super();
+  }
 
   async canHandle(info: BillingPeriodInfo): Promise<boolean> {
     if (info.isInTrial || !info.subscriptionStart) return false;
@@ -47,12 +50,12 @@ export class HighWaterMarkStrategy implements ISeatBillingStrategy {
     }
   }
 
-  async onInvoiceUpcoming(subscriptionId: string): Promise<{ applied: boolean }> {
+  override async onInvoiceUpcoming(subscriptionId: string): Promise<{ applied: boolean }> {
     const applied = await this.deps.highWaterMarkService.applyHighWaterMarkToSubscription(subscriptionId);
     return { applied };
   }
 
-  async onRenewalPaid(subscriptionId: string, periodStart: Date): Promise<{ reset: boolean }> {
+  override async onRenewalPaid(subscriptionId: string, periodStart: Date): Promise<{ reset: boolean }> {
     const reset = await this.deps.highWaterMarkService.resetSubscriptionAfterRenewal({
       subscriptionId,
       newPeriodStart: periodStart,
