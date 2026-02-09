@@ -12,7 +12,7 @@ import { extractHostTimezone } from "@calcom/lib/hashedLinksUtils";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import classNames from "@calcom/ui/classNames";
 import { Label, SettingsToggle } from "@calcom/ui/components/form";
-import { MultiplePrivateLinksController } from "@calcom/web/modules/event-types/components";
+import { MultiplePrivateLinksController } from "@calcom/web/modules/event-types/components/MultiplePrivateLinksController";
 import { TimezoneSelect as WebTimezoneSelect } from "@calcom/web/modules/timezone/components/TimezoneSelect";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
