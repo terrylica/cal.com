@@ -1,24 +1,49 @@
 "use client";
 
-import SettingsHeaderWithBackButton from "@calcom/features/settings/appDir/SettingsHeaderWithBackButton";
 import { APP_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { SkeletonText, SkeletonContainer } from "@calcom/ui/components/skeleton";
+import { Button } from "@coss/ui/components/button";
+import {
+  Card,
+  CardFrame,
+  CardFrameDescription,
+  CardFrameHeader,
+  CardFrameTitle,
+  CardPanel,
+} from "@coss/ui/components/card";
+import { Skeleton } from "@coss/ui/components/skeleton";
+import { ArrowLeftIcon } from "lucide-react";
+import Link from "next/link";
 
 export const SkeletonLoader = () => {
   const { t } = useLocale();
-  
+
   return (
-    <SettingsHeaderWithBackButton
-      title={t("add_webhook")}
-      description={t("add_webhook_description", { appName: APP_NAME })}
-      borderInShellHeader={true}>
-      <SkeletonContainer>
-        <div className="divide-subtle border-subtle stack-y-6 rounded-b-lg border border-t-0 px-6 py-4">
-          <SkeletonText className="h-8 w-full" />
-          <SkeletonText className="h-8 w-full" />
+    <CardFrame>
+      <CardFrameHeader>
+        <div className="flex min-w-0 items-start gap-3">
+          <Button
+            aria-label={t("go_back")}
+            render={<Link href="/settings/developer/webhooks" />}
+            size="icon-sm"
+            variant="ghost">
+            <ArrowLeftIcon />
+          </Button>
+          <div>
+            <CardFrameTitle>{t("add_webhook")}</CardFrameTitle>
+            <CardFrameDescription>{t("add_webhook_description", { appName: APP_NAME })}</CardFrameDescription>
+          </div>
         </div>
-      </SkeletonContainer>
-    </SettingsHeaderWithBackButton>
+      </CardFrameHeader>
+      <Card>
+        <CardPanel>
+          <div className="space-y-6">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        </CardPanel>
+      </Card>
+    </CardFrame>
   );
 };
