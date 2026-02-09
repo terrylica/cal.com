@@ -1,0 +1,51 @@
+import { _generateMetadata, getTranslate } from "app/_utils";
+
+import { Resource } from "@calcom/features/pbac/domain/types/permission-registry";
+import { getResourcePermissions } from "@calcom/features/pbac/lib/resource-permissions";
+import { MembershipRole } from "@calcom/prisma/enums";
+import SettingsHeader from "@calcom/web/modules/settings/components/SettingsHeader";
+
+import OrgCustomDomainView from "~/ee/organizations/custom-domain";
+
+import { validateUserHasOrg } from "../actions/validateUserHasOrg";
+
+export const generateMetadata = async () =>
+  await _generateMetadata(
+    (t) => t("custom_domain"),
+    (t) => t("custom_domain_description"),
+    undefined,
+    undefined,
+    "/settings/organizations/domain"
+  );
+
+const Page = async () => {
+  const t = await getTranslate();
+
+  const session = await validateUserHasOrg();
+
+  const { canRead, canEdit } = await getResourcePermissions({
+    userId: session.user.id,
+    teamId: session.user.profile.organizationId,
+    resource: Resource.Organization,
+    userRole: session.user.org.role,
+    fallbackRoles: {
+      read: {
+        roles: [MembershipRole.ADMIN, MembershipRole.OWNER],
+      },
+      update: {
+        roles: [MembershipRole.ADMIN, MembershipRole.OWNER],
+      },
+    },
+  });
+
+  return (
+    <SettingsHeader
+      title={t("custom_domain")}
+      description={t("custom_domain_description")}
+      borderInShellHeader={true}>
+      <OrgCustomDomainView orgId={session.user.profile.organizationId} permissions={{ canRead, canEdit }} />
+    </SettingsHeader>
+  );
+};
+
+export default Page;
