@@ -21,6 +21,13 @@ function createMockBillingProviderService(): IBillingProviderService {
   return { handleSubscriptionUpdate: vi.fn() } as unknown as IBillingProviderService;
 }
 
+function createMockHighWaterMarkRepository() {
+  return {
+    getByTeamId: vi.fn(),
+    updateIfHigher: vi.fn().mockResolvedValue({ updated: false, previousHighWaterMark: null }),
+  };
+}
+
 const baseBillingInfo: BillingPeriodInfo = {
   billingPeriod: null,
   subscriptionStart: new Date("2025-01-01"),
@@ -39,6 +46,7 @@ function createResolver(
     billingPeriodService: createMockBillingPeriodService(info),
     featuresRepository: createMockFeaturesRepository(enabledFlags),
     billingProviderService: createMockBillingProviderService(),
+    highWaterMarkRepository: createMockHighWaterMarkRepository(),
   } as never);
 }
 
@@ -52,6 +60,7 @@ describe("SeatBillingStrategyResolver", () => {
       billingPeriodService,
       featuresRepository: createMockFeaturesRepository({ "monthly-proration": true }),
       billingProviderService: createMockBillingProviderService(),
+      highWaterMarkRepository: createMockHighWaterMarkRepository(),
     } as never);
     const strategy = await resolver.resolve(1);
 

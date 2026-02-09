@@ -2,6 +2,7 @@ import type { IFeaturesRepository } from "@calcom/features/flags/features.reposi
 
 import type { BillingPeriodService } from "../billingPeriod/BillingPeriodService";
 import type { IBillingProviderService } from "../billingProvider/IBillingProviderService";
+import type { HighWaterMarkRepository } from "../../repository/highWaterMark/HighWaterMarkRepository";
 import { HighWaterMarkStrategy } from "./HighWaterMarkStrategy";
 import { ImmediateUpdateStrategy } from "./ImmediateUpdateStrategy";
 import type { ISeatBillingStrategy } from "./ISeatBillingStrategy";
@@ -11,6 +12,7 @@ export interface ISeatBillingStrategyResolverDeps {
   billingPeriodService: BillingPeriodService;
   featuresRepository: IFeaturesRepository;
   billingProviderService: IBillingProviderService;
+  highWaterMarkRepository: HighWaterMarkRepository;
 }
 
 export class SeatBillingStrategyResolver {
@@ -19,7 +21,10 @@ export class SeatBillingStrategyResolver {
   constructor(private readonly deps: ISeatBillingStrategyResolverDeps) {
     this.strategies = [
       new MonthlyProrationStrategy(deps.featuresRepository),
-      new HighWaterMarkStrategy(deps.featuresRepository),
+      new HighWaterMarkStrategy({
+        featuresRepository: deps.featuresRepository,
+        highWaterMarkRepository: deps.highWaterMarkRepository,
+      }),
       new ImmediateUpdateStrategy(deps.billingProviderService),
     ];
   }
