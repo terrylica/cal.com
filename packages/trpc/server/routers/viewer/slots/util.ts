@@ -1597,29 +1597,38 @@ export class AvailableSlotsService {
             timeZone: preferredTimezone,
             dateFrom: startTime,
             dateTo: endTime,
+            travelSchedules: [],
           });
           preferredDateRanges = dateRanges;
         }
       }
 
       const eventLength = input.duration || eventType.length;
-      for (const slots of Object.values(filteredSlotsMappedToDate)) {
-        for (const slot of slots) {
+      for (const [date, slots] of Object.entries(filteredSlotsMappedToDate)) {
+        filteredSlotsMappedToDate[date] = slots.map((slot) => {
           if (preferredTimesConfig.mode === "auto" && preferredTimesConfig.auto?.preferTimeOfDay) {
             const slotHour = dayjs.utc(slot.time).tz(input.timeZone).hour();
             const isMorning = slotHour < 12;
-            slot.preferred =
-              preferredTimesConfig.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning;
-          } else if (preferredTimesConfig.mode === "manual" && preferredDateRanges) {
+            return {
+              ...slot,
+              preferred:
+                preferredTimesConfig.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning,
+            };
+          }
+          if (preferredTimesConfig.mode === "manual" && preferredDateRanges) {
             const slotStart = dayjs.utc(slot.time);
             const slotEnd = slotStart.add(eventLength, "minute");
-            slot.preferred = preferredDateRanges.some(
-              (range) =>
-                (slotStart.isAfter(range.start) || slotStart.isSame(range.start)) &&
-                (slotEnd.isBefore(range.end) || slotEnd.isSame(range.end))
-            );
+            return {
+              ...slot,
+              preferred: preferredDateRanges.some(
+                (range) =>
+                  (slotStart.isAfter(range.start) || slotStart.isSame(range.start)) &&
+                  (slotEnd.isBefore(range.end) || slotEnd.isSame(range.end))
+              ),
+            };
           }
-        }
+          return slot;
+        });
       }
     }
 
