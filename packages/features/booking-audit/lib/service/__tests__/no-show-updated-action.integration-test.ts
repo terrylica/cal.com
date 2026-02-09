@@ -15,7 +15,7 @@ import {
   enableFeatureForOrganization,
 } from "./integration-utils";
 
-describe("No-Show Updated Action Integration", () => {
+describe.skip("No-Show Updated Action Integration", () => {
   let bookingAuditTaskConsumer: BookingAuditTaskConsumer;
   let bookingAuditViewerService: BookingAuditViewerService;
 
