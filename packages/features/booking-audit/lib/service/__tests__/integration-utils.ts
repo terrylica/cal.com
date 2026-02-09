@@ -117,7 +117,7 @@ export const enableFeatureForOrganization = async (organizationId: number, featu
 
 function cleanupLog(step: string, detail?: string) {
   const ts = new Date().toISOString();
-  console.log(`[CLEANUP][pid:${process.pid}][${ts}] ${step}${detail ? ` | ${detail}` : ""}`);
+  process.stderr.write(`[CLEANUP][pid:${process.pid}][${ts}] ${step}${detail ? ` | ${detail}` : ""}\n`);
 }
 
 export const cleanupTestData = async (testData: {

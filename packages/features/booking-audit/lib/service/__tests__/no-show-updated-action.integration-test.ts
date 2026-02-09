@@ -21,7 +21,7 @@ const FILE_ID = `no-show-${process.pid}`;
 function debugLog(testName: string, message: string, data?: Record<string, unknown>) {
   const timestamp = new Date().toISOString();
   const dataStr = data ? ` | ${JSON.stringify(data)}` : "";
-  console.log(`[DEBUG][${FILE_ID}][${timestamp}][${testName}] ${message}${dataStr}`);
+  process.stderr.write(`[DEBUG][${FILE_ID}][${timestamp}][${testName}] ${message}${dataStr}\n`);
 }
 
 async function checkBookingExists(bookingUid: string, context: string): Promise<boolean> {
