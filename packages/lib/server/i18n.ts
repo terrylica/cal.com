@@ -8,7 +8,7 @@ const log = logger.getSubLogger({ prefix: ["[i18n]"] });
 
 // Import only English translations directly to avoid HTTP requests
 // Other languages will be loaded dynamically to minimize bundle size
-const englishTranslations: Record<string, string> = require("@calcom/config/i18n/locales/en/common.json");
+const englishTranslations: Record<string, string> = require("../../config/i18n/locales/en/common.json");
 
 const translationCache = new Map<string, Record<string, string>>();
 const i18nInstanceCache = new Map<string, any>();
@@ -48,7 +48,7 @@ export async function loadTranslations(_locale: string, _ns: string) {
   }
 
   try {
-    const { default: localeTranslations } = await import(`@calcom/config/i18n/locales/${locale}/${ns}.json`);
+    const { default: localeTranslations } = await import(`../../config/i18n/locales/${locale}/${ns}.json`);
 
     const mergedTranslations = mergeWithEnglishFallback(localeTranslations);
     translationCache.set(cacheKey, mergedTranslations);

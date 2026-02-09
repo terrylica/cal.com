@@ -1,4 +1,3 @@
-import process from "node:process";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { fetchWithTimeout } from "@calcom/lib/fetchWithTimeout";
 import logger from "@calcom/lib/logger";
