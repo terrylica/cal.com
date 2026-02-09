@@ -11,7 +11,6 @@ import type { IWebhookProducerService } from "@calcom/features/webhooks/lib/inte
 import type { IWebhookNotifier } from "@calcom/features/webhooks/lib/interface/webhook";
 import type { WebhookTaskConsumer } from "@calcom/features/webhooks/lib/service/WebhookTaskConsumer";
 import { type Container, createContainer } from "@evyweb/ioctopus";
-import { moduleLoader as bookingRepositoryModuleLoader } from "../../modules/Booking";
 import { moduleLoader as prismaModuleLoader } from "../../modules/Prisma";
 import { moduleLoader as loggerModuleLoader } from "../../shared/services/logger.service";
 import { taskerServiceModule } from "../../shared/services/tasker.service";
@@ -28,11 +27,20 @@ import { WEBHOOK_TOKENS } from "../Webhooks.tokens";
 
 const webhookContainer: Container = createContainer();
 
-// Load shared infrastructure
+// Load shared infrastructure (BookingRepository is loaded lazily to avoid circular deps in Nest/API v2)
 loggerModuleLoader.loadModule(webhookContainer);
 prismaModuleLoader.loadModule(webhookContainer);
-bookingRepositoryModuleLoader.loadModule(webhookContainer);
 webhookContainer.load(SHARED_TOKENS.TASKER, taskerServiceModule);
+
+let bookingRepositoryModuleLoaded = false;
+function ensureBookingRepositoryLoaded(): void {
+  if (bookingRepositoryModuleLoaded) return;
+  const { moduleLoader: bookingRepositoryModuleLoader } = require("../../modules/Booking") as {
+    moduleLoader: { loadModule: (c: Container) => void };
+  };
+  bookingRepositoryModuleLoader.loadModule(webhookContainer);
+  bookingRepositoryModuleLoaded = true;
+}
 
 // Load webhook module (includes cross-table repositories + all webhook services)
 webhookContainer.load(WEBHOOK_TOKENS.WEBHOOK_EVENT_TYPE_REPOSITORY, webhookModule);
@@ -68,6 +76,7 @@ export { webhookContainer };
  * For application code, use `getWebhookFeature().consumer` instead.
  */
 export function getWebhookTaskConsumer(): WebhookTaskConsumer {
+  ensureBookingRepositoryLoaded();
   return webhookContainer.get<WebhookTaskConsumer>(WEBHOOK_TOKENS.WEBHOOK_TASK_CONSUMER);
 }
 
@@ -91,6 +100,7 @@ export function getWebhookTaskConsumer(): WebhookTaskConsumer {
  * ```
  */
 export function getWebhookFeature(): WebhookFeature {
+  ensureBookingRepositoryLoaded();
   return {
     producer: webhookContainer.get<IWebhookProducerService>(WEBHOOK_TOKENS.WEBHOOK_PRODUCER_SERVICE),
     consumer: webhookContainer.get<WebhookTaskConsumer>(WEBHOOK_TOKENS.WEBHOOK_TASK_CONSUMER),
@@ -130,5 +140,6 @@ export function getWebhookFeature(): WebhookFeature {
  * @returns Lightweight webhook producer service (no heavy dependencies)
  */
 export function getWebhookProducer(): IWebhookProducerService {
+  ensureBookingRepositoryLoaded();
   return webhookContainer.get<IWebhookProducerService>(WEBHOOK_TOKENS.WEBHOOK_PRODUCER_SERVICE);
 }
