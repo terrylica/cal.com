@@ -25,6 +25,7 @@ import {
 import { showToast } from "@calcom/ui/components/toast";
 import { trpc } from "@calcom/trpc/react";
 import Link from "next/link";
+import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type WeightMember = {
@@ -125,13 +126,8 @@ export const EditWeightsForAllTeamMembers = ({
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLocale();
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const { pendingChanges } = useHosts();
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   // When segment filtering is active, load all matching members at once (no limit).
   const isSegmentQueryEnabled = assignRRMembersUsingSegment && !!queryValue && !!teamId && isOpen;

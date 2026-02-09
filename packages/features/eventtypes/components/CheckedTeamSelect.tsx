@@ -60,9 +60,6 @@ export const CheckedTeamSelect = ({
   hasNextPageSelected,
   isFetchingNextPageSelected,
   fetchNextPageSelected,
-  assignedSearchValue,
-  onAssignedSearchChange,
-  isSearchingAssigned,
   ...props
 }: Omit<Props<CheckedSelectOption, true>, "value" | "onChange"> & {
   options?: Options<CheckedSelectOption>;
@@ -78,9 +75,6 @@ export const CheckedTeamSelect = ({
   hasNextPageSelected?: boolean;
   isFetchingNextPageSelected?: boolean;
   fetchNextPageSelected?: () => void;
-  assignedSearchValue?: string;
-  onAssignedSearchChange?: (value: string) => void;
-  isSearchingAssigned?: boolean;
 }) => {
   const isPlatform = useIsPlatform();
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);

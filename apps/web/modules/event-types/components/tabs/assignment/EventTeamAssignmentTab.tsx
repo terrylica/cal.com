@@ -45,6 +45,7 @@ import {
 import type { TFunction } from "i18next";
 import Link from "next/link";
 import type { ComponentProps, Dispatch, SetStateAction } from "react";
+import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import type { Options } from "react-select";
@@ -697,12 +698,7 @@ const ChildrenEventTypes = ({
   const { t } = useLocale();
 
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const debouncedSearch = useDebounce(search, 300);
 
   // Dropdown search for adding new children
   const {
@@ -718,15 +714,7 @@ const ChildrenEventTypes = ({
 
   // Search for assigned children list
   const [assignedChildrenSearch, setAssignedChildrenSearch] = useState("");
-  const [debouncedAssignedChildrenSearch, setDebouncedAssignedChildrenSearch] =
-    useState("");
-  useEffect(() => {
-    const timer = setTimeout(
-      () => setDebouncedAssignedChildrenSearch(assignedChildrenSearch),
-      300
-    );
-    return () => clearTimeout(timer);
-  }, [assignedChildrenSearch]);
+  const debouncedAssignedChildrenSearch = useDebounce(assignedChildrenSearch, 300);
 
   // Paginated display of existing children
   const pendingChanges = getValues("pendingChildrenChanges") ?? {
@@ -950,14 +938,7 @@ const Hosts = ({
   const eventTypeId = useWatch({ control, name: "id" });
 
   const [assignedSearch, setAssignedSearch] = useState("");
-  const [debouncedAssignedSearch, setDebouncedAssignedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(
-      () => setDebouncedAssignedSearch(assignedSearch),
-      300
-    );
-    return () => clearTimeout(timer);
-  }, [assignedSearch]);
+  const debouncedAssignedSearch = useDebounce(assignedSearch, 300);
 
   const {
     hosts: paginatedHosts,

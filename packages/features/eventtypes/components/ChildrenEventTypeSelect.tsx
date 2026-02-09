@@ -11,7 +11,8 @@ import { Avatar } from "@calcom/ui/components/avatar";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { ButtonGroup } from "@calcom/ui/components/buttonGroup";
-import { Select, TextField } from "@calcom/ui/components/form";
+import { AssignedSearchInput } from "@calcom/features/eventtypes/components/AssignedSearchInput";
+import { Select } from "@calcom/ui/components/form";
 import { Switch } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { Tooltip } from "@calcom/ui/components/tooltip";
@@ -89,21 +90,12 @@ export const ChildrenEventTypeSelect = ({
         {...props}
       />
       {onAssignedSearchChange && (
-        <div className="mt-3">
-          <TextField
-            type="search"
-            placeholder={t("search")}
-            value={assignedSearchValue ?? ""}
-            onChange={(e) => onAssignedSearchChange(e.target.value)}
-            addOnLeading={
-              isSearchingAssigned ? (
-                <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
-              ) : (
-                <Icon name="search" className="text-subtle h-4 w-4" />
-              )
-            }
-          />
-        </div>
+        <AssignedSearchInput
+          value={assignedSearchValue ?? ""}
+          onChange={onAssignedSearchChange}
+          isSearching={isSearchingAssigned}
+          className="mt-3"
+        />
       )}
       {/* This class name conditional looks a bit odd but it allows a seamless transition when using autoanimate
        - Slides down from the top instead of just teleporting in from nowhere*/}

@@ -11,11 +11,12 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { isEqual } from "@calcom/lib/isEqual";
 import type { AttributesQueryValue } from "@calcom/lib/raqb/types";
 import { type RouterOutputs, trpc } from "@calcom/trpc/react";
+import { AssignedSearchInput } from "@calcom/features/eventtypes/components/AssignedSearchInput";
 import cn from "@calcom/ui/classNames";
-import { TextField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { keepPreviousData } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDebounce } from "@calcom/lib/hooks/useDebounce";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { BuilderProps, ImmutableTree, JsonTree } from "react-awesome-query-builder";
 import { Builder, Utils as QbUtils, Query } from "react-awesome-query-builder";
 
@@ -112,11 +113,7 @@ function MatchingTeamMembers({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const debouncedSearch = useDebounce(search, 300);
 
   // Check if queryValue has valid children properties value
   const hasValidValue = queryValue?.children1
@@ -187,18 +184,10 @@ function MatchingTeamMembers({
       <div className="text-emphasis flex items-center text-sm font-medium">
         <span>{t("x_matching_members", { x: total })}</span>
       </div>
-      <TextField
-        type="search"
-        placeholder={t("search")}
+      <AssignedSearchInput
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        addOnLeading={
-          isFetching && debouncedSearch ? (
-            <Icon name="loader" className="text-subtle h-4 w-4 animate-spin" />
-          ) : (
-            <Icon name="search" className="text-subtle h-4 w-4" />
-          )
-        }
+        onChange={setSearch}
+        isSearching={isFetching && !!debouncedSearch}
       />
       <div ref={scrollContainerRef} className="max-h-[400px] overflow-y-auto">
         <ul className="divide-subtle divide-y">

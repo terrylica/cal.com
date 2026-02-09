@@ -1,5 +1,6 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useRef, useState, memo, useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import type { OptionProps, SingleValueProps } from "react-select";
@@ -36,7 +37,7 @@ import { Button } from "@calcom/ui/components/button";
 import { Label } from "@calcom/ui/components/form";
 import { Select } from "@calcom/ui/components/form";
 import { SettingsToggle } from "@calcom/ui/components/form";
-import { TextField } from "@calcom/ui/components/form";
+import { AssignedSearchInput } from "@calcom/features/eventtypes/components/AssignedSearchInput";
 import { Icon } from "@calcom/ui/components/icon";
 import { Spinner } from "@calcom/ui/components/icon";
 import { SkeletonText } from "@calcom/ui/components/skeleton";
@@ -714,12 +715,7 @@ const TeamAvailability = ({
   const eventTypeId = formMethods.getValues("id");
 
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const debouncedSearch = useDebounce(search, 300);
 
   const { hosts, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     usePaginatedAvailabilityHosts({
@@ -763,12 +759,10 @@ const TeamAvailability = ({
           </p>
         </div>
         <div className="border-subtle rounded-b-md border border-t-0 p-6">
-          <TextField
-            placeholder={t("search")}
+          <AssignedSearchInput
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            addOnLeading={<Icon name="search" className="text-subtle h-4 w-4" />}
-            containerClassName="mb-3"
+            onChange={setSearch}
+            className="mb-3"
           />
           {isLoading ? (
             <div className="flex justify-center py-4">
