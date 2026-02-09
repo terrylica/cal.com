@@ -157,6 +157,56 @@ function withSlotsCache(
   };
 }
 
+type SlotRecord = Record<string, { time: string; [key: string]: unknown }[]>;
+
+interface HighlightPreferredTimesConfig {
+  mode: "auto" | "manual";
+  auto?: { preferTimeOfDay?: "morning" | "afternoon" };
+  manual?: { scheduleId?: number };
+}
+
+export function applyPreferredFlagToSlots({
+  slots,
+  config,
+  timeZone,
+  eventLength,
+  preferredDateRanges,
+}: {
+  slots: SlotRecord;
+  config: HighlightPreferredTimesConfig;
+  timeZone: string;
+  eventLength: number;
+  preferredDateRanges: { start: Dayjs; end: Dayjs }[] | null;
+}): SlotRecord {
+  const result: SlotRecord = {};
+  for (const [date, dateSlots] of Object.entries(slots)) {
+    result[date] = dateSlots.map((slot) => {
+      if (config.mode === "auto" && config.auto?.preferTimeOfDay) {
+        const slotHour = dayjs.utc(slot.time).tz(timeZone).hour();
+        const isMorning = slotHour < 12;
+        return {
+          ...slot,
+          preferred: config.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning,
+        };
+      }
+      if (config.mode === "manual" && preferredDateRanges) {
+        const slotStart = dayjs.utc(slot.time);
+        const slotEnd = slotStart.add(eventLength, "minute");
+        return {
+          ...slot,
+          preferred: preferredDateRanges.some(
+            (range) =>
+              (slotStart.isAfter(range.start) || slotStart.isSame(range.start)) &&
+              (slotEnd.isBefore(range.end) || slotEnd.isSame(range.end))
+          ),
+        };
+      }
+      return slot;
+    });
+  }
+  return result;
+}
+
 export class AvailableSlotsService {
   constructor(public readonly dependencies: IAvailableSlotsService) {}
 
@@ -1604,31 +1654,15 @@ export class AvailableSlotsService {
       }
 
       const eventLength = input.duration || eventType.length;
-      for (const [date, slots] of Object.entries(filteredSlotsMappedToDate)) {
-        filteredSlotsMappedToDate[date] = slots.map((slot) => {
-          if (preferredTimesConfig.mode === "auto" && preferredTimesConfig.auto?.preferTimeOfDay) {
-            const slotHour = dayjs.utc(slot.time).tz(input.timeZone).hour();
-            const isMorning = slotHour < 12;
-            return {
-              ...slot,
-              preferred:
-                preferredTimesConfig.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning,
-            };
-          }
-          if (preferredTimesConfig.mode === "manual" && preferredDateRanges) {
-            const slotStart = dayjs.utc(slot.time);
-            const slotEnd = slotStart.add(eventLength, "minute");
-            return {
-              ...slot,
-              preferred: preferredDateRanges.some(
-                (range) =>
-                  (slotStart.isAfter(range.start) || slotStart.isSame(range.start)) &&
-                  (slotEnd.isBefore(range.end) || slotEnd.isSame(range.end))
-              ),
-            };
-          }
-          return slot;
-        });
+      const updatedSlots = applyPreferredFlagToSlots({
+        slots: filteredSlotsMappedToDate,
+        config: preferredTimesConfig,
+        timeZone: input.timeZone,
+        eventLength,
+        preferredDateRanges,
+      });
+      for (const [date, slots] of Object.entries(updatedSlots)) {
+        filteredSlotsMappedToDate[date] = slots;
       }
     }
 
