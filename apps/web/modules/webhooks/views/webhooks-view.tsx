@@ -14,7 +14,7 @@ import {
 } from "@coss/ui/components/empty";
 import { WebhookIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useState } from "react";
 import { CreateNewWebhookButton, WebhookListItem } from "../components";
 import { WebhooksFilter } from "../components/WebhooksFilter";
 import { WebhooksHeader } from "./webhooks-header";

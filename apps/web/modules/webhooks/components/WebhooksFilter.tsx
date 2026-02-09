@@ -68,7 +68,14 @@ export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }
   const [open, setOpen] = useState(false);
 
   const handleValueChange = (value: ProfileOption | ProfileOption[] | null) => {
-    const newSelection = Array.isArray(value) ? value : value ? [value] : [];
+    let newSelection: ProfileOption[];
+    if (Array.isArray(value)) {
+      newSelection = value;
+    } else if (value) {
+      newSelection = [value];
+    } else {
+      newSelection = [];
+    }
     onSelectionChange(newSelection.map((p) => p.id));
   };
 
