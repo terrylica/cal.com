@@ -165,6 +165,22 @@ interface HighlightPreferredTimesConfig {
   manual?: { scheduleId?: number };
 }
 
+function binarySearchRangeIndex(sortedStarts: number[], value: number): number {
+  let lo = 0;
+  let hi = sortedStarts.length - 1;
+  let result = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    if (sortedStarts[mid] <= value) {
+      result = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return result;
+}
+
 export function applyPreferredFlagToSlots({
   slots,
   config,
@@ -178,6 +194,15 @@ export function applyPreferredFlagToSlots({
   eventLength: number;
   preferredDateRanges: { start: Dayjs; end: Dayjs }[] | null;
 }): SlotRecord {
+  let sortedRanges: { startMs: number; endMs: number }[] | null = null;
+  let sortedStarts: number[] | null = null;
+  if (config.mode === "manual" && preferredDateRanges) {
+    sortedRanges = preferredDateRanges
+      .map((r) => ({ startMs: r.start.valueOf(), endMs: r.end.valueOf() }))
+      .sort((a, b) => a.startMs - b.startMs);
+    sortedStarts = sortedRanges.map((r) => r.startMs);
+  }
+
   const result: SlotRecord = {};
   for (const [date, dateSlots] of Object.entries(slots)) {
     result[date] = dateSlots.map((slot) => {
@@ -189,17 +214,15 @@ export function applyPreferredFlagToSlots({
           preferred: config.auto.preferTimeOfDay === "morning" ? isMorning : !isMorning,
         };
       }
-      if (config.mode === "manual" && preferredDateRanges) {
-        const slotStart = dayjs.utc(slot.time);
-        const slotEnd = slotStart.add(eventLength, "minute");
-        return {
-          ...slot,
-          preferred: preferredDateRanges.some(
-            (range) =>
-              (slotStart.isAfter(range.start) || slotStart.isSame(range.start)) &&
-              (slotEnd.isBefore(range.end) || slotEnd.isSame(range.end))
-          ),
-        };
+      if (config.mode === "manual" && sortedRanges && sortedStarts) {
+        const slotStartMs = dayjs.utc(slot.time).valueOf();
+        const slotEndMs = slotStartMs + eventLength * 60_000;
+        const idx = binarySearchRangeIndex(sortedStarts, slotStartMs);
+        let preferred = false;
+        if (idx >= 0 && slotStartMs >= sortedRanges[idx].startMs && slotEndMs <= sortedRanges[idx].endMs) {
+          preferred = true;
+        }
+        return { ...slot, preferred };
       }
       return slot;
     });
@@ -1657,7 +1680,7 @@ export class AvailableSlotsService {
       const updatedSlots = applyPreferredFlagToSlots({
         slots: filteredSlotsMappedToDate,
         config: preferredTimesConfig,
-        timeZone: input.timeZone,
+        timeZone: input.timeZone ?? "UTC",
         eventLength,
         preferredDateRanges,
       });
