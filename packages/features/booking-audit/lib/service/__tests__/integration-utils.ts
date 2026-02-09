@@ -115,6 +115,11 @@ export const enableFeatureForOrganization = async (organizationId: number, featu
   });
 };
 
+function cleanupLog(step: string, detail?: string) {
+  const ts = new Date().toISOString();
+  console.log(`[CLEANUP][pid:${process.pid}][${ts}] ${step}${detail ? ` | ${detail}` : ""}`);
+}
+
 export const cleanupTestData = async (testData: {
   bookingUid?: string;
   userUuids?: string[];
@@ -124,13 +129,17 @@ export const cleanupTestData = async (testData: {
   userIds?: number[];
   featureSlug?: string;
 }) => {
+  cleanupLog("START", `bookingUid=${testData.bookingUid} userIds=${JSON.stringify(testData.userIds)}`);
+
   if (testData.bookingUid) {
+    cleanupLog("deleting bookingAudit", testData.bookingUid);
     await prisma.bookingAudit.deleteMany({
       where: { bookingUid: testData.bookingUid },
     });
   }
 
   if (testData.userUuids?.length || testData.attendeeEmails?.length) {
+    cleanupLog("deleting auditActor", `uuids=${JSON.stringify(testData.userUuids)} emails=${JSON.stringify(testData.attendeeEmails)}`);
     await prisma.auditActor.deleteMany({
       where: {
         OR: [
@@ -142,18 +151,23 @@ export const cleanupTestData = async (testData: {
   }
 
   if (testData.attendeeEmails?.length) {
+    cleanupLog("deleting attendees", JSON.stringify(testData.attendeeEmails));
     await prisma.attendee.deleteMany({
       where: { email: { in: testData.attendeeEmails } },
     });
   }
 
   if (testData.bookingUid) {
+    cleanupLog("deleting booking", testData.bookingUid);
+    const bookingBefore = await prisma.booking.findFirst({ where: { uid: testData.bookingUid }, select: { id: true, uid: true } });
+    cleanupLog("booking exists before delete?", JSON.stringify(bookingBefore));
     await prisma.booking.deleteMany({
       where: { uid: testData.bookingUid },
     });
   }
 
   if (testData.eventTypeId) {
+    cleanupLog("deleting eventType", String(testData.eventTypeId));
     await prisma.eventType.deleteMany({
       where: { id: testData.eventTypeId },
     });
@@ -161,6 +175,7 @@ export const cleanupTestData = async (testData: {
 
   if (testData.organizationId) {
     if (testData.featureSlug) {
+      cleanupLog("deleting teamFeatures", `orgId=${testData.organizationId} feature=${testData.featureSlug}`);
       await prisma.teamFeatures.deleteMany({
         where: {
           teamId: testData.organizationId,
@@ -168,17 +183,28 @@ export const cleanupTestData = async (testData: {
         },
       });
     }
+    cleanupLog("deleting membership", `orgId=${testData.organizationId}`);
     await prisma.membership.deleteMany({
       where: { teamId: testData.organizationId },
     });
+    cleanupLog("deleting team", `orgId=${testData.organizationId}`);
     await prisma.team.deleteMany({
       where: { id: testData.organizationId },
     });
   }
 
   if (testData.userIds?.length) {
+    cleanupLog("deleting users", JSON.stringify(testData.userIds));
+    for (const uid of testData.userIds) {
+      const userBookings = await prisma.booking.findMany({ where: { userId: uid }, select: { id: true, uid: true } });
+      if (userBookings.length > 0) {
+        cleanupLog(`user ${uid} still has bookings at delete time`, JSON.stringify(userBookings));
+      }
+    }
     await prisma.user.deleteMany({
       where: { id: { in: testData.userIds } },
     });
   }
+
+  cleanupLog("END", `bookingUid=${testData.bookingUid}`);
 };
