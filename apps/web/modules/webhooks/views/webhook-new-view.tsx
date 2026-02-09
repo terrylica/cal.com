@@ -6,7 +6,7 @@ import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
-import { showToast } from "@calcom/ui/components/toast";
+import { toastManager } from "@coss/ui/components/toast";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -32,13 +32,13 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
 
   const createWebhookMutation = trpc.viewer.webhook.create.useMutation({
     async onSuccess() {
-      showToast(t("webhook_created_successfully"), "success");
+      toastManager.add({ title: t("webhook_created_successfully"), type: "success" });
       await utils.viewer.webhook.list.invalidate();
       revalidateWebhooksList();
       router.push("/settings/developer/webhooks");
     },
     onError(error) {
-      showToast(`${error.message}`, "error");
+      toastManager.add({ title: error.message, type: "error" });
     },
   });
 
@@ -53,7 +53,7 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
         platform,
       })
     ) {
-      showToast(t("webhook_subscriber_url_reserved"), "error");
+      toastManager.add({ title: t("webhook_subscriber_url_reserved"), type: "error" });
       return;
     }
 

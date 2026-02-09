@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@calcom/ui/components/dropdown";
 import { Switch } from "@calcom/ui/components/form";
-import { showToast } from "@calcom/ui/components/toast";
+import { toastManager } from "@coss/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import { revalidateEventTypeEditPage } from "@calcom/web/app/(use-page-wrapper)/event-types/[type]/actions";
 
@@ -48,21 +48,21 @@ export default function EventTypeWebhookListItem(props: {
   const deleteWebhook = trpc.viewer.webhook.delete.useMutation({
     async onSuccess() {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
-      showToast(t("webhook_removed_successfully"), "success");
+      toastManager.add({ title: t("webhook_removed_successfully"), type: "success" });
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();
       setDeleteDialogOpen(false);
     },
     onError() {
-      showToast(t("something_went_wrong"), "error");
+      toastManager.add({ title: t("something_went_wrong"), type: "error" });
       setDeleteDialogOpen(false);
     },
   });
   const toggleWebhook = trpc.viewer.webhook.edit.useMutation({
     async onSuccess(data) {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
-      showToast(t(data?.active ? "enabled" : "disabled"), "success");
+      toastManager.add({ title: t(data?.active ? "enabled" : "disabled"), type: "success" });
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();

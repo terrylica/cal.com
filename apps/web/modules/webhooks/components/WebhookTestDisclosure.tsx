@@ -3,7 +3,7 @@
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { ZTestTriggerInputSchema } from "@calcom/trpc/server/routers/viewer/webhook/testTrigger.schema";
-import { showToast } from "@calcom/ui/components/toast";
+import { toastManager } from "@coss/ui/components/toast";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import { Card, CardFrame, CardPanel } from "@coss/ui/components/card";
@@ -19,7 +19,7 @@ export default function WebhookTestDisclosure() {
   const { t } = useLocale();
   const mutation = trpc.viewer.webhook.testTrigger.useMutation({
     onError(err) {
-      showToast(err.message, "error");
+      toastManager.add({ title: err.message, type: "error" });
     },
   });
 
@@ -44,9 +44,9 @@ export default function WebhookTestDisclosure() {
               } catch (error) {
                 if (error instanceof ZodError) {
                   const errorMessage = error.errors.map((e) => e.message).join(", ");
-                  showToast(errorMessage, "error");
+                  toastManager.add({ title: errorMessage, type: "error" });
                 } else {
-                  showToast(t("unexpected_error_try_again"), "error");
+                  toastManager.add({ title: t("unexpected_error_try_again"), type: "error" });
                 }
               }
             }}>
@@ -58,7 +58,7 @@ export default function WebhookTestDisclosure() {
       <Card>
         <CardPanel>
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-h-5">
               <Label render={<div />}>{t("webhook_response")}</Label>
               {mutation.data && (
                 <Badge variant={mutation.data.ok ? "success" : "error"}>
