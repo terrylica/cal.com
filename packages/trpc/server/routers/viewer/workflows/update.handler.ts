@@ -463,6 +463,11 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
         const didSubjectChange = newStep.emailSubject !== oldStep.emailSubject;
         const didSourceLocaleChange = newStep.sourceLocale !== oldStep.sourceLocale;
         const didAutoTranslateEnable = !oldStep.autoTranslateEnabled && Boolean(newStep.autoTranslateEnabled);
+        const nextVerifiedAt = (() => {
+          if (!SCANNING_WORKFLOW_STEPS) return new Date();
+          if (didBodyChange) return null;
+          return oldStep.verifiedAt;
+        })();
 
         await workflowStepRepository.updateWorkflowStep(oldStep.id, {
           action: newStep.action,
@@ -476,7 +481,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
           numberVerificationPending: false,
           includeCalendarEvent: newStep.includeCalendarEvent,
           agentId: newStep.agentId || null,
-          verifiedAt: !SCANNING_WORKFLOW_STEPS ? new Date() : didBodyChange ? null : oldStep.verifiedAt,
+          verifiedAt: nextVerifiedAt,
           autoTranslateEnabled: ctx.user.organization?.id ? (newStep.autoTranslateEnabled ?? false) : false,
           sourceLocale: newStep.sourceLocale || ctx.user.locale,
         });
@@ -507,7 +512,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
           await scheduleWorkflowNotifications({
             activeOn: activeOnEventTypeIds,
             isOrg,
-            workflowSteps: [newStep],
+            workflowSteps: [{ ...newStep, verifiedAt: nextVerifiedAt }],
             time,
             timeUnit,
             trigger,
