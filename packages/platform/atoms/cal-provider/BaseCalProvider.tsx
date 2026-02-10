@@ -1,11 +1,17 @@
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import type { ReactNode } from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCallback } from "react";
 
 import type { API_VERSIONS_ENUM } from "@calcom/platform-constants";
 import { IconSprites } from "@calcom/ui/components/icon";
-import enTranslations from "@calcom/web/public/static/locales/en/common.json";
+import deTranslations from "./locales/de.json";
+import enTranslations from "./locales/en.json";
+import esTranslations from "./locales/es.json";
+import frTranslations from "./locales/fr.json";
+import itTranslations from "./locales/it.json";
+import nlTranslations from "./locales/nl.json";
+import ptBrTranslations from "./locales/pt-BR.json";
 
 import { AtomsContext } from "../hooks/useAtomsContext";
 import { useMe } from "../hooks/useMe";
@@ -19,6 +25,12 @@ import type {
   translationKeys,
   CalProviderLanguagesType,
   enTranslationKeys,
+  frTranslationKeys,
+  ptBrTranslationKeys,
+  deTranslationKeys,
+  esTranslationKeys,
+  itTranslationKeys,
+  nlTranslationKeys,
   i18nProps,
 } from "./languages";
 import { EN } from "./languages";
@@ -57,7 +69,6 @@ export function BaseCalProvider({
 }: BaseCalProviderProps) {
   const [error, setError] = useState<string>("");
   const [stateOrgId, setOrganizationId] = useState<number>(0);
-  const loadedTranslations = useLoadedTranslations(language);
 
   const { data: me } = useMe(isEmbed);
 
@@ -112,8 +123,7 @@ export function BaseCalProvider({
 
       const { count } = values;
 
-      const translation =
-        labels?.[key as keyof typeof labels] ?? String(getTranslation(key, language, loadedTranslations) ?? "");
+      const translation = labels?.[key as keyof typeof labels] ?? String(getTranslation(key, language) ?? "");
 
       // note(Lauris): if translation contains {{count}}, don't append pluralization suffix because count does not represent
       // the decision which key to use but it is to be interpolated as the value.
@@ -133,8 +143,7 @@ export function BaseCalProvider({
       const resolvedKey = resolveKey(key, values);
 
       let translation =
-        labels?.[resolvedKey as keyof typeof labels] ??
-        String(getTranslation(resolvedKey, language, loadedTranslations) ?? "");
+        labels?.[resolvedKey as keyof typeof labels] ?? String(getTranslation(resolvedKey, language) ?? "");
       if (!translation) {
         return key;
       }
@@ -218,50 +227,23 @@ function replaceOccurrences(input: string, replacementMap: { [key: string]: stri
   });
 }
 
-type TranslationRecord = Record<string, string>;
-
-const translationLoaders: Record<string, () => Promise<{ default: TranslationRecord }>> = {
-  fr: () => import("@calcom/web/public/static/locales/fr/common.json"),
-  "pt-BR": () => import("@calcom/web/public/static/locales/pt-BR/common.json"),
-  de: () => import("@calcom/web/public/static/locales/de/common.json"),
-  es: () => import("@calcom/web/public/static/locales/es/common.json"),
-  it: () => import("@calcom/web/public/static/locales/it/common.json"),
-  nl: () => import("@calcom/web/public/static/locales/nl/common.json"),
-};
-
-function useLoadedTranslations(language: CalProviderLanguagesType): TranslationRecord | null {
-  const [loaded, setLoaded] = useState<TranslationRecord | null>(null);
-
-  useEffect(() => {
-    if (language === "en") {
-      setLoaded(null);
-      return;
-    }
-    let cancelled = false;
-    const loader = translationLoaders[language];
-    if (loader) {
-      loader().then((mod) => {
-        if (!cancelled) setLoaded(mod.default);
-      });
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [language]);
-
-  return loaded;
-}
-
-function getTranslation(
-  key: string,
-  language: CalProviderLanguagesType,
-  loadedTranslations: TranslationRecord | null
-) {
-  if (language === "en") {
-    return enTranslations[key as enTranslationKeys];
+function getTranslation(key: string, language: CalProviderLanguagesType) {
+  switch (language) {
+    case "en":
+      return enTranslations[key as enTranslationKeys];
+    case "fr":
+      return frTranslations[key as frTranslationKeys];
+    case "pt-BR":
+      return ptBrTranslations[key as ptBrTranslationKeys];
+    case "de":
+      return deTranslations[key as deTranslationKeys];
+    case "es":
+      return esTranslations[key as esTranslationKeys];
+    case "it":
+      return itTranslations[key as itTranslationKeys];
+    case "nl":
+      return nlTranslations[key as nlTranslationKeys];
+    default:
+      return enTranslations[key as enTranslationKeys];
   }
-  if (loadedTranslations) {
-    return loadedTranslations[key];
-  }
-  return enTranslations[key as enTranslationKeys];
 }
