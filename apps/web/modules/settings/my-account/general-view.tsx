@@ -193,22 +193,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
   } = formMethods;
   const isDisabled = isSubmitting || !isDirty;
 
-  const [isAllowDynamicBookingChecked, setIsAllowDynamicBookingChecked] = useState(
-    !!user.allowDynamicBooking
-  );
-  const [isAllowSEOIndexingChecked, setIsAllowSEOIndexingChecked] = useState(
-    user.organizationSettings?.allowSEOIndexing === false
-      ? !!user.organizationSettings?.allowSEOIndexing
-      : !!user.allowSEOIndexing
-  );
-  const [isReceiveMonthlyDigestEmailChecked, setIsReceiveMonthlyDigestEmailChecked] = useState(
-    !!user.receiveMonthlyDigestEmail
-  );
-  const [isRequireBookerEmailVerificationChecked, setIsRequireBookerEmailVerificationChecked] = useState(
-    !!user.requiresBookerEmailVerification
-  );
-
-  const watchedTzSchedules = formMethods.watch("travelSchedules");
+  const watchedTzSchedules= formMethods.watch("travelSchedules");
 
   return (
     <div className="flex flex-col gap-4">
@@ -498,10 +483,12 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("allow_dynamic_booking")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            disabled={mutation.isPending}
-            checked={isAllowDynamicBookingChecked}
-            onCheckedChange={(checked) => {
-              setIsAllowDynamicBookingChecked(checked);
+            defaultChecked={!!user.allowDynamicBooking}
+            onCheckedChange={(checked, eventDetails) => {
+              if (mutation.isPending) {
+                eventDetails.cancel();
+                return;
+              }
               mutation.mutate({ allowDynamicBooking: checked });
             }}
           />
@@ -515,10 +502,17 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("allow_seo_indexing")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            disabled={mutation.isPending || user.organizationSettings?.allowSEOIndexing === false}
-            checked={isAllowSEOIndexingChecked}
-            onCheckedChange={(checked) => {
-              setIsAllowSEOIndexingChecked(checked);
+            defaultChecked={
+              user.organizationSettings?.allowSEOIndexing === false
+                ? false
+                : !!user.allowSEOIndexing
+            }
+            disabled={user.organizationSettings?.allowSEOIndexing === false}
+            onCheckedChange={(checked, eventDetails) => {
+              if (mutation.isPending) {
+                eventDetails.cancel();
+                return;
+              }
               mutation.mutate({ allowSEOIndexing: checked });
             }}
           />
@@ -532,10 +526,12 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("monthly_digest_email_for_teams")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            disabled={mutation.isPending}
-            checked={isReceiveMonthlyDigestEmailChecked}
-            onCheckedChange={(checked) => {
-              setIsReceiveMonthlyDigestEmailChecked(checked);
+            defaultChecked={!!user.receiveMonthlyDigestEmail}
+            onCheckedChange={(checked, eventDetails) => {
+              if (mutation.isPending) {
+                eventDetails.cancel();
+                return;
+              }
               mutation.mutate({ receiveMonthlyDigestEmail: checked });
             }}
           />
@@ -549,10 +545,12 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("require_booker_email_verification_description")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            disabled={mutation.isPending}
-            checked={isRequireBookerEmailVerificationChecked}
-            onCheckedChange={(checked) => {
-              setIsRequireBookerEmailVerificationChecked(checked);
+            defaultChecked={!!user.requiresBookerEmailVerification}
+            onCheckedChange={(checked, eventDetails) => {
+              if (mutation.isPending) {
+                eventDetails.cancel();
+                return;
+              }
               mutation.mutate({ requiresBookerEmailVerification: checked });
             }}
           />
