@@ -3,7 +3,7 @@ import React from "react";
 import {
   EventSetupTab,
   type EventSetupTabBaseProps,
-} from "@calcom/features/eventtypes/components/tabs/setup";
+} from "@calcom/features/eventtypes/components/tabs/setup/EventSetupTab";
 
 const EventSetupTabPlatformWrapper = (props: EventSetupTabBaseProps) => {
   return (
@@ -11,6 +11,7 @@ const EventSetupTabPlatformWrapper = (props: EventSetupTabBaseProps) => {
       {...props}
       urlPrefix=""
       hasOrgBranding={false}
+      isPlatform={true}
       slots={{
         Locations: null,
         HostLocations: null,

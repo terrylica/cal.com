@@ -1,7 +1,7 @@
 import {
   EventAdvancedTab,
   type EventAdvancedBaseProps,
-} from "@calcom/features/eventtypes/components/tabs/advanced";
+} from "@calcom/features/eventtypes/components/tabs/advanced/EventAdvancedTab";
 import { localeOptions } from "@calcom/lib/i18n";
 import { trpc } from "@calcom/trpc/react";
 

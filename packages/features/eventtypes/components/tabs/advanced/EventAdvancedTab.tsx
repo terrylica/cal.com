@@ -5,7 +5,6 @@ import type { z } from "zod";
 
 import { getPaymentAppData } from "@calcom/app-store/_utils/payments/getPaymentAppData";
 import { useAtomsContext } from "@calcom/atoms/hooks/useAtomsContext";
-import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import { Timezone as PlatformTimezoneSelect } from "@calcom/atoms/timezone";
 import getLocationsOptionsForSelect from "@calcom/features/bookings/lib/getLocationOptionsForSelect";
 import DestinationCalendarSelector from "@calcom/features/calendars/components/DestinationCalendarSelector";
@@ -175,6 +174,7 @@ export type EventAdvancedTabProps = EventAdvancedBaseProps & {
   localeOptions?: { value: string; label: string }[];
   verifiedEmails?: string[];
   slots?: EventAdvancedTabSlots;
+  isPlatform?: boolean;
 };
 
 type CalendarSettingsProps = {
@@ -193,6 +193,7 @@ type CalendarSettingsProps = {
   isTeamEventType: boolean;
   isChildrenManagedEventType: boolean;
   slots?: EventAdvancedTabSlots;
+  isPlatform?: boolean;
 };
 
 const destinationCalendarComponents = {
@@ -394,14 +395,13 @@ const calendarComponents = {
     setShowEventNameTip,
     showToast,
     slots,
+    isPlatform = false,
   }: CalendarSettingsProps) {
     const formMethods = useFormContext<FormValues>();
     /**
      * Only display calendar selector if user has connected calendars AND if it's not
      * a team event. Since we don't have logic to handle each attendee calendar (for now).
      */
-
-    const isPlatform = useIsPlatform();
     const isConnectedCalendarSettingsApplicable = !isTeamEventType || isChildrenManagedEventType;
     const isConnectedCalendarSettingsLoading = calendarsQuery.isPending;
     const showConnectedCalendarSettings =
@@ -476,8 +476,8 @@ export const EventAdvancedTab = ({
   orgId,
   localeOptions,
   slots,
+  isPlatform = false,
 }: EventAdvancedTabProps) => {
-  const isPlatform = useIsPlatform();
   const platformContext = useAtomsContext();
   const formMethods = useFormContext<FormValues>();
   const { t } = useLocale();
@@ -690,6 +690,7 @@ export const EventAdvancedTab = ({
         showToast={showToast}
         eventType={eventType}
         slots={slots}
+        isPlatform={isPlatform}
       />
       {showBookerLayoutSelector && BookerLayoutSelector && (
         <BookerLayoutSelector
@@ -737,6 +738,7 @@ export const EventAdvancedTab = ({
             }}
             showPriceField={isPaidEvent}
             paymentCurrency={paymentAppData?.currency || "usd"}
+            isPlatform={isPlatform}
           />
         </div>
       </div>

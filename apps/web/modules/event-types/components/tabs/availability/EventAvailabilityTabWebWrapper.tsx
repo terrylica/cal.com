@@ -4,7 +4,7 @@ import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hook
 import {
   EventAvailabilityTab,
   type TeamMember,
-} from "@calcom/features/eventtypes/components/tabs/availability";
+} from "@calcom/features/eventtypes/components/tabs/availability/EventAvailabilityTab";
 import type {
   EventTypeSetup,
   FormValues,

@@ -3,8 +3,6 @@ import type { ComponentType } from "react";
 import type { Control, FormState, UseFormGetValues, UseFormSetValue } from "react-hook-form";
 import { Controller, useFormContext } from "react-hook-form";
 import type { MultiValue } from "react-select";
-
-import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import type {
   EventTypeSetupProps,
@@ -99,13 +97,13 @@ export type EventSetupTabProps = EventSetupTabBaseProps & {
   orgId?: number;
   localeOptions?: { value: string; label: string }[];
   slots?: EventSetupTabSlots;
+  isPlatform?: boolean;
 };
 
 export const EventSetupTab = (props: EventSetupTabProps) => {
   const { t } = useLocale();
-  const isPlatform = useIsPlatform();
   const formMethods = useFormContext<FormValues>();
-  const { eventType, team, urlPrefix, hasOrgBranding, customClassNames, slots } = props;
+  const { eventType, team, urlPrefix, hasOrgBranding, customClassNames, slots, isPlatform = false } = props;
 
   const [multipleDuration, setMultipleDuration] = useState(
     formMethods.getValues("metadata")?.multipleDuration

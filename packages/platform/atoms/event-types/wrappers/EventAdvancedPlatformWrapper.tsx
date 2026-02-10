@@ -1,7 +1,7 @@
 import {
   EventAdvancedTab,
   type EventAdvancedBaseProps,
-} from "@calcom/features/eventtypes/components/tabs/advanced";
+} from "@calcom/features/eventtypes/components/tabs/advanced/EventAdvancedTab";
 
 import { useConnectedCalendars } from "../../hooks/useConnectedCalendars";
 import { useGetVerifiedEmails } from "../hooks/useGetVerifiedEmails";
@@ -20,6 +20,7 @@ const EventAdvancedPlatformWrapper = (props: EventAdvancedBaseProps) => {
       calendarsQuery={{ data: connectedCalendarsQuery, isPending, error }}
       showBookerLayoutSelector={false}
       verifiedEmails={verifiedEmails}
+      isPlatform={true}
       slots={{
         SelectedCalendarsSettings: null,
         SelectedCalendarsSettingsSkeleton: null,

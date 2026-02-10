@@ -1,7 +1,7 @@
 import {
   EventTeamAssignmentTab,
   type EventTeamAssignmentTabBaseProps,
-} from "@calcom/features/eventtypes/components/tabs/assignment";
+} from "@calcom/features/eventtypes/components/tabs/assignment/EventTeamAssignmentTab";
 
 import AddMembersWithSwitch from "@calcom/web/modules/event-types/components/AddMembersWithSwitch";
 import { EditWeightsForAllTeamMembers } from "@calcom/web/modules/event-types/components/EditWeightsForAllTeamMembers";

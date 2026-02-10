@@ -4,7 +4,7 @@ import {
   EventAvailabilityTab,
   type EventAvailabilityTabCustomClassNames,
   type ScheduleQueryData,
-} from "@calcom/features/eventtypes/components/tabs/availability";
+} from "@calcom/features/eventtypes/components/tabs/availability/EventAvailabilityTab";
 import type { EventTypeSetup, FormValues } from "@calcom/features/eventtypes/lib/types";
 import type { User } from "@calcom/prisma/client";
 
@@ -44,6 +44,7 @@ const EventAvailabilityTabPlatformWrapper = ({
     <EventAvailabilityTab
       {...props}
       user={user}
+      isPlatform={true}
       teamMembers={
         teamMembers?.map((member) => ({
           avatar: member.user.avatarUrl ?? "",
