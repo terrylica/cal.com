@@ -1,13 +1,12 @@
-import type { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { parse } from "node-html-parser";
-
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { EMBED_LIB_URL, WEBAPP_URL } from "@calcom/lib/constants";
+import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
-
+import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { parse } from "node-html-parser";
 import { test } from "./lib/fixtures";
 
 const nodeRequire = createRequire(__filename);
@@ -312,6 +311,62 @@ test.describe("Embed Code Generator Tests", () => {
           embedType: "element-click",
           calLink: `${user.username}/multiple-duration`,
           bookerUrl: getOrgFullOrigin(org?.slug ?? ""),
+        });
+      });
+    });
+  });
+
+  test.describe("Organization with Custom Domain", () => {
+    let customDomainSlug: string;
+    test.beforeEach(async ({ users, orgs }) => {
+      const org = await orgs.create({
+        name: "TestOrg",
+      });
+      customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+      await prisma.customDomain.create({
+        data: { teamId: org.id, slug: customDomainSlug, verified: true },
+      });
+      const user = await users.create({
+        organizationId: org.id,
+        roleInOrganization: MembershipRole.MEMBER,
+      });
+      await user.apiLogin();
+    });
+    test.describe("Event Types Page", () => {
+      test.beforeEach(async ({ page }) => {
+        await page.goto("/event-types");
+      });
+
+      test("open Embed Dialog and verify Inline embed uses custom domain in bookerUrl", async ({
+        page,
+        users,
+      }) => {
+        const [user] = users.get();
+        const embedUrl = await clickFirstEventTypeEmbedButton(page);
+        await expectToBeNavigatingToEmbedTypesDialog(page, {
+          embedUrl,
+          basePage: "/event-types",
+        });
+
+        chooseEmbedType(page, "inline");
+
+        await expectToBeNavigatingToEmbedCodeAndPreviewDialog(page, {
+          embedUrl,
+          embedType: "inline",
+          basePage: "/event-types",
+        });
+
+        await expectToContainValidCode(page, {
+          language: "html",
+          embedType: "inline",
+          orgSlug: customDomainSlug,
+        });
+
+        await page.waitForTimeout(1000);
+        await expectToContainValidPreviewIframe(page, {
+          embedType: "inline",
+          calLink: `${user.username}/multiple-duration`,
+          bookerUrl: getOrgFullOrigin(customDomainSlug, { isCustomDomain: true }),
         });
       });
     });

@@ -1,16 +1,15 @@
-import { expect } from "@playwright/test";
-
+import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
-
+import { expect } from "@playwright/test";
 import { test } from "./lib/fixtures";
 import {
   bookTimeSlot,
-  confirmReschedule,
+  cancelBookingFromBookingsList,
   confirmBooking,
+  confirmReschedule,
   doOnOrgDomain,
   selectFirstAvailableTimeSlotNextMonth,
   selectSecondAvailableTimeSlotNextMonth,
-  cancelBookingFromBookingsList,
 } from "./lib/testUtils";
 
 test.afterEach(({ users }) => users.deleteAll());
@@ -195,6 +194,44 @@ test.describe("Organization:", () => {
 
         await expect(page.getByText(user1.name!, { exact: true })).toBeVisible();
 
+        await expect(page.getByText(user2.name!, { exact: true })).toBeVisible();
+      }
+    );
+  });
+
+  test("Can book a dynamic time slot on custom domain", async ({ page, users, orgs }) => {
+    const org = await orgs.create({
+      name: "TestOrg",
+    });
+    const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+    await prisma.customDomain.create({
+      data: { teamId: org.id, slug: customDomainSlug, verified: true },
+    });
+
+    const user1 = await users.create({
+      organizationId: org.id,
+      name: "User 1",
+      roleInOrganization: MembershipRole.ADMIN,
+    });
+
+    const user2 = await users.create({
+      organizationId: org.id,
+      name: "User 2",
+      roleInOrganization: MembershipRole.ADMIN,
+    });
+    await doOnOrgDomain(
+      {
+        orgSlug: customDomainSlug,
+        page,
+      },
+      async () => {
+        await page.goto(`/${user1.username}+${user2.username}`);
+        await selectFirstAvailableTimeSlotNextMonth(page);
+        await bookTimeSlot(page, {
+          title: "Test meeting",
+        });
+        await expect(page.getByTestId("success-page")).toBeVisible();
+        await expect(page.getByText(user1.name!, { exact: true })).toBeVisible();
         await expect(page.getByText(user2.name!, { exact: true })).toBeVisible();
       }
     );

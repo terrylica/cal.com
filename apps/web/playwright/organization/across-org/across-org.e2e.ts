@@ -1,13 +1,21 @@
-import { expect } from "@playwright/test";
-
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
-
+import { expect } from "@playwright/test";
 import { test } from "../../lib/fixtures";
 
 test.afterEach(({ users }) => {
   users.deleteAll();
 });
+
+function getUniqueCustomDomainSlug() {
+  return `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+}
+
+async function addCustomDomainToOrg(orgId: number, slug: string) {
+  return prisma.customDomain.create({
+    data: { teamId: orgId, slug, verified: true },
+  });
+}
 
 test.describe("user1NotMemberOfOrg1 is part of team1MemberOfOrg1", () => {
   test("Team1 profile should show correct domain if logged in as User1", async ({ page, users, orgs }) => {
@@ -77,6 +85,62 @@ test.describe("user1NotMemberOfOrg1 is part of team1MemberOfOrg1", () => {
       const href = await teamEventLinksLocator.getAttribute("href");
       expect(href).not.toContain(WEBAPP_URL);
       expect(href).toContain(org.slug);
+    }
+  });
+});
+
+test.describe("user1NotMemberOfOrg1WithCustomDomain is part of team1MemberOfOrg1", () => {
+  test("Team1 profile should show custom domain in URL display", async ({ page, users, orgs }) => {
+    const org = await orgs.create({
+      name: "TestOrg",
+    });
+    const customDomainSlug = getUniqueCustomDomainSlug();
+    await addCustomDomainToOrg(org.id, customDomainSlug);
+
+    const user1NotMemberOfOrg1 = await users.create(undefined, {
+      hasTeam: true,
+    });
+
+    const { team: team1MemberOfOrg1 } = await user1NotMemberOfOrg1.getFirstTeamMembership();
+    await moveTeamToOrg({ team: team1MemberOfOrg1, org });
+
+    await user1NotMemberOfOrg1.apiLogin();
+
+    await page.goto(`/settings/teams/${team1MemberOfOrg1.id}/profile`);
+    const domain = await page.locator(".testid-leading-text-team-url").textContent();
+    expect(domain).toContain(customDomainSlug);
+  });
+
+  test("EventTypes listing should show custom domain in team event links", async ({ page, users, orgs }) => {
+    const org = await orgs.create({
+      name: "TestOrg",
+    });
+    const customDomainSlug = getUniqueCustomDomainSlug();
+    await addCustomDomainToOrg(org.id, customDomainSlug);
+
+    const user1NotMemberOfOrg1 = await users.create(undefined, {
+      hasTeam: true,
+    });
+
+    const { team: team1MemberOfOrg1 } = await user1NotMemberOfOrg1.getFirstTeamMembership();
+    await moveTeamToOrg({ team: team1MemberOfOrg1, org });
+
+    await user1NotMemberOfOrg1.apiLogin();
+    await page.goto(`/event-types?teamId=${team1MemberOfOrg1.id}`);
+
+    await page.waitForSelector(`[data-testid="event-types"] [data-testid="preview-link-button"]`, {
+      timeout: 5000,
+    });
+    const teamEventLinksLocators = await page
+      .locator(`[data-testid="event-types"] [data-testid="preview-link-button"]`)
+      .all();
+
+    expect(teamEventLinksLocators.length).toBeGreaterThan(0);
+
+    for (const teamEventLinksLocator of teamEventLinksLocators) {
+      const href = await teamEventLinksLocator.getAttribute("href");
+      expect(href).not.toContain(WEBAPP_URL);
+      expect(href).toContain(customDomainSlug);
     }
   });
 });

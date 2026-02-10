@@ -1,9 +1,6 @@
 import { constantsScenarios } from "@calcom/lib/__mocks__/constants";
-
-import { describe, it, vi, expect, beforeEach } from "vitest";
-
 import { getBrand } from "@calcom/features/ee/organizations/lib/getBrand";
-
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildEventUrlFromBooking } from "./buildEventUrlFromBooking";
 
 vi.mock("@calcom/features/ee/organizations/lib/getBrand", () => ({
@@ -82,9 +79,9 @@ describe("buildEventUrlFromBooking", () => {
     const organizationId = 123;
     const orgOrigin = "https://acme.cal.local";
     beforeEach(() => {
-      getBrand.mockResolvedValue({
+      vi.mocked(getBrand).mockResolvedValue({
         fullDomain: orgOrigin,
-      });
+      } as any);
     });
     it("should correctly build the event URL for a team event booking", async () => {
       const booking = {
@@ -144,6 +141,73 @@ describe("buildEventUrlFromBooking", () => {
       const expectedUrl = `${orgOrigin}/john/30min`;
       const result = await buildEventUrlFromBooking(booking);
       expect(result).toBe(expectedUrl);
+    });
+  });
+
+  describe("Organization with Custom Domain", () => {
+    const organizationId = 456;
+    const customDomainOrigin = "https://booking.acme.com";
+    beforeEach(() => {
+      vi.mocked(getBrand).mockResolvedValue({
+        fullDomain: customDomainOrigin,
+      } as any);
+    });
+
+    it("should build URL with custom domain for a team event booking", async () => {
+      const booking = {
+        eventType: {
+          slug: "30min",
+          team: {
+            slug: "engineering",
+            parentId: 456,
+          },
+        },
+        profileEnrichedBookingUser: {
+          profile: {
+            organizationId,
+            username: "john",
+          },
+        },
+        dynamicGroupSlugRef: null,
+      };
+      const result = await buildEventUrlFromBooking(booking);
+      expect(result).toBe(`${customDomainOrigin}/team/engineering/30min`);
+    });
+
+    it("should build URL with custom domain for a dynamic group booking", async () => {
+      const booking = {
+        eventType: {
+          slug: "30min",
+          team: null,
+        },
+        profileEnrichedBookingUser: {
+          profile: {
+            organizationId,
+            username: "john",
+          },
+        },
+        dynamicGroupSlugRef: "john+jane",
+      };
+      const result = await buildEventUrlFromBooking(booking);
+      expect(result).toBe(`${customDomainOrigin}/john+jane/30min`);
+    });
+
+    it("should build URL with custom domain for a personal booking", async () => {
+      const booking = {
+        eventType: {
+          slug: "30min",
+          team: null,
+        },
+        profileEnrichedBookingUser: {
+          profile: {
+            organizationId,
+            username: "john",
+          },
+        },
+        dynamicGroupSlugRef: null,
+      };
+      const result = await buildEventUrlFromBooking(booking);
+      expect(result).toBe(`${customDomainOrigin}/john/30min`);
     });
   });
 

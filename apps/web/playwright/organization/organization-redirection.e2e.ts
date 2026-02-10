@@ -1,8 +1,8 @@
+import { generateHashedLink } from "@calcom/lib/generateHashedLink";
+import { prisma } from "@calcom/prisma";
+import { MembershipRole } from "@calcom/prisma/enums";
 import { expect } from "@playwright/test";
 import type { createUsersFixture } from "playwright/fixtures/users";
-
-import { generateHashedLink } from "@calcom/lib/generateHashedLink";
-
 import { test } from "../lib/fixtures";
 import { bookEventOnThisPage, doOnOrgDomain } from "../lib/testUtils";
 
@@ -203,6 +203,100 @@ test.describe("Unpublished Organization Redirection", () => {
         // Attempt to book the event.
         await bookEventOnThisPage(page);
       });
+    });
+  });
+});
+
+test.describe("Published Organization with Custom Domain", () => {
+  test.afterEach(({ orgs, users }) => {
+    orgs.deleteAll();
+    users.deleteAll();
+  });
+
+  test("Team profile should be visible on custom domain", async ({ page, users, orgs }) => {
+    const org = await orgs.create({
+      name: "TestOrg",
+    });
+    const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+    await prisma.customDomain.create({
+      data: { teamId: org.id, slug: customDomainSlug, verified: true },
+    });
+
+    const owner = await users.create(
+      {
+        username: "org-owner",
+        roleInOrganization: MembershipRole.OWNER,
+        organizationId: org.id,
+      },
+      {
+        hasTeam: true,
+      }
+    );
+    const { team } = await owner.getFirstTeamMembership();
+
+    await doOnOrgDomain({ page, orgSlug: customDomainSlug }, async () => {
+      await page.goto(`/team/${team.slug}`);
+      await expect(page.getByTestId("team-name")).toBeVisible();
+    });
+  });
+
+  test("Private event should be accessible via hashed link on custom domain", async ({
+    page,
+    users,
+    orgs,
+    prisma: prismaMock,
+  }) => {
+    const org = await orgs.create({
+      name: "TestOrg",
+    });
+    const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+    await prisma.customDomain.create({
+      data: { teamId: org.id, slug: customDomainSlug, verified: true },
+    });
+
+    const user = await users.create({
+      username: "org-member",
+      organizationId: org.id,
+      roleInOrganization: MembershipRole.MEMBER,
+    });
+    const eventType = await user.getFirstEventAsOwner();
+
+    const privateEvent = await prismaMock.eventType.update({
+      where: { id: eventType.id },
+      data: {
+        hashedLink: {
+          create: [{ link: generateHashedLink(eventType.id) }],
+        },
+      },
+      include: { hashedLink: true },
+    });
+
+    await doOnOrgDomain({ page, orgSlug: customDomainSlug }, async () => {
+      await page.goto(`/d/${privateEvent.hashedLink[0]?.link}/${privateEvent.slug}`);
+      await expect(page.getByTestId("event-title")).toBeVisible();
+      await bookEventOnThisPage(page);
+    });
+  });
+
+  test("User profile should be visible on custom domain", async ({ page, users, orgs }) => {
+    const org = await orgs.create({
+      name: "TestOrg",
+    });
+    const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+    await prisma.customDomain.create({
+      data: { teamId: org.id, slug: customDomainSlug, verified: true },
+    });
+
+    const user = await users.create({
+      username: "org-member",
+      organizationId: org.id,
+      roleInOrganization: MembershipRole.MEMBER,
+    });
+
+    await doOnOrgDomain({ page, orgSlug: customDomainSlug }, async () => {
+      await page.goto(`/${user.username}`);
+      await expect(page.locator('[data-testid="name-title"]')).toBeVisible();
+      await expect(page.locator('[data-testid="event-types"]')).toBeVisible();
     });
   });
 });

@@ -1,5 +1,4 @@
-import { describe, it, expect } from "vitest";
-
+import { describe, expect, it } from "vitest";
 import { isAuthorizedToViewFormOnOrgDomain } from "./isAuthorizedToViewForm";
 
 const _createUser = (overrides = {}) => ({
@@ -26,13 +25,15 @@ const createRegularUser = (overrides = {}) => ({
 const createOrgMemberUser = ({
   orgSlug,
   requestedSlug,
+  customDomain,
 }: {
   orgSlug: string;
   requestedSlug: string | null;
+  customDomain?: { slug: string } | null;
 }) => ({
   ..._createUser({
     profile: {
-      organization: { slug: orgSlug, requestedSlug: requestedSlug },
+      organization: { slug: orgSlug, requestedSlug: requestedSlug, customDomain: customDomain ?? null },
     },
   }),
 });
@@ -50,12 +51,12 @@ const createRegularTeam = (overrides = {}) => _createTeam(overrides);
 /**
  * Creates a sub-team that belongs to an organization
  */
-const createSubTeam = (orgSlug: string, overrides = {}) =>
+const createSubTeam = (orgSlug: string, opts?: { customDomain?: { slug: string } | null }) =>
   _createTeam({
     parent: {
       slug: orgSlug,
+      customDomain: opts?.customDomain ?? null,
     },
-    ...overrides,
   });
 
 describe("isAuthorizedToViewFormOnOrgDomain", () => {
@@ -87,7 +88,7 @@ describe("isAuthorizedToViewFormOnOrgDomain", () => {
 
   it("should deny viewing form when on org domain but neither user nor sub team belongs to it", () => {
     const result = isAuthorizedToViewFormOnOrgDomain({
-      user: createOrgMemberUser("different-org"),
+      user: createOrgMemberUser({ orgSlug: "different-org", requestedSlug: null }),
       currentOrgDomain: "test-org",
       team: createSubTeam("another-org"),
     });
@@ -109,5 +110,39 @@ describe("isAuthorizedToViewFormOnOrgDomain", () => {
       currentOrgDomain: "test-org",
     });
     expect(result).toBe(true);
+  });
+
+  it("should allow viewing form when currentOrgDomain matches user org customDomain", () => {
+    const result = isAuthorizedToViewFormOnOrgDomain({
+      user: createOrgMemberUser({
+        orgSlug: "test-org",
+        requestedSlug: null,
+        customDomain: { slug: "booking.acme.com" },
+      }),
+      currentOrgDomain: "booking.acme.com",
+    });
+    expect(result).toBe(true);
+  });
+
+  it("should allow viewing form when currentOrgDomain matches team parent customDomain", () => {
+    const result = isAuthorizedToViewFormOnOrgDomain({
+      user: createRegularUser(),
+      currentOrgDomain: "booking.acme.com",
+      team: createSubTeam("test-org", { customDomain: { slug: "booking.acme.com" } }),
+    });
+    expect(result).toBe(true);
+  });
+
+  it("should deny when customDomain does not match currentOrgDomain", () => {
+    const result = isAuthorizedToViewFormOnOrgDomain({
+      user: createOrgMemberUser({
+        orgSlug: "test-org",
+        requestedSlug: null,
+        customDomain: { slug: "other.com" },
+      }),
+      currentOrgDomain: "booking.acme.com",
+      team: createSubTeam("test-org", { customDomain: { slug: "other2.com" } }),
+    });
+    expect(result).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
-import { expect } from "@playwright/test";
+import { prisma } from "@calcom/prisma";
 import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { doOnOrgDomain, setupOrgMember } from "playwright/lib/testUtils";
-
 import { test } from "../lib/fixtures";
 
 type TestContext = Awaited<ReturnType<typeof setupOrgMember>>;
@@ -137,6 +137,26 @@ test.describe("Organization Settings", () => {
             urls: [`/${orgMember.username}/${userEvent.slug}`],
             expectedContent: "noindex,nofollow",
           });
+        });
+      });
+
+      test("Robots meta tag should work on custom domain pages", async ({ page }) => {
+        const { team, teamEvent, org, orgMember, userEvent } = ctx;
+        const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+        await prisma.customDomain.create({
+          data: { teamId: org.id, slug: customDomainSlug, verified: true },
+        });
+
+        await verifyRobotsMetaTag({
+          page,
+          orgSlug: customDomainSlug,
+          urls: [
+            `/team/${team.slug}`,
+            `/team/${team.slug}/${teamEvent.slug}`,
+            `/${orgMember.username}`,
+            `/${orgMember.username}/${userEvent.slug}`,
+          ],
+          expectedContent: "noindex,nofollow",
         });
       });
     });
