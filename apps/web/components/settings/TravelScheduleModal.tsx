@@ -182,7 +182,7 @@ const TravelScheduleModal = ({
           <div className="flex flex-col gap-3">
             <div>
               {!isNoEndDate ? (
-                <Field>
+                <Field invalid={!!errorMessage}>
                   <FieldLabel htmlFor={datePitckerId}>{t("time_range")}</FieldLabel>
                   <Popover>
                     <PopoverTrigger
@@ -225,7 +225,7 @@ const TravelScheduleModal = ({
                   {errorMessage && <FieldError match={true}>{errorMessage}</FieldError>}
                 </Field>
               ) : (
-                <Field>
+                <Field invalid={!!errorMessage}>
                   <FieldLabel>{t("date")}</FieldLabel>
                   <Popover>
                     <PopoverTrigger
