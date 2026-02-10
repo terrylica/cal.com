@@ -774,7 +774,7 @@ export class AvailableSlotsService {
       Awaited<ReturnType<(typeof AvailableSlotsService)["prototype"]["getRegularOrDynamicEventType"]>>,
       null
     >;
-    {
+    hosts: {
       isFixed?: boolean;
       groupId?: string | null;
       user: GetAvailabilityUserWithDelegationCredentials;
@@ -984,7 +984,7 @@ export class AvailableSlotsService {
     eventType,
   }: {
     orgDetails: { currentOrgDomain: string | null; isValidOrgDomain: boolean };
-    {
+    eventType: {
       parent?: { team?: { parentId: number | null } | null } | null;
       team?: { parentId: number | null } | null;
       userId: number | null;
