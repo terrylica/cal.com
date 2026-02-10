@@ -693,31 +693,75 @@ async function ensureAcmeOwnerHasApiKeySeeded() {
   }
 }
 
-async function seedPerHostLocations(
-  team: { id: number; eventTypes: { id: number; slug: string; schedulingType: string | null }[] },
-  users: {
-    proUserTeam: { id: number };
-    pro2UserTeam: { id: number };
-    pro3UserTeam: { id: number };
-  }
-) {
-  const rrEventType = team.eventTypes.find((et) => et.schedulingType === SchedulingType.ROUND_ROBIN);
-  if (!rrEventType) {
-    console.log("No Round Robin event type found for per-host location seeding");
-    return;
-  }
-
-  const existingHostLocations = await prisma.hostLocation.findFirst({
-    where: { eventTypeId: rrEventType.id },
+async function seedPerHostLocationsInAcmeOrg() {
+  const acmeOrg = await prisma.team.findFirst({
+    where: { slug: "acme", parentId: null },
+    select: { id: true },
   });
-  if (existingHostLocations) {
-    console.log("Per-host locations already seeded, skipping.");
+  if (!acmeOrg) {
+    console.log("Acme org not found, skipping per-host location seeding.");
     return;
   }
 
-  await prisma.eventType.update({
-    where: { id: rrEventType.id },
-    data: { enablePerHostLocations: true },
+  const acmeTeam = await prisma.team.findFirst({
+    where: { slug: "team1", parentId: acmeOrg.id },
+    select: { id: true },
+  });
+  if (!acmeTeam) {
+    console.log("Acme Team 1 not found, skipping per-host location seeding.");
+    return;
+  }
+
+  const existingEvent = await prisma.eventType.findFirst({
+    where: { slug: "per-host-location-event", teamId: acmeTeam.id },
+  });
+  if (existingEvent) {
+    console.log("Per-host location event already seeded in Acme, skipping.");
+    return;
+  }
+
+  const owner = await prisma.user.findFirst({
+    where: { email: "owner1-acme@example.com" },
+    select: { id: true },
+  });
+  const member0 = await prisma.user.findFirst({
+    where: { email: "member0-acme@example.com" },
+    select: { id: true },
+  });
+  const member2 = await prisma.user.findFirst({
+    where: { email: "member2-acme@example.com" },
+    select: { id: true },
+  });
+  if (!owner || !member0 || !member2) {
+    console.log("Required Acme members not found, skipping per-host location seeding.");
+    return;
+  }
+
+  const hosts = [owner, member0, member2];
+
+  const ownerProfile = await prisma.profile.findFirst({
+    where: { userId: owner.id, organizationId: acmeOrg.id },
+    select: { id: true },
+  });
+
+  const eventType = await prisma.eventType.create({
+    data: {
+      title: "Per Host Location Event",
+      slug: "per-host-location-event",
+      length: 30,
+      schedulingType: SchedulingType.ROUND_ROBIN,
+      enablePerHostLocations: true,
+      team: { connect: { id: acmeTeam.id } },
+      owner: { connect: { id: owner.id } },
+      ...(ownerProfile ? { profile: { connect: { id: ownerProfile.id } } } : {}),
+      users: { connect: hosts.map((h) => ({ id: h.id })) },
+      hosts: {
+        create: hosts.map((h) => ({
+          userId: h.id,
+          isFixed: false,
+        })),
+      },
+    },
   });
 
   const zoomCredential = await prisma.credential.create({
@@ -725,7 +769,7 @@ async function seedPerHostLocations(
       type: "zoom_video",
       key: { access_token: "MOCK_ZOOM_ACCESS_TOKEN", token_type: "bearer" },
       appId: "zoom",
-      userId: users.proUserTeam.id,
+      userId: owner.id,
     },
   });
 
@@ -734,14 +778,14 @@ async function seedPerHostLocations(
       type: "google_video",
       key: { access_token: "MOCK_GOOGLE_ACCESS_TOKEN", token_type: "bearer" },
       appId: "google-meet",
-      userId: users.pro2UserTeam.id,
+      userId: member0.id,
     },
   });
 
   await prisma.hostLocation.create({
     data: {
-      userId: users.proUserTeam.id,
-      eventTypeId: rrEventType.id,
+      userId: owner.id,
+      eventTypeId: eventType.id,
       type: "integrations:zoom",
       credentialId: zoomCredential.id,
     },
@@ -749,8 +793,8 @@ async function seedPerHostLocations(
 
   await prisma.hostLocation.create({
     data: {
-      userId: users.pro2UserTeam.id,
-      eventTypeId: rrEventType.id,
+      userId: member0.id,
+      eventTypeId: eventType.id,
       type: "integrations:google:meet",
       credentialId: googleMeetCredential.id,
     },
@@ -758,15 +802,15 @@ async function seedPerHostLocations(
 
   await prisma.hostLocation.create({
     data: {
-      userId: users.pro3UserTeam.id,
-      eventTypeId: rrEventType.id,
+      userId: member2.id,
+      eventTypeId: eventType.id,
       type: "integrations:daily",
     },
   });
 
   console.log(
-    `🏠 Seeded per-host locations for RR event type "${rrEventType.slug}" (id=${rrEventType.id}): ` +
-      `proUserTeam→Zoom, pro2UserTeam→Google Meet, pro3UserTeam→Daily Video (Cal Video)`
+    `🏠 Seeded per-host locations in Acme Org for event "${eventType.slug}" (id=${eventType.id}): ` +
+      `owner1→Zoom, member0→Google Meet, member2→Daily Video (Cal Video)`
   );
 }
 
@@ -1229,7 +1273,7 @@ async function main() {
     });
   }
 
-  const seededTeam = await createTeamAndAddUsers(
+  await createTeamAndAddUsers(
     {
       name: "Seeded Team",
       slug: "seeded-team",
@@ -1277,14 +1321,6 @@ async function main() {
       },
     ]
   );
-
-  if (seededTeam) {
-    await seedPerHostLocations(seededTeam, {
-      proUserTeam,
-      pro2UserTeam,
-      pro3UserTeam,
-    });
-  }
 
   await createTeamAndAddUsers(
     {
@@ -1722,6 +1758,7 @@ async function main() {
   }
 
   await ensureAcmeOwnerHasApiKeySeeded();
+  await seedPerHostLocationsInAcmeOrg();
 }
 
 async function runSeed() {
