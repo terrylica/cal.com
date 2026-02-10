@@ -5,8 +5,6 @@ import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
 import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
 import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
 import { WEBAPP_URL } from "@calcom/lib/constants";
-import { ErrorCode } from "@calcom/lib/errorCodes";
-import { ErrorWithCode } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { prisma } from "@calcom/prisma";
@@ -18,6 +16,7 @@ import type {
 } from "@calcom/prisma/client";
 import { MembershipRole, Prisma } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
+import { TRPCError } from "@trpc/server";
 import type { TFunction } from "i18next";
 
 const log = logger.getSubLogger({ prefix: ["inviteMember.utils"] });
@@ -60,7 +59,11 @@ export async function getTeamOrThrow(teamId: number) {
     },
   });
 
-  if (!team) throw new ErrorWithCode(ErrorCode.NotFound, "Team not found");
+  if (!team)
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: `Team not found`,
+    });
 
   return { ...team, metadata: teamMetadataSchema.parse(team.metadata) };
 }
@@ -110,6 +113,7 @@ export async function sendSignupToOrganizationEmail({
       parentTeamName: team?.parent?.name,
       isAutoJoin: false,
       isExistingUserMovedToOrg: false,
+      // For a new user there is no prev and new links.
       prevLink: null,
       newLink: null,
     });
@@ -117,6 +121,7 @@ export async function sendSignupToOrganizationEmail({
     logger.error(
       "Failed to send signup to organization email",
       safeStringify({
+        usernameOrEmail,
         orgId: teamId,
       }),
       error
@@ -160,12 +165,16 @@ export const sendExistingUserTeamInviteEmails = async ({
       sendTo = user.email;
     }
 
-    log.debug("Sending team invite email to", safeStringify({ userId: user.id, currentUserTeamName }));
+    log.debug("Sending team invite email to", safeStringify({ user, currentUserName, currentUserTeamName }));
 
     if (!currentUserTeamName) {
-      throw new ErrorWithCode(ErrorCode.InternalServerError, "The team doesn't have a name");
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "The team doesn't have a name",
+      });
     }
 
+    // inform user of membership by email
     if (currentUserTeamName) {
       const inviteTeamOptions = {
         joinLink: `${WEBAPP_URL}/auth/login?callbackUrl=/settings/teams`,
