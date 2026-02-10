@@ -30,7 +30,7 @@ export default function DisconnectIntegrationModal({
 }: DisconnectIntegrationModalProps) {
   const { t } = useLocale();
   return (
-    <Dialog open={isOpen} onOpenChange={handleModelClose}>
+    <Dialog open={isOpen} onOpenChange={handleModelClose} isPlatform={isPlatform}>
       <ConfirmationDialogContent
         variety="danger"
         title={t("remove_app")}

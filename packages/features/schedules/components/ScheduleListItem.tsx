@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { Fragment, useState } from "react";
-
+import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { availabilityAsString } from "@calcom/lib/availability";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { sortAvailabilityStrings } from "@calcom/lib/weekstart";
-import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
+import { ConfirmationDialogContent } from "@calcom/ui/components/dialog";
 import {
   Dropdown,
   DropdownItem,
@@ -16,9 +14,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@calcom/ui/components/dropdown";
-import { ConfirmationDialogContent } from "@calcom/ui/components/dialog";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
+import Link from "next/link";
+import { Fragment, useState } from "react";
 
 interface Schedule {
   id: number;
@@ -45,6 +44,7 @@ export function ScheduleListItem({
   isDeletable,
   duplicateFunction,
   redirectUrl,
+  isPlatform = false,
 }: {
   schedule: Schedule;
   deleteFunction: ({ scheduleId }: { scheduleId: number }) => void;
@@ -57,6 +57,7 @@ export function ScheduleListItem({
   updateDefault: ({ scheduleId, isDefault }: { scheduleId: number; isDefault: boolean }) => void;
   duplicateFunction: ({ scheduleId }: { scheduleId: number }) => void;
   redirectUrl: string;
+  isPlatform?: boolean;
 }) {
   const { t, i18n } = useLocale();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -66,47 +67,40 @@ export function ScheduleListItem({
   return (
     <li key={schedule.id}>
       <div className="hover:bg-cal-muted flex items-center justify-between px-3 py-5 transition sm:px-4">
-          <Link href={redirectUrl} className="grow truncate text-sm" title={schedule.name}>
-            <div className="space-x-2 rtl:space-x-reverse">
-              <span className="text-emphasis truncate font-medium">{schedule.name}</span>
-              {schedule.isDefault && (
-                <Badge variant="gray" className="text-xs">
-                  {t("default")}
-                </Badge>
-              )}
-            </div>
-            <p className="text-subtle mt-1">
-              {schedule.availability
-                .filter(
-                  (availability: AvailabilityItem) => !!availability.days.length
-                )
-                .map((availability: AvailabilityItem) =>
-                  availabilityAsString(availability, {
-                    locale: i18n.language,
-                    hour12: displayOptions?.hour12,
-                  })
-                )
-                // sort the availability strings as per user's weekstart (settings)
-                .sort(
-                  sortAvailabilityStrings(
-                    i18n.language,
-                    displayOptions?.weekStart
-                  )
-                )
-                .map((availabilityString: string) => (
-                  <Fragment key={availabilityString}>
-                    {availabilityString}
-                    <br />
-                  </Fragment>
-                ))}
-              {(schedule.timeZone || displayOptions?.timeZone) && (
-                <span className="my-1 flex items-center first-letter:text-xs">
-                  <Icon name="globe" className="h-3.5 w-3.5" />
-                  &nbsp;{schedule.timeZone ?? displayOptions?.timeZone}
-                </span>
-              )}
-            </p>
-          </Link>
+        <Link href={redirectUrl} className="grow truncate text-sm" title={schedule.name}>
+          <div className="space-x-2 rtl:space-x-reverse">
+            <span className="text-emphasis truncate font-medium">{schedule.name}</span>
+            {schedule.isDefault && (
+              <Badge variant="gray" className="text-xs">
+                {t("default")}
+              </Badge>
+            )}
+          </div>
+          <p className="text-subtle mt-1">
+            {schedule.availability
+              .filter((availability: AvailabilityItem) => !!availability.days.length)
+              .map((availability: AvailabilityItem) =>
+                availabilityAsString(availability, {
+                  locale: i18n.language,
+                  hour12: displayOptions?.hour12,
+                })
+              )
+              // sort the availability strings as per user's weekstart (settings)
+              .sort(sortAvailabilityStrings(i18n.language, displayOptions?.weekStart))
+              .map((availabilityString: string) => (
+                <Fragment key={availabilityString}>
+                  {availabilityString}
+                  <br />
+                </Fragment>
+              ))}
+            {(schedule.timeZone || displayOptions?.timeZone) && (
+              <span className="my-1 flex items-center first-letter:text-xs">
+                <Icon name="globe" className="h-3.5 w-3.5" />
+                &nbsp;{schedule.timeZone ?? displayOptions?.timeZone}
+              </span>
+            )}
+          </p>
+        </Link>
         <Dropdown>
           <DropdownMenuTrigger asChild>
             <Button
@@ -165,7 +159,7 @@ export function ScheduleListItem({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </Dropdown>
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} isPlatform={isPlatform}>
           <ConfirmationDialogContent
             variety="danger"
             title={t("delete_schedule")}

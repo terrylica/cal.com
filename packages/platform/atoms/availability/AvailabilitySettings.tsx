@@ -247,6 +247,7 @@ const DateOverride = ({
           userTimeFormat={userTimeFormat}
           weekStart={weekStart}
           isDryRun={isDryRun}
+          isPlatform={true}
           Trigger={
             <Button
               className={classNames?.button}
@@ -480,6 +481,7 @@ export const AvailabilitySettings = forwardRef<AvailabilitySettingsFormRef, Avai
                 eventTypes={bulkUpdateModalProps?.eventTypes}
                 isEventTypesFetching={bulkUpdateModalProps?.isEventTypesFetching}
                 handleBulkEditDialogToggle={bulkUpdateModalProps.handleBulkEditDialogToggle}
+                isPlatform={true}
               />
             )}
 

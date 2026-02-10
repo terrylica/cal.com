@@ -7,6 +7,7 @@ import { useState } from "react";
 export type DialogProps = React.ComponentProps<(typeof DialogPrimitive)["Root"]> & {
   name?: string;
   clearQueryParamsOnClose?: string[];
+  isPlatform?: boolean;
 };
 
 enum DIALOG_STATE {
@@ -18,8 +19,11 @@ enum DIALOG_STATE {
   OPEN = "OPEN",
 }
 
-/** Controlled dialog for web - uses URL-based state management */
-export function Dialog(props: DialogProps) {
+/** Dialog that switches between URL-based (web) and simple (platform) behavior */
+export function Dialog({ isPlatform, ...props }: DialogProps) {
+  if (isPlatform) {
+    return <DialogPrimitive.Dialog {...props} />;
+  }
   return <ControlledDialog {...props} />;
 }
 
