@@ -32,6 +32,7 @@ import type { NoSlotsNotificationService } from "@calcom/features/slots/handleNo
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { withSelectedCalendars } from "@calcom/features/users/repositories/UserRepository";
 import { filterBlockedHosts } from "@calcom/features/watchlist/operations/filter-blocked-hosts.controller";
+import { binarySearchRangeIndex } from "@calcom/lib/binarySearch";
 import { shouldIgnoreContactOwner } from "@calcom/lib/bookings/routing/utils";
 import { RESERVED_SUBDOMAINS } from "@calcom/lib/constants";
 import { getUTCOffsetByTimezone } from "@calcom/lib/dayjs";
@@ -169,22 +170,6 @@ interface HighlightPreferredTimesConfig {
   mode: "auto" | "manual";
   auto?: { preferTimeOfDay?: "morning" | "afternoon"; batchMeetings?: boolean };
   manual?: { ranges: ManualPreferredRange[] };
-}
-
-function binarySearchRangeIndex(sortedStarts: number[], value: number): number {
-  let lo = 0;
-  let hi = sortedStarts.length - 1;
-  let result = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >>> 1;
-    if (sortedStarts[mid] <= value) {
-      result = mid;
-      lo = mid + 1;
-    } else {
-      hi = mid - 1;
-    }
-  }
-  return result;
 }
 
 function parseHHMM(hhmm: string): { hours: number; minutes: number } {
