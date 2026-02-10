@@ -56,7 +56,7 @@ describe("TeamBilling", () => {
     mockBillingProviderService = createMockBillingProviderService();
     mockTeamBillingDataRepository = createMockTeamBillingDataRepository();
     mockBillingRepository = createMockBillingRepository();
-    mockSeatBillingStrategyFactory = { create: vi.fn() } as unknown as SeatBillingStrategyFactory;
+    mockSeatBillingStrategyFactory = { createByTeamId: vi.fn() } as unknown as SeatBillingStrategyFactory;
   });
 
   afterEach(() => {

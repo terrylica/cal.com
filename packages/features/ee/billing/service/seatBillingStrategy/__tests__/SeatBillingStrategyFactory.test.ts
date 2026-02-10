@@ -92,7 +92,7 @@ describe("SeatBillingStrategyFactory", () => {
       monthlyProrationService: createMockMonthlyProrationService(),
       teamBillingDataRepository: createMockTeamBillingDataRepository(),
     } as never);
-    const strategy = await factory.create(1);
+    const strategy = await factory.createByTeamId(1);
 
     expect(strategy).toBeInstanceOf(MonthlyProrationStrategy);
     expect(billingPeriodService.getBillingPeriodInfo).toHaveBeenCalledWith(1);
@@ -103,7 +103,7 @@ describe("SeatBillingStrategyFactory", () => {
       { ...baseBillingInfo, billingPeriod: "MONTHLY" },
       { "hwm-seating": true }
     );
-    const strategy = await factory.create(1);
+    const strategy = await factory.createByTeamId(1);
 
     expect(strategy).toBeInstanceOf(HighWaterMarkStrategy);
   });
@@ -113,7 +113,7 @@ describe("SeatBillingStrategyFactory", () => {
       { ...baseBillingInfo, billingPeriod: "ANNUALLY" },
       { "monthly-proration": false }
     );
-    const strategy = await factory.create(1);
+    const strategy = await factory.createByTeamId(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
@@ -123,7 +123,7 @@ describe("SeatBillingStrategyFactory", () => {
       { ...baseBillingInfo, billingPeriod: "MONTHLY" },
       { "hwm-seating": false }
     );
-    const strategy = await factory.create(1);
+    const strategy = await factory.createByTeamId(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
@@ -133,7 +133,7 @@ describe("SeatBillingStrategyFactory", () => {
       { ...baseBillingInfo, billingPeriod: "ANNUALLY", isInTrial: true, trialEnd: new Date("2026-06-01") },
       { "monthly-proration": true }
     );
-    const strategy = await factory.create(1);
+    const strategy = await factory.createByTeamId(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
@@ -143,7 +143,7 @@ describe("SeatBillingStrategyFactory", () => {
       { ...baseBillingInfo, billingPeriod: "ANNUALLY", subscriptionStart: null },
       { "monthly-proration": true }
     );
-    const strategy = await factory.create(1);
+    const strategy = await factory.createByTeamId(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
@@ -153,7 +153,7 @@ describe("SeatBillingStrategyFactory", () => {
       { ...baseBillingInfo, billingPeriod: null },
       { "monthly-proration": true, "hwm-seating": true }
     );
-    const strategy = await factory.create(1);
+    const strategy = await factory.createByTeamId(1);
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });

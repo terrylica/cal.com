@@ -40,7 +40,7 @@ export class SeatBillingStrategyFactory {
     });
   }
 
-  async create(teamId: number): Promise<ISeatBillingStrategy> {
+  async createByTeamId(teamId: number): Promise<ISeatBillingStrategy> {
     const info = await this.deps.billingPeriodService.getBillingPeriodInfo(
       teamId
     );
@@ -77,6 +77,6 @@ export class SeatBillingStrategyFactory {
       );
       return this.fallback;
     }
-    return this.create(team.id);
+    return this.createByTeamId(team.id);
   }
 }

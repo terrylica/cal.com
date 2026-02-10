@@ -169,7 +169,7 @@ export class TeamBillingService implements ITeamBillingService {
       if (!subscriptionId) throw Error("missing subscriptionId");
       if (!subscriptionItemId) throw Error("missing subscriptionItemId");
 
-      const strategy = await this.seatBillingStrategyFactory.create(teamId);
+      const strategy = await this.seatBillingStrategyFactory.createByTeamId(teamId);
       await strategy.onSeatChange({
         teamId,
         subscriptionId,

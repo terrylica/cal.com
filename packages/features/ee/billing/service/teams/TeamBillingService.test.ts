@@ -74,7 +74,7 @@ function createMockStrategy(): ISeatBillingStrategy {
 }
 
 function createMockFactory(strategy: ISeatBillingStrategy): SeatBillingStrategyFactory {
-  return { create: vi.fn().mockResolvedValue(strategy) } as unknown as SeatBillingStrategyFactory;
+  return { createByTeamId: vi.fn().mockResolvedValue(strategy) } as unknown as SeatBillingStrategyFactory;
 }
 
 describe("TeamBillingService", () => {
@@ -195,7 +195,7 @@ describe("TeamBillingService", () => {
 
       await teamBillingService.updateQuantity("addition");
 
-      expect(resolver.create).toHaveBeenCalledWith(mockTeamNotOrg.id);
+      expect(resolver.createByTeamId).toHaveBeenCalledWith(mockTeamNotOrg.id);
       expect(strategy.onSeatChange).toHaveBeenCalledWith({
         teamId: mockTeamNotOrg.id,
         subscriptionId: "sub_123",
