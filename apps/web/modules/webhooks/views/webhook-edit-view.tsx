@@ -33,7 +33,6 @@ type WebhookProps = {
 
 export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
   const { t } = useLocale();
-  const utils = trpc.useUtils();
   const router = useRouter();
   const { data: installedApps, isPending } = trpc.viewer.apps.integrations.useQuery(
     { variant: "other", onlyInstalled: true },
@@ -49,10 +48,8 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
   });
   const editWebhookMutation = trpc.viewer.webhook.edit.useMutation({
     async onSuccess() {
-      await utils.viewer.webhook.list.invalidate();
-      await utils.viewer.webhook.get.invalidate({ webhookId: webhook?.id });
       toastManager.add({ title: t("webhook_updated_successfully"), type: "success" });
-      revalidateWebhooksList();
+      await revalidateWebhooksList();
       router.push("/settings/developer/webhooks");
     },
     onError(error) {
