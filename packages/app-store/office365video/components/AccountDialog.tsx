@@ -1,5 +1,7 @@
-import type { DialogProps as ControlledDialogProps } from "@calcom/features/components/controlled-dialog";
-import { Dialog } from "@calcom/features/components/controlled-dialog";
+import {
+  ControlledDialog as Dialog,
+  type ControlledDialogProps,
+} from "@calcom/features/components/controlled-dialog/ControlledDialog";
 import { Button } from "@calcom/ui/components/button";
 import { DialogContent, DialogFooter, DialogClose } from "@calcom/ui/components/dialog";
 
