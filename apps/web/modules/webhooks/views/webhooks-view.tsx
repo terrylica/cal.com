@@ -52,12 +52,12 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
         actions={
           hasWebhooks ? (
             <div className="flex items-center gap-2">
-              <CreateNewWebhookButton />
               <WebhooksFilter
                 groups={webhookGroups}
                 selectedProfileIds={selectedProfileIds}
                 onSelectionChange={setSelectedProfileIds}
               />
+              <CreateNewWebhookButton />
             </div>
           ) : undefined
         }
