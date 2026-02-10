@@ -96,7 +96,7 @@ export class BookingDataPreparationService {
     });
 
     if (!eventType) {
-      throw new HttpError({ statusCode: 404, message: "Event type not found" });
+      throw new HttpError({ statusCode: 404, message: "event_type_not_found" });
     }
 
     const user = eventType.users.find((user) => user.id === eventType.userId);
@@ -115,15 +115,16 @@ export class BookingDataPreparationService {
       bookingFields: enrichedEventType.bookingFields,
     });
 
-    const bookingData = await getBookingData({
-      reqBody: rawBookingData,
-      eventType: enrichedEventType,
-      schema: bookingDataSchema,
-    });
-
-    const eventOrganizationId = await getEventOrganizationId({
-      eventType: enrichedEventType,
-    });
+    const [bookingData, eventOrganizationId] = await Promise.all([
+      getBookingData({
+        reqBody: rawBookingData,
+        eventType: enrichedEventType,
+        schema: bookingDataSchema,
+      }),
+      getEventOrganizationId({
+        eventType: enrichedEventType,
+      }),
+    ]);
 
     return {
       eventType: enrichedEventType,
@@ -282,6 +283,15 @@ export class BookingDataPreparationService {
       endTime,
     } = bookingFormData;
 
+    await validateRescheduleRestrictions({
+      rescheduleUid: rawBookingData.rescheduleUid,
+      userId: loggedInUser.id,
+      eventType: {
+        seatsPerTimeSlot: eventType.seatsPerTimeSlot,
+        minimumRescheduleNotice: eventType.minimumRescheduleNotice ?? null,
+      },
+    });
+
     if (eventType.seatsPerTimeSlot && eventType.recurringEvent) {
       throw new HttpError({ statusCode: 400, message: "recurring_event_seats_error" });
     }
@@ -346,16 +356,6 @@ export class BookingDataPreparationService {
       logger: this.log,
     });
 
-    await validateRescheduleRestrictions({
-      rescheduleUid: rawBookingData.rescheduleUid,
-      userId: loggedInUser.id,
-      eventType: eventType
-        ? {
-            seatsPerTimeSlot: eventType.seatsPerTimeSlot,
-            minimumRescheduleNotice: eventType.minimumRescheduleNotice ?? null,
-          }
-        : null,
-    });
   }
 
   async prepare(
