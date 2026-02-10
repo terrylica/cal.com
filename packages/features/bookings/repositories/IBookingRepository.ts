@@ -1,3 +1,4 @@
+import type { BookingForCalEventBuilder } from "@calcom/features/CalendarEventBuilder";
 import type { Booking } from "@calcom/prisma/client";
 import type { BookingStatus, WorkflowMethods } from "@calcom/prisma/enums";
 
@@ -52,4 +53,6 @@ export interface IBookingRepository {
   findManyIncludeWorkflowRemindersAndReferences(params: {
     where: BookingWhereInput;
   }): Promise<BookingWithWorkflowReminders[]>;
+
+  getBookingForCalEventBuilderFromUid(bookingUid: string): Promise<BookingForCalEventBuilder | null>;
 }
