@@ -29,7 +29,7 @@ import {
 import { Switch } from "@coss/ui/components/switch";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@coss/ui/components/tooltip";
 import { EllipsisIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 
 const MAX_BADGES_TWO_ROWS = 7;
@@ -49,6 +49,11 @@ export default function WebhookListItem(props: {
   const utils = trpc.useUtils();
   const { webhook } = props;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [optimisticActive, setOptimisticActive] = useState(webhook.active);
+
+  useEffect(() => {
+    setOptimisticActive(webhook.active);
+  }, [webhook.active]);
 
   const deleteWebhook = trpc.viewer.webhook.delete.useMutation({
     async onSuccess() {
@@ -72,6 +77,9 @@ export default function WebhookListItem(props: {
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();
+    },
+    onError() {
+      setOptimisticActive(webhook.active);
     },
   });
 
@@ -129,22 +137,23 @@ export default function WebhookListItem(props: {
               <TooltipTrigger
                 render={
                   <Switch
-                    checked={webhook.active}
+                    checked={optimisticActive}
                     data-testid="webhook-switch"
                     disabled={!props.permissions.canEditWebhook}
-                    onCheckedChange={(checked) =>
+                    onCheckedChange={(checked) => {
+                      setOptimisticActive(checked);
                       toggleWebhook.mutate({
                         id: webhook.id,
                         active: checked,
                         payloadTemplate: webhook.payloadTemplate,
                         eventTypeId: webhook.eventTypeId || undefined,
-                      })
-                    }
+                      });
+                    }}
                   />
                 }
               />
               <TooltipPopup sideOffset={11}>
-                {webhook.active ? t("disable_webhook") : t("enable_webhook")}
+                {optimisticActive ? t("disable_webhook") : t("enable_webhook")}
               </TooltipPopup>
             </Tooltip>
 
@@ -200,15 +209,16 @@ export default function WebhookListItem(props: {
               <MenuSeparator />
               <MenuGroup>
                 <MenuCheckboxItem
-                  checked={webhook.active}
-                  onCheckedChange={(checked) =>
+                  checked={optimisticActive}
+                  onCheckedChange={(checked) => {
+                    setOptimisticActive(checked);
                     toggleWebhook.mutate({
                       id: webhook.id,
                       active: checked,
                       payloadTemplate: webhook.payloadTemplate,
                       eventTypeId: webhook.eventTypeId || undefined,
-                    })
-                  }
+                    });
+                  }}
                   variant="switch">
                   {t("enable_webhook")}
                 </MenuCheckboxItem>
