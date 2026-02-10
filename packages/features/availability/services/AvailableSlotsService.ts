@@ -35,8 +35,6 @@ import { filterBlockedHosts } from "@calcom/features/watchlist/operations/filter
 import { shouldIgnoreContactOwner } from "@calcom/lib/bookings/routing/utils";
 import { RESERVED_SUBDOMAINS } from "@calcom/lib/constants";
 import { getUTCOffsetByTimezone } from "@calcom/lib/dayjs";
-import { ErrorCode } from "@calcom/lib/errorCodes";
-import { ErrorWithCode } from "@calcom/lib/errors";
 import { descendingLimitKeys, intervalLimitKeyToUnit } from "@calcom/lib/intervalLimits/intervalLimit";
 import type { IntervalLimit } from "@calcom/lib/intervalLimits/intervalLimitSchema";
 import { parseBookingLimit } from "@calcom/lib/intervalLimits/isBookingLimits";
@@ -56,8 +54,13 @@ import type { RoutingFormResponseRepository } from "@calcom/lib/server/repositor
 import { PeriodType, SchedulingType } from "@calcom/prisma/enums";
 import type { CalendarFetchMode, EventBusyDate, EventBusyDetails } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService } from "@calcom/types/Credential";
+import { TRPCError } from "@trpc/server";
 import type { Logger } from "tslog";
 import { v4 as uuid } from "uuid";
+
+// Import types from tRPC router schemas
+import type { TGetScheduleInputSchema } from "@calcom/trpc/server/routers/viewer/slots/getSchedule.schema";
+import type { GetScheduleOptions } from "@calcom/trpc/server/routers/viewer/slots/types";
 
 const log = logger.getSubLogger({ prefix: ["[slots/util]"] });
 const DEFAULT_SLOTS_CACHE_TTL = 2000;
@@ -66,9 +69,9 @@ type GetAvailabilityUserWithDelegationCredentials = Omit<NonNullable<GetAvailabi
   credentials: CredentialForCalendarService[];
 };
 
-// Types imported from tRPC router schemas - these will be re-exported from here
-// to avoid the service depending on tRPC types
-export type { GetScheduleOptions, TGetScheduleInputSchema } from "@calcom/trpc/server/routers/viewer/slots/types";
+export type GetAvailableSlotsResponse = Awaited<
+  ReturnType<(typeof AvailableSlotsService)["prototype"]["_getAvailableSlots"]>
+>;
 
 export interface IAvailableSlotsService {
   oooRepo: PrismaOOORepository;
@@ -188,10 +191,10 @@ export class AvailableSlotsService {
 
     const isDynamicAllowed = !usersWithOldSelectedCalendars.some((user) => !user.allowDynamicBooking);
     if (!isDynamicAllowed) {
-      throw new ErrorWithCode(
-        ErrorCode.Unauthorized,
-        "Some of the users in this group do not allow dynamic booking"
-      );
+      throw new TRPCError({
+        message: "Some of the users in this group do not allow dynamic booking",
+        code: "UNAUTHORIZED",
+      });
     }
     return Object.assign({}, dynamicEventType, {
       users: usersWithOldSelectedCalendars,
@@ -369,7 +372,7 @@ export class AvailableSlotsService {
     const eventTypeRepo = this.dependencies.eventTypeRepo;
     const eventType = await eventTypeRepo.findFirstEventTypeId({ slug: eventTypeSlug, teamId, userId });
     if (!eventType) {
-      throw new ErrorWithCode(ErrorCode.NotFound, "Not found");
+      throw new TRPCError({ code: "NOT_FOUND" });
     }
     return eventType?.id;
   }
@@ -1059,7 +1062,7 @@ export class AvailableSlotsService {
     const eventType = await this.getRegularOrDynamicEventType(input, orgDetails);
 
     if (!eventType) {
-      throw new ErrorWithCode(ErrorCode.NotFound, "Not found");
+      throw new TRPCError({ code: "NOT_FOUND" });
     }
 
     // Use "slots" mode to enable cache when available for getting calendar availability
@@ -1484,7 +1487,7 @@ export class AvailableSlotsService {
     const _mapWithinBoundsSlotsToDate = () => {
       let foundAFutureLimitViolation = false;
       // This should never happen. Just for type safety, we already check in the upper scope
-      if (!eventType) throw new ErrorWithCode(ErrorCode.NotFound, "Not found");
+      if (!eventType) throw new TRPCError({ code: "NOT_FOUND" });
 
       const withinBoundsSlotsMappedToDate = {} as typeof slotsMappedToDate;
       const doesStartFromToday = this.doesRangeStartFromToday(eventType.periodType);
@@ -1508,7 +1511,10 @@ export class AvailableSlotsService {
             });
           } catch (error) {
             if (error instanceof BookingDateInPastError) {
-              throw new ErrorWithCode(ErrorCode.BadRequest, error.message);
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: error.message,
+              });
             }
             throw error;
           }
