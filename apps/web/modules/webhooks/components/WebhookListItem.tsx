@@ -27,8 +27,8 @@ import {
   MenuTrigger,
 } from "@coss/ui/components/menu";
 import { Switch } from "@coss/ui/components/switch";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@coss/ui/components/tooltip";
-import { EllipsisIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
+import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "@coss/ui/components/tooltip";
+import { EllipsisIcon, ExternalLinkIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 import { getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants";
@@ -124,7 +124,27 @@ export default function WebhookListItem(props: {
               </div>
             )}
             {!props.permissions.canEditWebhook && <Badge variant="warning">{t("readonly")}</Badge>}
-            <Badge variant="info">{getWebhookVersionLabel(webhook.version)}</Badge>
+            <div className="flex items-center">
+              <TooltipProvider delay={0}>
+                <Tooltip>
+                  <TooltipTrigger render={<Badge variant="info" />}>
+                    {getWebhookVersionLabel(webhook.version)}
+                  </TooltipTrigger>
+                  <TooltipPopup>
+                    {t("webhook_version")}
+                  </TooltipPopup>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger render={<a className="h-5 sm:h-4.5 px-2 flex items-center justify-center" href={`https://cal.com/docs/developing/guides/automation/webhooks#${webhook.version}`} target="_blank" rel="noopener noreferrer" />}>
+                    <span className="sr-only">{t("webhook_version_docs")}</span>
+                    <ExternalLinkIcon className="size-3.5 sm:size-3 shrink-0" aria-hidden="true" />
+                  </TooltipTrigger>
+                  <TooltipPopup>
+                    {t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}
+                  </TooltipPopup>
+                </Tooltip>            
+              </TooltipProvider>
+            </div>
           </div>
         </div>                
       </ListItemContent>
