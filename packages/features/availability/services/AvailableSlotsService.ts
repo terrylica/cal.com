@@ -54,7 +54,7 @@ import {
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { withReporting } from "@calcom/lib/sentryWrapper";
-import type { RoutingFormResponseRepository } from "@calcom/lib/server/repository/formResponse";
+import type { RoutingFormResponseRepository } from "@calcom/features/routing-forms/repositories/RoutingFormResponseRepository";
 import { PeriodType, SchedulingType } from "@calcom/prisma/enums";
 import type { CalendarFetchMode, EventBusyDate, EventBusyDetails } from "@calcom/types/Calendar";
 import type { CredentialForCalendarService } from "@calcom/types/Credential";
@@ -700,7 +700,7 @@ export class AvailableSlotsService {
               if (
                 periodStartDates.every((start: Dayjs) => limitManager.isAlreadyBusy(start, unit, timeZone))
               ) {
-                break;
+                return;
               }
             }
             continue;
@@ -794,7 +794,7 @@ export class AvailableSlotsService {
     });
 
     loggerWithEventDetails.debug("Using users", {
-      usersWithCredentials: usersWithCredentials.map((user) => user.id),
+      usersWithCredentials: usersWithCredentials.map((user) => user.email),
     });
 
     const durationToUse = input.duration || 0;
@@ -1221,6 +1221,8 @@ export class AvailableSlotsService {
 
       if (input.email) {
         loggerWithEventDetails.info({
+          email: input.email,
+          contactOwnerEmail,
           eligibleQualifiedRRHosts: eligibleQualifiedRRHosts.map((host) => host.user.id),
           eligibleFallbackRRHosts: eligibleFallbackRRHosts.map((host) => host.user.id),
           blockedHostsCount: qualifiedRRHosts.length - eligibleQualifiedRRHosts.length,
@@ -1280,7 +1282,7 @@ export class AvailableSlotsService {
 
         const restrictionTimezone = eventType.useBookerTimezone
           ? input.timeZone
-          : (restrictionSchedule.timeZone ?? "UTC");
+          : restrictionSchedule.timeZone ?? "UTC";
         const eventLength = input.duration || eventType.length;
 
         const restrictionAvailability = restrictionSchedule.availability.map((rule) => ({
