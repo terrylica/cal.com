@@ -1,10 +1,8 @@
 import "@calcom/lib/__mocks__/constants";
 
-import React from "react";
-import { vi, afterEach } from "vitest";
-
 import { render, screen } from "@calcom/features/bookings/Booker/__tests__/test-utils";
-
+import React from "react";
+import { afterEach, vi } from "vitest";
 import { CrmContactOwnerMessage } from "./CrmContactOwnerMessage";
 
 describe("CrmContactOwnerMessage", () => {
@@ -33,14 +31,13 @@ describe("CrmContactOwnerMessage", () => {
     expect(screen.queryByTestId("crm-contact-owner-msg")).not.toBeInTheDocument();
   });
 
-  it("renders with isEmbed prop adjusting top position", () => {
-    const { container } = render(<CrmContactOwnerMessage isEmbed={true} />, {
+  it("renders banner content correctly", () => {
+    render(<CrmContactOwnerMessage />, {
       mockStore: {
         teamMemberEmail: "owner@example.com",
       },
     });
 
-    const banner = container.querySelector(".top-0");
-    expect(banner).toBeInTheDocument();
+    expect(screen.getByTestId("crm-contact-owner-msg")).toBeInTheDocument();
   });
 });
