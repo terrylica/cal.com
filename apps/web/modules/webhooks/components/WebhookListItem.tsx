@@ -119,7 +119,7 @@ export default function WebhookListItem(props: {
                       .toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-muted-foreground text-xs truncate" title={props.profile.name || ""}>
+                <span className="text-muted-foreground font-medium text-xs truncate" title={props.profile.name || ""}>
                   {props.profile.name || ""}
                 </span>
               </div>
