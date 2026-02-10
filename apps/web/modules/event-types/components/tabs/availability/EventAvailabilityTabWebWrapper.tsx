@@ -1,8 +1,7 @@
-import { useFormContext } from "react-hook-form";
-
 import useLockedFieldsManager from "@calcom/features/ee/managed-event-types/hooks/useLockedFieldsManager";
 import {
   EventAvailabilityTab,
+  type HostSchedulesQueryType,
   type TeamMember,
 } from "@calcom/features/eventtypes/components/tabs/availability/EventAvailabilityTab";
 import type {
@@ -12,6 +11,7 @@ import type {
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
+import { useFormContext } from "react-hook-form";
 
 type TeamMembers = RouterOutputs["viewer"]["eventTypes"]["get"]["teamMembers"];
 
@@ -83,8 +83,10 @@ const EventAvailabilityTabWebWrapper = (
   const { data: schedulesQueryData, isPending: isSchedulesPending } =
     trpc.viewer.availability.list.useQuery(undefined);
 
-  const hostSchedulesQuery =
-    trpc.viewer.availability.schedule.getAllSchedulesByUserId.useQuery;
+  const hostSchedulesQuery = (({ userId }: { userId: number }) =>
+    trpc.viewer.availability.schedule.getAllSchedulesByUserId.useQuery({
+      userId,
+    })) as HostSchedulesQueryType;
 
   const transformedTeamMembers: TeamMember[] = props.teamMembers.map(
     (member) => ({
