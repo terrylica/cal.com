@@ -174,6 +174,8 @@ export default function CancelBooking(props: Props) {
     isCancellationUserHost && props.internalNotePresets.length > 0 && !internalNote?.id;
   const cancellationNoShowFeeNotAcknowledged =
     !props.isHost && cancellationNoShowFeeWarning && !acknowledgeCancellationNoShowFee;
+  const canCancel =
+    !missingRequiredReason && !hostMissingInternalNote && !cancellationNoShowFeeNotAcknowledged;
   const cancelBookingRef = useCallback((node: HTMLTextAreaElement) => {
     if (node !== null) {
       // eslint-disable-next-line @calcom/eslint/no-scroll-into-view-embed -- CancelBooking is not usually used in embed mode
@@ -274,9 +276,7 @@ export default function CancelBooking(props: Props) {
               </Button>
               <Button
                 data-testid="confirm_cancel"
-                disabled={
-                  missingRequiredReason || hostMissingInternalNote || cancellationNoShowFeeNotAcknowledged
-                }
+                disabled={!canCancel}
                 onClick={async () => {
                   setLoading(true);
 
