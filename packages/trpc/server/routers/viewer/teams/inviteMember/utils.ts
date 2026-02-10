@@ -1,11 +1,11 @@
 import { getParsedTeam } from "@calcom/features/ee/teams/lib/getParsedTeam";
 import {
-  type UserWithMembership,
   createMemberships,
   getTeamOrThrow,
   sendEmails,
   sendExistingUserTeamInviteEmails,
   sendSignupToOrganizationEmail,
+  type UserWithMembership,
 } from "@calcom/features/ee/teams/lib/inviteMemberUtils";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
