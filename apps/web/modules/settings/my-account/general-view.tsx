@@ -1,12 +1,26 @@
 "use client";
 
-import { revalidateSettingsGeneral } from "app/(use-page-wrapper)/settings/(settings-layout)/my-account/general/actions";
-import { CalendarIcon, ChevronsUpDownIcon, PlusIcon, SearchIcon, TrashIcon } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { Fragment, useMemo, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-
+import { formatLocalizedDateTime } from "@calcom/lib/dayjs";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { localeOptions } from "@calcom/lib/i18n";
+import { nameOfDay } from "@calcom/lib/weekday";
+import type { RouterOutputs } from "@calcom/trpc/react";
+import { trpc } from "@calcom/trpc/react";
+import classNames from "@calcom/ui/classNames";
+import { Form } from "@calcom/ui/components/form";
+import { Icon } from "@calcom/ui/components/icon";
+import { revalidateTravelSchedules } from "@calcom/web/app/cache/travelSchedule";
+import TravelScheduleModal from "@components/settings/TravelScheduleModal";
 import { Button } from "@coss/ui/components/button";
+import {
+  Card,
+  CardFrame,
+  CardFrameDescription,
+  CardFrameFooter,
+  CardFrameHeader,
+  CardFrameTitle,
+  CardPanel,
+} from "@coss/ui/components/card";
 import {
   Combobox,
   ComboboxEmpty,
@@ -20,39 +34,16 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@coss/ui/components/field";
 import { Fieldset, FieldsetLegend } from "@coss/ui/components/fieldset";
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "@coss/ui/components/frame";
-import { Separator } from "@coss/ui/components/separator";
 import { Label } from "@coss/ui/components/label";
-import {
-  Select,
-  SelectItem,
-  SelectPopup,
-  SelectTrigger,
-  SelectValue,
-} from "@coss/ui/components/select";
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@coss/ui/components/select";
+import { Separator } from "@coss/ui/components/separator";
 import { Switch } from "@coss/ui/components/switch";
-import {
-  Card,
-  CardFrame,
-  CardFrameDescription,
-  CardFrameFooter,
-  CardFrameHeader,
-  CardFrameTitle,
-  CardPanel,
-} from "@coss/ui/components/card";
-
-import { formatLocalizedDateTime } from "@calcom/lib/dayjs";
-import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { localeOptions } from "@calcom/lib/i18n";
-import { nameOfDay } from "@calcom/lib/weekday";
-import type { RouterOutputs } from "@calcom/trpc/react";
-import { trpc } from "@calcom/trpc/react";
-import classNames from "@calcom/ui/classNames";
-import { Form } from "@calcom/ui/components/form";
 import { toastManager } from "@coss/ui/components/toast";
-import { revalidateTravelSchedules } from "@calcom/web/app/cache/travelSchedule";
-
-import TravelScheduleModal from "@components/settings/TravelScheduleModal";
-import { Icon } from "@calcom/ui/components/icon";
+import { revalidateSettingsGeneral } from "app/(use-page-wrapper)/settings/(settings-layout)/my-account/general/actions";
+import { CalendarIcon, ChevronsUpDownIcon, PlusIcon, SearchIcon, TrashIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Fragment, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 
 export type FormValues = {
   locale: {
@@ -200,7 +191,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
   } = formMethods;
   const isDisabled = isSubmitting || !isDirty;
 
-  const watchedTzSchedules= formMethods.watch("travelSchedules");
+  const watchedTzSchedules = formMethods.watch("travelSchedules");
 
   return (
     <div className="flex flex-col gap-4">
@@ -233,47 +224,52 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                   }) => {
                     const currentLocale = localeOptions.find((opt) => opt.value === value.value);
                     return (
-                    <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty} className="max-md:col-span-2">
-                      <FieldLabel>{t("language")}</FieldLabel>
-                      <Combobox
-                        autoHighlight
-                        value={currentLocale}
-                        onValueChange={(newValue) => {
-                          if (newValue) {
-                            onChange(newValue);
-                          }
-                        }}
-                        items={localeOptions}>
-                        <ComboboxTrigger
-                          render={
-                            <Button
-                              className="w-full justify-between font-normal capitalize"
-                              variant="outline"
-                            />
-                          }>
-                          <ComboboxValue />
-                          <ChevronsUpDownIcon className="-me-1!" />
-                        </ComboboxTrigger>
-                        <ComboboxPopup aria-label={t("language")}>
-                          <div className="border-b p-2">
-                            <ComboboxInput
-                              className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
-                              placeholder={t("search")}
-                              showTrigger={false}
-                              startAddon={<SearchIcon />}
-                            />
-                          </div>
-                          <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
-                          <ComboboxList>
-                            {(item: { label: string; value: string }) => (
-                              <ComboboxItem className="capitalize" key={item.value} value={item}>
-                                {item.label}
-                              </ComboboxItem>
-                            )}
-                          </ComboboxList>
-                        </ComboboxPopup>
-                      </Combobox>
-                    </Field>
+                      <Field
+                        name={name}
+                        invalid={invalid}
+                        touched={isTouched}
+                        dirty={isDirty}
+                        className="max-md:col-span-2">
+                        <FieldLabel>{t("language")}</FieldLabel>
+                        <Combobox
+                          autoHighlight
+                          value={currentLocale}
+                          onValueChange={(newValue) => {
+                            if (newValue) {
+                              onChange(newValue);
+                            }
+                          }}
+                          items={localeOptions}>
+                          <ComboboxTrigger
+                            render={
+                              <Button
+                                className="w-full justify-between font-normal capitalize"
+                                variant="outline"
+                              />
+                            }>
+                            <ComboboxValue />
+                            <ChevronsUpDownIcon className="-me-1!" />
+                          </ComboboxTrigger>
+                          <ComboboxPopup aria-label={t("language")}>
+                            <div className="border-b p-2">
+                              <ComboboxInput
+                                className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
+                                placeholder={t("search")}
+                                showTrigger={false}
+                                startAddon={<SearchIcon />}
+                              />
+                            </div>
+                            <ComboboxEmpty>{t("no_options_available")}</ComboboxEmpty>
+                            <ComboboxList>
+                              {(item: { label: string; value: string }) => (
+                                <ComboboxItem className="capitalize" key={item.value} value={item}>
+                                  {item.label}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxPopup>
+                        </Combobox>
+                      </Field>
                     );
                   }}
                 />
@@ -291,7 +287,12 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                         <Fieldset className="max-w-none gap-2">
                           <Label render={<FieldsetLegend />}>{t("timezone")}</Label>
                           <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-                            <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty} className="contents">
+                            <Field
+                              name={name}
+                              invalid={invalid}
+                              touched={isTouched}
+                              dirty={isDirty}
+                              className="contents">
                               <Combobox
                                 autoHighlight
                                 value={currentTimezone}
@@ -420,13 +421,10 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                 <Frame>
                   <FrameHeader className="flex-row items-center justify-between">
                     <FrameTitle>{t("travel_schedule")}</FrameTitle>
-                    <Button
-                      className="-my-1"
-                      variant="outline"
-                      onClick={() => setIsTZScheduleOpen(true)}>
+                    <Button className="-my-1" variant="outline" onClick={() => setIsTZScheduleOpen(true)}>
                       <PlusIcon />
                       {t("add")}
-                    </Button>                    
+                    </Button>
                   </FrameHeader>
                   <FramePanel className="p-0 bg-card">
                     {watchedTzSchedules.map((schedule, index) => (
@@ -461,8 +459,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                                 shouldDirty: true,
                               });
                             }}
-                            aria-label={t("delete")}
-                          >
+                            aria-label={t("delete")}>
                             <TrashIcon />
                           </Button>
                         </div>
