@@ -151,7 +151,7 @@ const Wrapper = ({
   children: ReactNode;
   formValues?: Record<string, unknown>;
 }) => {
-  const form = useForm({ defaultValues: formValues });
+  const form = useForm({ defaultValues: formValues as { [x: string]: {} | undefined } });
   return (
     <TooltipProvider>
       <FormProvider {...form}>{children}</FormProvider>
@@ -164,7 +164,7 @@ const renderTab = (
   formValues?: Record<string, unknown>
 ) => {
   const props: EventAdvancedTabProps = {
-    eventType: createMinimalEventType() as EventAdvancedTabProps["eventType"],
+    eventType: createMinimalEventType() as unknown as EventAdvancedTabProps["eventType"],
     team: null,
     calendarsQuery: { data: undefined, isPending: false, error: null },
     showBookerLayoutSelector: false,
