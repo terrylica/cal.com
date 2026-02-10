@@ -1678,8 +1678,8 @@ function initializeGlobalCalProps() {
   // Store Commit Hash to know exactly what version of the code is running
   // TODO: Ideally it should be the version as per package.json and then it can be renamed to version.
   // But because it is built on local machine right now, it is much more reliable to have the commit hash.
-  globalCal.fingerprint = process.env.EMBED_PUBLIC_EMBED_FINGER_PRINT as string;
-  globalCal.version = process.env.EMBED_PUBLIC_EMBED_VERSION as string;
+  globalCal.fingerprint = import.meta.env.EMBED_PUBLIC_EMBED_FINGER_PRINT as string;
+  globalCal.version = import.meta.env.EMBED_PUBLIC_EMBED_VERSION as string;
   globalCal.__css = tailwindCss;
 
   if (!globalCal.config) {
@@ -1697,7 +1697,7 @@ function log(...args: unknown[]) {
   const searchString = location.search;
   globalCal.__logQueue = globalCal.__logQueue || [];
   globalCal.__logQueue.push(args);
-  if (searchString.includes("cal.embed.logging=1") || process.env.INTEGRATION_TEST_MODE === "true") {
+  if (searchString.includes("cal.embed.logging=1") || import.meta.env.INTEGRATION_TEST_MODE === "true") {
     console.log("Parent:", ...args);
   }
 }
