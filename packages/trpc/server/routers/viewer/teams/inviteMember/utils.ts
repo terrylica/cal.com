@@ -1,4 +1,3 @@
-import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
 import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
 import { getParsedTeam } from "@calcom/features/ee/teams/lib/getParsedTeam";
 import {
@@ -29,7 +28,6 @@ import { isEmail } from "../util";
 import type { TeamWithParent } from "./types";
 
 export type { Invitee, UserWithMembership } from "@calcom/features/ee/teams/lib/inviteMemberUtils";
-export { getTeamOrThrow, sendEmails, sendExistingUserTeamInviteEmails, sendSignupToOrganizationEmail } from "@calcom/features/ee/teams/lib/inviteMemberUtils";
 export {
   createMemberships,
   getTeamOrThrow,

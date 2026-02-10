@@ -121,7 +121,6 @@ export async function sendSignupToOrganizationEmail({
     logger.error(
       "Failed to send signup to organization email",
       safeStringify({
-        usernameOrEmail,
         orgId: teamId,
       }),
       error
@@ -160,12 +159,9 @@ export const sendExistingUserTeamInviteEmails = async ({
   orgSlug: string | null;
 }) => {
   const sendEmailsPromises = existingUsersWithMemberships.map(async (user) => {
-    let sendTo = user.email;
-    if (!isEmail(user.email)) {
-      sendTo = user.email;
-    }
+    const sendTo = user.email;
 
-    log.debug("Sending team invite email to", safeStringify({ user, currentUserName, currentUserTeamName }));
+    log.debug("Sending team invite email to", safeStringify({ userId: user.id, currentUserTeamName }));
 
     if (!currentUserTeamName) {
       throw new TRPCError({
@@ -239,7 +235,7 @@ export async function createMemberships({
   parentId: number | null;
   accepted: boolean;
 }) {
-  log.debug("Creating memberships for", safeStringify({ teamId, language, invitees, parentId, accepted }));
+  log.debug("Creating memberships for", safeStringify({ teamId, inviteeIds: invitees.map((i) => i.id), parentId, accepted }));
   try {
     await prisma.membership.createMany({
       data: invitees.flatMap((invitee) => {
