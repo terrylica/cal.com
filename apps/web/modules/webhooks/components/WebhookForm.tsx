@@ -332,6 +332,14 @@ const WebhookForm = (props: {
   const time = formMethods.watch("time");
   const timeUnit = formMethods.watch("timeUnit");
 
+  const TIME_UNITS = [TimeUnit.MINUTE, TimeUnit.HOUR, TimeUnit.DAY] as const;
+  const timeUnitItems = TIME_UNITS.map((unit) => ({
+    value: unit,
+    label: t(`${unit.toLowerCase()}_timeUnit`),
+  }));
+  const selectedTimeUnitItem =
+    timeUnitItems.find((item) => item.value === timeUnit) ?? timeUnitItems[2];
+
   const isCreating = !props?.webhook?.id;
   const needsTime = triggers.some(
     (t) =>
@@ -528,66 +536,49 @@ const WebhookForm = (props: {
               name="timeUnit"
               control={formMethods.control}
               render={({
-                field: { name, value: timeUnitValue, onChange: onTimeUnitChange },
+                field: { name, onChange: onTimeUnitChange },
                 fieldState: { invalid, isTouched, isDirty },
-              }) => {
-                const TIME_UNITS = [TimeUnit.MINUTE, TimeUnit.HOUR, TimeUnit.DAY] as const;
-                const timeUnitItems = useMemo(
-                  () =>
-                    TIME_UNITS.map((unit) => ({
-                      value: unit,
-                      label: t(`${unit.toLowerCase()}_timeUnit`),
-                    })),
-                  [t]
-                );
-
-                const selectedTimeUnitItem = useMemo(
-                  () => timeUnitItems.find((item) => item.value === timeUnitValue) ?? timeUnitItems[2],
-                  [timeUnitItems, timeUnitValue]
-                );
-
-                return (
-                  <Field
-                    name={name}
-                    invalid={invalid || timeInvalid}
-                    touched={isTouched || timeTouched}
-                    dirty={isDirty || timeDirty}>
-                    <FieldLabel>How long after the users don&apos;t show up on cal video meeting?</FieldLabel>
-                    <Group
-                      aria-label="How long after the users don't show up on cal video meeting?"
-                      className="w-full">
-                      <NumberField
-                        aria-label="Duration"
-                        className="gap-0"
-                        value={timeValue ?? 5}
-                        min={0}
-                        onValueChange={(newValue) => onTimeChange(newValue ?? 5)}
-                        render={<NumberFieldGroup />}>
-                        <NumberFieldInput className="text-left" />
-                      </NumberField>
-                      <GroupSeparator />
-                      <Select
-                        value={selectedTimeUnitItem}
-                        onValueChange={(newValue) => {
-                          if (!newValue) return;
-                          onTimeUnitChange(newValue.value);
-                        }}
-                        items={timeUnitItems}>
-                        <SelectTrigger className="w-fit min-w-none">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectPopup>
-                          {timeUnitItems.map((item) => (
-                            <SelectItem key={item.value} value={item}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectPopup>
-                      </Select>
-                    </Group>
-                  </Field>
-                );
-              }}
+              }) => (
+                <Field
+                  name={name}
+                  invalid={invalid || timeInvalid}
+                  touched={isTouched || timeTouched}
+                  dirty={isDirty || timeDirty}>
+                  <FieldLabel>How long after the users don&apos;t show up on cal video meeting?</FieldLabel>
+                  <Group
+                    aria-label="How long after the users don't show up on cal video meeting?"
+                    className="w-full">
+                    <NumberField
+                      aria-label="Duration"
+                      className="gap-0"
+                      value={timeValue ?? 5}
+                      min={0}
+                      onValueChange={(newValue) => onTimeChange(newValue ?? 5)}
+                      render={<NumberFieldGroup />}>
+                      <NumberFieldInput className="text-left" />
+                    </NumberField>
+                    <GroupSeparator />
+                    <Select
+                      value={selectedTimeUnitItem}
+                      onValueChange={(newValue) => {
+                        if (!newValue) return;
+                        onTimeUnitChange(newValue.value);
+                      }}
+                      items={timeUnitItems}>
+                      <SelectTrigger className="w-fit min-w-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectPopup>
+                        {timeUnitItems.map((item) => (
+                          <SelectItem key={item.value} value={item}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </Select>
+                  </Group>
+                </Field>
+              )}
             />
           )}
         />
