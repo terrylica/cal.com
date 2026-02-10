@@ -9,21 +9,24 @@ import { Button } from "@coss/ui/components/button";
 export function FullscreenUpgradeBannerForInsightsPage() {
   const { t } = useLocale();
 
-  const teamsFeatures = [
-    t("upgrade_feature_round_robin"),
-    t("upgrade_feature_collective_events"),
-    t("routing_forms"),
-    t("upgrade_feature_workflows"),
-    t("upgrade_feature_insights"),
-    t("upgrade_feature_remove_branding"),
+  const features = [
+    t("upgrade_banner_insights_feature1"),
+    t("upgrade_banner_insights_feature2"),
+    t("upgrade_banner_insights_feature3"),
   ];
 
   return (
     <FullScreenUpgradeBanner
-      title={t("insights")}
-      subtitle={t("upgrade_banner_teams_subtitle")}
-      features={teamsFeatures}
+      name={t("upgrade_banner_insights_name")}
+      title={t("upgrade_banner_insights_title")}
+      subtitle={t("upgrade_banner_insights_subtitle")}
+      features={features}
       target="team"
+      image={{
+        src: "/upgrade/roles_portrait.png",
+        width: 2160,
+        height: 3840,
+      }}
       learnMoreButton={{
         text: t("learn_more"),
         href: "https://go.cal.com/teams",

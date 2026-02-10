@@ -9,21 +9,25 @@ import { Button } from "@coss/ui/components/button";
 export function FullscreenUpgradeBannerForTeamsPage() {
   const { t } = useLocale();
 
-  const teamsFeatures = [
-    t("upgrade_feature_round_robin"),
-    t("upgrade_feature_collective_events"),
-    t("routing_forms"),
-    t("upgrade_feature_workflows"),
-    t("upgrade_feature_insights"),
-    t("upgrade_feature_remove_branding"),
+  const features = [
+    t("upgrade_banner_teams_feature1"),
+    t("upgrade_banner_teams_feature2"),
+    t("upgrade_banner_teams_feature3"),
+    t("upgrade_banner_teams_feature4"),
   ];
 
   return (
     <FullScreenUpgradeBanner
-      title={t("teams")}
+      name={t("upgrade_banner_teams_name")}
+      title={t("upgrade_banner_teams_title")}
       subtitle={t("upgrade_banner_teams_subtitle")}
-      features={teamsFeatures}
+      features={features}
       target="team"
+      image={{
+        src: "/upgrade/teams_portrait.png",
+        width: 2304,
+        height: 4096,
+      }}
       learnMoreButton={{
         text: t("learn_more"),
         href: "https://go.cal.com/teams",

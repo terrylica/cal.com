@@ -1,6 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
-import { FullscreenUpgradeBannerForRoutingPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/routing";
+import { FullscreenUpgradeBannerForRoutingFormPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/routingForm";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { _generateMetadata } from "app/_utils";
 import { cookies, headers } from "next/headers";
@@ -24,7 +24,7 @@ const ServerPage = async () => {
   const hasTeamPlan = userId && (await MembershipRepository.hasAnyAcceptedMembershipByUserId({ userId }));
 
   if (!hasTeamPlan) {
-    return <FullscreenUpgradeBannerForRoutingPage />;
+    return <FullscreenUpgradeBannerForRoutingFormPage />;
   }
 
   return <Forms appUrl="/routing" />;

@@ -4,24 +4,19 @@ import { useFillRemainingHeight } from "@calcom/lib/hooks/useFillRemainingHeight
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMediaQuery from "@calcom/lib/hooks/useMediaQuery";
 import { Icon } from "@calcom/ui/components/icon";
-import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
-import { useBanners } from "@calcom/web/modules/shell/banners/useBanners";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
+import Image from "next/image";
 import Link from "next/link";
-
-const SHELL_FIXED_OFFSET_MOBILE = 174;
-const SHELL_FIXED_OFFSET_TABLET = 174;
-const SHELL_FIXED_OFFSET_DESKTOP = 32;
-
 import type { UpgradeTarget } from "./types";
 
 export type { UpgradeTarget };
 
 export type FullScreenUpgradeBannerProps = {
+  name: string;
   title: string;
   subtitle: string;
-  features: string[];
+  features?: string[];
   target: UpgradeTarget;
   learnMoreButton?: {
     text: string;
@@ -35,6 +30,11 @@ export type FullScreenUpgradeBannerProps = {
         tablet?: number;
         desktop?: number;
       };
+  image: {
+    src: string;
+    width: number;
+    height: number;
+  };
   children: React.ReactNode;
 };
 
@@ -60,67 +60,89 @@ function useResponsiveOffset(
 }
 
 export function FullScreenUpgradeBanner({
+  name,
   title,
   subtitle,
   features,
   target,
   learnMoreButton,
   extraOffset,
+  image,
   children,
 }: FullScreenUpgradeBannerProps): JSX.Element {
-  const { bannersHeight } = useBanners();
   const deviceSpecificOffset = useResponsiveOffset(extraOffset);
   const { t } = useLocale();
   const ref = useFillRemainingHeight(deviceSpecificOffset);
 
   return (
-    <div ref={ref} className="flex w-full flex-1 items-center justify-center rounded-xl bg-subtle p-8">
+    <div ref={ref} className="flex w-full shrink-0 items-center justify-center rounded-xl bg-subtle p-8">
       <div className="flex w-full max-w-3xl gap-2 overflow-hidden rounded-3xl bg-default py-8 pl-8 shadow-sm">
         {/* Left Content */}
-        <div className="flex flex-1 flex-col">
-          <h2 className="font-cal font-semibold text-emphasis text-xl leading-none">{title}</h2>
-          <p className="mt-1 font-semibold text-subtle text-xl leading-none">{subtitle}</p>
+        <div className="flex flex-1 flex-col justify-between">
+          <div>
+            <div>
+              <Badge
+                variant="outline"
+                className="text-sm text-default font-medium bg-subtle px-2 py-1 h-fit! border-0">
+                {name}
+              </Badge>
+            </div>
+            <h2 className="mt-3 font-cal font-semibold text-emphasis text-xl leading-none">{title}</h2>
+            <p className="mt-2 text-subtle text-sm">{subtitle}</p>
 
-          {/* Features List */}
-          <ul className="mt-5 space-y-2">
-            {features.map((feature) => (
-              <li key={feature} className="flex items-center gap-2 text-sm text-subtle">
-                <span className="text-subtle">•</span>
-                {feature}
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-10">
-            <Badge
-              variant="outline"
-              className="text-sm text-default font-medium bg-subtle px-2 py-1 h-fit! border-0">
-              <Icon name="sparkles" />
-              {target === "team" ? t("upgrade_badge_available_team") : t("upgrade_badge_available_org")}
-            </Badge>
+            {/* Features List */}
+            {features && (
+              <ul className="mt-4 space-y-2">
+                {features.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2 text-sm text-subtle">
+                    <span className="text-subtle">•</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          {/* Buttons */}
-          <div className="mt-2 flex items-center gap-2">
-            {children}
-            {learnMoreButton &&
-              (learnMoreButton.href ? (
-                <Button
-                  variant="ghost"
-                  className="text-subtle"
-                  render={<Link href={learnMoreButton.href} target="_blank" rel="noopener noreferrer" />}>
-                  {learnMoreButton.text}
-                </Button>
-              ) : (
-                <Button variant="ghost" className="text-subtle" onClick={learnMoreButton.onClick}>
-                  {learnMoreButton.text}
-                </Button>
-              ))}
+
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-subtle">{t("available_on")}</p>
+              {target === "team" && <Badge variant="warning">{t("teams")}</Badge>}
+              {(target === "team" || target === "organization") && (
+                <Badge variant="warning" className="bg-purple-200 text-purple-700">
+                  {t("orgs")}
+                </Badge>
+              )}
+            </div>
+            <div className="mt-4 h-px w-full border border-t-subtle border-dashed" />
+            {/* Buttons */}
+            <div className="mt-6 flex items-center gap-2">
+              {children}
+              {learnMoreButton &&
+                (learnMoreButton.href ? (
+                  <Button
+                    variant="ghost"
+                    className="text-subtle"
+                    render={<Link href={learnMoreButton.href} target="_blank" rel="noopener noreferrer" />}>
+                    {learnMoreButton.text}
+                  </Button>
+                ) : (
+                  <Button variant="ghost" className="text-subtle" onClick={learnMoreButton.onClick}>
+                    {learnMoreButton.text}
+                  </Button>
+                ))}
+            </div>
           </div>
         </div>
 
-        {/* Right Content - Image Placeholder */}
-        <div className="-my-2 flex flex-1 items-center justify-center rounded-l-xl bg-subtle">
-          <span className="text-muted text-sm"></span>
+        {/* Right Content - Image */}
+        <div className="-my-2 flex flex-1 items-center justify-center rounded-l-xl bg-subtle aspect-[9/16] overflow-hidden">
+          <Image
+            src={image.src}
+            alt={name}
+            width={image.width}
+            height={image.height}
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
     </div>

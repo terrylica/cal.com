@@ -6,24 +6,20 @@ import { FullScreenUpgradeBanner } from "@calcom/web/modules/billing/components/
 import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
 import { Button } from "@coss/ui/components/button";
 
-export function FullscreenUpgradeBannerForRoutingPage() {
+export function FullscreenUpgradeBannerForRoutingFormPage() {
   const { t } = useLocale();
-
-  const features = [
-    t("upgrade_feature_round_robin"),
-    t("upgrade_feature_collective_events"),
-    t("routing_forms"),
-    t("upgrade_feature_workflows"),
-    t("upgrade_feature_insights"),
-    t("upgrade_feature_remove_branding"),
-  ];
 
   return (
     <FullScreenUpgradeBanner
-      title={t("routing")}
-      subtitle={t("upgrade_banner_teams_subtitle")}
-      features={features}
+      name={t("upgrade_banner_routing_form_name")}
+      title={t("upgrade_banner_routing_form_title")}
+      subtitle={t("upgrade_banner_routing_form_subtitle")}
       target="team"
+      image={{
+        src: "/upgrade/roles_portrait.png",
+        width: 2160,
+        height: 3840,
+      }}
       learnMoreButton={{
         text: t("learn_more"),
         href: "https://go.cal.com/teams",
