@@ -700,7 +700,7 @@ export class AvailableSlotsService {
               if (
                 periodStartDates.every((start: Dayjs) => limitManager.isAlreadyBusy(start, unit, timeZone))
               ) {
-                return;
+                break;
               }
             }
             continue;
@@ -794,7 +794,7 @@ export class AvailableSlotsService {
     });
 
     loggerWithEventDetails.debug("Using users", {
-      usersWithCredentials: usersWithCredentials.map((user) => user.email),
+      usersWithCredentials: usersWithCredentials.map((user) => user.id),
     });
 
     const durationToUse = input.duration || 0;
@@ -1221,8 +1221,6 @@ export class AvailableSlotsService {
 
       if (input.email) {
         loggerWithEventDetails.info({
-          email: input.email,
-          contactOwnerEmail,
           eligibleQualifiedRRHosts: eligibleQualifiedRRHosts.map((host) => host.user.id),
           eligibleFallbackRRHosts: eligibleFallbackRRHosts.map((host) => host.user.id),
           blockedHostsCount: qualifiedRRHosts.length - eligibleQualifiedRRHosts.length,
