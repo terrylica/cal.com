@@ -34,13 +34,8 @@ function WebhookListItemSkeleton() {
   return (
     <ListItem>
       <ListItemContent>
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-5 shrink-0 rounded-full" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-24" />
-        </div>
         <ListItemHeader>
-          <Skeleton className="h-4 my-0.5 w-full max-w-[18rem] truncate rounded" />
+          <Skeleton className="h-5 sm:h-4 my-0.5 w-full max-w-[18rem] truncate" />
         </ListItemHeader>
         <ListItemBadges>
           <Skeleton className="h-5.5 sm:h-4.5 w-36" />
@@ -51,6 +46,10 @@ function WebhookListItemSkeleton() {
           <Skeleton className="h-5.5 sm:h-4.5 w-36" />
           <Skeleton className="h-5.5 sm:h-4.5 w-36" />
         </ListItemBadges>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-5 sm:h-4 w-24" />
+        </div>        
       </ListItemContent>
       <ListItemActions>
         <Skeleton className="h-4.5 w-7.5 rounded-full max-md:hidden" />

@@ -16,6 +16,7 @@ import {
 import { Group, GroupSeparator } from "@coss/ui/components/group";
 import { ListFilterIcon, SearchIcon, XIcon } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 
 type WebhookGroup = RouterOutputs["viewer"]["webhook"]["getByViewer"]["webhookGroups"][number];
 
@@ -59,6 +60,7 @@ interface WebhooksFilterProps {
 }
 
 export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }: WebhooksFilterProps) {
+  const { t } = useLocale();
   const uniqueProfiles = useMemo(() => getUniqueProfiles(groups), [groups]);
   const selectedProfiles = useMemo(
     () => uniqueProfiles.filter((p) => selectedProfileIds.includes(p.id)),
@@ -109,7 +111,7 @@ export function WebhooksFilter({ groups, selectedProfileIds, onSelectionChange }
         <div className="border-b p-2">
           <ComboboxInput
             className="rounded-md before:rounded-[calc(var(--radius-md)-1px)]"
-            placeholder="Search users..."
+            placeholder={t("search")}
             showTrigger={false}
             startAddon={<SearchIcon />}
           />

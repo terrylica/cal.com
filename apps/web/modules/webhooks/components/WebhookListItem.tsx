@@ -29,7 +29,7 @@ import {
 } from "@coss/ui/components/menu";
 import { Switch } from "@coss/ui/components/switch";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@coss/ui/components/tooltip";
-import { EllipsisIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
+import { EllipsisIcon, InfoIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 
@@ -84,7 +84,7 @@ export default function WebhookListItem(props: {
           <ListItemTitle data-testid="webhook-url">
             {webhook.subscriberUrl}
           </ListItemTitle>
-        </ListItemHeader>
+        </ListItemHeader>        
         <ListItemBadges>
           {webhook.eventTriggers.slice(0, MAX_BADGES_TWO_ROWS).map((trigger) => (
             <Badge key={trigger} variant="outline">
@@ -98,28 +98,20 @@ export default function WebhookListItem(props: {
             </Badge>
           )}
         </ListItemBadges>
-        <div className="flex items-center gap-2">
-          {props.profile && (
-            <>
-              <Avatar className="size-5">
-                <AvatarImage alt={props.profile.name || ""} src={props.profile.image} />
-                <AvatarFallback className="text-[.625rem]">
-                  {(props.profile.name || "")
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-medium text-sm truncate" title={props.profile.name || ""}>
-                {props.profile.name || ""}
-              </span>
-            </>
-          )}
-          {!props.permissions.canEditWebhook && <Badge variant="warning">{t("readonly")}</Badge>}
-          <Badge variant="info">{getWebhookVersionLabel(webhook.version)}</Badge>
-        </div>        
+        <div className="flex items-center gap-1">
+          <InfoIcon className="size-3 text-muted-foreground" />
+          <div className="flex items-center gap-2">
+            {props.profile && (
+              <>
+                <span className="text-muted-foreground text-xs truncate" title={props.profile.name || ""}>
+                  {props.profile.name || ""}
+                </span>
+              </>
+            )}
+            {!props.permissions.canEditWebhook && <Badge variant="warning">{t("readonly")}</Badge>}
+            <Badge variant="info" size="sm">{getWebhookVersionLabel(webhook.version)}</Badge>
+          </div>
+        </div>                
       </ListItemContent>
       {(props.permissions.canEditWebhook || props.permissions.canDeleteWebhook) && (
         <ListItemActions>
