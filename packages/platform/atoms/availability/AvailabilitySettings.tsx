@@ -20,13 +20,14 @@ import { TimezoneSelect as WebTimezoneSelect } from "@calcom/web/modules/timezon
 import type {
   BulkUpdatParams,
   EventTypes,
-} from "@calcom/web/modules/event-types/components/BulkEditDefaultForEventsModal";
-import { BulkEditDefaultForEventsModal } from "@calcom/web/modules/event-types/components/BulkEditDefaultForEventsModal";
+} from "@calcom/features/eventtypes/components/BulkEditDefaultForEventsModal";
+import { BulkEditDefaultForEventsModal } from "@calcom/features/eventtypes/components/BulkEditDefaultForEventsModal";
 import DateOverrideInputDialog from "@calcom/features/schedules/components/DateOverrideInputDialog";
 import DateOverrideList from "@calcom/features/schedules/components/DateOverrideList";
-import WebSchedule, {
+import {
   ScheduleComponent as PlatformSchedule,
-} from "@calcom/features/schedules/components/Schedule";
+} from "@calcom/features/schedules/components/ScheduleComponent";
+import WebSchedule from "@calcom/web/modules/schedules/components/Schedule";
 import { availabilityAsString } from "@calcom/lib/availability";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { sortAvailabilityStrings } from "@calcom/lib/weekstart";
@@ -404,6 +405,8 @@ export const AvailabilitySettings = forwardRef<AvailabilitySettingsFormRef, Avai
     return (
       <Shell
         headerClassName={cn(customClassNames?.containerClassName)}
+        disableSticky
+        topAlignedHeading
         backPath={backPath}
         title={schedule.name ? `${schedule.name} | ${t("availability")}` : t("availability")}
         heading={
