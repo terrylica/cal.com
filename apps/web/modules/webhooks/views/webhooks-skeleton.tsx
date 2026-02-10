@@ -48,7 +48,7 @@ function WebhookListItemSkeleton() {
         </ListItemBadges>
         <div className="flex items-center gap-2">
           <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-5 sm:h-4 w-24" />
+          <Skeleton className="h-5.5 sm:h-4.5 w-24" />
         </div>        
       </ListItemContent>
       <ListItemActions>
