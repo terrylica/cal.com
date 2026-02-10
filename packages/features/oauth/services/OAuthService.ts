@@ -162,7 +162,7 @@ export class OAuthService {
     await this.accessCodeRepository.create({
       code: authorizationCode,
       clientId,
-      userId: teamSlug ? undefined : loggedInUserId,
+      userId: loggedInUserId,
       teamId,
       scopes,
       codeChallenge,
