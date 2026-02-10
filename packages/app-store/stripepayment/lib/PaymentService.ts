@@ -404,9 +404,8 @@ class StripePaymentService implements IAbstractPaymentService {
     );
 
     // Schedule automatic cancellation of booking if payment is not completed
-    // Default: 24 hours, configurable via ABANDONED_PAYMENT_CANCEL_HOURS env var
-    const cancelDelayHours = Number(process.env.ABANDONED_PAYMENT_CANCEL_HOURS) || 24;
-    const scheduledCancelAt = dayjs().add(cancelDelayHours, "hours").toDate();
+    const ABANDONED_PAYMENT_CANCEL_MINUTES = 30;
+    const scheduledCancelAt = dayjs().add(ABANDONED_PAYMENT_CANCEL_MINUTES, "minutes").toDate();
 
     await tasker.create(
       "cancelAbandonedStripePayment",
