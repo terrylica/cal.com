@@ -1,6 +1,5 @@
 "use client";
 
-import { getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants";
 import type { Webhook } from "@calcom/features/webhooks/lib/dto/types";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -29,9 +28,10 @@ import {
 } from "@coss/ui/components/menu";
 import { Switch } from "@coss/ui/components/switch";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@coss/ui/components/tooltip";
-import { EllipsisIcon, InfoIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
+import { EllipsisIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
+import { getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants";
 
 const MAX_BADGES_TWO_ROWS = 7;
 
@@ -99,17 +99,25 @@ export default function WebhookListItem(props: {
           )}
         </ListItemBadges>
         <div className="flex items-center gap-1">
-          <InfoIcon className="size-3 text-muted-foreground" />
           <div className="flex items-center gap-2">
             {props.profile && (
-              <>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Avatar className="size-4 shrink-0">
+                  <AvatarImage src={props.profile.image} alt={props.profile.name ?? ""} />
+                  <AvatarFallback className="text-[0.625rem]">
+                    {(props.profile.name || props.profile.slug || "?")
+                      .trim()
+                      .slice(0, 1)
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <span className="text-muted-foreground text-xs truncate" title={props.profile.name || ""}>
                   {props.profile.name || ""}
                 </span>
-              </>
+              </div>
             )}
             {!props.permissions.canEditWebhook && <Badge variant="warning">{t("readonly")}</Badge>}
-            <Badge variant="info" size="sm">{getWebhookVersionLabel(webhook.version)}</Badge>
+            <Badge variant="info">{getWebhookVersionLabel(webhook.version)}</Badge>
           </div>
         </div>                
       </ListItemContent>
