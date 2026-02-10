@@ -3,7 +3,7 @@
 import { revalidateSettingsGeneral } from "app/(use-page-wrapper)/settings/(settings-layout)/my-account/general/actions";
 import { CalendarIcon, ChevronsUpDownIcon, PlusIcon, SearchIcon, TrashIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@coss/ui/components/button";
@@ -91,6 +91,13 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
   const { update } = useSession();
   const [isUpdateBtnLoading, setIsUpdateBtnLoading] = useState<boolean>(false);
   const [isTZScheduleOpen, setIsTZScheduleOpen] = useState<boolean>(false);
+
+  const initialAllowDynamicBooking = useRef(!!user.allowDynamicBooking).current;
+  const initialAllowSEOIndexing = useRef(
+    user.organizationSettings?.allowSEOIndexing === false ? false : !!user.allowSEOIndexing
+  ).current;
+  const initialReceiveMonthlyDigestEmail = useRef(!!user.receiveMonthlyDigestEmail).current;
+  const initialRequiresBookerEmailVerification = useRef(!!user.requiresBookerEmailVerification).current;
 
   const mutation = trpc.viewer.me.updateProfile.useMutation({
     onSuccess: async (res) => {
@@ -483,7 +490,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("allow_dynamic_booking")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            defaultChecked={!!user.allowDynamicBooking}
+            defaultChecked={initialAllowDynamicBooking}
             onCheckedChange={(checked, eventDetails) => {
               if (mutation.isPending) {
                 eventDetails.cancel();
@@ -502,11 +509,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("allow_seo_indexing")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            defaultChecked={
-              user.organizationSettings?.allowSEOIndexing === false
-                ? false
-                : !!user.allowSEOIndexing
-            }
+            defaultChecked={initialAllowSEOIndexing}
             disabled={user.organizationSettings?.allowSEOIndexing === false}
             onCheckedChange={(checked, eventDetails) => {
               if (mutation.isPending) {
@@ -526,7 +529,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("monthly_digest_email_for_teams")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            defaultChecked={!!user.receiveMonthlyDigestEmail}
+            defaultChecked={initialReceiveMonthlyDigestEmail}
             onCheckedChange={(checked, eventDetails) => {
               if (mutation.isPending) {
                 eventDetails.cancel();
@@ -545,7 +548,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
             <CardFrameDescription>{t("require_booker_email_verification_description")}</CardFrameDescription>
           </CardFrameHeader>
           <Switch
-            defaultChecked={!!user.requiresBookerEmailVerification}
+            defaultChecked={initialRequiresBookerEmailVerification}
             onCheckedChange={(checked, eventDetails) => {
               if (mutation.isPending) {
                 eventDetails.cancel();
