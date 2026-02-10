@@ -321,13 +321,17 @@ export default async function SeatBillingDebug({ teamId }: { teamId: number }) {
 
   let stripeSubscription: SeatBillingDebugData["stripeSubscription"] = null;
   let recentInvoices: SeatBillingDebugData["recentInvoices"] = [];
-
   if (subscriptionId && customerId) {
     const stripe = await fetchStripeData(subscriptionId, customerId);
     stripeSubscription = stripe.stripeSubscription;
     recentInvoices = stripe.recentInvoices;
     errors.push(...stripe.errors);
   }
+
+  const isTestMode = process.env.STRIPE_PRIVATE_KEY?.startsWith("sk_test") ?? false;
+  const stripeDashboardUrl = customerId
+    ? `https://dashboard.stripe.com${isTestMode ? "/test" : ""}/customers/${customerId}`
+    : null;
 
   const { activeStrategy, strategyReason } = resolveStrategy(
     billing.billingPeriodInfo,
@@ -415,6 +419,7 @@ export default async function SeatBillingDebug({ teamId }: { teamId: number }) {
             customerId,
           }
         : null,
+    stripeDashboardUrl,
     testClock: customerId && subscriptionId ? { customerId, subscriptionId } : null,
     monthKey: formatMonthKey(new Date()),
     predictions: { hwm: hwmPrediction, proration: prorationPrediction },

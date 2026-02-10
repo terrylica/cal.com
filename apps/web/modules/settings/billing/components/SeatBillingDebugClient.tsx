@@ -31,17 +31,9 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import { advancePastPeriodEnd, advanceTestClock, advanceToBeforePeriodEnd } from "./advanceTestClockAction";
 import {
-  cancelSubscription,
-  endTrialNow,
-  forceHwmReset,
   markInvoiceUncollectible,
   payInvoice,
   refundInvoice,
-  retryFailedProration,
-  runProrationNow,
-  syncSeatsToStripe,
-  triggerHwmReconciliation,
-  updateSubscriptionQuantity,
   voidInvoice,
 } from "./billingDebugActions";
 import type {
@@ -291,6 +283,15 @@ function OverviewTab({ data }: { data: SeatBillingDebugData }) {
               <KV label="Period start" value={formatDate(data.stripeSubscription.currentPeriodStart)} />
               <KV label="Period end" value={formatDate(data.stripeSubscription.currentPeriodEnd)} />
               <KV label="Price/seat" value={formatCents(data.stripeSubscription.pricePerSeat)} />
+              {data.stripeDashboardUrl && (
+                <Button
+                  variant="outline"
+                  size="xs"
+                  className="mt-2"
+                  render={<a href={data.stripeDashboardUrl} target="_blank" rel="noreferrer" />}>
+                  <ExternalLinkIcon /> Open in Stripe
+                </Button>
+              )}
             </>
           ) : (
             <Muted>No Stripe subscription found.</Muted>
@@ -450,7 +451,13 @@ function InvoicesTab({
 
 // -- Tab: Strategy --
 
-function StrategyTab({ data }: { data: SeatBillingDebugData }) {
+function StrategyTab({
+  data,
+  onAction,
+}: {
+  data: SeatBillingDebugData;
+  onAction: (action: () => Promise<{ success: boolean; error?: string }>) => void;
+}) {
   const hwmPred = data.predictions.hwm;
   const prorationPred = data.predictions.proration;
 
@@ -585,168 +592,9 @@ function StrategyTab({ data }: { data: SeatBillingDebugData }) {
           </AlertDescription>
         </Alert>
       )}
-    </div>
-  );
-}
-
-// -- Tab: Actions --
-
-function ActionsTab({
-  data,
-  onAction,
-  actionResult,
-}: {
-  data: SeatBillingDebugData;
-  onAction: (action: () => Promise<{ success: boolean; error?: string }>) => void;
-  actionResult: string | null;
-}) {
-  const [qtyInput, setQtyInput] = useState("");
-
-  const subscriptionId = data.subscription?.id;
-  const subscriptionItemId = data.subscription?.itemId;
-  const isTrial = data.billingPeriod.isInTrial;
-  const isActive = data.stripeSubscription?.status === "active" || data.stripeSubscription?.status === "trialing";
-
-  return (
-    <div className="flex flex-col gap-3">
-      {actionResult && (
-        <Alert variant={actionResult.startsWith("Error") ? "error" : "success"}>
-          <AlertDescription>{actionResult}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Subscription Actions */}
-      {data.subscription && (
-        <Card>
-          <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide">
-              Subscription
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Direct Stripe operations. These bypass normal billing flows.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-1.5">
-                <Button variant="outline" size="sm" className="flex-1 justify-center" onClick={() => onAction(() => syncSeatsToStripe(data.teamId))}>
-                  Sync DB Seats to Stripe
-                </Button>
-                <InfoTip content="Sets Stripe qty to current member count and updates DB paidSeats." />
-              </div>
-
-              {isTrial && subscriptionId && (
-                <div className="flex items-center gap-1.5">
-                  <Button variant="outline" size="sm" className="flex-1 justify-center" onClick={() => onAction(() => endTrialNow(subscriptionId))}>
-                    End Trial Now
-                  </Button>
-                  <InfoTip content="Immediately converts trial to active." />
-                </div>
-              )}
-
-              {subscriptionId && subscriptionItemId && (
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="number"
-                    min={1}
-                    placeholder="Qty"
-                    value={qtyInput}
-                    onChange={(e) => setQtyInput(e.target.value)}
-                    className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 justify-center"
-                    disabled={!qtyInput || Number(qtyInput) < 1}
-                    onClick={() => {
-                      const qty = Number(qtyInput);
-                      if (qty >= 1) {
-                        onAction(() => updateSubscriptionQuantity(subscriptionId, subscriptionItemId, qty));
-                        setQtyInput("");
-                      }
-                    }}>
-                    Set Stripe Quantity
-                  </Button>
-                  <InfoTip content="Manually set Stripe subscription quantity." />
-                </div>
-              )}
-
-              {isActive && subscriptionId && (
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="flex-1 justify-center"
-                    onClick={() => {
-                      if (window.confirm("Cancel this subscription? This is immediate.")) {
-                        onAction(() => cancelSubscription(subscriptionId));
-                      }
-                    }}>
-                    Cancel Subscription
-                  </Button>
-                  <InfoTip content="Immediately cancels the Stripe subscription." />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Strategy Actions */}
-      {(data.activeStrategy === "HighWaterMark" || data.activeStrategy === "MonthlyProration") && (
-        <Card>
-          <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide">
-              Strategy Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="flex flex-col gap-2">
-              {data.activeStrategy === "HighWaterMark" && data.subscription && (
-                <>
-                  <div className="flex items-center gap-1.5">
-                    <Button variant="outline" size="sm" className="flex-1 justify-center" onClick={() => onAction(() => forceHwmReset(data.teamId))}>
-                      Reset HWM to Current Members
-                    </Button>
-                    <InfoTip content="Resets the high water mark to current member count." />
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Button variant="outline" size="sm" className="flex-1 justify-center" onClick={() => onAction(() => triggerHwmReconciliation(data.subscription!.id))}>
-                      Trigger HWM Reconciliation
-                    </Button>
-                    <InfoTip content="Manually runs invoice.upcoming logic: sets Stripe qty to HWM." />
-                  </div>
-                </>
-              )}
-
-              {data.activeStrategy === "MonthlyProration" && (
-                <>
-                  <div className="flex items-center gap-1.5">
-                    <Button variant="outline" size="sm" className="flex-1 justify-center" onClick={() => onAction(() => runProrationNow(data.teamId, data.monthKey))}>
-                      Run Proration Now
-                    </Button>
-                    <InfoTip content="Manually runs the monthly proration for the current month." />
-                  </div>
-                  {data.proration?.status === "FAILED" && (
-                    <div className="flex items-center gap-1.5">
-                      <Button variant="outline" size="sm" className="flex-1 justify-center" onClick={() => onAction(() => retryFailedProration(data.proration!.id))}>
-                        Retry Failed Proration
-                      </Button>
-                      <InfoTip content="Voids old invoice and creates a new one." />
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Test Clock Controls -- dev only */}
-      {IS_DEV && (
-        <TestClockCard data={data} onAction={onAction} />
-      )}
+      {IS_DEV && <TestClockCard data={data} onAction={onAction} />}
     </div>
   );
 }
@@ -891,12 +739,17 @@ export default function SeatBillingDebugClient({ data }: { data: SeatBillingDebu
           </SheetHeader>
 
           <SheetPanel>
+            {actionResult && (
+              <Alert variant={actionResult.startsWith("Error") ? "error" : "success"} className="mb-3">
+                <AlertDescription className="text-xs">{actionResult}</AlertDescription>
+              </Alert>
+            )}
+
             <Tabs defaultValue="overview">
               <TabsList variant="default" className="mb-3 w-full">
                 <TabsTab value="overview">Overview</TabsTab>
                 <TabsTab value="invoices">Invoices</TabsTab>
                 <TabsTab value="strategy">Strategy</TabsTab>
-                <TabsTab value="actions">Actions</TabsTab>
               </TabsList>
 
               <TabsPanel value="overview">
@@ -908,11 +761,7 @@ export default function SeatBillingDebugClient({ data }: { data: SeatBillingDebu
               </TabsPanel>
 
               <TabsPanel value="strategy">
-                <StrategyTab data={data} />
-              </TabsPanel>
-
-              <TabsPanel value="actions">
-                <ActionsTab data={data} onAction={handleAction} actionResult={actionResult} />
+                <StrategyTab data={data} onAction={handleAction} />
               </TabsPanel>
             </Tabs>
           </SheetPanel>

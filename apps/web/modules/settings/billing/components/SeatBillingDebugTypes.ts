@@ -114,6 +114,8 @@ export interface SeatBillingDebugData {
     customerId: string;
   } | null;
 
+  stripeDashboardUrl: string | null;
+
   testClock: {
     customerId: string;
     subscriptionId: string;
