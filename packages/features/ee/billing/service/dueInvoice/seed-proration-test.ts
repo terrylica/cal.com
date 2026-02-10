@@ -1,13 +1,13 @@
 #!/usr/bin/env npx tsx
 /**
- * Seed script for testing due invoice banner and invitation blocking
+ * Seed script for testing monthly proration billing
  *
  * This script creates:
- * 1. A test organization with billing data
+ * 1. A test organization with annual billing (ANNUALLY period)
  * 2. A test team under the organization
- * 3. Test users with billing permissions
- * 4. Real Stripe customers, subscriptions, and invoices
- * 5. MonthlyProration records to simulate overdue invoices
+ * 3. Test users (8 org members, 5 paid seats)
+ * 4. Real Stripe customer + annual subscription
+ * 5. Unprocessed seat change logs (clean slate for the proration cron)
  *
  * Prerequisites:
  *   - STRIPE_PRIVATE_KEY must be set (use test mode key)
@@ -81,7 +81,8 @@ interface SeedResult {
   organization: { id: number; name: string; slug: string };
   team: { id: number; name: string; slug: string };
   users: Array<{ email: string; name: string; role: string }>;
-  prorations: Array<{ id: string; status: string; isBlocking: boolean }>;
+  monthKey: string;
+  unprocessedSeatChanges: number;
   stripe: StripeResources;
   triggerOrg: TriggerOrgResult | null;
 }
@@ -204,13 +205,13 @@ async function createStripeResources(stripe: Stripe, orgId: number): Promise<Str
   });
   console.log(`  Created product: ${product.id}`);
 
-  // Create a price for the product ($15/seat/month)
+  // Create a price for the product ($150/seat/year)
   const price = await stripe.prices.create({
     product: product.id,
-    unit_amount: 1500, // $15.00
+    unit_amount: 15000, // $150.00
     currency: "usd",
     recurring: {
-      interval: "month",
+      interval: "year",
       usage_type: "licensed",
     },
     metadata: {
@@ -269,37 +270,6 @@ async function createStripeResources(stripe: Stripe, orgId: number): Promise<Str
   return { customer, subscription, product, price };
 }
 
-async function createFailedInvoice(
-  stripe: Stripe,
-  customerId: string,
-  amount: number,
-  description: string
-): Promise<Stripe.Invoice> {
-  console.log(`Creating invoice for $${(amount / 100).toFixed(2)}...`);
-
-  // Create an invoice item
-  await stripe.invoiceItems.create({
-    customer: customerId,
-    amount,
-    currency: "usd",
-    description,
-  });
-
-  // Create and finalize the invoice
-  const invoice = await stripe.invoices.create({
-    customer: customerId,
-    auto_advance: false, // Don't auto-charge
-    metadata: {
-      testData: "true",
-      prorationTest: "true",
-    },
-  });
-
-  const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
-  console.log(`  Created invoice: ${finalizedInvoice.id} (status: ${finalizedInvoice.status})`);
-
-  return finalizedInvoice;
-}
 
 async function createStripeResourcesForTriggerOrg(stripe: Stripe, orgId: number): Promise<StripeResources> {
   console.log("Creating Stripe resources for trigger org (annual)...");
@@ -836,18 +806,24 @@ async function seedProrationTest(): Promise<SeedResult> {
     stripeCustomerId = stripeResources.customer!.id;
     stripeSubscriptionId = stripeResources.subscription!.id;
     stripeSubscriptionItemId = stripeResources.subscription!.items.data[0].id;
-
-    // Create a separate invoice that will remain unpaid (simulating failed proration)
-    await createFailedInvoice(stripe, stripeCustomerId, 3000, "Proration charge - 3 additional seats");
   }
 
-  // Create OrganizationBilling record
+  // Create OrganizationBilling record (annual billing for proration)
+  const subscriptionStart = new Date();
+  subscriptionStart.setUTCMonth(subscriptionStart.getUTCMonth() - 6);
+  const subscriptionEnd = new Date();
+  subscriptionEnd.setUTCMonth(subscriptionEnd.getUTCMonth() + 6);
+
   await prisma.organizationBilling.upsert({
     where: { teamId: org.id },
     update: {
       customerId: stripeCustomerId,
       subscriptionId: stripeSubscriptionId,
       subscriptionItemId: stripeSubscriptionItemId,
+      billingPeriod: BillingPeriod.ANNUALLY,
+      pricePerSeat: 15000,
+      subscriptionStart,
+      subscriptionEnd,
     },
     create: {
       teamId: org.id,
@@ -856,9 +832,11 @@ async function seedProrationTest(): Promise<SeedResult> {
       subscriptionItemId: stripeSubscriptionItemId,
       status: "ACTIVE",
       planName: "ORGANIZATION",
-      subscriptionStart: new Date(),
-      pricePerSeat: 1500,
+      billingPeriod: BillingPeriod.ANNUALLY,
+      pricePerSeat: 15000,
       paidSeats: 5,
+      subscriptionStart,
+      subscriptionEnd,
     },
   });
 
@@ -884,130 +862,39 @@ async function seedProrationTest(): Promise<SeedResult> {
     where: { teamId: org.id },
   });
 
-  // Create test MonthlyProration records
-  console.log("Creating test proration and seat change records...");
-
-  const now = new Date();
-  const eightDaysAgo = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000);
-  const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-
-  // Clear existing prorations and seat change logs for this team
+  // Clear existing prorations and seat change logs for this team (clean slate)
   await prisma.seatChangeLog.deleteMany({ where: { teamId: org.id } });
   await prisma.monthlyProration.deleteMany({ where: { teamId: org.id } });
 
-  // Blocking proration (8 days old, FAILED status)
-  const blockingProration = await prisma.monthlyProration.create({
-    data: {
-      teamId: org.id,
-      monthKey: "2025-01",
-      periodStart: new Date("2025-01-01"),
-      periodEnd: new Date("2025-01-31"),
-      seatsAtStart: 5,
-      seatsAdded: 3,
-      seatsRemoved: 0,
-      netSeatIncrease: 3,
-      seatsAtEnd: 8,
-      subscriptionId: stripeSubscriptionId,
-      subscriptionItemId: stripeSubscriptionItemId,
-      customerId: stripeCustomerId,
-      subscriptionStart: new Date("2025-01-01"),
-      subscriptionEnd: new Date("2025-12-31"),
-      remainingDays: 20,
-      pricePerSeat: 1500,
-      proratedAmount: 3000, // $30.00
-      status: "FAILED",
-      createdAt: eightDaysAgo,
-      failedAt: eightDaysAgo,
-      failureReason: "card_declined",
-    },
-  });
+  // Create unprocessed seat change logs so the proration cron can pick them up
+  console.log("Creating unprocessed seat change logs...");
 
-  // Warning proration (2 days old, INVOICE_CREATED status) - use different monthKey
-  const warningProration = await prisma.monthlyProration.create({
-    data: {
-      teamId: org.id,
-      monthKey: "2025-02",
-      periodStart: new Date("2025-02-01"),
-      periodEnd: new Date("2025-02-28"),
-      seatsAtStart: 8,
-      seatsAdded: 2,
-      seatsRemoved: 0,
-      netSeatIncrease: 2,
-      seatsAtEnd: 10,
-      subscriptionId: stripeSubscriptionId,
-      subscriptionItemId: `${stripeSubscriptionItemId}_2`,
-      customerId: stripeCustomerId,
-      subscriptionStart: new Date("2025-01-01"),
-      subscriptionEnd: new Date("2025-12-31"),
-      remainingDays: 15,
-      pricePerSeat: 1500,
-      proratedAmount: 1500, // $15.00
-      status: "INVOICE_CREATED",
-      createdAt: twoDaysAgo,
-    },
-  });
+  const monthKey = computeTriggerMonthKey();
+  const changeDate = new Date();
+  changeDate.setUTCDate(15);
+  const [mkYear, mkMonth] = monthKey.split("-").map(Number);
+  changeDate.setUTCFullYear(mkYear);
+  changeDate.setUTCMonth(mkMonth - 1);
 
-  // Create SeatChangeLog entries that correspond to the prorations
-  console.log("Creating seat change logs...");
-
-  // Initial 5 seats (original team members) - these would have been added when org was created
-  const initialAdditionDate = new Date(eightDaysAgo.getTime() - 30 * 24 * 60 * 60 * 1000); // 38 days ago
-
-  // Create seat addition logs for initial members (admin + member = 2, then 3 more = 5 total initial)
-  for (let i = 0; i < 5; i++) {
-    await prisma.seatChangeLog.create({
-      data: {
-        teamId: org.id,
-        changeType: "ADDITION",
-        seatCount: 1,
-        userId: i === 0 ? adminUser.id : i === 1 ? memberUser.id : additionalMembers[i - 2].id,
-        triggeredBy: adminUser.id,
-        changeDate: initialAdditionDate,
-        monthKey: "2024-12",
-        organizationBillingId: orgBilling?.id,
-        metadata: { source: "seed-script", note: "Initial org member" },
-      },
-    });
-  }
-
-  // Seat additions that triggered the FAILED proration (3 seats added 8 days ago)
+  // 3 seat additions beyond the initial 5 paid seats (members 4, 5, 6)
   for (let i = 0; i < 3; i++) {
     await prisma.seatChangeLog.create({
       data: {
         teamId: org.id,
         changeType: "ADDITION",
         seatCount: 1,
-        userId: additionalMembers[3 + i].id, // Users 4, 5, 6
+        userId: additionalMembers[3 + i].id,
         triggeredBy: adminUser.id,
-        changeDate: eightDaysAgo,
-        monthKey: "2025-01",
-        processedInProrationId: blockingProration.id,
+        changeDate,
+        monthKey,
+        processedInProrationId: null,
         organizationBillingId: orgBilling?.id,
-        metadata: { source: "seed-script", note: "Seat addition that failed to charge" },
+        metadata: { source: "seed-script", note: "Unprocessed seat addition for proration test" },
       },
     });
   }
 
-  // More recent seat change attempt (2 seats, 2 days ago) - linked to warning proration
-  // These are pending/invoice created but not yet charged
-  for (let i = 0; i < 2; i++) {
-    await prisma.seatChangeLog.create({
-      data: {
-        teamId: org.id,
-        changeType: "ADDITION",
-        seatCount: 1,
-        userId: null, // Simulating pending invites that haven't been accepted yet
-        triggeredBy: adminUser.id,
-        changeDate: twoDaysAgo,
-        monthKey: "2025-02",
-        processedInProrationId: warningProration.id,
-        organizationBillingId: orgBilling?.id,
-        metadata: { source: "seed-script", note: "Recent seat addition pending payment" },
-      },
-    });
-  }
-
-  console.log("Proration and seat change records created");
+  console.log(`  Created 3 unprocessed SeatChangeLog entries (monthKey: ${monthKey})`);
 
   // Seed the trigger-ready org (no MonthlyProration, unprocessed seat changes)
   const triggerOrgResult = await seedTriggerReadyOrg(stripe);
@@ -1019,10 +906,8 @@ async function seedProrationTest(): Promise<SeedResult> {
       { email: adminUser.email, name: adminUser.name!, role: "OWNER" },
       { email: memberUser.email, name: memberUser.name!, role: "MEMBER" },
     ],
-    prorations: [
-      { id: blockingProration.id, status: "FAILED", isBlocking: true },
-      { id: warningProration.id, status: "INVOICE_CREATED", isBlocking: false },
-    ],
+    monthKey,
+    unprocessedSeatChanges: 3,
     stripe: stripeResources,
     triggerOrg: triggerOrgResult,
   };
@@ -1048,10 +933,8 @@ async function main() {
     });
     console.log(`  Password for all users: ${TEST_PASSWORD}`);
 
-    console.log("\nProration Records:");
-    result.prorations.forEach((p) => {
-      console.log(`  - ${p.id}: ${p.status} (blocking: ${p.isBlocking})`);
-    });
+    console.log(`\nSeat Changes: ${result.unprocessedSeatChanges} unprocessed additions (monthKey: ${result.monthKey})`);
+    console.log("MonthlyProration records: 0 (clean slate for cron)");
 
     if (result.stripe.customer) {
       console.log("\nStripe Resources:");
@@ -1063,16 +946,13 @@ async function main() {
 
     console.log("\n=== Testing Instructions ===\n");
     console.log("1. Login as proration-admin@example.com");
-    console.log("   - Should see the due invoice banner (error variant - blocking)");
-    console.log("   - Should be blocked from inviting new members");
+    console.log("   - Billing debug panel should show MonthlyProration strategy");
+    console.log("   - 8 org members, 5 paid seats, 3 unprocessed seat additions");
     console.log("");
-    console.log("2. Login as proration-member@example.com");
-    console.log("   - Should NOT see the due invoice banner (not a billing admin)");
-    console.log("");
-    console.log("3. To test sub-team exception:");
-    console.log("   - Try inviting proration-member@example.com to the sub-team");
-    console.log("   - This should succeed (existing org member)");
-    console.log("   - Try inviting a new email - this should be blocked");
+    console.log("2. When scheduleMonthlyProration runs, it will:");
+    console.log(`   - Find proration-test-org with ${result.unprocessedSeatChanges} additions for monthKey "${result.monthKey}"`);
+    console.log("   - Calculate prorated amount based on remaining annual subscription days");
+    console.log("   - Create a MonthlyProration record and Stripe invoice");
     console.log("");
 
     if (result.stripe.customer) {
