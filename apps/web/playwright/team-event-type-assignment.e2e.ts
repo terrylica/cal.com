@@ -121,6 +121,112 @@ test.describe("Team Event Type - Round Robin Weights", () => {
 
     await expect(form.getByText("Enable weights")).toBeVisible();
   });
+
+  test("Can open edit weights sheet and see team members", async ({ page, users }) => {
+    test.slow();
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const weightsSection = form.locator("fieldset").filter({ hasText: "Enable weights" });
+    await weightsSection.getByRole("switch").click();
+
+    const editWeightsButton = form.getByRole("button", { name: "Edit weights" });
+    await expect(editWeightsButton).toBeVisible();
+    await editWeightsButton.click();
+
+    const sheet = page.locator("[role=dialog]");
+    await expect(sheet).toBeVisible();
+
+    const memberRow = sheet.locator("div.flex.h-12.items-center").filter({ hasText: TARGET_HOST });
+    await memberRow.scrollIntoViewIfNeeded();
+    await expect(memberRow).toBeVisible();
+  });
+
+  test("Can edit a host weight via the weights sheet", async ({ page, users }) => {
+    test.slow();
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const weightsSection = form.locator("fieldset").filter({ hasText: "Enable weights" });
+    await weightsSection.getByRole("switch").click();
+
+    await form.getByRole("button", { name: "Edit weights" }).click();
+
+    const sheet = page.locator("[role=dialog]");
+    await expect(sheet).toBeVisible();
+
+    const memberRow = sheet.locator("div.flex.h-12.items-center").filter({ hasText: TARGET_HOST });
+    await memberRow.scrollIntoViewIfNeeded();
+    const weightButton = memberRow.locator("button");
+    await expect(weightButton).toContainText("100%");
+    await weightButton.click();
+
+    const weightInput = memberRow.locator("input[type=number]");
+    await expect(weightInput).toBeVisible();
+    await weightInput.fill("75");
+    await weightInput.press("Enter");
+
+    await expect(memberRow.locator("button")).toContainText("75%");
+  });
+
+  test("Weight changes via weights sheet persist after saving", async ({ page, users }) => {
+    test.slow();
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const weightsSection = form.locator("fieldset").filter({ hasText: "Enable weights" });
+    await weightsSection.getByRole("switch").click();
+
+    await form.getByRole("button", { name: "Edit weights" }).click();
+
+    const sheet = page.locator("[role=dialog]");
+    await expect(sheet).toBeVisible();
+
+    const memberRow = sheet.locator("div.flex.h-12.items-center").filter({ hasText: TARGET_HOST });
+    await memberRow.scrollIntoViewIfNeeded();
+    await memberRow.locator("button").click();
+
+    const weightInput = memberRow.locator("input[type=number]");
+    await weightInput.fill("50");
+    await weightInput.press("Enter");
+
+    await sheet.getByRole("button", { name: "Done" }).click();
+    await expect(sheet).not.toBeVisible();
+
+    await saveEventType(page);
+
+    const hostsAfterSave = await prisma.host.findMany({
+      where: { eventTypeId: teamEvent.id },
+      select: {
+        weight: true,
+        user: { select: { name: true } },
+      },
+    });
+    const targetHost = hostsAfterSave.find((h) => h.user.name === TARGET_HOST);
+    expect(targetHost).toBeDefined();
+    expect(targetHost?.weight).toBe(50);
+  });
+
+  test("Can search for a team member in the weights sheet", async ({ page, users }) => {
+    test.slow();
+    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
+    const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const weightsSection = form.locator("fieldset").filter({ hasText: "Enable weights" });
+    await weightsSection.getByRole("switch").click();
+
+    await form.getByRole("button", { name: "Edit weights" }).click();
+
+    const sheet = page.locator("[role=dialog]");
+    await expect(sheet).toBeVisible();
+
+    const searchInput = sheet.getByPlaceholder("Search");
+    await searchInput.fill(TARGET_HOST);
+
+    const visibleMembers = sheet.locator("div.flex.h-12.items-center");
+    await expect(visibleMembers).toHaveCount(1);
+    await expect(visibleMembers.first()).toContainText(TARGET_HOST);
+  });
 });
 
 test.describe("Team Event Type - Host Assignment and Removal", () => {
