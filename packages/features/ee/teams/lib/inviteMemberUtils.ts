@@ -117,7 +117,6 @@ export async function sendSignupToOrganizationEmail({
     logger.error(
       "Failed to send signup to organization email",
       safeStringify({
-        usernameOrEmail,
         orgId: teamId,
       }),
       error
@@ -161,7 +160,7 @@ export const sendExistingUserTeamInviteEmails = async ({
       sendTo = user.email;
     }
 
-    log.debug("Sending team invite email to", safeStringify({ user, currentUserName, currentUserTeamName }));
+    log.debug("Sending team invite email to", safeStringify({ userId: user.id, currentUserTeamName }));
 
     if (!currentUserTeamName) {
       throw new ErrorWithCode(ErrorCode.InternalServerError, "The team doesn't have a name");
