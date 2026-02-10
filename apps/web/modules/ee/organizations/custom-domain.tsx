@@ -1,6 +1,6 @@
 "use client";
 
-import { DomainVerificationStatus } from "@calcom/features/custom-domains/services/CustomDomainService";
+import { DNS_CONFIG, DomainVerificationStatus } from "@calcom/features/custom-domains/services/CustomDomainService";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -9,7 +9,6 @@ import { Button } from "@calcom/ui/components/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
 import { Form, TextField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
-import { SkeletonContainer, SkeletonText } from "@calcom/ui/components/skeleton";
 import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import { useState } from "react";
@@ -17,17 +16,6 @@ import { useForm } from "react-hook-form";
 
 type DomainFormValues = {
   domain: string;
-};
-
-const SkeletonLoader = () => {
-  return (
-    <SkeletonContainer>
-      <div className="mb-8 mt-6 space-y-6">
-        <SkeletonText className="h-8 w-full" />
-        <SkeletonText className="h-8 w-full" />
-      </div>
-    </SkeletonContainer>
-  );
 };
 
 const DomainVerificationBanner = ({
@@ -168,9 +156,9 @@ const DnsInstructions = ({
 
   const getRecordValue = () => {
     if (recordType === "A") {
-      return "76.76.21.21";
+      return DNS_CONFIG.A_RECORD_IP;
     }
-    return "cname.vercel-dns.com";
+    return DNS_CONFIG.CNAME_TARGET;
   };
 
   return (
@@ -213,7 +201,7 @@ const DnsInstructions = ({
               <td className="py-2 pr-4 font-mono">
                 <CopyableValue value={getRecordValue()} />
               </td>
-              <td className="py-2 font-mono">86400</td>
+              <td className="py-2 font-mono">{DNS_CONFIG.DEFAULT_TTL}</td>
             </tr>
             {txtVerification && (
               <tr>
@@ -224,7 +212,7 @@ const DnsInstructions = ({
                 <td className="py-2 pr-4 font-mono">
                   <CopyableValue value={txtVerification.value} />
                 </td>
-                <td className="py-2 font-mono">86400</td>
+                <td className="py-2 font-mono">{DNS_CONFIG.DEFAULT_TTL}</td>
               </tr>
             )}
           </tbody>
@@ -403,56 +391,51 @@ const AddDomainForm = ({ orgId, onSuccess }: { orgId: number; onSuccess: () => v
   );
 };
 
-interface OrgCustomDomainViewProps {
+export const CustomDomainContent = ({
+  orgId,
+  customDomain,
+  refetchCustomDomain,
+}: {
   orgId: number;
-  permissions: {
-    canRead: boolean;
-    canEdit: boolean;
-  };
-}
-
-const OrgCustomDomainView = ({ orgId, permissions }: OrgCustomDomainViewProps) => {
+  customDomain: { slug: string; verified: boolean } | null | undefined;
+  refetchCustomDomain: () => void;
+}) => {
   const { t } = useLocale();
-
-  const {
-    data: customDomain,
-    isPending: isDomainLoading,
-    refetch: refetchDomain,
-  } = trpc.viewer.organizations.getCustomDomain.useQuery({ teamId: orgId }, { enabled: !!orgId });
-
   const [showAddForm, setShowAddForm] = useState(false);
 
-  if (isDomainLoading) {
-    return <SkeletonLoader />;
-  }
-
-  if (!permissions.canEdit) {
-    return (
-      <div className="border-subtle rounded-md border p-5">
-        <span className="text-default text-sm">{t("only_owner_change")}</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="p-6">
       {customDomain ? (
         <CustomDomainCard
           orgId={orgId}
           domain={{ slug: customDomain.slug, verified: customDomain.verified }}
-          onRemove={() => refetchDomain()}
+          onRemove={() => refetchCustomDomain()}
         />
       ) : showAddForm ? (
-        <div className="border-subtle rounded-lg border p-4">
-          <AddDomainForm orgId={orgId} onSuccess={() => setShowAddForm(false)} />
-        </div>
+        <AddDomainForm
+          orgId={orgId}
+          onSuccess={() => {
+            setShowAddForm(false);
+            refetchCustomDomain();
+          }}
+        />
       ) : (
-        <Button onClick={() => setShowAddForm(true)} StartIcon="plus">
-          {t("add_custom_domain")}
-        </Button>
+        <div className="bg-default flex flex-col items-center justify-center py-8">
+          <div className="bg-emphasis text-emphasis flex h-10 w-10 items-center justify-center rounded-full">
+            <Icon name="globe" className="h-5 w-5" />
+          </div>
+          <p className="text-subtle mt-3 text-sm">{t("no_custom_domain_configured")}</p>
+          <Button
+            className="mt-3"
+            onClick={() => setShowAddForm(true)}
+            StartIcon="plus"
+            color="secondary"
+            size="sm">
+            {t("add_custom_domain")}
+          </Button>
+        </div>
       )}
     </div>
   );
 };
 
-export default OrgCustomDomainView;

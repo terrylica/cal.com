@@ -21,6 +21,12 @@ export interface DomainVerificationResult {
   verificationJson?: VercelDomainResponse;
 }
 
+export const DNS_CONFIG = {
+  A_RECORD_IP: "76.76.21.21",
+  CNAME_TARGET: "cname.vercel-dns.com",
+  DEFAULT_TTL: 86400,
+} as const;
+
 const DOMAIN_REGEX = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
 
 export interface ICustomDomainServiceDeps {
