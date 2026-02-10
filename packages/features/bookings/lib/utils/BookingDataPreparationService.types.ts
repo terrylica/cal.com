@@ -60,7 +60,6 @@ export type BookingFormData = {
 export type PreparedBookingData = {
   eventType: EnrichedEventType;
   bookingFormData: BookingFormData;
-  bookingData: BookingData;
   loggedInUser: {
     id: number | null;
   };
@@ -74,6 +73,7 @@ export type PreparedBookingData = {
     crmAppSlug: string | null;
     skipContactOwner: boolean | null;
     contactOwnerEmail: string | null;
+    rrHostSubsetIds: number[] | null;
   };
   bookingMeta: {
     areCalendarEventsEnabled: boolean;
@@ -81,6 +81,7 @@ export type PreparedBookingData = {
     skipEventLimitsCheck: boolean;
     skipCalendarSyncTaskCreation: boolean;
     appsStatus: AppsStatus[] | undefined;
+    noEmail: boolean;
     platform: {
       clientId: string | null;
       rescheduleUrl: string | null;

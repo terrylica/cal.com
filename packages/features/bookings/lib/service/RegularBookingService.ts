@@ -535,36 +535,79 @@ async function handler(
     bookingDataSchemaGetter
   );
 
-  const eventType = preparedData.eventType;
-  const bookingData = preparedData.bookingData;
-  const spamCheckService = preparedData.spamCheckService;
-  const eventOrganizationId = preparedData.eventOrganizationId;
-  const routingData = preparedData.routingData;
+  const {
+    bookingFormData,
+    routingData,
+    recurringBookingData,
+    hashedBookingLinkData,
+    bookingMeta,
+    config,
+    seatsData,
+    teamOrUserSlug,
+    eventType,
+    spamCheckService,
+    eventOrganizationId,
+  } = preparedData;
+
+  const {
+    booker,
+    rawBookingLocation: location,
+    additionalNotes,
+    startTime: start,
+    endTime: end,
+    rawGuests: reqGuests,
+    rescheduleData,
+    responses,
+    calEventResponses,
+    calEventUserFieldsResponses,
+    customInputs: rawCustomInputs,
+    metadata: reqBodyMetadata,
+    creationSource,
+    tracking,
+  } = bookingFormData;
+
+  const {
+    name: bookerName,
+    email: bookerEmail,
+    phoneNumber: bookerPhoneNumber,
+    smsReminderNumber,
+    language,
+    timeZone: bookerTimeZone,
+  } = booker;
 
   const {
     recurringCount,
-    noEmail,
-    eventTypeId,
-    eventTypeSlug,
-    hasHashedBookingLink,
-    language,
-    appsStatus: reqAppsStatus,
-    name: bookerName,
-    attendeePhoneNumber: bookerPhoneNumber,
-    email: bookerEmail,
-    guests: reqGuests,
-    location,
-    notes: additionalNotes,
-    smsReminderNumber,
-    rescheduleReason,
     luckyUsers,
+    recurringEventId,
+    allRecurringDates,
+    isFirstRecurringSlot,
+    numSlotsToCheckForAvailability,
+    thirdPartyRecurringEventId,
+  } = recurringBookingData;
+
+  const {
     routedTeamMemberIds,
     reroutingFormResponses,
     routingFormResponseId,
+    rawTeamMemberEmail: teamMemberEmail,
     rrHostSubsetIds,
-    _isDryRun: isDryRun = false,
-    ...reqBody
-  } = bookingData;
+  } = routingData;
+
+  const { hasHashedBookingLink, hashedLink } = hashedBookingLinkData ?? {};
+  const { appsStatus: reqAppsStatus, noEmail } = bookingMeta;
+  const { isDryRun } = config;
+
+  // Convert null to undefined for compatibility
+  const teamOrUserSlugValue = teamOrUserSlug ?? undefined;
+  const teamMemberEmailValue = teamMemberEmail ?? undefined;
+  const routingFormResponseIdValue = routingFormResponseId ?? undefined;
+  const rescheduleReasonValue = rescheduleReason ?? undefined;
+  const finalRescheduleUidValue = rescheduleUid ?? undefined;
+
+  const eventTypeId = eventType.id;
+  const eventTypeSlug = eventType.slug ?? "";
+  const rescheduleUid = rescheduleData.rawUid ?? undefined;
+  const rescheduleReason = rescheduleData.reason ?? undefined;
 
   let troubleshooterData = buildTroubleshooterData({
     eventType,
@@ -572,7 +615,7 @@ async function handler(
 
   const emailsAndSmsHandler = new BookingEmailSmsHandler({ logger: tracingLogger });
 
-  if (isEventTypeLoggingEnabled({ eventTypeId, usernameOrTeamName: reqBody.user })) {
+  if (isEventTypeLoggingEnabled({ eventTypeId, usernameOrTeamName: teamOrUserSlug })) {
     tracingLogger.settings.minLevel = 0;
   }
 
@@ -580,16 +623,14 @@ async function handler(
   // Why are we only using "en" locale
   const tGuests = await getTranslation("en", "common");
 
-  const dynamicUserList = Array.isArray(reqBody.user) ? reqBody.user : getUsernameList(reqBody.user);
+  const dynamicUserList = Array.isArray(teamOrUserSlug) ? teamOrUserSlug : getUsernameList(teamOrUserSlug);
 
-  const bookingSeat = reqBody.rescheduleUid ? await getSeatedBooking(reqBody.rescheduleUid) : null;
-  const rescheduleUid = bookingSeat ? bookingSeat.booking.uid : reqBody.rescheduleUid;
-  const isNormalBookingOrFirstRecurringSlot = input.bookingData.allRecurringDates
-    ? !!input.bookingData.isFirstRecurringSlot
-    : true;
+  const bookingSeat = rescheduleUid ? await getSeatedBooking(rescheduleUid) : null;
+  const finalRescheduleUid = bookingSeat ? bookingSeat.booking.uid : rescheduleUid;
+  const isNormalBookingOrFirstRecurringSlot = allRecurringDates ? !!isFirstRecurringSlot : true;
 
-  let originalRescheduledBooking = rescheduleUid
-    ? await getOriginalRescheduledBooking(rescheduleUid, !!eventType.seatsPerTimeSlot)
+  let originalRescheduledBooking = finalRescheduleUid
+    ? await getOriginalRescheduledBooking(finalRescheduleUid, !!eventType.seatsPerTimeSlot)
     : null;
 
   const paymentAppData = getPaymentAppData({
@@ -599,7 +640,7 @@ async function handler(
 
   const { userReschedulingIsOwner, isConfirmedByDefault } = await getRequiresConfirmationFlags({
     eventType,
-    bookingStartTime: reqBody.start,
+    bookingStartTime: start,
     userId,
     originalRescheduledBookingOrganizerId: originalRescheduledBooking?.user?.id,
     paymentAppData,
@@ -617,7 +658,7 @@ async function handler(
       eventTypeId,
       bookerEmail,
       bookerPhoneNumber,
-      startTime: new Date(dayjs(reqBody.start).utc().format()),
+      startTime: new Date(dayjs(start).utc().format()),
       filterForUnconfirmed: !isConfirmedByDefault,
     });
 
@@ -667,14 +708,14 @@ async function handler(
     `Booking eventType ${eventTypeId} started`,
     safeStringify({
       reqBody: {
-        user: reqBody.user,
+        user: teamOrUserSlug,
         eventTypeId,
         eventTypeSlug,
-        startTime: reqBody.start,
-        endTime: reqBody.end,
-        rescheduleUid: reqBody.rescheduleUid,
+        startTime: start,
+        endTime: end,
+        rescheduleUid: finalRescheduleUid,
         location: location,
-        timeZone: reqBody.timeZone,
+        timeZone: bookerTimeZone,
       },
       isTeamEventType,
       eventType: getPiiFreeEventType(eventType),
@@ -728,7 +769,7 @@ async function handler(
     logger: tracingLogger,
     routedTeamMemberIds: routedTeamMemberIds ?? null,
     contactOwnerEmail,
-    rescheduleUid: reqBody.rescheduleUid || null,
+    rescheduleUid: finalRescheduleUid || null,
     routingFormResponse,
     rrHostSubsetIds: rrHostSubsetIds ?? undefined,
   });
@@ -747,8 +788,8 @@ async function handler(
   if (!skipEventLimitsCheck) {
     await deps.checkBookingAndDurationLimitsService.checkBookingAndDurationLimits({
       eventType,
-      reqBodyStart: reqBody.start,
-      reqBodyRescheduleUid: reqBody.rescheduleUid,
+      reqBodyStart: start,
+      reqBodyRescheduleUid: finalRescheduleUid,
     });
   }
 
@@ -760,7 +801,7 @@ async function handler(
     const booking = await deps.prismaClient.booking.findFirst({
       where: {
         eventTypeId: eventType.id,
-        startTime: new Date(dayjs(reqBody.start).utc().format()),
+        startTime: new Date(dayjs(start).utc().format()),
         status: BookingStatus.ACCEPTED,
       },
       select: {
@@ -805,11 +846,7 @@ async function handler(
         },
       }),
     };
-    if (
-      input.bookingData.allRecurringDates &&
-      input.bookingData.isFirstRecurringSlot &&
-      input.bookingData.numSlotsToCheckForAvailability
-    ) {
+    if (allRecurringDates && isFirstRecurringSlot && numSlotsToCheckForAvailability) {
       const isTeamEvent =
         eventType.schedulingType === SchedulingType.COLLECTIVE ||
         eventType.schedulingType === SchedulingType.ROUND_ROBIN;
@@ -818,14 +855,9 @@ async function handler(
         ? eventTypeWithUsers.users.filter((user: IsFixedAwareUserWithCredentials) => user.isFixed)
         : [];
 
-      for (
-        let i = 0;
-        i < input.bookingData.allRecurringDates.length &&
-        i < input.bookingData.numSlotsToCheckForAvailability;
-        i++
-      ) {
-        const start = input.bookingData.allRecurringDates[i].start;
-        const end = input.bookingData.allRecurringDates[i].end;
+      for (let i = 0; i < allRecurringDates.length && i < numSlotsToCheckForAvailability; i++) {
+        const start = allRecurringDates[i].start;
+        const end = allRecurringDates[i].end;
         if (isTeamEvent) {
           // each fixed user must be available
           for (const key in fixedUsers) {
@@ -833,9 +865,9 @@ async function handler(
               await ensureAvailableUsers(
                 { ...eventTypeWithUsers, users: [fixedUsers[key]] },
                 {
-                  dateFrom: dayjs(start).tz(reqBody.timeZone).format(),
-                  dateTo: dayjs(end).tz(reqBody.timeZone).format(),
-                  timeZone: reqBody.timeZone,
+                  dateFrom: dayjs(start).tz(bookerTimeZone).format(),
+                  dateTo: dayjs(end).tz(bookerTimeZone).format(),
+                  timeZone: bookerTimeZone,
                   originalRescheduledBooking: originalRescheduledBooking ?? null,
                 },
                 tracingLogger,
@@ -848,9 +880,9 @@ async function handler(
             await ensureAvailableUsers(
               eventTypeWithUsers,
               {
-                dateFrom: dayjs(start).tz(reqBody.timeZone).format(),
-                dateTo: dayjs(end).tz(reqBody.timeZone).format(),
-                timeZone: reqBody.timeZone,
+                dateFrom: dayjs(start).tz(bookerTimeZone).format(),
+                dateTo: dayjs(end).tz(bookerTimeZone).format(),
+                timeZone: bookerTimeZone,
                 originalRescheduledBooking,
               },
               tracingLogger,
@@ -861,15 +893,15 @@ async function handler(
       }
     }
 
-    if (!input.bookingData.allRecurringDates || input.bookingData.isFirstRecurringSlot) {
+    if (!allRecurringDates || isFirstRecurringSlot) {
       try {
         if (!skipAvailabilityCheck) {
           availableUsers = await ensureAvailableUsers(
             { ...eventTypeWithUsers, users: [...qualifiedRRUsers, ...fixedUsers] as IsFixedAwareUser[] },
             {
-              dateFrom: dayjs(reqBody.start).tz(reqBody.timeZone).format(),
-              dateTo: dayjs(reqBody.end).tz(reqBody.timeZone).format(),
-              timeZone: reqBody.timeZone,
+              dateFrom: dayjs(start).tz(bookerTimeZone).format(),
+              dateTo: dayjs(end).tz(bookerTimeZone).format(),
+              timeZone: bookerTimeZone,
               originalRescheduledBooking,
             },
             tracingLogger,
@@ -896,9 +928,9 @@ async function handler(
                 users: [...additionalFallbackRRUsers, ...fixedUsers] as IsFixedAwareUser[],
               },
               {
-                dateFrom: dayjs(reqBody.start).tz(reqBody.timeZone).format(),
-                dateTo: dayjs(reqBody.end).tz(reqBody.timeZone).format(),
-                timeZone: reqBody.timeZone,
+                dateFrom: dayjs(start).tz(bookerTimeZone).format(),
+                dateTo: dayjs(end).tz(bookerTimeZone).format(),
+                timeZone: bookerTimeZone,
                 originalRescheduledBooking,
               },
               tracingLogger,
@@ -983,35 +1015,30 @@ async function handler(
             ),
             eventType,
             routingFormResponse,
-            meetingStartTime: new Date(reqBody.start),
+            meetingStartTime: new Date(start),
           });
           if (!newLuckyUser) {
             break; // prevent infinite loop
           }
           if (
-            input.bookingData.isFirstRecurringSlot &&
+            isFirstRecurringSlot &&
             eventType.schedulingType === SchedulingType.ROUND_ROBIN &&
-            input.bookingData.numSlotsToCheckForAvailability &&
-            input.bookingData.allRecurringDates
+            numSlotsToCheckForAvailability &&
+            allRecurringDates
           ) {
             // for recurring round robin events check if lucky user is available for next slots
             try {
-              for (
-                let i = 0;
-                i < input.bookingData.allRecurringDates.length &&
-                i < input.bookingData.numSlotsToCheckForAvailability;
-                i++
-              ) {
-                const start = input.bookingData.allRecurringDates[i].start;
-                const end = input.bookingData.allRecurringDates[i].end;
+              for (let i = 0; i < allRecurringDates.length && i < numSlotsToCheckForAvailability; i++) {
+                const start = allRecurringDates[i].start;
+                const end = allRecurringDates[i].end;
 
                 if (!skipAvailabilityCheck) {
                   await ensureAvailableUsers(
                     { ...eventTypeWithUsers, users: [newLuckyUser] },
                     {
-                      dateFrom: dayjs(start).tz(reqBody.timeZone).format(),
-                      dateTo: dayjs(end).tz(reqBody.timeZone).format(),
-                      timeZone: reqBody.timeZone,
+                      dateFrom: dayjs(start).tz(bookerTimeZone).format(),
+                      dateTo: dayjs(end).tz(bookerTimeZone).format(),
+                      timeZone: bookerTimeZone,
                       originalRescheduledBooking,
                     },
                     tracingLogger,
@@ -1070,10 +1097,7 @@ async function handler(
           .flat()
           .map((u) => u.id),
       };
-    } else if (
-      input.bookingData.allRecurringDates &&
-      eventType.schedulingType === SchedulingType.ROUND_ROBIN
-    ) {
+    } else if (allRecurringDates && eventType.schedulingType === SchedulingType.ROUND_ROBIN) {
       // all recurring slots except the first one
       const luckyUsersFromFirstBooking = luckyUsers
         ? eventTypeWithUsers.users.filter((user) => luckyUsers.find((luckyUserId) => luckyUserId === user.id))
@@ -1094,8 +1118,8 @@ async function handler(
   }
 
   // If the team member is requested then they should be the organizer
-  const organizerUser = reqBody.teamMemberEmail
-    ? (users.find((user) => user.email === reqBody.teamMemberEmail) ?? users[0])
+  const organizerUser = teamMemberEmail
+    ? (users.find((user) => user.email === teamMemberEmail) ?? users[0])
     : users[0];
 
   const tOrganizer = await getTranslation(organizerUser?.locale ?? "en", "common");
@@ -1108,7 +1132,7 @@ async function handler(
       : null;
 
   const attendeeLanguage = attendeeInfoOnReschedule ? attendeeInfoOnReschedule.locale : language;
-  const attendeeTimezone = attendeeInfoOnReschedule ? attendeeInfoOnReschedule.timeZone : reqBody.timeZone;
+  const attendeeTimezone = attendeeInfoOnReschedule ? attendeeInfoOnReschedule.timeZone : bookerTimeZone;
 
   const tAttendees = await getTranslation(attendeeLanguage ?? "en", "common");
 
@@ -1242,7 +1266,7 @@ async function handler(
     tracingLogger.info("Removed guests from the booking", guestsRemoved);
   }
 
-  const seed = `${organizerUser.username}:${dayjs(reqBody.start).utc().format()}:${new Date().getTime()}`;
+  const seed = `${organizerUser.username}:${dayjs(start).utc().format()}:${new Date().getTime()}`;
   const uid = translator.fromUUID(uuidv5(seed, uuidv5.URL));
 
   // For static link based video apps, it would have the static URL value instead of it's type(e.g. integrations:campfire_video)
@@ -1261,10 +1285,11 @@ async function handler(
   tracingLogger.info("locationBodyString", locationBodyString);
   tracingLogger.info("event type locations", eventType.locations);
 
-  const customInputs = getCustomInputsResponses(reqBody, eventType.customInputs);
+  const customInputs = getCustomInputsResponses(
+    { responses, customInputs: rawCustomInputs },
+    eventType.customInputs
+  );
   const attendeesList = [...invitee, ...guests];
-
-  const responses = reqBody.responses || null;
   const evtName = !eventType?.isDynamic ? eventType.eventName : responses?.title;
   const eventNameObject = {
     //TODO: Can we have an unnamed attendee? If not, I would really like to throw an error here.
@@ -1276,7 +1301,7 @@ async function handler(
     // TODO: Can we have an unnamed organizer? If not, I would really like to throw an error here.
     host: organizerUser.name || "Nameless",
     location: bookingLocation,
-    eventDuration: dayjs(reqBody.end).diff(reqBody.start, "minutes"),
+    eventDuration: dayjs(end).diff(start, "minutes"),
     bookingFields: { ...responses },
     t: tOrganizer,
   };
@@ -1312,8 +1337,8 @@ async function handler(
   }
 
   //update cal event responses with latest location value , later used by webhook
-  if (reqBody.calEventResponses)
-    reqBody.calEventResponses["location"].value = {
+  if (calEventResponses)
+    calEventResponses["location"].value = {
       value: platformBookingLocation ?? bookingLocation,
       optionValue: "",
     };
@@ -1324,8 +1349,8 @@ async function handler(
     .withBasicDetails({
       bookerUrl,
       title: eventName,
-      startTime: dayjs(reqBody.start).utc().format(),
-      endTime: dayjs(reqBody.end).utc().format(),
+      startTime: dayjs(start).utc().format(),
+      endTime: dayjs(end).utc().format(),
       additionalNotes,
     })
     .withEventType({
@@ -1358,8 +1383,8 @@ async function handler(
     .withMetadataAndResponses({
       additionalNotes,
       customInputs,
-      responses: reqBody.calEventResponses || null,
-      userFieldsResponses: reqBody.calEventUserFieldsResponses || null,
+      responses: calEventResponses || null,
+      userFieldsResponses: calEventUserFieldsResponses || null,
     })
     .withLocation({
       location: platformBookingLocation ?? bookingLocation, // Will be processed by the EventManager later.
@@ -1378,7 +1403,7 @@ async function handler(
       platformBookingUrl,
     })
     .withOrganization(organizerOrganizationId)
-    .withHashedLink(hasHashedBookingLink ? (reqBody.hashedLink ?? null) : null)
+    .withHashedLink(hasHashedBookingLink ? (hashedLink ?? null) : null)
     .build();
 
   if (!builtEvt) {
@@ -1390,9 +1415,9 @@ async function handler(
 
   let evt: CalendarEvent = builtEvt;
 
-  if (input.bookingData.thirdPartyRecurringEventId) {
+  if (thirdPartyRecurringEventId) {
     const updatedEvt = CalendarEventBuilder.fromEvent(evt)
-      ?.withRecurringEventId(input.bookingData.thirdPartyRecurringEventId)
+      ?.withRecurringEventId(thirdPartyRecurringEventId)
       .build();
 
     if (!updatedEvt) {
@@ -1427,7 +1452,7 @@ async function handler(
     eventDescription: eventType.description,
     price: paymentAppData.price,
     currency: eventType.currency,
-    length: dayjs(reqBody.end).diff(dayjs(reqBody.start), "minutes"),
+    length: dayjs(end).diff(dayjs(start), "minutes"),
   };
 
   const teamId = await getTeamIdFromEventType({ eventType });
@@ -1447,7 +1472,7 @@ async function handler(
     oAuthClientId: platformClientId,
   };
 
-  const eventTrigger: WebhookTriggerEvents = rescheduleUid
+  const eventTrigger: WebhookTriggerEvents = finalRescheduleUid
     ? WebhookTriggerEvents.BOOKING_RESCHEDULED
     : WebhookTriggerEvents.BOOKING_CREATED;
 
@@ -1505,8 +1530,8 @@ async function handler(
       userId: null,
       userUuid: null,
       title: eventName,
-      startTime: new Date(reqBody.start),
-      endTime: new Date(reqBody.end),
+      startTime: new Date(start),
+      endTime: new Date(end),
       createdAt: new Date(),
       updatedAt: new Date(),
       attendees: [
@@ -1514,7 +1539,7 @@ async function handler(
           id: 0,
           email: bookerEmail,
           name: fullName,
-          timeZone: reqBody.timeZone,
+          timeZone: bookerTimeZone,
           locale: null,
           phoneNumber: null,
           bookingId: null,
@@ -1571,7 +1596,7 @@ async function handler(
   }
 
   const actionSource = getAuditActionSource({
-    creationSource: input.bookingData.creationSource,
+    creationSource: creationSource,
     eventTypeId,
     rescheduleUid: originalRescheduledBooking?.uid ?? null,
   });
@@ -1580,8 +1605,8 @@ async function handler(
   if (eventType.seatsPerTimeSlot) {
     const newBooking = await handleSeats(
       {
-        rescheduleUid,
-        reqBookingUid: reqBody.bookingUid,
+        rescheduleUid: finalRescheduleUid,
+        reqBookingUid: seatsData.bookingUid,
         eventType,
         evt: { ...evt, seatsPerTimeSlot: eventType.seatsPerTimeSlot, bookerUrl },
         invitee,
@@ -1595,7 +1620,7 @@ async function handler(
         reqUserId: input.userId,
         reqUserUuid: userUuid,
         rescheduleReason,
-        reqBodyUser: reqBody.user,
+        reqBodyUser: teamOrUserSlug,
         noEmail,
         isConfirmedByDefault,
         additionalNotes,
@@ -1607,12 +1632,12 @@ async function handler(
         eventTypeInfo,
         uid,
         eventTypeId,
-        reqBodyMetadata: reqBody.metadata,
+        reqBodyMetadata: reqBodyMetadata,
         subscriberOptions,
         eventTrigger,
         responses,
         workflows,
-        rescheduledBy: reqBody.rescheduledBy,
+        rescheduledBy: rescheduleData.rescheduledBy,
         isDryRun,
         organizationId: eventOrganizationId,
         actionSource,
@@ -1668,7 +1693,7 @@ async function handler(
     }
   }
 
-  if (reqBody.recurringEventId && eventType.recurringEvent) {
+  if (recurringEventId && eventType.recurringEvent) {
     // Overriding the recurring event configuration count to be the actual number of events booked for
     // the recurring event (equal or less than recurring event configuration count)
     eventType.recurringEvent = Object.assign({}, eventType.recurringEvent, { count: recurringCount });
@@ -1723,13 +1748,13 @@ async function handler(
     if (!isDryRun) {
       booking = await createBooking({
         uid,
-        rescheduledBy: reqBody.rescheduledBy,
+        rescheduledBy: rescheduleData.rescheduledBy,
         routingFormResponseId: routingFormResponseId,
         reroutingFormResponses: reroutingFormResponses ?? null,
         reqBody: {
-          user: reqBody.user,
-          metadata: reqBody.metadata,
-          recurringEventId: reqBody.recurringEventId,
+          user: teamOrUserSlug,
+          metadata: reqBodyMetadata,
+          recurringEventId: recurringEventId,
         },
         eventType: {
           eventTypeData: eventType,
@@ -1747,8 +1772,8 @@ async function handler(
         },
         evt,
         originalRescheduledBooking,
-        creationSource: input.bookingData.creationSource,
-        tracking: reqBody.tracking,
+        creationSource: creationSource,
+        tracking: tracking,
       });
 
       if (booking?.userId) {
@@ -1775,7 +1800,7 @@ async function handler(
             bookingUid: booking.uid,
             organizerEmail: organizerUser.email,
             isRerouting: !!reroutingFormResponses,
-            reroutedByEmail: reqBody.rescheduledBy,
+            reroutedByEmail: rescheduleData.rescheduledBy,
           });
           if (result?.assignmentReason) {
             assignmentReason = result.assignmentReason;
@@ -1828,9 +1853,8 @@ async function handler(
       if (booking && booking.id && eventType.seatsPerTimeSlot) {
         const currentAttendee = booking.attendees.find(
           (attendee) =>
-            attendee.email === bookingData.responses.email ||
-            (bookingData.responses.attendeePhoneNumber &&
-              attendee.phoneNumber === bookingData.responses.attendeePhoneNumber)
+            attendee.email === bookerEmail ||
+            (bookerPhoneNumber && attendee.phoneNumber === bookerPhoneNumber)
         );
 
         // Save description to bookingSeat
@@ -1842,7 +1866,7 @@ async function handler(
               description: additionalNotes,
               responses,
             },
-            metadata: reqBody.metadata,
+            metadata: reqBodyMetadata,
             booking: {
               connect: {
                 id: booking.id,
@@ -1862,9 +1886,9 @@ async function handler(
         eventTypeId,
         organizerUser,
         eventName,
-        startTime: reqBody.start,
-        endTime: reqBody.end,
-        contactOwnerFromReq: bookingData.teamMemberEmail ?? null,
+        startTime: start,
+        endTime: end,
+        contactOwnerFromReq: teamMemberEmail ?? null,
         contactOwnerEmail: routingData.contactOwnerEmail ?? null,
         allHostUsers: users,
         isManagedEventType,
@@ -1905,7 +1929,7 @@ async function handler(
     await WorkflowRepository.deleteAllWorkflowReminders(originalRescheduledBooking.workflowReminders);
 
     evt = addVideoCallDataToEvent(originalRescheduledBooking.references, evt);
-    evt.rescheduledBy = reqBody.rescheduledBy;
+    evt.rescheduledBy = rescheduleData.rescheduledBy;
 
     // If organizer is changed in RR event then we need to delete the previous host destination calendar events
     const previousHostDestinationCalendar = originalRescheduledBooking?.destinationCalendar
@@ -2100,7 +2124,7 @@ async function handler(
           iCalUID,
           originalRescheduledBooking,
           rescheduleReason,
-          isRescheduledByBooker: reqBody.rescheduledBy === bookerEmail,
+          isRescheduledByBooker: rescheduleData.rescheduledBy === bookerEmail,
           users,
           changedOrganizer,
         },
@@ -2211,7 +2235,7 @@ async function handler(
         }
       }
       if (!noEmail) {
-        if (!isDryRun && !(eventType.seatsPerTimeSlot && rescheduleUid)) {
+        if (!isDryRun && !(eventType.seatsPerTimeSlot && finalRescheduleUid)) {
           await emailsAndSmsHandler.send({
             action: BookingActionMap.confirmed,
             data: {
@@ -2291,16 +2315,16 @@ async function handler(
     },
     organizerUser,
     // FIXME: It looks like hasHashedBookingLink is set to true based on the value of hashedLink when sending the request. So, technically we could remove hasHashedBookingLink usage completely
-    hashedLink: hasHashedBookingLink ? (reqBody.hashedLink ?? null) : null,
+    hashedLink: hasHashedBookingLink ? (hashedLink ?? null) : null,
     isDryRun,
     eventOrganizationId,
     bookerEmail,
     bookerName: fullName,
     actorUserUuid: userUuid ?? null,
     originalRescheduledBooking,
-    rescheduledBy: reqBody.rescheduledBy ?? null,
+    rescheduledBy: rescheduleData.rescheduledBy ?? null,
     actionSource,
-    isRecurringBooking: !!input.bookingData.allRecurringDates,
+    isRecurringBooking: !!allRecurringDates,
     attendeeSeatId: evt.attendeeSeatId ?? null,
     tracingLogger,
     isBookingAuditEnabled,
@@ -2320,11 +2344,11 @@ async function handler(
     rescheduleEndTime: originalRescheduledBooking?.endTime
       ? dayjs(originalRescheduledBooking?.endTime).utc().format()
       : undefined,
-    metadata: { ...metadata, ...reqBody.metadata },
+    metadata: { ...metadata, ...reqBodyMetadata },
     eventTypeId,
     status: "ACCEPTED",
     smsReminderNumber: booking?.smsReminderNumber || undefined,
-    rescheduledBy: reqBody.rescheduledBy,
+    rescheduledBy: rescheduleData.rescheduledBy,
     location: webhookLocation,
     ...(assignmentReason ? { assignmentReason: [assignmentReason] } : {}),
   };
@@ -2481,7 +2505,7 @@ async function handler(
     const deleteWebhookScheduledTriggerPromises: Promise<unknown>[] = [];
     const scheduleTriggerPromises = [];
 
-    if (rescheduleUid && originalRescheduledBooking) {
+    if (finalRescheduleUid && originalRescheduledBooking) {
       //delete all scheduled triggers for meeting ended and meeting started of booking
       deleteWebhookScheduledTriggerPromises.push(
         deleteWebhookScheduledTriggers({
@@ -2499,7 +2523,7 @@ async function handler(
     if (booking && booking.status === BookingStatus.ACCEPTED) {
       const bookingWithCalEventResponses = {
         ...booking,
-        responses: reqBody.calEventResponses,
+        responses: calEventResponses,
       };
       for (const subscriber of subscribersMeetingEnded) {
         scheduleTriggerPromises.push(
@@ -2619,7 +2643,7 @@ async function handler(
       isDryRun,
       isConfirmedByDefault,
       isNormalBookingOrFirstRecurringSlot,
-      isRescheduleEvent: !!rescheduleUid,
+      isRescheduleEvent: !!finalRescheduleUid,
       creditCheckFn: creditService.hasAvailableCredits.bind(creditService),
     });
   } catch (error) {
@@ -2674,7 +2698,7 @@ async function handler(
             platformRescheduleUrl,
             platformCancelUrl,
             platformBookingUrl,
-            isRescheduledByBooker: reqBody.rescheduledBy === bookerEmail,
+            isRescheduledByBooker: rescheduleData.rescheduledBy === bookerEmail,
           },
         });
       } catch (err) {

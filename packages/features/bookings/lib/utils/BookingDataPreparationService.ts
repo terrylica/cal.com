@@ -57,7 +57,6 @@ async function getEventOrganizationId({
 }
 
 export type {
-  BookingData,
   BookingFormData,
   EnrichedEventType,
   EnrichmentInput,
@@ -183,7 +182,6 @@ export class BookingDataPreparationService {
     return {
       eventType,
       bookingFormData,
-      bookingData,
       loggedInUser: {
         id: loggedInUserId,
       },
@@ -197,9 +195,11 @@ export class BookingDataPreparationService {
         crmAppSlug: bookingData.crmAppSlug ?? null,
         skipContactOwner: bookingData.skipContactOwner ?? null,
         contactOwnerEmail: contactOwnerEmail ?? null,
+        rrHostSubsetIds: bookingData.rrHostSubsetIds ?? null,
       },
       bookingMeta: {
         appsStatus: bookingData.appsStatus,
+        noEmail: !!bookingData.noEmail,
         areCalendarEventsEnabled: rawBookingMeta.areCalendarEventsEnabled ?? true,
         platform:
           rawBookingMeta.platformClientId ||

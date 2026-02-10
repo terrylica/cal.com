@@ -1,10 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import type { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { HttpError } from "@calcom/lib/http-error";
 import type { Logger } from "tslog";
-
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BookingDataPreparationService } from "./BookingDataPreparationService";
 
 vi.mock("../handleNewBooking/getEventType", () => ({
@@ -51,14 +49,14 @@ vi.mock("@calcom/features/profile/repositories/ProfileRepository", () => ({
   },
 }));
 
-import { getEventType } from "../handleNewBooking/getEventType";
-import { getBookingData } from "../handleNewBooking/getBookingData";
-import { checkIfBookerEmailIsBlocked } from "../handleNewBooking/checkIfBookerEmailIsBlocked";
-import { checkActiveBookingsLimitForBooker } from "../handleNewBooking/checkActiveBookingsLimitForBooker";
-import { validateBookingTimeIsNotOutOfBounds } from "../handleNewBooking/validateBookingTimeIsNotOutOfBounds";
-import { validateEventLength } from "../handleNewBooking/validateEventLength";
 import { verifyCodeUnAuthenticated } from "@calcom/features/auth/lib/verifyCodeUnAuthenticated";
 import { getSpamCheckService } from "@calcom/features/di/watchlist/containers/SpamCheckService.container";
+import { checkActiveBookingsLimitForBooker } from "../handleNewBooking/checkActiveBookingsLimitForBooker";
+import { checkIfBookerEmailIsBlocked } from "../handleNewBooking/checkIfBookerEmailIsBlocked";
+import { getBookingData } from "../handleNewBooking/getBookingData";
+import { getEventType } from "../handleNewBooking/getEventType";
+import { validateBookingTimeIsNotOutOfBounds } from "../handleNewBooking/validateBookingTimeIsNotOutOfBounds";
+import { validateEventLength } from "../handleNewBooking/validateEventLength";
 
 describe("BookingDataPreparationService", () => {
   let service: BookingDataPreparationService;
@@ -134,6 +132,7 @@ describe("BookingDataPreparationService", () => {
     recurringEventId: null,
     thirdPartyRecurringEventId: null,
     bookingUid: null,
+    rrHostSubsetIds: null,
     user: "test-user",
     _isDryRun: false,
     ...overrides,
@@ -208,6 +207,7 @@ describe("BookingDataPreparationService", () => {
       expect(result).toHaveProperty("bookingMeta");
       expect(result).toHaveProperty("config");
       expect(result).toHaveProperty("spamCheckService");
+      expect(result).not.toHaveProperty("bookingData");
       expect(result.eventType.id).toBe(1);
       expect(result.bookingFormData.booker.email).toBe("booker@example.com");
     });
@@ -230,9 +230,7 @@ describe("BookingDataPreparationService", () => {
     });
 
     it("should mark event type as team event when schedulingType is COLLECTIVE", async () => {
-      vi.mocked(getEventType).mockResolvedValue(
-        createMockEventType({ schedulingType: "COLLECTIVE" })
-      );
+      vi.mocked(getEventType).mockResolvedValue(createMockEventType({ schedulingType: "COLLECTIVE" }));
       const mockSchemaGetter = vi.fn().mockReturnValue({});
 
       const result = await service.enrich(
@@ -249,9 +247,7 @@ describe("BookingDataPreparationService", () => {
     });
 
     it("should mark event type as team event when schedulingType is ROUND_ROBIN", async () => {
-      vi.mocked(getEventType).mockResolvedValue(
-        createMockEventType({ schedulingType: "ROUND_ROBIN" })
-      );
+      vi.mocked(getEventType).mockResolvedValue(createMockEventType({ schedulingType: "ROUND_ROBIN" }));
       const mockSchemaGetter = vi.fn().mockReturnValue({});
 
       const result = await service.enrich(
@@ -308,9 +304,7 @@ describe("BookingDataPreparationService", () => {
         mockSchemaGetter
       );
 
-      await expect(
-        service.validate(preparedData, createMockRawBookingData())
-      ).resolves.toBeUndefined();
+      await expect(service.validate(preparedData, createMockRawBookingData())).resolves.toBeUndefined();
     });
 
     it("should throw error when event type has both seats and recurring", async () => {
@@ -332,9 +326,7 @@ describe("BookingDataPreparationService", () => {
         mockSchemaGetter
       );
 
-      await expect(
-        service.validate(preparedData, createMockRawBookingData())
-      ).rejects.toThrow(HttpError);
+      await expect(service.validate(preparedData, createMockRawBookingData())).rejects.toThrow(HttpError);
     });
 
     it("should call checkIfBookerEmailIsBlocked with userRepository", async () => {
@@ -393,12 +385,8 @@ describe("BookingDataPreparationService", () => {
     });
 
     it("should skip booking limits check for reschedule", async () => {
-      vi.mocked(getEventType).mockResolvedValue(
-        createMockEventType({ maxActiveBookingsPerBooker: 5 })
-      );
-      vi.mocked(getBookingData).mockResolvedValue(
-        createMockBookingData({ rescheduleUid: "existing-uid" })
-      );
+      vi.mocked(getEventType).mockResolvedValue(createMockEventType({ maxActiveBookingsPerBooker: 5 }));
+      vi.mocked(getBookingData).mockResolvedValue(createMockBookingData({ rescheduleUid: "existing-uid" }));
       const mockSchemaGetter = vi.fn().mockReturnValue({});
 
       const preparedData = await service.enrich(
@@ -411,10 +399,7 @@ describe("BookingDataPreparationService", () => {
         mockSchemaGetter
       );
 
-      await service.validate(
-        preparedData,
-        createMockRawBookingData({ rescheduleUid: "existing-uid" })
-      );
+      await service.validate(preparedData, createMockRawBookingData({ rescheduleUid: "existing-uid" }));
 
       expect(checkActiveBookingsLimitForBooker).not.toHaveBeenCalled();
     });
@@ -435,9 +420,7 @@ describe("BookingDataPreparationService", () => {
         mockSchemaGetter
       );
 
-      await expect(
-        service.validate(preparedData, createMockRawBookingData())
-      ).rejects.toThrow(HttpError);
+      await expect(service.validate(preparedData, createMockRawBookingData())).rejects.toThrow(HttpError);
     });
 
     it("should validate verification code when provided", async () => {
@@ -458,16 +441,10 @@ describe("BookingDataPreparationService", () => {
       );
 
       await expect(
-        service.validate(
-          preparedData,
-          createMockRawBookingData({ verificationCode: "123456" })
-        )
+        service.validate(preparedData, createMockRawBookingData({ verificationCode: "123456" }))
       ).resolves.toBeUndefined();
 
-      expect(verifyCodeUnAuthenticated).toHaveBeenCalledWith(
-        "booker@example.com",
-        "123456"
-      );
+      expect(verifyCodeUnAuthenticated).toHaveBeenCalledWith("booker@example.com", "123456");
     });
 
     it("should throw error for invalid verification code", async () => {
@@ -488,10 +465,7 @@ describe("BookingDataPreparationService", () => {
       );
 
       await expect(
-        service.validate(
-          preparedData,
-          createMockRawBookingData({ verificationCode: "wrong" })
-        )
+        service.validate(preparedData, createMockRawBookingData({ verificationCode: "wrong" }))
       ).rejects.toThrow(HttpError);
     });
 
@@ -499,9 +473,7 @@ describe("BookingDataPreparationService", () => {
       vi.mocked(getEventType).mockResolvedValue(
         createMockEventType({ requiresBookerEmailVerification: true })
       );
-      vi.mocked(getBookingData).mockResolvedValue(
-        createMockBookingData({ rescheduleUid: "existing-uid" })
-      );
+      vi.mocked(getBookingData).mockResolvedValue(createMockBookingData({ rescheduleUid: "existing-uid" }));
       const mockSchemaGetter = vi.fn().mockReturnValue({});
 
       const preparedData = await service.enrich(
@@ -515,10 +487,7 @@ describe("BookingDataPreparationService", () => {
       );
 
       await expect(
-        service.validate(
-          preparedData,
-          createMockRawBookingData({ rescheduleUid: "existing-uid" })
-        )
+        service.validate(preparedData, createMockRawBookingData({ rescheduleUid: "existing-uid" }))
       ).resolves.toBeUndefined();
 
       expect(verifyCodeUnAuthenticated).not.toHaveBeenCalled();
@@ -602,9 +571,7 @@ describe("BookingDataPreparationService", () => {
     });
 
     it("should propagate validation errors", async () => {
-      vi.mocked(checkIfBookerEmailIsBlocked).mockRejectedValue(
-        new Error("Email is blocked")
-      );
+      vi.mocked(checkIfBookerEmailIsBlocked).mockRejectedValue(new Error("Email is blocked"));
       const mockSchemaGetter = vi.fn().mockReturnValue({});
 
       await expect(
@@ -658,6 +625,7 @@ describe("BookingDataPreparationService", () => {
           crmRecordId: "crm-123",
           crmOwnerRecordType: "contact",
           crmAppSlug: "salesforce",
+          rrHostSubsetIds: [201, 202],
         })
       );
       const mockSchemaGetter = vi.fn().mockReturnValue({});
@@ -680,6 +648,7 @@ describe("BookingDataPreparationService", () => {
           crmRecordId: "crm-123",
           crmOwnerRecordType: "contact",
           crmAppSlug: "salesforce",
+          rrHostSubsetIds: [201, 202],
         })
       );
     });
@@ -688,10 +657,7 @@ describe("BookingDataPreparationService", () => {
       vi.mocked(getBookingData).mockResolvedValue(
         createMockBookingData({
           luckyUsers: [101, 102],
-          allRecurringDates: [
-            { start: "2024-01-15T10:00:00.000Z" },
-            { start: "2024-01-22T10:00:00.000Z" },
-          ],
+          allRecurringDates: [{ start: "2024-01-15T10:00:00.000Z" }, { start: "2024-01-22T10:00:00.000Z" }],
           recurringCount: 2,
           isFirstRecurringSlot: true,
           numSlotsToCheckForAvailability: 4,
@@ -713,10 +679,7 @@ describe("BookingDataPreparationService", () => {
 
       expect(result.recurringBookingData).toEqual({
         luckyUsers: [101, 102],
-        allRecurringDates: [
-          { start: "2024-01-15T10:00:00.000Z" },
-          { start: "2024-01-22T10:00:00.000Z" },
-        ],
+        allRecurringDates: [{ start: "2024-01-15T10:00:00.000Z" }, { start: "2024-01-22T10:00:00.000Z" }],
         recurringCount: 2,
         isFirstRecurringSlot: true,
         numSlotsToCheckForAvailability: 4,
@@ -726,9 +689,7 @@ describe("BookingDataPreparationService", () => {
     });
 
     it("should set isDryRun from booking data", async () => {
-      vi.mocked(getBookingData).mockResolvedValue(
-        createMockBookingData({ _isDryRun: true })
-      );
+      vi.mocked(getBookingData).mockResolvedValue(createMockBookingData({ _isDryRun: true }));
       const mockSchemaGetter = vi.fn().mockReturnValue({});
 
       const result = await service.enrich(
@@ -766,6 +727,48 @@ describe("BookingDataPreparationService", () => {
       expect(result.bookingMeta.skipEventLimitsCheck).toBe(true);
       expect(result.bookingMeta.skipCalendarSyncTaskCreation).toBe(true);
       expect(result.bookingMeta.areCalendarEventsEnabled).toBe(false);
+    });
+
+    it("should correctly transform noEmail field in bookingMeta", async () => {
+      vi.mocked(getBookingData).mockResolvedValue(
+        createMockBookingData({
+          noEmail: true,
+        })
+      );
+      const mockSchemaGetter = vi.fn().mockReturnValue({});
+
+      const result = await service.enrich(
+        {
+          rawBookingData: createMockRawBookingData(),
+          rawBookingMeta: {},
+          eventType: { id: 1, slug: "test-event" },
+          loggedInUserId: null,
+        },
+        mockSchemaGetter
+      );
+
+      expect(result.bookingMeta.noEmail).toBe(true);
+    });
+
+    it("should set noEmail to false when not provided", async () => {
+      vi.mocked(getBookingData).mockResolvedValue(
+        createMockBookingData({
+          noEmail: false,
+        })
+      );
+      const mockSchemaGetter = vi.fn().mockReturnValue({});
+
+      const result = await service.enrich(
+        {
+          rawBookingData: createMockRawBookingData(),
+          rawBookingMeta: {},
+          eventType: { id: 1, slug: "test-event" },
+          loggedInUserId: null,
+        },
+        mockSchemaGetter
+      );
+
+      expect(result.bookingMeta.noEmail).toBe(false);
     });
   });
 });
