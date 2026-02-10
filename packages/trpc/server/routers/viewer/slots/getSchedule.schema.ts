@@ -1,3 +1,1 @@
-import type { TGetScheduleInputSchema as TGetScheduleInput } from "./types";
-
-export type TGetScheduleInputSchema = TGetScheduleInput;
+export type { TGetScheduleInputSchema } from "@calcom/features/availability/types/getSchedule.types";

@@ -1,13 +1,16 @@
-import { z } from "zod";
-
 import {
-  getScheduleSchemaObject,
   type GetScheduleOptions,
+  getScheduleSchemaObject,
   type TGetScheduleInputSchema,
 } from "@calcom/features/availability/types/getSchedule.types";
+import { z } from "zod";
 
 // Re-export types for backward compatibility
-export type { ContextForGetSchedule, GetScheduleOptions, TGetScheduleInputSchema } from "@calcom/features/availability/types/getSchedule.types";
+export type {
+  ContextForGetSchedule,
+  GetScheduleOptions,
+  TGetScheduleInputSchema,
+} from "@calcom/features/availability/types/getSchedule.types";
 
 export const getScheduleSchema = getScheduleSchemaObject
   .transform((val) => {
