@@ -1,10 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";
 import { sendTeamInviteEmail } from "@calcom/emails/organization-email-service";
-import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
-import { WEBAPP_URL } from "@calcom/lib/constants";
 import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
 import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
+import { OnboardingPathService } from "@calcom/features/onboarding/lib/onboarding-path.service";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { prisma } from "@calcom/prisma";
@@ -14,7 +14,8 @@ import type {
   UserPassword,
   User as UserType,
 } from "@calcom/prisma/client";
-import { MembershipRole, Prisma } from "@calcom/prisma/enums";
+import { Prisma } from "@calcom/prisma/client";
+import { MembershipRole } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 import { TRPCError } from "@trpc/server";
 import type { TFunction } from "i18next";
@@ -121,6 +122,7 @@ export async function sendSignupToOrganizationEmail({
     logger.error(
       "Failed to send signup to organization email",
       safeStringify({
+        usernameOrEmail,
         orgId: teamId,
       }),
       error
@@ -159,9 +161,12 @@ export const sendExistingUserTeamInviteEmails = async ({
   orgSlug: string | null;
 }) => {
   const sendEmailsPromises = existingUsersWithMemberships.map(async (user) => {
-    const sendTo = user.email;
+    let sendTo = user.email;
+    if (!isEmail(user.email)) {
+      sendTo = user.email;
+    }
 
-    log.debug("Sending team invite email to", safeStringify({ userId: user.id, currentUserTeamName }));
+    log.debug("Sending team invite email to", safeStringify({ user, currentUserName, currentUserTeamName }));
 
     if (!currentUserTeamName) {
       throw new TRPCError({
@@ -235,7 +240,7 @@ export async function createMemberships({
   parentId: number | null;
   accepted: boolean;
 }) {
-  log.debug("Creating memberships for", safeStringify({ teamId, inviteeIds: invitees.map((i) => i.id), parentId, accepted }));
+  log.debug("Creating memberships for", safeStringify({ teamId, language, invitees, parentId, accepted }));
   try {
     await prisma.membership.createMany({
       data: invitees.flatMap((invitee) => {
