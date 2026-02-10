@@ -1,5 +1,4 @@
 import type { GetServerSidePropsContext } from "next";
-import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 
 import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-utils";
@@ -16,11 +15,9 @@ import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { NEXTJS_CACHE_TTL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
-import { prisma } from "@calcom/prisma";
+import { getReplicaFromHeaders, prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { SchedulingType } from "@calcom/prisma/enums";
-
-export async function getCachedTeamData(teamSlug: string, orgSlug: string | null) {
   return unstable_cache(async () => getTeamData(teamSlug, orgSlug), ["team-data", teamSlug, orgSlug ?? ""], {
     revalidate: NEXTJS_CACHE_TTL,
     tags: [`team:${orgSlug ? `${orgSlug}:` : ""}${teamSlug}`],
@@ -58,7 +55,7 @@ export async function getEnrichedEventType({
     return null;
   }
 
-  const db = prisma.replica((await headers()).get("x-cal-replica"));
+  const db = prisma.replica(await getReplicaFromHeaders());
 
   const { subsetOfHosts, hosts } = await getEventTypeHosts({
     hosts: eventType.hosts,
@@ -106,7 +103,7 @@ export async function getEnrichedEventType({
 }
 
 export async function shouldUseApiV2ForTeamSlots(teamId: number): Promise<boolean> {
-  const db = prisma.replica((await headers()).get("x-cal-replica"));
+  const db = prisma.replica(await getReplicaFromHeaders());
   const featureRepo = new FeaturesRepository(db);
   const teamHasApiV2Route = await featureRepo.checkIfTeamHasFeature(teamId, "use-api-v2-for-team-slots");
   const useApiV2 = teamHasApiV2Route && Boolean(process.env.NEXT_PUBLIC_API_V2_URL);
@@ -170,7 +167,7 @@ export async function getCRMData(
 }
 
 export async function getTeamId(teamSlug: string, orgSlug: string | null): Promise<number | null> {
-  const db = prisma.replica((await headers()).get("x-cal-replica"));
+  const db = prisma.replica(await getReplicaFromHeaders());
   const teamRepo = new TeamRepository(db);
   const team = await teamRepo.findFirstBySlugAndParentSlug({
     slug: teamSlug,

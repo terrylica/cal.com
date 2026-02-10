@@ -169,5 +169,21 @@ export const prisma: DatabaseProxy = createDatabaseProxy({
 
 export type { DatabaseProxy };
 
+/**
+ * Gets the replica name from the x-cal-replica header.
+ * Returns null if the header is not present.
+ * @requires next/headers
+ */
+export async function getReplicaFromHeaders(): Promise<string | null> {
+  try {
+    const { headers } = await import("next/headers");
+    return (await headers()).get("x-cal-replica");
+  } catch {
+    // If next/headers is not available (e.g., in non-Next.js context), return null
+    return null;
+  }
+}
+
 export default prisma;
 export * from "./selects";
+
