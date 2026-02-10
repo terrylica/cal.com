@@ -2,11 +2,12 @@ import { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
 import { SeatChangeTrackingService } from "@calcom/features/ee/billing/service/seatTracking/SeatChangeTrackingService";
 import { getParsedTeam } from "@calcom/features/ee/teams/lib/getParsedTeam";
 import {
-  type UserWithMembership,
+  createMemberships,
   getTeamOrThrow,
   sendEmails,
   sendExistingUserTeamInviteEmails,
   sendSignupToOrganizationEmail,
+  type UserWithMembership,
 } from "@calcom/features/ee/teams/lib/inviteMemberUtils";
 import { updateNewTeamMemberEventTypes } from "@calcom/features/ee/teams/lib/queries";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
@@ -21,7 +22,6 @@ import { getTranslation } from "@calcom/lib/server/i18n";
 import slugify from "@calcom/lib/slugify";
 import { prisma } from "@calcom/prisma";
 import type { OrganizationSettings, Team } from "@calcom/prisma/client";
-import { Prisma } from "@calcom/prisma/client";
 import type { CreationSource } from "@calcom/prisma/enums";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { TRPCError } from "@trpc/server";
@@ -30,6 +30,13 @@ import type { TeamWithParent } from "./types";
 
 export type { Invitee, UserWithMembership } from "@calcom/features/ee/teams/lib/inviteMemberUtils";
 export { getTeamOrThrow, sendEmails, sendExistingUserTeamInviteEmails, sendSignupToOrganizationEmail } from "@calcom/features/ee/teams/lib/inviteMemberUtils";
+export {
+  createMemberships,
+  getTeamOrThrow,
+  sendEmails,
+  sendExistingUserTeamInviteEmails,
+  sendSignupToOrganizationEmail,
+} from "@calcom/features/ee/teams/lib/inviteMemberUtils";
 
 const log = logger.getSubLogger({ prefix: ["inviteMember.utils"] });
 
@@ -393,88 +400,6 @@ export async function createNewUsersConnectToOrgIfExists({
   }
 
   return createdUsers;
-}
-
-export async function createMemberships({
-  teamId,
-  language,
-  invitees,
-  parentId,
-  accepted,
-}: {
-  teamId: number;
-  language: string;
-  invitees: (InvitableExistingUser & {
-    needToCreateOrgMembership: boolean | null;
-  })[];
-  parentId: number | null;
-  accepted: boolean;
-}) {
-  log.debug("Creating memberships for", safeStringify({ teamId, language, invitees, parentId, accepted }));
-  try {
-    await prisma.membership.createMany({
-      data: invitees.flatMap((invitee) => {
-        const organizationRole = parentId
-          ? invitee?.teams?.find((membership) => membership.teamId === parentId)?.role
-          : undefined;
-        const data = [];
-        const createdAt = new Date();
-        // membership for the team
-        data.push({
-          createdAt,
-          teamId,
-          userId: invitee.id,
-          accepted,
-          role: checkAdminOrOwner(organizationRole) ? organizationRole : invitee.newRole,
-        });
-
-        // membership for the org
-        if (parentId && invitee.needToCreateOrgMembership) {
-          data.push({
-            createdAt,
-            accepted,
-            teamId: parentId,
-            userId: invitee.id,
-            role: MembershipRole.MEMBER,
-          });
-        }
-        return data;
-      }),
-    });
-
-    const seatTracker = new SeatChangeTrackingService();
-    const teamSeatAdditions = parentId ? 0 : invitees.length;
-    const organizationSeatAdditions = parentId
-      ? invitees.filter((invitee) => invitee.needToCreateOrgMembership).length
-      : 0;
-
-    const trackingPromises: Promise<void>[] = [];
-    if (teamSeatAdditions > 0) {
-      trackingPromises.push(
-        seatTracker.logSeatAddition({
-          teamId,
-          seatCount: teamSeatAdditions,
-        })
-      );
-    }
-
-    if (parentId && organizationSeatAdditions > 0) {
-      trackingPromises.push(
-        seatTracker.logSeatAddition({
-          teamId: parentId,
-          seatCount: organizationSeatAdditions,
-        })
-      );
-    }
-
-    await Promise.all(trackingPromises);
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError) {
-      logger.error("Failed to create memberships", teamId);
-    } else {
-      throw e;
-    }
-  }
 }
 
 type TeamAndOrganizationSettings = Team & {
