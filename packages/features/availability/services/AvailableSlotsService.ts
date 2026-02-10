@@ -58,9 +58,10 @@ import { TRPCError } from "@trpc/server";
 import type { Logger } from "tslog";
 import { v4 as uuid } from "uuid";
 
-// Import types from tRPC router schemas
-import type { TGetScheduleInputSchema } from "@calcom/trpc/server/routers/viewer/slots/getSchedule.schema";
-import type { GetScheduleOptions } from "@calcom/trpc/server/routers/viewer/slots/types";
+import type {
+  GetScheduleOptions,
+  TGetScheduleInputSchema,
+} from "@calcom/features/availability/types/getSchedule.types";
 
 const log = logger.getSubLogger({ prefix: ["[slots/util]"] });
 const DEFAULT_SLOTS_CACHE_TTL = 2000;

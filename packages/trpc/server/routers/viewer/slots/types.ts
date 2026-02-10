@@ -1,46 +1,13 @@
-import type { IncomingMessage } from "node:http";
 import { z } from "zod";
 
-import { timeZoneSchema } from "@calcom/lib/dayjs/timeZone.schema";
+import {
+  getScheduleSchemaObject,
+  type GetScheduleOptions,
+  type TGetScheduleInputSchema,
+} from "@calcom/features/availability/types/getSchedule.types";
 
-const isValidDateString = (val: string) => !isNaN(Date.parse(val));
-
-export const getScheduleSchemaObject = z.object({
-  startTime: z.string().refine(isValidDateString, {
-    message: "startTime must be a valid date string",
-  }),
-  endTime: z.string().refine(isValidDateString, {
-    message: "endTime must be a valid date string",
-  }),
-  // Event type ID
-  eventTypeId: z.coerce.number().int().optional(),
-  // Event type slug
-  eventTypeSlug: z.string().optional(),
-  // invitee timezone
-  timeZone: timeZoneSchema.optional(),
-  // or list of users (for dynamic events)
-  usernameList: z.array(z.string()).min(1).optional(),
-  debug: z.boolean().optional(),
-  // to handle event types with multiple duration options
-  duration: z
-    .string()
-    .optional()
-    .transform((val) => val && parseInt(val)),
-  rescheduleUid: z.string().nullish(),
-  // whether to do team event or user event
-  isTeamEvent: z.boolean().optional().default(false),
-  orgSlug: z.string().nullish(),
-  teamMemberEmail: z.string().nullish(),
-  routedTeamMemberIds: z.array(z.number()).nullish(),
-  skipContactOwner: z.boolean().nullish(),
-  rrHostSubsetIds: z.array(z.number()).nullish(),
-  _enableTroubleshooter: z.boolean().optional(),
-  _bypassCalendarBusyTimes: z.boolean().optional(),
-  _silentCalendarFailures: z.boolean().optional(),
-  routingFormResponseId: z.number().optional(),
-  queuedFormResponseId: z.string().nullish(),
-  email: z.string().nullish(),
-});
+// Re-export types for backward compatibility
+export type { ContextForGetSchedule, GetScheduleOptions, TGetScheduleInputSchema } from "@calcom/features/availability/types/getSchedule.types";
 
 export const getScheduleSchema = getScheduleSchemaObject
   .transform((val) => {
@@ -80,14 +47,4 @@ export const removeSelectedSlotSchema = z.object({
   uid: z.string().nullable(),
 });
 
-export interface ContextForGetSchedule extends Record<string, unknown> {
-  req?: (IncomingMessage & { cookies: Partial<{ [key: string]: string }> }) | undefined;
-}
-
-export type TGetScheduleInputSchema = z.infer<typeof getScheduleSchemaObject>;
 export const ZGetScheduleInputSchema = getScheduleSchema;
-
-export type GetScheduleOptions = {
-  ctx?: ContextForGetSchedule;
-  input: TGetScheduleInputSchema;
-};
