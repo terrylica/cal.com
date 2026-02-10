@@ -1,9 +1,5 @@
 "use client";
 
-import { keepPreviousData } from "@tanstack/react-query";
-
-import { useHosts } from "@calcom/features/eventtypes/lib/HostsContext";
-import { usePaginatedAssignmentHosts } from "@calcom/features/eventtypes/lib/usePaginatedAssignmentHosts";
 import type { Host } from "@calcom/features/eventtypes/lib/types";
 import ServerTrans from "@calcom/lib/components/ServerTrans";
 import { downloadAsCsv } from "@calcom/lib/csvUtils";
@@ -25,7 +21,6 @@ import {
 import { showToast } from "@calcom/ui/components/toast";
 import { trpc } from "@calcom/trpc/react";
 import Link from "next/link";
-import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type WeightMember = {
@@ -126,92 +121,19 @@ export const EditWeightsForAllTeamMembers = ({
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLocale();
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch = useDebounce(searchQuery, 300);
-  const { pendingChanges } = useHosts();
 
-  // When segment filtering is active, load all matching members at once (no limit).
-  const isSegmentQueryEnabled = assignRRMembersUsingSegment && !!queryValue && !!teamId && isOpen;
-  const { data: segmentData, isPending: isSegmentPending } =
-    trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useQuery(
-      {
-        teamId: teamId || 0,
-        attributesQueryValue: queryValue as AttributesQueryValue,
-        _enablePerf: true,
-      },
-      {
-        enabled: isSegmentQueryEnabled,
-        placeholderData: keepPreviousData,
-      }
-    );
-
-  const hasSegmentResults = isSegmentQueryEnabled && !!segmentData?.result;
-
-  const segmentMembers = useMemo(
-    () => (hasSegmentResults ? segmentData!.result! : []),
-    [hasSegmentResults, segmentData]
-  );
-
-  const segmentMemberIds = useMemo(() => {
-    if (!hasSegmentResults) return null;
-    return new Set(segmentMembers.map((m) => m.id));
-  }, [hasSegmentResults, segmentMembers]);
-
-  // When assignAllTeamMembers ON + NO segment: load all team members.
-  const searchQueryEnabled = isOpen && assignAllTeamMembers && !!teamId && !hasSegmentResults;
-  const {
-    data: searchData,
-    fetchNextPage: fetchNextSearchPage,
-    hasNextPage: hasNextSearchPage,
-    isFetchingNextPage: isFetchingNextSearchPage,
-    isPending: isSearchPending,
-  } = trpc.viewer.eventTypes.searchTeamMembers.useInfiniteQuery(
+  // Single query that loads all members — handles assignAllTeamMembers, segment filtering, and assigned hosts
+  const { data, isPending: isLoading } = trpc.viewer.eventTypes.exportHostsForWeights.useQuery(
     {
-      teamId: teamId ?? 0,
-      limit: 50,
-      search: debouncedSearch || undefined,
+      eventTypeId,
+      teamId,
+      assignAllTeamMembers,
+      assignRRMembersUsingSegment,
+      attributesQueryValue: queryValue,
     },
-    {
-      enabled: searchQueryEnabled,
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
-      placeholderData: keepPreviousData,
-    }
+    { enabled: isOpen }
   );
-  const searchMembers = useMemo(
-    () => searchData?.pages.flatMap((page) => page.members) ?? [],
-    [searchData]
-  );
-
-  // When assignAllTeamMembers OFF: load all assigned hosts
-  const {
-    hosts: assignmentHosts,
-    fetchNextPage: fetchNextAssignmentPage,
-    hasNextPage: hasNextAssignmentPage,
-    isFetchingNextPage: isFetchingNextAssignmentPage,
-    isLoading: isLoadingAssignment,
-  } = usePaginatedAssignmentHosts({
-    eventTypeId,
-    pendingChanges,
-    search: debouncedSearch,
-    enabled: isOpen && !assignAllTeamMembers,
-  });
-
-  // Auto-fetch all remaining pages so the dialog shows every member
-  useEffect(() => {
-    if (searchQueryEnabled && hasNextSearchPage && !isFetchingNextSearchPage) {
-      fetchNextSearchPage();
-    }
-  }, [searchQueryEnabled, hasNextSearchPage, isFetchingNextSearchPage, fetchNextSearchPage]);
-
-  useEffect(() => {
-    if (isOpen && !assignAllTeamMembers && hasNextAssignmentPage && !isFetchingNextAssignmentPage) {
-      fetchNextAssignmentPage();
-    }
-  }, [isOpen, assignAllTeamMembers, hasNextAssignmentPage, isFetchingNextAssignmentPage, fetchNextAssignmentPage]);
-
-  const isLoading = assignAllTeamMembers
-    ? (isSegmentQueryEnabled && isSegmentPending) ||
-      (searchQueryEnabled && (isSearchPending || hasNextSearchPage))
-    : isLoadingAssignment || hasNextAssignmentPage;
+  const allMembers = data?.members ?? [];
 
   // Build a map of current RR host weights from form state for quick lookup
   const hostWeightsMap = useMemo(() => {
@@ -258,63 +180,24 @@ export const EditWeightsForAllTeamMembers = ({
     setIsOpen(false);
   };
 
-  // Normalize data into WeightMember for display
   const displayMembers = useMemo((): WeightMember[] => {
-    let members: WeightMember[];
+    let members = allMembers.map((m) => ({
+      value: String(m.userId),
+      label: m.name || m.email || "",
+      avatar: m.avatarUrl || "",
+      email: m.email,
+      weight: localWeights[String(m.userId)] ?? m.weight ?? hostWeightsMap.get(m.userId) ?? 100,
+    }));
 
-    if (assignAllTeamMembers) {
-      if (hasSegmentResults) {
-        // Segment loads all at once — filter client-side by search
-        members = segmentMembers.map((m) => ({
-          value: String(m.id),
-          label: m.name || m.email || "",
-          avatar: "",
-          email: m.email,
-          weight: localWeights[String(m.id)] ?? hostWeightsMap.get(m.id) ?? 100,
-        }));
-      } else {
-        // No segment — searchTeamMembers handles search server-side
-        members = searchMembers.map((m) => ({
-          value: String(m.userId),
-          label: m.name || m.email || "",
-          avatar: m.avatarUrl || "",
-          email: m.email,
-          weight: localWeights[String(m.userId)] ?? hostWeightsMap.get(m.userId) ?? 100,
-        }));
-      }
-    } else {
-      // assignAllTeamMembers OFF: assignmentHosts handles search server-side
-      const rrHosts = assignmentHosts.filter((h) => !h.isFixed);
-      members = rrHosts.map((h) => ({
-        value: String(h.userId),
-        label: h.name || h.email || "",
-        avatar: h.avatarUrl || "",
-        email: h.email || "",
-        weight: localWeights[String(h.userId)] ?? h.weight ?? 100,
-      }));
-    }
-
-    // Client-side search for segment path (loaded all at once)
-    if (hasSegmentResults && debouncedSearch) {
-      const q = debouncedSearch.toLowerCase();
-      return members.filter((m) => m.label.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      members = members.filter(
+        (m) => m.label.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
+      );
     }
 
     return members;
-  }, [assignAllTeamMembers, hasSegmentResults, segmentMembers, searchMembers, assignmentHosts, hostWeightsMap, localWeights, debouncedSearch]);
-
-  // Unified list for CSV upload lookup
-  const loadedMembers = useMemo(() => {
-    if (assignAllTeamMembers) {
-      if (hasSegmentResults) {
-        return segmentMembers.map((m) => ({ userId: m.id, email: m.email }));
-      }
-      return searchMembers.map((m) => ({ userId: m.userId, email: m.email }));
-    }
-    return assignmentHosts
-      .filter((h) => !h.isFixed)
-      .map((h) => ({ userId: h.userId, email: h.email }));
-  }, [assignAllTeamMembers, hasSegmentResults, segmentMembers, searchMembers, assignmentHosts]);
+  }, [allMembers, localWeights, hostWeightsMap, searchQuery]);
 
   const utils = trpc.useUtils();
   const [isDownloading, setIsDownloading] = useState(false);
@@ -366,12 +249,8 @@ export const EditWeightsForAllTeamMembers = ({
         const [, , email, weightStr] = line.split(",");
         if (!email || !weightStr) continue;
 
-        const member = loadedMembers.find((m) => m.email === email);
-        if (!member || !hostWeightsMap.has(member.userId)) {
-          newErrors.push({ email, error: t("member_not_found") });
-          continue;
-        }
-        if (segmentMemberIds && !segmentMemberIds.has(member.userId)) {
+        const member = allMembers.find((m) => m.email === email);
+        if (!member) {
           newErrors.push({ email, error: t("member_not_found") });
           continue;
         }
