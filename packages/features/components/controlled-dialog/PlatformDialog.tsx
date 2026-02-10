@@ -5,5 +5,5 @@ export type PlatformDialogProps = React.ComponentProps<
 >;
 
 export function PlatformDialog(props: PlatformDialogProps) {
-  return <DialogPrimitive.Dialog {...props} />;
+  return <DialogPrimitive.Root {...props} />;
 }

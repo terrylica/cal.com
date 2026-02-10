@@ -16,7 +16,7 @@ export type DialogProps = React.ComponentProps<(typeof DialogPrimitive)["Root"]>
  * For URL-based state management, import ControlledDialog from "./ControlledDialog" directly.
  */
 export function Dialog({ isPlatform: _isPlatform, name: _name, clearQueryParamsOnClose: _clear, ...props }: DialogProps) {
-  return <DialogPrimitive.Dialog {...props} />;
+  return <DialogPrimitive.Root {...props} />;
 }
 
 // Keep PlatformDialog export for backwards compatibility (same as Dialog now)
