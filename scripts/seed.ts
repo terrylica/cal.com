@@ -693,6 +693,83 @@ async function ensureAcmeOwnerHasApiKeySeeded() {
   }
 }
 
+async function seedPerHostLocations(
+  team: { id: number; eventTypes: { id: number; slug: string; schedulingType: string | null }[] },
+  users: {
+    proUserTeam: { id: number };
+    pro2UserTeam: { id: number };
+    pro3UserTeam: { id: number };
+  }
+) {
+  const rrEventType = team.eventTypes.find((et) => et.schedulingType === SchedulingType.ROUND_ROBIN);
+  if (!rrEventType) {
+    console.log("No Round Robin event type found for per-host location seeding");
+    return;
+  }
+
+  const existingHostLocations = await prisma.hostLocation.findFirst({
+    where: { eventTypeId: rrEventType.id },
+  });
+  if (existingHostLocations) {
+    console.log("Per-host locations already seeded, skipping.");
+    return;
+  }
+
+  await prisma.eventType.update({
+    where: { id: rrEventType.id },
+    data: { enablePerHostLocations: true },
+  });
+
+  const zoomCredential = await prisma.credential.create({
+    data: {
+      type: "zoom_video",
+      key: { access_token: "MOCK_ZOOM_ACCESS_TOKEN", token_type: "bearer" },
+      appId: "zoom",
+      userId: users.proUserTeam.id,
+    },
+  });
+
+  const googleMeetCredential = await prisma.credential.create({
+    data: {
+      type: "google_video",
+      key: { access_token: "MOCK_GOOGLE_ACCESS_TOKEN", token_type: "bearer" },
+      appId: "google-meet",
+      userId: users.pro2UserTeam.id,
+    },
+  });
+
+  await prisma.hostLocation.create({
+    data: {
+      userId: users.proUserTeam.id,
+      eventTypeId: rrEventType.id,
+      type: "integrations:zoom",
+      credentialId: zoomCredential.id,
+    },
+  });
+
+  await prisma.hostLocation.create({
+    data: {
+      userId: users.pro2UserTeam.id,
+      eventTypeId: rrEventType.id,
+      type: "integrations:google:meet",
+      credentialId: googleMeetCredential.id,
+    },
+  });
+
+  await prisma.hostLocation.create({
+    data: {
+      userId: users.pro3UserTeam.id,
+      eventTypeId: rrEventType.id,
+      type: "integrations:daily",
+    },
+  });
+
+  console.log(
+    `🏠 Seeded per-host locations for RR event type "${rrEventType.slug}" (id=${rrEventType.id}): ` +
+      `proUserTeam→Zoom, pro2UserTeam→Google Meet, pro3UserTeam→Daily Video (Cal Video)`
+  );
+}
+
 async function main() {
   await createUserAndEventType({
     user: {
@@ -1152,7 +1229,7 @@ async function main() {
     });
   }
 
-  await createTeamAndAddUsers(
+  const seededTeam = await createTeamAndAddUsers(
     {
       name: "Seeded Team",
       slug: "seeded-team",
@@ -1200,6 +1277,14 @@ async function main() {
       },
     ]
   );
+
+  if (seededTeam) {
+    await seedPerHostLocations(seededTeam, {
+      proUserTeam,
+      pro2UserTeam,
+      pro3UserTeam,
+    });
+  }
 
   await createTeamAndAddUsers(
     {
