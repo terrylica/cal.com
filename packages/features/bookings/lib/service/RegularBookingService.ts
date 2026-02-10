@@ -1521,7 +1521,6 @@ async function handler(
     additionalNotes,
   })
     .withEventType({
-      slug: eventType.slug,
       description: eventType.description,
       id: eventType.id,
       hideCalendarNotes: eventType.hideCalendarNotes,
@@ -1536,17 +1535,6 @@ async function handler(
       disableRescheduling: eventType.disableRescheduling ?? false,
       disableCancelling: eventType.disableCancelling ?? false,
     })
-    .withOrganizer({
-      id: organizerUser.id,
-      name: organizerUser.name || "Nameless",
-      email: organizerEmail,
-      username: organizerUser.username || undefined,
-      usernameInOrg: organizerOrganizationProfile?.username || undefined,
-      timeZone: organizerUser.timeZone,
-      language: { translate: tOrganizer, locale: organizerUser.locale ?? "en" },
-      timeFormat: getTimeFormatStringFromUserTimeFormat(organizerUser.timeFormat),
-    })
-    .withAttendees(attendeesList)
     .withMetadataAndResponses({
       additionalNotes,
       customInputs,

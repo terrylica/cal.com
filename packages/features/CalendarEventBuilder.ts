@@ -5,7 +5,7 @@ import type { BookingRepository } from "@calcom/features/bookings/repositories/B
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
 import { parseRecurringEvent } from "@calcom/lib/isRecurringEvent";
 import { getTranslation } from "@calcom/lib/server/i18n";
-import { getTimeFormatStringFromUserTimeFormat, type TimeFormat } from "@calcom/lib/timeFormat";
+import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import type {
   Attendee,
   BookingReference,
@@ -18,7 +18,6 @@ import type { SchedulingType } from "@calcom/prisma/enums";
 import { bookingResponses as bookingResponsesSchema } from "@calcom/prisma/zod-utils";
 import type { AppsStatus, CalEventResponses, CalendarEvent, Person } from "@calcom/types/Calendar";
 import type { VideoCallData } from "@calcom/types/VideoApiAdapter";
-import type { TFunction } from "i18next";
 
 type CalendarEventRequiredFields = Required<
   Pick<CalendarEvent, "startTime" | "endTime" | "type" | "bookerUrl" | "title" | "organizer" | "attendees">
@@ -167,7 +166,6 @@ export class CalendarEventBuilder {
     builder
       .withEventType({
         id: eventType.id,
-        slug: eventType.slug,
         description: eventType.description,
         hideCalendarNotes: eventType.hideCalendarNotes,
         hideCalendarEventDetails: eventType.hideCalendarEventDetails,
@@ -180,8 +178,6 @@ export class CalendarEventBuilder {
         disableRescheduling: eventType.disableRescheduling ?? false,
         disableCancelling: eventType.disableCancelling ?? false,
       })
-      .withOrganizer(organizerPerson)
-      .withAttendees(attendeesList)
       .withMetadataAndResponses({
         additionalNotes,
         customInputs: parsedCustomInputs,
@@ -312,7 +308,7 @@ export class CalendarEventBuilder {
   }
 
   withEventType(eventType: {
-    slug: string;
+    slug?: string;
     description?: string | null;
     id: number;
     hideCalendarNotes?: boolean;
@@ -328,7 +324,6 @@ export class CalendarEventBuilder {
   }) {
     this.event = {
       ...this.event,
-      type: eventType.slug,
       description: eventType.description,
       eventTypeId: eventType.id,
       hideCalendarNotes: eventType.hideCalendarNotes,
@@ -342,43 +337,6 @@ export class CalendarEventBuilder {
       customReplyToEmail: eventType.customReplyToEmail,
       disableRescheduling: eventType.disableRescheduling ?? false,
       disableCancelling: eventType.disableCancelling ?? false,
-    };
-    return this;
-  }
-
-  withOrganizer(organizer: {
-    id: number;
-    name: string | null;
-    email: string;
-    username?: string;
-    usernameInOrg?: string;
-    timeZone: string;
-    timeFormat?: TimeFormat;
-    language: {
-      translate: TFunction;
-      locale: string;
-    };
-  }) {
-    this.event = {
-      ...this.event,
-      organizer: {
-        id: organizer.id,
-        name: organizer.name || "Nameless",
-        email: organizer.email,
-        username: organizer.username,
-        usernameInOrg: organizer.usernameInOrg,
-        timeZone: organizer.timeZone,
-        language: organizer.language,
-        timeFormat: organizer.timeFormat,
-      },
-    };
-    return this;
-  }
-
-  withAttendees(attendees: Person[]) {
-    this.event = {
-      ...this.event,
-      attendees,
     };
     return this;
   }

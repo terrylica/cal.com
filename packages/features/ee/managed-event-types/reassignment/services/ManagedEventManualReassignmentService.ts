@@ -482,19 +482,10 @@ export class ManagedEventManualReassignmentService {
       })
         .withEventType({
           id: targetEventTypeDetails.id,
-          slug: targetEventTypeDetails.slug,
           description: newBooking.description,
           hideOrganizerEmail: targetEventTypeDetails.hideOrganizerEmail,
           schedulingType: targetEventTypeDetails.schedulingType,
         })
-        .withOrganizer({
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          timeZone: newUser.timeZone,
-          language: { translate: newUserT, locale: newUser.locale ?? "en" },
-        })
-        .withAttendees(attendees)
         .withLocation({
           location: bookingLocation || null,
           conferenceCredentialId: conferenceCredentialId ?? undefined,
@@ -704,20 +695,10 @@ export class ManagedEventManualReassignmentService {
       })
         .withEventType({
           id: targetEventTypeDetails.id,
-          slug: targetEventTypeDetails.slug,
           description: newBooking.description,
           schedulingType: parentEventType.schedulingType,
           seatsPerTimeSlot: targetEventTypeDetails.seatsPerTimeSlot,
         })
-        .withOrganizer({
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          timeZone: newUser.timeZone,
-          timeFormat: getTimeFormatStringFromUserTimeFormat(newUser.timeFormat),
-          language: { translate: newUserT, locale: newUser.locale ?? "en" },
-        })
-        .withAttendees(attendeesForEmail)
         .withLocation({
           location: bookingLocation || null,
         })

@@ -115,7 +115,19 @@ describe("CalendarEventBuilder", () => {
   });
 
   it("should create an event with organizer details", () => {
-    const event = createBuilder()
+    const organizer = {
+      id: 456,
+      name: "John Doe",
+      email: "john@example.com",
+      username: "johndoe",
+      timeZone: "America/New_York",
+      language: {
+        translate: mockTranslate,
+        locale: "en",
+      },
+    };
+
+    const event = createBuilder({ organizer })
       .withBasicDetails({
         bookerUrl: "https://cal.com/user/test-slug",
         title: "Test Event",
@@ -126,62 +138,11 @@ describe("CalendarEventBuilder", () => {
         slug: "test-slug",
         id: 123,
       })
-      .withOrganizer({
-        id: 456,
-        name: "John Doe",
-        email: "john@example.com",
-        username: "johndoe",
-        timeZone: "America/New_York",
-        language: {
-          translate: mockTranslate,
-          locale: "en",
-        },
-      })
       .build();
 
     expect(event).not.toBeNull();
     if (event) {
-      expect(event.organizer).toEqual({
-        id: 456,
-        name: "John Doe",
-        email: "john@example.com",
-        username: "johndoe",
-        timeZone: "America/New_York",
-        language: {
-          translate: mockTranslate,
-          locale: "en",
-        },
-      });
-    }
-  });
-
-  it("should handle nameless organizer", () => {
-    const event = createBuilder()
-      .withBasicDetails({
-        bookerUrl: "https://cal.com/user/test-slug",
-        title: "Test Event",
-        startTime: mockStartTime,
-        endTime: mockEndTime,
-      })
-      .withEventType({
-        slug: "test-slug",
-        id: 123,
-      })
-      .withOrganizer({
-        id: 456,
-        name: null,
-        email: "john@example.com",
-        timeZone: "America/New_York",
-        language: {
-          translate: mockTranslate,
-          locale: "en",
-        },
-      })
-      .build();
-
-    expect(event).not.toBeNull();
-    if (event) {
-      expect(event.organizer.name).toBe("Nameless");
+      expect(event.organizer).toEqual(organizer);
     }
   });
 
@@ -207,7 +168,7 @@ describe("CalendarEventBuilder", () => {
       },
     ];
 
-    const event = createBuilder()
+    const event = createBuilder({ attendees })
       .withBasicDetails({
         bookerUrl: "https://cal.com/user",
         title: "Test Event",
@@ -218,7 +179,6 @@ describe("CalendarEventBuilder", () => {
         slug: "test-slug",
         id: 123,
       })
-      .withAttendees(attendees)
       .build();
 
     expect(event).not.toBeNull();
@@ -725,7 +685,31 @@ describe("CalendarEventBuilder", () => {
   });
 
   it("should create a complete calendar event with all properties", () => {
-    const event = createBuilder()
+    const organizer = {
+      id: 456,
+      name: "John Doe",
+      email: "john@example.com",
+      username: "johndoe",
+      timeZone: "America/New_York",
+      language: {
+        translate: mockTranslate,
+        locale: "en",
+      },
+    };
+
+    const attendees = [
+      {
+        email: "attendee@example.com",
+        name: "Attendee",
+        timeZone: "Europe/London",
+        language: {
+          translate: mockTranslate,
+          locale: "en",
+        },
+      },
+    ];
+
+    const event = createBuilder({ type: "complete-test", organizer, attendees })
       .withBasicDetails({
         bookerUrl: "https://cal.com/user/test-slug",
         title: "Complete Test Event",
@@ -740,28 +724,6 @@ describe("CalendarEventBuilder", () => {
         hideCalendarNotes: true,
         hideCalendarEventDetails: false,
       })
-      .withOrganizer({
-        id: 456,
-        name: "John Doe",
-        email: "john@example.com",
-        username: "johndoe",
-        timeZone: "America/New_York",
-        language: {
-          translate: mockTranslate,
-          locale: "en",
-        },
-      })
-      .withAttendees([
-        {
-          email: "attendee@example.com",
-          name: "Attendee",
-          timeZone: "Europe/London",
-          language: {
-            translate: mockTranslate,
-            locale: "en",
-          },
-        },
-      ])
       .withMetadataAndResponses({
         customInputs: { question1: "answer1" },
         responses: {
@@ -1571,7 +1533,6 @@ describe("CalendarEventBuilder", () => {
       const eventFromBooking = await CalendarEventBuilder.fromBooking(mockBooking);
       const builtFromBooking = eventFromBooking.build();
 
-      const manualBuilder = createBuilder();
       const organizerPerson = {
         id: 8,
         name: "Match Host",
@@ -1587,6 +1548,12 @@ describe("CalendarEventBuilder", () => {
         timeZone: "America/New_York",
         language: { translate: mockTranslate, locale: "en" },
       };
+
+      const manualBuilder = createBuilder({
+        type: "match-event",
+        organizer: organizerPerson,
+        attendees: [attendeePerson],
+      });
 
       const manualEvent = manualBuilder
         .withBasicDetails({
@@ -1611,8 +1578,6 @@ describe("CalendarEventBuilder", () => {
           disableRescheduling: false,
           disableCancelling: false,
         })
-        .withOrganizer(organizerPerson)
-        .withAttendees([attendeePerson])
         .withLocation({ location: "Test Location" })
         .withIdentifiers({ iCalUID: "match-ical", iCalSequence: 1 })
         .withConfirmation({ requiresConfirmation: false, isConfirmedByDefault: true })
