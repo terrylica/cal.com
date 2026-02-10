@@ -1,9 +1,3 @@
-import type {
-  BookingUpdateData,
-  BookingWhereInput,
-  BookingWhereUniqueInput,
-  IBookingRepository,
-} from "@calcom/features/bookings/repositories/IBookingRepository";
 import { withReporting } from "@calcom/lib/sentryWrapper";
 import type { PrismaClient } from "@calcom/prisma";
 import type { Booking, Prisma } from "@calcom/prisma/client";
@@ -14,6 +8,13 @@ import {
   bookingMinimalSelect,
 } from "@calcom/prisma/selects/booking";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
+
+import type {
+  BookingWhereInput,
+  IBookingRepository,
+  BookingUpdateData,
+  BookingWhereUniqueInput,
+} from "./IBookingRepository";
 import { workflowSelect } from "../../ee/workflows/lib/getAllWorkflows";
 
 const workflowReminderSelect = {
