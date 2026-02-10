@@ -48,7 +48,7 @@ import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import classNames from "@calcom/ui/classNames";
 import { Form } from "@calcom/ui/components/form";
-import { showToast } from "@calcom/ui/components/toast";
+import { toastManager } from "@coss/ui/components/toast";
 import { revalidateTravelSchedules } from "@calcom/web/app/cache/travelSchedule";
 
 import TravelScheduleModal from "@components/settings/TravelScheduleModal";
@@ -98,7 +98,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
       revalidateSettingsGeneral();
       revalidateTravelSchedules();
       reset(getValues());
-      showToast(t("settings_updated_successfully"), "success");
+      toastManager.add({ title: t("settings_updated_successfully"), type: "success" });
       await update(res);
 
       if (res.locale) {
@@ -107,7 +107,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
       }
     },
     onError: () => {
-      showToast(t("error_updating_settings"), "error");
+      toastManager.add({ title: t("error_updating_settings"), type: "error" });
     },
     onSettled: async () => {
       await utils.viewer.me.invalidate();
