@@ -502,9 +502,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
             userId: ctx.user.id,
             createdAt: new Date().toISOString(),
           });
-        }
-
-        if (!SCANNING_WORKFLOW_STEPS && !isFormTrigger(trigger)) {
+        } else if (!isFormTrigger(trigger)) {
           // schedule notifications for edited steps (only for event-based triggers)
           await scheduleWorkflowNotifications({
             activeOn: activeOnEventTypeIds,

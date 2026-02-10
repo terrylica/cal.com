@@ -178,6 +178,8 @@ export async function scheduleBookingReminders(
             userId: userId,
             teamId: teamId,
             verifiedAt: step?.verifiedAt ?? null,
+            autoTranslateEnabled: step.autoTranslateEnabled,
+            sourceLocale: step.sourceLocale,
             creditCheckFn: creditService.hasAvailableCredits.bind(creditService),
           });
         } else if (step.action === WorkflowActions.WHATSAPP_ATTENDEE) {
@@ -197,6 +199,8 @@ export async function scheduleBookingReminders(
             userId: userId,
             teamId: teamId,
             verifiedAt: step?.verifiedAt ?? null,
+            autoTranslateEnabled: step.autoTranslateEnabled,
+            sourceLocale: step.sourceLocale,
             creditCheckFn: creditService.hasAvailableCredits.bind(creditService),
           });
         }

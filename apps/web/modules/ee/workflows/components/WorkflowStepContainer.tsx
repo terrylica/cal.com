@@ -8,7 +8,6 @@ import "react-phone-number-input/style.css";
 
 import type { RetellAgentWithDetails } from "@calcom/features/calAIPhone/providers/retellAI";
 import { Dialog } from "@calcom/features/components/controlled-dialog";
-import PhoneInput from "@calcom/web/components/phone-input";
 import {
   getTemplateBodyForAction,
   hasCalAIAction,
@@ -27,6 +26,7 @@ import {
 import emailRatingTemplate from "@calcom/features/ee/workflows/lib/reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "@calcom/features/ee/workflows/lib/reminders/templates/emailReminderTemplate";
 import type { FormValues } from "@calcom/features/ee/workflows/lib/types";
+import PhoneInput from "@calcom/web/components/phone-input";
 import "@calcom/features/ee/workflows/style/styles.css";
 import { SENDER_ID, SENDER_NAME } from "@calcom/lib/constants";
 import { formatPhoneNumber } from "@calcom/lib/formatPhoneNumber";
@@ -477,7 +477,7 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
   const verifyEmailCodeMutation = trpc.viewer.workflows.verifyEmailCode.useMutation({
     onSuccess: (isVerified) => {
       showToast(isVerified ? t("verified_successfully") : t("wrong_code"), "success");
-      setEmailVerified(true);
+      setEmailVerified(isVerified);
       if (
         step &&
         form?.formState?.errors?.steps &&
