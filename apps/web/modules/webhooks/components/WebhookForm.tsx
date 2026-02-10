@@ -410,11 +410,10 @@ const WebhookForm = (props: {
               ref={ref}
               placeholder="https://example.com/webhook"
               type="url"
-              value={value ?? ""}
+              value={value}
               required
               onBlur={onBlur}
-              onChange={(e) => {
-                const urlValue = e?.target?.value ?? "";
+              onValueChange={(urlValue) => {
                 onChange(urlValue);
                 if (urlValue && hasTemplateIntegration({ url: urlValue })) {
                   setCustomPayloadOpen(true);
@@ -612,10 +611,9 @@ const WebhookForm = (props: {
                     value={changeSecret ? newSecret : "••••••••••••"}
                     readOnly={!changeSecret}
                     disabled={!changeSecret}
-                    onChange={
+                    onValueChange={
                       changeSecret
-                        ? (event) => {
-                            const v = event.currentTarget.value;
+                        ? (v) => {
                             setNewSecret(v);
                             onChange(v);
                           }
@@ -647,7 +645,7 @@ const WebhookForm = (props: {
                 <Input
                   type="text"
                   value={value ?? ""}
-                  onChange={(e) => onChange(e?.target?.value ?? "")}
+                  onValueChange={onChange}
                 />
               </>
             )}
