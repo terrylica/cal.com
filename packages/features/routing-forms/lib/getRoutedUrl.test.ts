@@ -13,7 +13,6 @@ import { UserRepository } from "@calcom/features/users/repositories/UserReposito
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import type { GetServerSidePropsContext } from "next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { getRoutedUrl } from "./getRoutedUrl";
 import { getUrlSearchParamsToForward } from "./getUrlSearchParamsToForward";
 import { handleResponse } from "./handleResponse";
@@ -331,6 +330,50 @@ describe("getRoutedUrl", () => {
     await expect(getRoutedUrl(context)).rejects.toThrow("Rate limit exceeded");
     expect(checkRateLimitAndThrowError).toHaveBeenCalledWith({
       identifier: `form:form-id:hash:${expectedHash}`,
+    });
+  });
+
+  describe("Custom Domain", () => {
+    it("should pass custom domain as currentOrgDomain to authorization check", async () => {
+      vi.mocked(orgDomainConfig).mockReturnValue({
+        currentOrgDomain: "booking.acme.com",
+        isValidOrgDomain: true,
+        customDomain: "booking.acme.com",
+      });
+      vi.mocked(PrismaRoutingFormRepository.findFormByIdIncludeUserTeamAndOrg).mockResolvedValue(
+        mockForm as never
+      );
+
+      const redirectUrl = "test-user/30min";
+      const mockRoute = { id: "route1", action: { type: "eventTypeRedirectUrl", value: redirectUrl } };
+      vi.mocked(findMatchingRoute).mockReturnValue(mockRoute as never);
+      vi.mocked(getAbsoluteEventTypeRedirectUrlWithEmbedSupport).mockReturnValue(`/${redirectUrl}`);
+
+      const context = mockContext({});
+      await getRoutedUrl(context);
+
+      expect(isAuthorizedToViewFormOnOrgDomain).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currentOrgDomain: "booking.acme.com",
+        })
+      );
+    });
+
+    it("should return notFound when form is not authorized on custom domain", async () => {
+      vi.mocked(orgDomainConfig).mockReturnValue({
+        currentOrgDomain: "booking.acme.com",
+        isValidOrgDomain: true,
+        customDomain: "booking.acme.com",
+      });
+      vi.mocked(PrismaRoutingFormRepository.findFormByIdIncludeUserTeamAndOrg).mockResolvedValue(
+        mockForm as never
+      );
+      vi.mocked(isAuthorizedToViewFormOnOrgDomain).mockReturnValue(false);
+
+      const context = mockContext({});
+      const result = await getRoutedUrl(context);
+
+      expect(result).toEqual({ notFound: true });
     });
   });
 

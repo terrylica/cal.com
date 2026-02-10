@@ -1,12 +1,10 @@
-import type { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
-
+import process from "node:process";
 import dayjs from "@calcom/dayjs";
 import { prisma } from "@calcom/prisma";
-import { MembershipRole } from "@calcom/prisma/enums";
-import { BookingStatus } from "@calcom/prisma/enums";
+import { BookingStatus, MembershipRole } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
-
+import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { test } from "./lib/fixtures";
 import {
   bookTimeSlot,
@@ -434,12 +432,50 @@ test.describe("Reschedule Tests", async () => {
       );
     });
 
+    test("Booking should be rescheduleable on custom domain", async ({ users, bookings, orgs, page }) => {
+      const org = await orgs.create({
+        name: "TestOrg",
+      });
+      const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+      await prisma.customDomain.create({
+        data: { teamId: org.id, slug: customDomainSlug, verified: true },
+      });
+
+      const orgMember = await users.create({
+        username: "username-outside-org",
+        organizationId: org.id,
+        profileUsername: "username-inside-org",
+        roleInOrganization: MembershipRole.MEMBER,
+      });
+      const profileUsername = (await orgMember.getFirstProfile()).username;
+      const eventType = orgMember.eventTypes[0];
+      const booking = await bookings.create(orgMember.id, orgMember.username, eventType.id);
+
+      await doOnOrgDomain(
+        {
+          orgSlug: customDomainSlug,
+          page,
+        },
+        async ({ page, goToUrlWithErrorHandling }) => {
+          const result = await goToUrlWithErrorHandling(`/reschedule/${booking.uid}`);
+          const urlObject = new URL(result.url);
+          const usernameInUrl = urlObject.pathname.split("/")[1];
+          expect(usernameInUrl).toEqual(profileUsername);
+
+          await selectFirstAvailableTimeSlotNextMonth(page);
+          const { protocol, host } = new URL(page.url());
+          const apiUrl = `${protocol}//${host}/api/book/event`.replace(customDomainSlug, "app");
+          await confirmReschedule(page, apiUrl);
+          await expect(page.locator("[data-testid=success-page]")).toBeVisible();
+        }
+      );
+    });
+
     const getNonOrgUrlFromOrgUrl = (url: string, orgSlug: string) => url.replace(orgSlug, "app");
 
     async function expectSuccessfulReschedule(page: Page, orgSlug: string) {
       await selectFirstAvailableTimeSlotNextMonth(page);
       const { protocol, host } = new URL(page.url());
-      // Needed since we we're expecting a non-org URL, causing timeouts.
       const url = getNonOrgUrlFromOrgUrl(`${protocol}//${host}/api/book/event`, orgSlug);
       await confirmReschedule(page, url);
       await expect(page.locator("[data-testid=success-page]")).toBeVisible();

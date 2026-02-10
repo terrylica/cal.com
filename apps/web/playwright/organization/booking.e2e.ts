@@ -1,12 +1,12 @@
+import { getOrgUsernameFromEmail } from "@calcom/features/auth/signup/utils/getOrgUsernameFromEmail";
+import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
+import { WEBAPP_URL } from "@calcom/lib/constants";
+import { prisma } from "@calcom/prisma";
+import { MembershipRole, SchedulingType } from "@calcom/prisma/enums";
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { JSDOM } from "jsdom";
 import { uuid } from "short-uuid";
-
-import { getOrgUsernameFromEmail } from "@calcom/features/auth/signup/utils/getOrgUsernameFromEmail";
-import { WEBAPP_URL } from "@calcom/lib/constants";
-import { MembershipRole, SchedulingType } from "@calcom/prisma/enums";
-
 import { test } from "../lib/fixtures";
 import {
   bookTeamEvent,
@@ -184,7 +184,7 @@ test.describe("Bookings", () => {
           // Anyone of the teammates could be the Host of the booking.
           const chosenUser = await page.getByTestId("booking-host-name").textContent();
           expect(chosenUser).not.toBeNull();
-           
+
           expect(teamMatesObj.concat([{ name: owner.name! }]).some(({ name }) => name === chosenUser)).toBe(
             true
           );
@@ -248,7 +248,7 @@ test.describe("Bookings", () => {
           // Anyone of the teammates could be the Host of the booking.
           const chosenUser = await page.getByTestId("booking-host-name").textContent();
           expect(chosenUser).not.toBeNull();
-           
+
           expect(teamMatesObj.concat([{ name: owner.name! }]).some(({ name }) => name === chosenUser)).toBe(
             true
           );
@@ -599,6 +599,97 @@ test.describe("Bookings", () => {
           );
           // Verify Organizer Name in the URL
           expect(ogImage).toContain("meetingProfileName%3DTest%2BUser");
+        }
+      );
+    });
+  });
+
+  test.describe("Custom Domain", () => {
+    test("Can create a booking for Collective EventType on custom domain", async ({ page, users, orgs }) => {
+      const org = await orgs.create({
+        name: "TestOrg",
+      });
+      const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+      await prisma.customDomain.create({
+        data: { teamId: org.id, slug: customDomainSlug, verified: true },
+      });
+
+      const teamMatesObj = [
+        { name: "teammate-1" },
+        { name: "teammate-2" },
+        { name: "teammate-3" },
+        { name: "teammate-4" },
+      ];
+
+      const owner = await users.create(
+        {
+          username: "pro-user",
+          name: "pro-user",
+          organizationId: org.id,
+          roleInOrganization: MembershipRole.MEMBER,
+        },
+        {
+          hasTeam: true,
+          teammates: teamMatesObj,
+          schedulingType: SchedulingType.COLLECTIVE,
+        }
+      );
+      const { team } = await owner.getFirstTeamMembership();
+      const teamEvent = await owner.getFirstTeamEvent(team.id);
+
+      await expectPageToBeNotFound({ page, url: `/team/${team.slug}/${teamEvent.slug}` });
+      await doOnOrgDomain(
+        {
+          orgSlug: customDomainSlug,
+          page,
+        },
+        async () => {
+          await bookTeamEvent({ page, team, event: teamEvent });
+          for (const teammate of teamMatesObj.concat([{ name: owner.name || "" }])) {
+            await expect(page.getByText(teammate.name, { exact: true })).toBeVisible();
+          }
+        }
+      );
+    });
+
+    test("check SSR and OG tags use custom domain origin", async ({ page, users, orgs }) => {
+      const name = "Test User";
+      const org = await orgs.create({
+        name: "TestOrg",
+      });
+      const customDomainSlug = `booking-${Math.random().toString(36).substring(7)}.testorg.com`;
+      await prisma.customDomain.create({
+        data: { teamId: org.id, slug: customDomainSlug, verified: true },
+      });
+
+      const user = await users.create({
+        name,
+        organizationId: org.id,
+        roleInOrganization: MembershipRole.MEMBER,
+      });
+
+      const firstEventType = await user.getFirstEventAsOwner();
+      const calLink = `/${user.username}/${firstEventType.slug}`;
+      const customDomainOrigin = getOrgFullOrigin(customDomainSlug, { isCustomDomain: true });
+
+      await doOnOrgDomain(
+        {
+          orgSlug: customDomainSlug,
+          page,
+        },
+        async () => {
+          const [response] = await Promise.all([
+            page.waitForResponse(
+              (response) => response.url().includes(`${calLink}`) && response.status() === 200
+            ),
+            page.goto(`${calLink}`),
+          ]);
+          const ssrResponse = await response.text();
+          const document = new JSDOM(ssrResponse).window.document;
+          const ogUrl = document.querySelector('meta[property="og:url"]')?.getAttribute("content");
+          const canonicalLink = document.querySelector('link[rel="canonical"]')?.getAttribute("href");
+          expect(ogUrl).toEqual(`${customDomainOrigin}${calLink}`);
+          expect(canonicalLink).toEqual(`${customDomainOrigin}${calLink}`);
         }
       );
     });
