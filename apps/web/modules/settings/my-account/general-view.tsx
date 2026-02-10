@@ -52,6 +52,7 @@ import { showToast } from "@calcom/ui/components/toast";
 import { revalidateTravelSchedules } from "@calcom/web/app/cache/travelSchedule";
 
 import TravelScheduleModal from "@components/settings/TravelScheduleModal";
+import { Icon } from "@calcom/ui/components/icon";
 
 export type FormValues = {
   locale: {
