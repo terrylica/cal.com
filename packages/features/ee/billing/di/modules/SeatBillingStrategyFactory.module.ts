@@ -7,6 +7,7 @@ import { billingProviderServiceModuleLoader } from "./BillingProviderService";
 import { highWaterMarkRepositoryModuleLoader } from "./HighWaterMarkRepository";
 import { highWaterMarkServiceModuleLoader } from "./HighWaterMarkService";
 import { monthlyProrationServiceModuleLoader } from "./MonthlyProrationService";
+import { teamBillingDataRepositoryModuleLoader } from "./TeamBillingDataRepositoryFactory";
 
 const thisModule = createModule();
 const token = DI_TOKENS.SEAT_BILLING_STRATEGY_FACTORY;
@@ -24,6 +25,7 @@ const loadModule = bindModuleToClassOnToken({
     highWaterMarkRepository: highWaterMarkRepositoryModuleLoader,
     highWaterMarkService: highWaterMarkServiceModuleLoader,
     monthlyProrationService: monthlyProrationServiceModuleLoader,
+    teamBillingDataRepository: teamBillingDataRepositoryModuleLoader,
   },
 });
 

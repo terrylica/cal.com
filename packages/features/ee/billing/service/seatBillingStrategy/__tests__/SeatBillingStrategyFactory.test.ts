@@ -1,5 +1,6 @@
 import type { IFeaturesRepository } from "@calcom/features/flags/features.repository.interface";
 import { describe, expect, it, vi } from "vitest";
+import type { ITeamBillingDataRepository } from "../../../repository/teamBillingData/ITeamBillingDataRepository";
 import type { BillingPeriodInfo } from "../../billingPeriod/BillingPeriodService";
 import type { IBillingProviderService } from "../../billingProvider/IBillingProviderService";
 import { HighWaterMarkStrategy } from "../HighWaterMarkStrategy";
@@ -24,7 +25,6 @@ function createMockBillingProviderService(): IBillingProviderService {
 function createMockHighWaterMarkRepository() {
   return {
     getByTeamId: vi.fn(),
-    getBySubscriptionId: vi.fn(),
     updateIfHigher: vi.fn().mockResolvedValue({ updated: false, previousHighWaterMark: null }),
   };
 }
@@ -43,6 +43,14 @@ function createMockMonthlyProrationService() {
   };
 }
 
+function createMockTeamBillingDataRepository(): ITeamBillingDataRepository {
+  return {
+    find: vi.fn(),
+    findBySubscriptionId: vi.fn().mockResolvedValue(null),
+    findMany: vi.fn(),
+  };
+}
+
 const baseBillingInfo: BillingPeriodInfo = {
   billingPeriod: null,
   subscriptionStart: new Date("2025-01-01"),
@@ -56,15 +64,16 @@ const baseBillingInfo: BillingPeriodInfo = {
 function createFactory(
   info: BillingPeriodInfo,
   enabledFlags: Record<string, boolean>,
-  overrides?: { highWaterMarkRepository?: ReturnType<typeof createMockHighWaterMarkRepository> }
+  overrides?: { teamBillingDataRepository?: ITeamBillingDataRepository }
 ): SeatBillingStrategyFactory {
   return new SeatBillingStrategyFactory({
     billingPeriodService: createMockBillingPeriodService(info),
     featuresRepository: createMockFeaturesRepository(enabledFlags),
     billingProviderService: createMockBillingProviderService(),
-    highWaterMarkRepository: overrides?.highWaterMarkRepository ?? createMockHighWaterMarkRepository(),
+    highWaterMarkRepository: createMockHighWaterMarkRepository(),
     highWaterMarkService: createMockHighWaterMarkService(),
     monthlyProrationService: createMockMonthlyProrationService(),
+    teamBillingDataRepository: overrides?.teamBillingDataRepository ?? createMockTeamBillingDataRepository(),
   } as never);
 }
 
@@ -81,6 +90,7 @@ describe("SeatBillingStrategyFactory", () => {
       highWaterMarkRepository: createMockHighWaterMarkRepository(),
       highWaterMarkService: createMockHighWaterMarkService(),
       monthlyProrationService: createMockMonthlyProrationService(),
+      teamBillingDataRepository: createMockTeamBillingDataRepository(),
     } as never);
     const strategy = await factory.create(1);
 
@@ -148,26 +158,32 @@ describe("SeatBillingStrategyFactory", () => {
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
   });
 
-  it("createBySubscriptionId looks up teamId and delegates to create", async () => {
-    const hwmRepo = createMockHighWaterMarkRepository();
-    hwmRepo.getBySubscriptionId.mockResolvedValue({ teamId: 42 });
+  it("createBySubscriptionId looks up team and delegates to create", async () => {
+    const teamBillingDataRepo = createMockTeamBillingDataRepository();
+    vi.mocked(teamBillingDataRepo.findBySubscriptionId).mockResolvedValue({
+      id: 42,
+      metadata: {},
+      isOrganization: false,
+      parentId: null,
+      name: "Test Team",
+    });
 
     const factory = createFactory(
       { ...baseBillingInfo, billingPeriod: "MONTHLY" },
       { "hwm-seating": true },
-      { highWaterMarkRepository: hwmRepo }
+      { teamBillingDataRepository: teamBillingDataRepo }
     );
     const strategy = await factory.createBySubscriptionId("sub_abc");
 
-    expect(hwmRepo.getBySubscriptionId).toHaveBeenCalledWith("sub_abc");
+    expect(teamBillingDataRepo.findBySubscriptionId).toHaveBeenCalledWith("sub_abc");
     expect(strategy).toBeInstanceOf(HighWaterMarkStrategy);
   });
 
-  it("createBySubscriptionId returns fallback when no billing record found", async () => {
-    const hwmRepo = createMockHighWaterMarkRepository();
-    hwmRepo.getBySubscriptionId.mockResolvedValue(null);
+  it("createBySubscriptionId returns fallback when no team found", async () => {
+    const teamBillingDataRepo = createMockTeamBillingDataRepository();
+    vi.mocked(teamBillingDataRepo.findBySubscriptionId).mockResolvedValue(null);
 
-    const factory = createFactory(baseBillingInfo, {}, { highWaterMarkRepository: hwmRepo });
+    const factory = createFactory(baseBillingInfo, {}, { teamBillingDataRepository: teamBillingDataRepo });
     const strategy = await factory.createBySubscriptionId("sub_unknown");
 
     expect(strategy).toBeInstanceOf(ImmediateUpdateStrategy);
