@@ -5,13 +5,13 @@ import { useCallback } from "react";
 
 import type { API_VERSIONS_ENUM } from "@calcom/platform-constants";
 import { IconSprites } from "@calcom/ui/components/icon";
-import deTranslations from "@calcom/web/public/static/locales/de/atom.json";
-import enTranslations from "@calcom/web/public/static/locales/en/atom.json";
-import esTranslations from "@calcom/web/public/static/locales/es/atom.json";
-import frTranslations from "@calcom/web/public/static/locales/fr/atom.json";
-import itTranslations from "@calcom/web/public/static/locales/it/atom.json";
-import nlTranslations from "@calcom/web/public/static/locales/nl/atom.json";
-import ptBrTranslations from "@calcom/web/public/static/locales/pt-BR/atom.json";
+import deTranslations from "@calcom/config/i18n/locales/de/atom.json";
+import enTranslations from "@calcom/config/i18n/locales/en/atom.json";
+import esTranslations from "@calcom/config/i18n/locales/es/atom.json";
+import frTranslations from "@calcom/config/i18n/locales/fr/atom.json";
+import itTranslations from "@calcom/config/i18n/locales/it/atom.json";
+import nlTranslations from "@calcom/config/i18n/locales/nl/atom.json";
+import ptBrTranslations from "@calcom/config/i18n/locales/pt-BR/atom.json";
 
 import { AtomsContext } from "../hooks/useAtomsContext";
 import { useMe } from "../hooks/useMe";

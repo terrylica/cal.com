@@ -1,10 +1,10 @@
-import type deTranslations from "@calcom/web/public/static/locales/de/atom.json";
-import type enTranslations from "@calcom/web/public/static/locales/en/atom.json";
-import type esTranslations from "@calcom/web/public/static/locales/es/atom.json";
-import type frTranslations from "@calcom/web/public/static/locales/fr/atom.json";
-import type itTranslations from "@calcom/web/public/static/locales/it/atom.json";
-import type nlTranslations from "@calcom/web/public/static/locales/nl/atom.json";
-import type ptBrTranslations from "@calcom/web/public/static/locales/pt-BR/atom.json";
+import type deTranslations from "@calcom/config/i18n/locales/de/atom.json";
+import type enTranslations from "@calcom/config/i18n/locales/en/atom.json";
+import type esTranslations from "@calcom/config/i18n/locales/es/atom.json";
+import type frTranslations from "@calcom/config/i18n/locales/fr/atom.json";
+import type itTranslations from "@calcom/config/i18n/locales/it/atom.json";
+import type nlTranslations from "@calcom/config/i18n/locales/nl/atom.json";
+import type ptBrTranslations from "@calcom/config/i18n/locales/pt-BR/atom.json";
 
 export type enTranslationKeys = keyof typeof enTranslations;
 export type frTranslationKeys = keyof typeof frTranslations;
