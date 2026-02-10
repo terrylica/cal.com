@@ -99,7 +99,6 @@ export default function WebhookListItem(props: {
             <Badge
               variant="outline"
               render={<button type="button" />}
-              className="cursor-pointer"
               onClick={() => setBadgesExpanded(true)}
             >
               +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
