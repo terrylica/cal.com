@@ -47,6 +47,8 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
       ? flat.filter(({ group }) => selectedProfileIds.includes(group.profile.slug ?? ""))
       : flat;
   const hasWebhooks = flat.length > 0;
+  const hasMultipleProfiles =
+    new Set(webhookGroups.map((g) => g.profile.slug ?? "")).size > 1;
 
   return (
     <CardFrame>
@@ -54,11 +56,13 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
         actions={
           hasWebhooks ? (
             <div className="flex items-center gap-2">
-              <WebhooksFilter
-                groups={webhookGroups}
-                selectedProfileIds={selectedProfileIds}
-                onSelectionChange={setSelectedProfileIds}
-              />
+              {hasMultipleProfiles && (
+                <WebhooksFilter
+                  groups={webhookGroups}
+                  selectedProfileIds={selectedProfileIds}
+                  onSelectionChange={setSelectedProfileIds}
+                />
+              )}
               <CreateNewWebhookButton />
             </div>
           ) : undefined
