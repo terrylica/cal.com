@@ -93,13 +93,12 @@ export class EmailWorkflowService {
       creditCheckFn,
     });
 
-    // Use hideBranding from the CalendarEvent if set (calculated in CalendarEventBuilder.fromBooking),
-    // otherwise fall back to fetching it based on event's team or workflow's team/user
     const hideBranding =
       evt.hideBranding ??
-      (await getHideBranding({
-        userId: workflow.userId ?? undefined,
-        teamId: evt.team?.id ?? workflow.teamId ?? undefined,
+      (await this.shouldHideBranding({
+        platformClientId: evt.platformClientId,
+        userId: workflow.userId,
+        teamId: evt.team?.id ?? workflow.teamId,
       }));
 
     const emailWorkflowContentParams = await this.generateParametersToBuildEmailWorkflowContent({
@@ -245,6 +244,27 @@ export class EmailWorkflowService {
       ...contextData,
       verifiedAt: workflowStep.verifiedAt,
     } as const;
+  }
+
+  private async shouldHideBranding({
+    platformClientId,
+    userId,
+    teamId,
+  }: {
+    platformClientId?: string | null;
+    userId?: number | null;
+    teamId?: number | null;
+  }): Promise<boolean> {
+    if (platformClientId) {
+      return true;
+    }
+
+    const hideBranding = await getHideBranding({
+      userId: userId ?? undefined,
+      teamId: teamId ?? undefined,
+    });
+
+    return hideBranding;
   }
 
   async generateEmailPayloadForEvtWorkflow({
