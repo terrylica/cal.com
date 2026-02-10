@@ -117,8 +117,8 @@ export default function WebhookListItem(props: {
               </span>
             </>
           )}
-          {!props.permissions.canEditWebhook && <Badge variant="outline">{t("readonly")}</Badge>}
-          <Badge variant="info" size="sm">{getWebhookVersionLabel(webhook.version)}</Badge>
+          {!props.permissions.canEditWebhook && <Badge variant="warning">{t("readonly")}</Badge>}
+          <Badge variant="info">{getWebhookVersionLabel(webhook.version)}</Badge>
         </div>        
       </ListItemContent>
       {(props.permissions.canEditWebhook || props.permissions.canDeleteWebhook) && (
