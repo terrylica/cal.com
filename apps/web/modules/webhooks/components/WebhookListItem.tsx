@@ -1,22 +1,14 @@
 "use client";
 
+import { getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants";
 import type { Webhook } from "@calcom/features/webhooks/lib/dto/types";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { toastManager } from "@coss/ui/components/toast";
 import { revalidateEventTypeEditPage } from "@calcom/web/app/(use-page-wrapper)/event-types/[type]/actions";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@coss/ui/components/avatar";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
-import {
-  ListItem,
-  ListItemActions,
-  ListItemBadges,
-  ListItemTitle,
-  ListItemContent,
-  ListItemHeader,
-} from "@coss/ui/shared/list-item";
 import {
   Menu,
   MenuCheckboxItem,
@@ -27,11 +19,26 @@ import {
   MenuTrigger,
 } from "@coss/ui/components/menu";
 import { Switch } from "@coss/ui/components/switch";
-import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "@coss/ui/components/tooltip";
+import { toastManager } from "@coss/ui/components/toast";
+import {
+  Tooltip,
+  TooltipCreateHandle,
+  TooltipPopup,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@coss/ui/components/tooltip";
+import {
+  ListItem,
+  ListItemActions,
+  ListItemBadges,
+  ListItemContent,
+  ListItemHeader,
+  ListItemTitle,
+} from "@coss/ui/shared/list-item";
 import { EllipsisIcon, ExternalLinkIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import type { ComponentType } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
-import { getWebhookVersionLabel } from "@calcom/features/webhooks/lib/constants";
 
 const MAX_BADGES_TWO_ROWS = 7;
 
@@ -52,6 +59,7 @@ export default function WebhookListItem(props: {
   const initialActive = useRef(webhook.active).current;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
+  const versionTooltipHandle = useMemo(() => TooltipCreateHandle<ComponentType>(), []);
 
   const deleteWebhook = trpc.viewer.webhook.delete.useMutation({
     async onSuccess() {
@@ -82,25 +90,20 @@ export default function WebhookListItem(props: {
     <ListItem data-testid="webhook-list-item">
       <ListItemContent>
         <ListItemHeader>
-          <ListItemTitle data-testid="webhook-url">
-            {webhook.subscriberUrl}
-          </ListItemTitle>
-        </ListItemHeader>        
+          <ListItemTitle data-testid="webhook-url">{webhook.subscriberUrl}</ListItemTitle>
+        </ListItemHeader>
         <ListItemBadges>
-          {webhook.eventTriggers
-            .slice(0, badgesExpanded ? undefined : MAX_BADGES_TWO_ROWS)
-            .map((trigger) => (
-              <Badge key={trigger} variant="outline">
-                <WebhookIcon />
-                {t(`${trigger.toLowerCase()}`)}
-              </Badge>
-            ))}
+          {webhook.eventTriggers.slice(0, badgesExpanded ? undefined : MAX_BADGES_TWO_ROWS).map((trigger) => (
+            <Badge key={trigger} variant="outline">
+              <WebhookIcon />
+              {t(`${trigger.toLowerCase()}`)}
+            </Badge>
+          ))}
           {!badgesExpanded && webhook.eventTriggers.length > MAX_BADGES_TWO_ROWS && (
             <Badge
               variant="outline"
               render={<button type="button" />}
-              onClick={() => setBadgesExpanded(true)}
-            >
+              onClick={() => setBadgesExpanded(true)}>
               +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
             </Badge>
           )}
@@ -112,13 +115,12 @@ export default function WebhookListItem(props: {
                 <Avatar className="size-4 shrink-0">
                   <AvatarImage src={props.profile.image} alt={props.profile.name ?? ""} />
                   <AvatarFallback className="text-[0.625rem]">
-                    {(props.profile.name || props.profile.slug || "?")
-                      .trim()
-                      .slice(0, 1)
-                      .toUpperCase()}
+                    {(props.profile.name || props.profile.slug || "?").trim().slice(0, 1).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-muted-foreground font-medium text-xs truncate" title={props.profile.name || ""}>
+                <span
+                  className="text-muted-foreground font-medium text-xs truncate"
+                  title={props.profile.name || ""}>
                   {props.profile.name || ""}
                 </span>
               </div>
@@ -126,27 +128,39 @@ export default function WebhookListItem(props: {
             {!props.permissions.canEditWebhook && <Badge variant="warning">{t("readonly")}</Badge>}
             <div className="flex items-center">
               <TooltipProvider delay={0}>
-                <Tooltip>
-                  <TooltipTrigger render={<Badge variant="info" />}>
-                    {getWebhookVersionLabel(webhook.version)}
-                  </TooltipTrigger>
-                  <TooltipPopup>
-                    {t("webhook_version")}
-                  </TooltipPopup>
+                <TooltipTrigger
+                  className="after:absolute after:left-full after:h-full after:w-1"
+                  handle={versionTooltipHandle}
+                  payload={() => <>{t("webhook_version")}</>}
+                  render={<Badge variant="info" />}>
+                  {getWebhookVersionLabel(webhook.version)}
+                </TooltipTrigger>
+                <TooltipTrigger
+                  className="after:absolute after:left-full after:h-full after:w-1"
+                  handle={versionTooltipHandle}
+                  payload={() => (
+                    <>{t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}</>
+                  )}
+                  render={
+                    <a
+                      className="flex h-5 items-center justify-center px-2 sm:h-4.5"
+                      href={`https://cal.com/docs/developing/guides/automation/webhooks#${webhook.version}`}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    />
+                  }>
+                  <span className="sr-only">{t("webhook_version_docs")}</span>
+                  <ExternalLinkIcon aria-hidden="true" className="size-3.5 shrink-0 sm:size-3" />
+                </TooltipTrigger>
+                <Tooltip handle={versionTooltipHandle}>
+                  {({ payload: Payload }) => (
+                    <TooltipPopup>{Payload !== undefined && <Payload />}</TooltipPopup>
+                  )}
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger render={<a className="h-5 sm:h-4.5 px-2 flex items-center justify-center" href={`https://cal.com/docs/developing/guides/automation/webhooks#${webhook.version}`} target="_blank" rel="noopener noreferrer" />}>
-                    <span className="sr-only">{t("webhook_version_docs")}</span>
-                    <ExternalLinkIcon className="size-3.5 sm:size-3 shrink-0" aria-hidden="true" />
-                  </TooltipTrigger>
-                  <TooltipPopup>
-                    {t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}
-                  </TooltipPopup>
-                </Tooltip>            
               </TooltipProvider>
             </div>
           </div>
-        </div>                
+        </div>
       </ListItemContent>
       {(props.permissions.canEditWebhook || props.permissions.canDeleteWebhook) && (
         <ListItemActions>
