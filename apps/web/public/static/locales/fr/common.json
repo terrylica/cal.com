@@ -607,7 +607,6 @@
   "delegation_credential_error": "Erreur d'identifiant de délégation",
   "event_triggers": "Déclencheurs d'événement",
   "subscriber_url": "Lien de l'abonné",
-  "subscriber_url_required": "L'URL de l'abonné est obligatoire",
   "create_new_webhook": "Créez un nouveau webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Webhooks d’équipe",

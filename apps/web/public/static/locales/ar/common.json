@@ -607,7 +607,6 @@
   "delegation_credential_error": "خطأ في بيانات اعتماد التفويض",
   "event_triggers": "مشغلات الحدث",
   "subscriber_url": "رابط المشترك",
-  "subscriber_url_required": "رابط المشترك مطلوب",
   "create_new_webhook": "إنشاء ويب هوك جديد",
   "webhooks": "ويبهوكس",
   "team_webhooks": "فريق ويبهوكس",

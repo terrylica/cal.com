@@ -607,7 +607,6 @@
   "delegation_credential_error": "Delegeerimise volituse viga",
   "event_triggers": "Sündmuste käivitajad",
   "subscriber_url": "Abonendi URL",
-  "subscriber_url_required": "Abonendi URL on nõutud",
   "create_new_webhook": "Loo uus veebihaak",
   "webhooks": "Veebihaagid",
   "team_webhooks": "Meeskonna veebihaagid",

@@ -607,7 +607,6 @@
   "delegation_credential_error": "កំហុសលិខិតសម្គាល់ប្រគល់សិទ្ធិ",
   "event_triggers": "ការបញ្ចុះបញ្ចូលព្រឹត្តិការណ៍",
   "subscriber_url": "URL អ្នកជាវ",
-  "subscriber_url_required": "URL អ្នកជាវ ត្រូវបានទាមទារ",
   "create_new_webhook": "បង្កើត webhook ថ្មី",
   "webhooks": "Webhooks",
   "team_webhooks": "Webhooks ក្រុម",

@@ -607,7 +607,6 @@
   "delegation_credential_error": "Delegálási hitelesítő adat hiba",
   "event_triggers": "Eseményindítók",
   "subscriber_url": "Feliratkozói URL",
-  "subscriber_url_required": "A feliratkozói URL megadása kötelező",
   "create_new_webhook": "Hozzon létre egy új webhookot",
   "webhooks": "Webhookok",
   "team_webhooks": "Csapat Webhookok",

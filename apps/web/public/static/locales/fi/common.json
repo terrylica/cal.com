@@ -607,7 +607,6 @@
   "delegation_credential_error": "Delegointitunnisteen virhe",
   "event_triggers": "Tapahtumaliipaisimet",
   "subscriber_url": "Tilaajan URL",
-  "subscriber_url_required": "Tilaajan URL on pakollinen",
   "create_new_webhook": "Luo uusi webhook",
   "webhooks": "Webhookit",
   "team_webhooks": "Tiimin webhookit",

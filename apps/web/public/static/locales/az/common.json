@@ -607,7 +607,6 @@
   "delegation_credential_error": "Nümayəndəlik etimadnaməsi xətası",
   "event_triggers": "Hadisə tetikleyiciləri",
   "subscriber_url": "Abunəçi URL",
-  "subscriber_url_required": "Abunəçi URL tələb olunur",
   "create_new_webhook": "Yeni webhook yarat",
   "webhooks": "Webhooks",
   "team_webhooks": "Komanda webhooks",

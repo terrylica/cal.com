@@ -607,7 +607,6 @@
   "delegation_credential_error": "委派憑證錯誤",
   "event_triggers": "事件觸發條件",
   "subscriber_url": "訂閱者網址",
-  "subscriber_url_required": "訂閱者網址為必填",
   "create_new_webhook": "建立新的 Webhook",
   "webhooks": "Webhook",
   "team_webhooks": "團隊 Webhook",

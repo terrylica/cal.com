@@ -607,7 +607,6 @@
   "delegation_credential_error": "委托凭证错误",
   "event_triggers": "事件触发器",
   "subscriber_url": "订阅者链接",
-  "subscriber_url_required": "订阅者链接为必填项",
   "create_new_webhook": "创建一个新的 Webhook",
   "webhooks": "Webhook",
   "team_webhooks": "团队 Webhook",

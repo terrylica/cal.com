@@ -607,7 +607,6 @@
   "delegation_credential_error": "Yetki devri kimlik bilgisi hatası",
   "event_triggers": "Etkinlik tetikleyicileri",
   "subscriber_url": "Abone URL'si",
-  "subscriber_url_required": "Abone URL'si gerekli",
   "create_new_webhook": "Yeni bir web kancası oluştur",
   "webhooks": "Web kancaları",
   "team_webhooks": "Takım web kancaları",

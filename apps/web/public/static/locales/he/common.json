@@ -607,7 +607,6 @@
   "delegation_credential_error": "שגיאת אישור האצלה",
   "event_triggers": "גורמים מפעילים של אירועים",
   "subscriber_url": "כתובת URL של המנוי/ה",
-  "subscriber_url_required": "כתובת URL של המנוי/ה נדרשת",
   "create_new_webhook": "יצירת Webhook חדש",
   "webhooks": "רכיבי Webhook",
   "team_webhooks": "רכיבי Webhook של הצוות",

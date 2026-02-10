@@ -607,7 +607,6 @@
   "delegation_credential_error": "Eroare credențial de delegare",
   "event_triggers": "Declanșatoare eveniment",
   "subscriber_url": "URL abonat",
-  "subscriber_url_required": "URL-ul abonatului este obligatoriu",
   "create_new_webhook": "Creează un nou webhook",
   "webhooks": "Webhooks",
   "team_webhooks": "Webhooks de echipă",

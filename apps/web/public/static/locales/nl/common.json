@@ -607,7 +607,6 @@
   "delegation_credential_error": "Fout bij delegatiereferentie",
   "event_triggers": "Webhook activaties",
   "subscriber_url": "Abonnee-URL",
-  "subscriber_url_required": "Abonnee-URL is verplicht",
   "create_new_webhook": "Nieuwe webhook aanmaken",
   "webhooks": "Webhooks",
   "team_webhooks": "Teamwebhooks",
