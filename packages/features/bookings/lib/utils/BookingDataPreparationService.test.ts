@@ -226,7 +226,7 @@ describe("BookingDataPreparationService", () => {
           },
           mockSchemaGetter
         )
-      ).rejects.toThrow("Event type not found");
+      ).rejects.toThrow("event_type_not_found");
     });
 
     it("should mark event type as team event when schedulingType is COLLECTIVE", async () => {
