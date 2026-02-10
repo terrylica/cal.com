@@ -2621,6 +2621,8 @@
   "from_last_period": "from last period",
   "from_to_date_period": "From: {{startDate}} To: {{endDate}}",
   "redirect_url_warning": "Adding a redirect will disable the success page. Make sure to mention \"Booking Confirmed\" on your custom success page.",
+  "redirect_url_paid_feature": "Redirect on booking is now a paid feature. Upgrade to a paid plan to use this feature.",
+  "redirect_url_grandfathered": "This redirect URL is still active for backwards compatibility, but editing requires a paid plan.",
   "event_trends": "Event trends",
   "clear_filters": "Clear filters",
   "clear": "Clear",
