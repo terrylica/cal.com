@@ -544,9 +544,9 @@ const WebhookForm = (props: {
                   invalid={invalid || timeInvalid}
                   touched={isTouched || timeTouched}
                   dirty={isDirty || timeDirty}>
-                  <FieldLabel>How long after the users don&apos;t show up on cal video meeting?</FieldLabel>
+                  <FieldLabel>{t("how_long_after_user_no_show_minutes")}</FieldLabel>
                   <Group
-                    aria-label="How long after the users don't show up on cal video meeting?"
+                    aria-label={t("how_long_after_user_no_show_minutes")}
                     className="w-full">
                     <NumberField
                       aria-label="Duration"
