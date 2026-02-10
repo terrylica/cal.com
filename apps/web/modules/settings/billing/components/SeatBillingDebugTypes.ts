@@ -88,16 +88,38 @@ export interface SeatBillingDebugData {
 
   recentInvoices: Array<{
     id: string;
+    number: string | null;
     amountDue: number;
+    amountPaid: number;
+    currency: string;
     status: string | null;
     created: string;
     hostedInvoiceUrl: string | null;
+    invoicePdf: string | null;
+    description: string | null;
+    lineItems: Array<{
+      description: string | null;
+      amount: number;
+      quantity: number | null;
+    }>;
+    paymentMethod: {
+      type: string;
+      card?: { last4: string; brand: string };
+    } | null;
   }>;
+
+  subscription: {
+    id: string;
+    itemId: string;
+    customerId: string;
+  } | null;
 
   testClock: {
     customerId: string;
     subscriptionId: string;
   } | null;
+
+  monthKey: string;
 
   predictions: {
     hwm: HwmPrediction | null;

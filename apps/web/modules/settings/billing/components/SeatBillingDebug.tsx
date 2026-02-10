@@ -120,10 +120,21 @@ async function fetchStripeData(subscriptionId: string, customerId: string) {
   const recentInvoices: SeatBillingDebugData["recentInvoices"] = results[1]
     ? results[1].invoices.map((inv) => ({
         id: inv.id,
+        number: inv.number,
         amountDue: inv.amountDue,
+        amountPaid: inv.amountPaid,
+        currency: inv.currency,
         status: inv.status,
         created: new Date(inv.created * 1000).toISOString(),
         hostedInvoiceUrl: inv.hostedInvoiceUrl,
+        invoicePdf: inv.invoicePdf,
+        description: inv.description,
+        lineItems: inv.lineItems.map((li) => ({
+          description: li.description,
+          amount: li.amount,
+          quantity: li.quantity,
+        })),
+        paymentMethod: inv.paymentMethod,
       }))
     : [];
 
@@ -396,7 +407,16 @@ export default async function SeatBillingDebug({ teamId }: { teamId: number }) {
     seatChanges: billing.seatChanges,
     stripeSubscription,
     recentInvoices,
+    subscription:
+      subscriptionId && customerId
+        ? {
+            id: subscriptionId,
+            itemId: billing.teamWithBilling?.billing?.subscriptionItemId ?? "",
+            customerId,
+          }
+        : null,
     testClock: customerId && subscriptionId ? { customerId, subscriptionId } : null,
+    monthKey: formatMonthKey(new Date()),
     predictions: { hwm: hwmPrediction, proration: prorationPrediction },
     healthChecks,
     errors,
