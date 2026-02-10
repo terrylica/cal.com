@@ -230,12 +230,14 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                   render={({
                     field: { name, value, onChange },
                     fieldState: { invalid, isTouched, isDirty },
-                  }) => (
+                  }) => {
+                    const currentLocale = localeOptions.find((opt) => opt.value === value.value);
+                    return (
                     <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty} className="max-md:col-span-2">
                       <FieldLabel>{t("language")}</FieldLabel>
                       <Combobox
                         autoHighlight
-                        value={value}
+                        value={currentLocale}
                         onValueChange={(newValue) => {
                           if (newValue) {
                             onChange(newValue);
@@ -272,7 +274,8 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                         </ComboboxPopup>
                       </Combobox>
                     </Field>
-                  )}
+                    );
+                  }}
                 />
 
                 <div className="col-span-2">
