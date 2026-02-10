@@ -16,7 +16,7 @@ import type {
   UserPassword,
   User as UserType,
 } from "@calcom/prisma/client";
-import { Prisma, MembershipRole } from "@calcom/prisma/enums";
+import { MembershipRole, Prisma } from "@calcom/prisma/enums";
 import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 import type { TFunction } from "i18next";
 
