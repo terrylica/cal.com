@@ -1,8 +1,18 @@
+import {
+  EventAdvancedTab,
+  type EventAdvancedBaseProps,
+} from "@calcom/features/eventtypes/components/tabs/advanced";
 import { localeOptions } from "@calcom/lib/i18n";
 import { trpc } from "@calcom/trpc/react";
 
-import type { EventAdvancedBaseProps } from "./EventAdvancedTab";
-import { EventAdvancedTab } from "./EventAdvancedTab";
+import {
+  SelectedCalendarsSettingsWebWrapper,
+  SelectedCalendarsSettingsSkeleton,
+} from "@calcom/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper";
+import { TimezoneSelect as WebTimezoneSelect } from "@calcom/web/modules/timezone/components/TimezoneSelect";
+import { MultiplePrivateLinksController } from "@calcom/web/modules/event-types/components";
+import AddVerifiedEmail from "@calcom/web/modules/event-types/components/AddVerifiedEmail";
+import { BookerLayoutSelector } from "@calcom/web/modules/settings/components/BookerLayoutSelector";
 
 const EventAdvancedWebWrapper = ({ ...props }: EventAdvancedBaseProps) => {
   const connectedCalendarsQuery = trpc.viewer.calendars.connectedCalendars.useQuery();
@@ -20,6 +30,14 @@ const EventAdvancedWebWrapper = ({ ...props }: EventAdvancedBaseProps) => {
       showBookerLayoutSelector={true}
       verifiedEmails={verifiedEmails}
       localeOptions={localeOptions}
+      slots={{
+        SelectedCalendarsSettings: SelectedCalendarsSettingsWebWrapper,
+        SelectedCalendarsSettingsSkeleton: SelectedCalendarsSettingsSkeleton,
+        TimezoneSelect: WebTimezoneSelect,
+        MultiplePrivateLinksController: MultiplePrivateLinksController,
+        AddVerifiedEmail: AddVerifiedEmail,
+        BookerLayoutSelector: BookerLayoutSelector,
+      }}
     />
   );
 };

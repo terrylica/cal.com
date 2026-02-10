@@ -1,10 +1,22 @@
 import React from "react";
 
-import type { EventSetupTabProps } from "@calcom/web/modules/event-types/components/tabs/setup/EventSetupTab";
-import { EventSetupTab } from "@calcom/web/modules/event-types/components/tabs/setup/EventSetupTab";
+import {
+  EventSetupTab,
+  type EventSetupTabBaseProps,
+} from "@calcom/features/eventtypes/components/tabs/setup";
 
-const EventSetupTabPlatformWrapper = (props: EventSetupTabProps) => {
-  return <EventSetupTab {...props} urlPrefix="" hasOrgBranding={false} />;
+const EventSetupTabPlatformWrapper = (props: EventSetupTabBaseProps) => {
+  return (
+    <EventSetupTab
+      {...props}
+      urlPrefix=""
+      hasOrgBranding={false}
+      slots={{
+        Locations: null,
+        HostLocations: null,
+      }}
+    />
+  );
 };
 
 export default EventSetupTabPlatformWrapper;

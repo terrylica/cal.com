@@ -1,11 +1,17 @@
-import type { EventAdvancedBaseProps } from "@calcom/web/modules/event-types/components/tabs/advanced/EventAdvancedTab";
-import { EventAdvancedTab } from "@calcom/web/modules/event-types/components/tabs/advanced/EventAdvancedTab";
+import {
+  EventAdvancedTab,
+  type EventAdvancedBaseProps,
+} from "@calcom/features/eventtypes/components/tabs/advanced";
 
 import { useConnectedCalendars } from "../../hooks/useConnectedCalendars";
 import { useGetVerifiedEmails } from "../hooks/useGetVerifiedEmails";
 
 const EventAdvancedPlatformWrapper = (props: EventAdvancedBaseProps) => {
-  const { isPending, data: connectedCalendarsQuery, error } = useConnectedCalendars({});
+  const {
+    isPending,
+    data: connectedCalendarsQuery,
+    error,
+  } = useConnectedCalendars({});
   const { data: verifiedEmails } = useGetVerifiedEmails(props.team?.id);
 
   return (
@@ -14,6 +20,14 @@ const EventAdvancedPlatformWrapper = (props: EventAdvancedBaseProps) => {
       calendarsQuery={{ data: connectedCalendarsQuery, isPending, error }}
       showBookerLayoutSelector={false}
       verifiedEmails={verifiedEmails}
+      slots={{
+        SelectedCalendarsSettings: null,
+        SelectedCalendarsSettingsSkeleton: null,
+        TimezoneSelect: null,
+        MultiplePrivateLinksController: null,
+        AddVerifiedEmail: null,
+        BookerLayoutSelector: null,
+      }}
     />
   );
 };
