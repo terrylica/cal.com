@@ -180,6 +180,7 @@ const DateOverride = ({
   classNames,
   handleSubmit,
   isDryRun = false,
+  isPlatform = false,
 }: {
   workingHours: WorkingHours[];
   userTimeFormat: number | null;
@@ -194,6 +195,7 @@ const DateOverride = ({
   };
   handleSubmit: (data: AvailabilityFormValues) => Promise<void>;
   isDryRun?: boolean;
+  isPlatform?: boolean;
 }) => {
   const { append, replace, fields } = useFieldArray<AvailabilityFormValues, "dateOverrides">({
     name: "dateOverrides",
@@ -234,7 +236,7 @@ const DateOverride = ({
           travelSchedules={travelSchedules}
           handleAvailabilityUpdate={handleAvailabilityUpdate}
           isDryRun={isDryRun}
-          isPlatform={true}
+          isPlatform={isPlatform}
         />
         <DateOverrideInputDialog
           className={overridesModalClassNames}
@@ -247,7 +249,7 @@ const DateOverride = ({
           userTimeFormat={userTimeFormat}
           weekStart={weekStart}
           isDryRun={isDryRun}
-          isPlatform={true}
+          isPlatform={isPlatform}
           Trigger={
             <Button
               className={classNames?.button}
