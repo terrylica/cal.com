@@ -139,7 +139,7 @@ export default function WebhookListItem(props: {
                   <Switch
                     checked={optimisticActive}
                     data-testid="webhook-switch"
-                    disabled={!props.permissions.canEditWebhook}
+                    disabled={!props.permissions.canEditWebhook || toggleWebhook.isPending}
                     onCheckedChange={(checked) => {
                       setOptimisticActive(checked);
                       toggleWebhook.mutate({
@@ -210,6 +210,7 @@ export default function WebhookListItem(props: {
               <MenuGroup>
                 <MenuCheckboxItem
                   checked={optimisticActive}
+                  disabled={toggleWebhook.isPending}
                   onCheckedChange={(checked) => {
                     setOptimisticActive(checked);
                     toggleWebhook.mutate({
