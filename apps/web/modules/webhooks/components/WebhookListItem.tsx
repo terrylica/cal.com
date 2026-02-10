@@ -51,6 +51,7 @@ export default function WebhookListItem(props: {
   const { webhook } = props;
   const initialActive = useRef(webhook.active).current;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [badgesExpanded, setBadgesExpanded] = useState(false);
 
   const deleteWebhook = trpc.viewer.webhook.delete.useMutation({
     async onSuccess() {
@@ -86,14 +87,21 @@ export default function WebhookListItem(props: {
           </ListItemTitle>
         </ListItemHeader>        
         <ListItemBadges>
-          {webhook.eventTriggers.slice(0, MAX_BADGES_TWO_ROWS).map((trigger) => (
-            <Badge key={trigger} variant="outline">
-              <WebhookIcon />
-              {t(`${trigger.toLowerCase()}`)}
-            </Badge>
-          ))}
-          {webhook.eventTriggers.length > MAX_BADGES_TWO_ROWS && (
-            <Badge variant="outline">
+          {webhook.eventTriggers
+            .slice(0, badgesExpanded ? undefined : MAX_BADGES_TWO_ROWS)
+            .map((trigger) => (
+              <Badge key={trigger} variant="outline">
+                <WebhookIcon />
+                {t(`${trigger.toLowerCase()}`)}
+              </Badge>
+            ))}
+          {!badgesExpanded && webhook.eventTriggers.length > MAX_BADGES_TWO_ROWS && (
+            <Badge
+              variant="outline"
+              render={<button type="button" />}
+              className="cursor-pointer"
+              onClick={() => setBadgesExpanded(true)}
+            >
               +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
             </Badge>
           )}
