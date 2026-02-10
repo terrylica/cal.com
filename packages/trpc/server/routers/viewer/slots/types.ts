@@ -1,8 +1,4 @@
-import {
-  type GetScheduleOptions,
-  getScheduleSchemaObject,
-  type TGetScheduleInputSchema,
-} from "@calcom/features/availability/types/getSchedule.types";
+import { getScheduleSchemaObject } from "@calcom/features/availability/types/getSchedule.types";
 import { z } from "zod";
 
 // Re-export types for backward compatibility
