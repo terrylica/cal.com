@@ -2,28 +2,31 @@
 
 import { DNS_CONFIG, DomainVerificationStatus } from "@calcom/features/custom-domains/services/CustomDomainService";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
+import { useDebounce } from "@calcom/lib/hooks/useDebounce";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
+import classNames from "@calcom/ui/classNames";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
-import { Form, TextField } from "@calcom/ui/components/form";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@calcom/ui/components/dropdown";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-
-type DomainFormValues = {
-  domain: string;
-};
+import { useEffect, useState } from "react";
 
 const DomainVerificationBanner = ({
   status,
   domainJson,
   configJson,
 }: {
-  status: string;
+  status: DomainVerificationStatus;
   domainJson?: {
     apexName?: string;
     name?: string;
@@ -68,6 +71,8 @@ const DomainVerificationBanner = ({
   }
 
   if (status === DomainVerificationStatus.CONFLICTING_DNS && configJson?.conflicts) {
+    const txtVerification = domainJson?.verification?.find((v) => v.type === "TXT");
+
     return (
       <div className="mt-4 space-y-4">
         <div className="bg-error/10 text-error flex items-center gap-2 rounded-lg p-4">
@@ -101,11 +106,19 @@ const DomainVerificationBanner = ({
             </table>
           </div>
         </div>
+
+        <DnsInstructions
+          domain={domainJson?.name || ""}
+          apexDomain={domainJson?.apexName || ""}
+          txtVerification={txtVerification}
+        />
       </div>
     );
   }
 
   if (status === DomainVerificationStatus.INVALID_CONFIGURATION || status === DomainVerificationStatus.NOT_FOUND) {
+    const txtVerification = domainJson?.verification?.find((v) => v.type === "TXT");
+
     return (
       <div className="mt-4 space-y-4">
         <div className="bg-error/10 text-error flex items-center gap-2 rounded-lg p-4">
@@ -116,7 +129,11 @@ const DomainVerificationBanner = ({
           </div>
         </div>
 
-        <DnsInstructions domain={domainJson?.name || ""} apexDomain={domainJson?.apexName || ""} />
+        <DnsInstructions
+          domain={domainJson?.name || ""}
+          apexDomain={domainJson?.apexName || ""}
+          txtVerification={txtVerification}
+        />
       </div>
     );
   }
@@ -252,15 +269,21 @@ const CustomDomainCard = ({
   orgId,
   domain,
   onRemove,
+  onEdit,
 }: {
   orgId: number;
   domain: { slug: string; verified: boolean };
   onRemove: () => void;
+  onEdit: () => void;
 }) => {
   const { t } = useLocale();
   const utils = trpc.useUtils();
 
-  const { data: verificationData } = trpc.viewer.organizations.verifyCustomDomain.useQuery(
+  const {
+    data: verificationData,
+    refetch: refetchVerification,
+    isFetching: isRefreshing,
+  } = trpc.viewer.organizations.verifyCustomDomain.useQuery(
     { teamId: orgId },
     { refetchInterval: domain.verified ? false : 10000 }
   );
@@ -268,7 +291,7 @@ const CustomDomainCard = ({
   const removeMutation = trpc.viewer.organizations.removeCustomDomain.useMutation({
     onSuccess: () => {
       showToast(t("custom_domain_removed"), "success");
-      // utils.viewer.organizations.({ teamId: orgId });
+      utils.viewer.organizations.getCustomDomain.invalidate({ teamId: orgId });
       onRemove();
     },
     onError: (error) => {
@@ -278,13 +301,28 @@ const CustomDomainCard = ({
 
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
 
+  const handleRefresh = async () => {
+    await refetchVerification();
+    showToast(t("domain_verification_refreshed"), "success");
+  };
+
   return (
     <div className="border-subtle rounded-lg border">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <Icon name="globe" className="text-subtle h-5 w-5" />
           <div>
-            <p className="text-default font-medium">{domain.slug}</p>
+            {domain.verified ? (
+              <a
+                href={`https://${domain.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-default font-medium hover:underline">
+                {domain.slug}
+              </a>
+            ) : (
+              <p className="text-default font-medium">{domain.slug}</p>
+            )}
             <p className="text-subtle text-sm">
               {domain.verified ? t("verified") : t("pending_verification")}
             </p>
@@ -300,12 +338,53 @@ const CustomDomainCard = ({
               {t("pending")}
             </span>
           )}
-          <Button
-            color="destructive"
-            variant="icon"
-            StartIcon="trash-2"
-            onClick={() => setShowRemoveDialog(true)}
-          />
+          <div className="border-subtle flex items-center divide-x overflow-hidden rounded-md border">
+            <Tooltip content={t("refresh_verification")}>
+              <Button
+                variant="icon"
+                color="minimal"
+                StartIcon="refresh-cw"
+                onClick={handleRefresh}
+                loading={isRefreshing}
+                className="rounded-none border-0"
+              />
+            </Tooltip>
+            <Dropdown>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="icon"
+                  color="minimal"
+                  StartIcon="ellipsis"
+                  className="rounded-none border-0"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <DropdownItem type="button" StartIcon="pencil" onClick={onEdit}>
+                    {t("edit")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <DropdownItem
+                    type="button"
+                    StartIcon="refresh-cw"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}>
+                    {t("refresh_verification")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <DropdownItem
+                    type="button"
+                    StartIcon="trash-2"
+                    color="destructive"
+                    onClick={() => setShowRemoveDialog(true)}>
+                    {t("remove")}
+                  </DropdownItem>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </Dropdown>
+          </div>
         </div>
       </div>
 
@@ -342,52 +421,299 @@ const CustomDomainCard = ({
   );
 };
 
-const AddDomainForm = ({ orgId, onSuccess }: { orgId: number; onSuccess: () => void }) => {
+type DomainStatus = "idle" | "checking" | "valid" | "invalid" | "conflict";
+
+const DOMAIN_REGEX = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+
+const isValidDomainFormat = (domain: string): boolean => {
+  return DOMAIN_REGEX.test(domain);
+};
+
+const STATUS_CONFIG: Record<
+  DomainStatus,
+  {
+    message: string;
+    messageKey?: string;
+    icon?: "loader" | "circle-check" | "circle-alert";
+    containerClass: string;
+    showDomain?: boolean;
+  }
+> = {
+  idle: {
+    message: "enter_domain_to_check",
+    containerClass: "bg-subtle text-subtle",
+  },
+  checking: {
+    message: "checking_availability",
+    icon: "loader",
+    containerClass: "bg-subtle text-subtle",
+    showDomain: true,
+  },
+  valid: {
+    message: "domain_available",
+    icon: "circle-check",
+    containerClass: "bg-success/10 text-success",
+    showDomain: true,
+  },
+  invalid: {
+    message: "invalid_domain_format",
+    icon: "circle-alert",
+    containerClass: "bg-error/10 text-error",
+  },
+  conflict: {
+    message: "domain_already_in_use",
+    icon: "circle-alert",
+    containerClass: "bg-error/10 text-error",
+    showDomain: true,
+  },
+};
+
+const DomainStatusIndicator = ({ status, domain }: { status: DomainStatus; domain: string }) => {
+  const { t } = useLocale();
+  const statusConfig = STATUS_CONFIG[status];
+
+  return (
+    <div
+      className={classNames(
+        "mt-2 flex items-center justify-between gap-2 rounded-lg p-3 text-sm",
+        statusConfig.containerClass
+      )}>
+      <p>
+        {statusConfig.showDomain && domain ? (
+          <>
+            <span className="font-medium">{domain}</span> {t(statusConfig.message)}
+          </>
+        ) : (
+          t(statusConfig.message)
+        )}
+      </p>
+      {statusConfig.icon && (
+        <Icon
+          name={statusConfig.icon}
+          className={classNames("h-4 w-4 shrink-0", status === "checking" && "animate-spin")}
+        />
+      )}
+    </div>
+  );
+};
+
+const AddDomainModal = ({
+  orgId,
+  isOpen,
+  onClose,
+  onSuccess,
+}: {
+  orgId: number;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) => {
   const { t } = useLocale();
   const utils = trpc.useUtils();
 
-  const form = useForm<DomainFormValues>({
-    defaultValues: { domain: "" },
-  });
+  const [domain, setDomain] = useState("");
+  const [status, setStatus] = useState<DomainStatus>("idle");
+  const debouncedDomain = useDebounce(domain, 500);
+
+  useEffect(() => {
+    if (!debouncedDomain) {
+      setStatus("idle");
+      return;
+    }
+
+    if (!isValidDomainFormat(debouncedDomain)) {
+      setStatus("invalid");
+      return;
+    }
+
+    setStatus("valid");
+  }, [debouncedDomain]);
+
+  useEffect(() => {
+    if (domain && domain !== debouncedDomain) {
+      setStatus("checking");
+    }
+  }, [domain, debouncedDomain]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDomain("");
+      setStatus("idle");
+    }
+  }, [isOpen]);
 
   const addMutation = trpc.viewer.organizations.addCustomDomain.useMutation({
     onSuccess: () => {
       showToast(t("custom_domain_added"), "success");
-      // utils.viewer.customDomains.get.invalidate({ teamId: orgId });
-      form.reset();
+      utils.viewer.organizations.getCustomDomain.invalidate({ teamId: orgId });
       onSuccess();
+      onClose();
     },
     onError: (error) => {
-      showToast(error.message, "error");
+      if (error.message.includes("already in use")) {
+        setStatus("conflict");
+      } else {
+        showToast(error.message, "error");
+      }
     },
   });
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (status !== "valid") return;
+    addMutation.mutate({ teamId: orgId, slug: domain });
+  };
+
+  const canSubmit = status === "valid" && !addMutation.isPending;
+
   return (
-    <Form
-      form={form}
-      handleSubmit={(values) => {
-        addMutation.mutate({ teamId: orgId, slug: values.domain });
-      }}>
-      <div className="flex gap-2">
-        <TextField
-          {...form.register("domain", {
-            required: t("domain_required"),
-            pattern: {
-              value: /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i,
-              message: t("invalid_domain_format"),
-            },
-          })}
-          placeholder="booking.yourdomain.com"
-          className="flex-1"
-        />
-        <Button type="submit" loading={addMutation.isPending}>
-          {t("add_domain")}
-        </Button>
-      </div>
-      {form.formState.errors.domain && (
-        <p className="text-error mt-1 text-sm">{form.formState.errors.domain.message}</p>
-      )}
-    </Form>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        type="creation"
+        title={t("add_custom_domain")}
+        description={t("custom_domain_description")}>
+        <form onSubmit={handleSubmit}>
+          <div>
+            <label className="text-default mb-2 block text-sm font-medium">{t("domain")}</label>
+            <input
+              type="text"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value.toLowerCase().trim())}
+              placeholder="booking.yourdomain.com"
+              className="border-default bg-default text-default placeholder:text-muted w-full rounded-md border px-3 py-2 text-sm focus:border-neutral-300 focus:outline-none focus:ring-0"
+              autoFocus
+            />
+            <DomainStatusIndicator status={status} domain={domain} />
+          </div>
+          <DialogFooter showDivider className="mt-6">
+            <DialogClose />
+            <Button type="submit" disabled={!canSubmit} loading={addMutation.isPending}>
+              {t("add_domain")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const EditDomainModal = ({
+  orgId,
+  currentDomain,
+  isOpen,
+  onClose,
+  onSuccess,
+}: {
+  orgId: number;
+  currentDomain: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}) => {
+  const { t } = useLocale();
+  const utils = trpc.useUtils();
+
+  const [domain, setDomain] = useState(currentDomain);
+  const [status, setStatus] = useState<DomainStatus>("valid");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const debouncedDomain = useDebounce(domain, 500);
+
+  const isDifferent = domain !== currentDomain;
+
+  useEffect(() => {
+    if (!debouncedDomain) {
+      setStatus("idle");
+      return;
+    }
+
+    if (!isValidDomainFormat(debouncedDomain)) {
+      setStatus("invalid");
+      return;
+    }
+
+    setStatus("valid");
+  }, [debouncedDomain]);
+
+  useEffect(() => {
+    if (domain && domain !== debouncedDomain) {
+      setStatus("checking");
+    }
+  }, [domain, debouncedDomain]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDomain(currentDomain);
+      setStatus("valid");
+    }
+  }, [isOpen, currentDomain]);
+
+  const removeMutation = trpc.viewer.organizations.removeCustomDomain.useMutation();
+  const addMutation = trpc.viewer.organizations.addCustomDomain.useMutation();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (status !== "valid" || !isDifferent) return;
+
+    setIsUpdating(true);
+    try {
+      await removeMutation.mutateAsync({ teamId: orgId });
+      await addMutation.mutateAsync({ teamId: orgId, slug: domain });
+      showToast(t("custom_domain_updated"), "success");
+      utils.viewer.organizations.getCustomDomain.invalidate({ teamId: orgId });
+      onSuccess();
+      onClose();
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes("already in use")) {
+          setStatus("conflict");
+        } else {
+          showToast(error.message, "error");
+        }
+      }
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const canSubmit = status === "valid" && isDifferent && !isUpdating;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        type="creation"
+        title={t("edit_custom_domain")}
+        description={t("edit_custom_domain_description")}>
+        <form onSubmit={handleSubmit}>
+          <div className="text-subtle mb-4 text-sm">
+            {t("current_domain")}: <span className="text-default font-medium">{currentDomain}</span>
+          </div>
+          <div>
+            <label className="text-default mb-2 block text-sm font-medium">{t("new_domain")}</label>
+            <input
+              type="text"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value.toLowerCase().trim())}
+              placeholder="booking.yourdomain.com"
+              className="border-default bg-default text-default placeholder:text-muted w-full rounded-md border px-3 py-2 text-sm focus:border-neutral-300 focus:outline-none focus:ring-0"
+              autoFocus
+            />
+            <DomainStatusIndicator status={status} domain={domain} />
+          </div>
+          {isDifferent && (
+            <div className="bg-attention/10 text-attention mt-4 flex items-start gap-2 rounded-lg p-3 text-sm">
+              <Icon name="triangle-alert" className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{t("edit_domain_warning")}</p>
+            </div>
+          )}
+          <DialogFooter showDivider className="mt-6">
+            <DialogClose />
+            <Button type="submit" disabled={!canSubmit} loading={isUpdating}>
+              {t("save_changes")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -401,7 +727,8 @@ export const CustomDomainContent = ({
   refetchCustomDomain: () => void;
 }) => {
   const { t } = useLocale();
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   return (
     <div className="p-6">
@@ -410,14 +737,7 @@ export const CustomDomainContent = ({
           orgId={orgId}
           domain={{ slug: customDomain.slug, verified: customDomain.verified }}
           onRemove={() => refetchCustomDomain()}
-        />
-      ) : showAddForm ? (
-        <AddDomainForm
-          orgId={orgId}
-          onSuccess={() => {
-            setShowAddForm(false);
-            refetchCustomDomain();
-          }}
+          onEdit={() => setShowEditModal(true)}
         />
       ) : (
         <div className="bg-default flex flex-col items-center justify-center py-8">
@@ -427,7 +747,7 @@ export const CustomDomainContent = ({
           <p className="text-subtle mt-3 text-sm">{t("no_custom_domain_configured")}</p>
           <Button
             className="mt-3"
-            onClick={() => setShowAddForm(true)}
+            onClick={() => setShowAddModal(true)}
             StartIcon="plus"
             color="secondary"
             size="sm">
@@ -435,7 +755,23 @@ export const CustomDomainContent = ({
           </Button>
         </div>
       )}
+
+      <AddDomainModal
+        orgId={orgId}
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => refetchCustomDomain()}
+      />
+
+      {customDomain && (
+        <EditDomainModal
+          orgId={orgId}
+          currentDomain={customDomain.slug}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => refetchCustomDomain()}
+        />
+      )}
     </div>
   );
 };
-
