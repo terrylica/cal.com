@@ -47,10 +47,10 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
     enabled: !!webhook,
   });
   const editWebhookMutation = trpc.viewer.webhook.edit.useMutation({
-    async onSuccess() {
+    onSuccess() {
       toastManager.add({ title: t("webhook_updated_successfully"), type: "success" });
-      await revalidateWebhooksList();
       router.push("/settings/developer/webhooks");
+      revalidateWebhooksList();
     },
     onError(error) {
       toastManager.add({ title: error.message, type: "error" });
