@@ -9,10 +9,9 @@
  * to provide users with transparency about data freshness.
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryContext } from "../contexts/QueryContext";
+import { StyleSheet, Text, View } from "react-native";
+import { useQueryContext } from "@/contexts/QueryContext";
 
 /**
  * Props for the CacheStatusIndicator component
@@ -93,7 +92,7 @@ export function CacheStatusIndicator({
   if (isFetching) {
     return (
       <View style={[styles.container, style]}>
-        <Ionicons name="sync-outline" size={12} color="#8E8E93" />
+        <Ionicons name="sync-outline" size={12} color="#A3A3A3" />
         {!compact && <Text style={styles.text}>Updating...</Text>}
       </View>
     );
@@ -104,14 +103,14 @@ export function CacheStatusIndicator({
     if (compact) {
       return (
         <View style={[styles.container, style]}>
-          <Ionicons name="time-outline" size={12} color="#8E8E93" />
+          <Ionicons name="time-outline" size={12} color="#A3A3A3" />
         </View>
       );
     }
 
     return (
       <View style={[styles.container, style]}>
-        <Ionicons name="time-outline" size={12} color="#8E8E93" />
+        <Ionicons name="time-outline" size={12} color="#A3A3A3" />
         <Text style={styles.text}>Updated {formatTimeAgo(dataUpdatedAt)}</Text>
       </View>
     );
@@ -134,7 +133,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 11,
-    color: "#8E8E93",
+    color: "#A3A3A3",
   },
   offlineText: {
     fontSize: 11,
