@@ -6,7 +6,67 @@ import { safeStringify } from "@calcom/lib/safeStringify";
 import logger from "../../logger";
 
 const log = logger.getSubLogger({ prefix: ["Vercel/DomainManager"] });
-const vercelApiForProjectUrl = `https://api.vercel.com/v9/projects/${process.env.PROJECT_ID_VERCEL}`;
+
+export interface VercelDomainResponse {
+  name: string;
+  apexName: string;
+  verified: boolean;
+  verification?: Array<{
+    type: string;
+    domain: string;
+    value: string;
+    reason: string;
+  }>;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface VercelConfigResponse {
+  misconfigured: boolean;
+  conflicts?: Array<{
+    name: string;
+    type: string;
+    value: string;
+  }>;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+function assertVercelEnvVars(env: typeof process.env): asserts env is {
+  PROJECT_ID_VERCEL: string;
+  TEAM_ID_VERCEL: string;
+  AUTH_BEARER_TOKEN_VERCEL: string;
+} & typeof process.env {
+  if (!env.PROJECT_ID_VERCEL) {
+    throw new Error("Missing env var: PROJECT_ID_VERCEL");
+  }
+
+  // TEAM_ID_VERCEL is optional
+
+  if (!env.AUTH_BEARER_TOKEN_VERCEL) {
+    throw new Error("Missing env var: AUTH_BEARER_TOKEN_VERCEL");
+  }
+}
+
+function buildUrl(path: string, teamId?: string) {
+  const url = new URL(path, "https://api.vercel.com");
+  if (teamId) {
+    url.searchParams.set("teamId", teamId);
+  }
+  return url.toString();
+}
+
+function getHeaders(authToken: string) {
+  return {
+    Authorization: `Bearer ${authToken}`,
+    "Content-Type": "application/json",
+  };
+}
+
 const vercelDomainApiResponseSchema = z.object({
   error: z
     .object({
@@ -21,17 +81,17 @@ const vercelDomainApiResponseSchema = z.object({
 export const createDomain = async (domain: string) => {
   assertVercelEnvVars(process.env);
   log.info(`Creating domain in Vercel: ${domain}`);
-  const response = await fetch(`${vercelApiForProjectUrl}/domains?teamId=${process.env.TEAM_ID_VERCEL}`, {
-    body: JSON.stringify({ name: domain }),
-    headers: {
-      Authorization: `Bearer ${process.env.AUTH_BEARER_TOKEN_VERCEL}`,
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-  });
+
+  const response = await fetch(
+    buildUrl(`/v9/projects/${process.env.PROJECT_ID_VERCEL}/domains`, process.env.TEAM_ID_VERCEL),
+    {
+      method: "POST",
+      headers: getHeaders(process.env.AUTH_BEARER_TOKEN_VERCEL),
+      body: JSON.stringify({ name: domain }),
+    }
+  );
 
   const responseJson = await response.json();
-
   const parsedResponse = vercelDomainApiResponseSchema.safeParse(responseJson);
 
   if (!parsedResponse.success) {
@@ -59,12 +119,13 @@ export const deleteDomain = async (domain: string) => {
   assertVercelEnvVars(process.env);
 
   const response = await fetch(
-    `${vercelApiForProjectUrl}/domains/${domain}?teamId=${process.env.TEAM_ID_VERCEL}`,
+    buildUrl(
+      `/v9/projects/${process.env.PROJECT_ID_VERCEL}/domains/${domain}`,
+      process.env.TEAM_ID_VERCEL
+    ),
     {
-      headers: {
-        Authorization: `Bearer ${process.env.AUTH_BEARER_TOKEN_VERCEL}`,
-      },
       method: "DELETE",
+      headers: getHeaders(process.env.AUTH_BEARER_TOKEN_VERCEL),
     }
   );
 
@@ -76,6 +137,67 @@ export const deleteDomain = async (domain: string) => {
   return handleDomainDeletionError(data.error);
 };
 
+export async function getDomain(domain: string): Promise<VercelDomainResponse> {
+  assertVercelEnvVars(process.env);
+  const normalizedDomain = domain.toLowerCase();
+
+  const response = await fetch(
+    buildUrl(
+      `/v9/projects/${process.env.PROJECT_ID_VERCEL}/domains/${normalizedDomain}`,
+      process.env.TEAM_ID_VERCEL
+    ),
+    {
+      method: "GET",
+      headers: getHeaders(process.env.AUTH_BEARER_TOKEN_VERCEL),
+    }
+  );
+
+  return (await response.json()) as VercelDomainResponse;
+}
+
+export async function getConfig(domain: string): Promise<VercelConfigResponse> {
+  assertVercelEnvVars(process.env);
+  const normalizedDomain = domain.toLowerCase();
+
+  const response = await fetch(
+    buildUrl(`/v6/domains/${normalizedDomain}/config`, process.env.TEAM_ID_VERCEL),
+    {
+      method: "GET",
+      headers: getHeaders(process.env.AUTH_BEARER_TOKEN_VERCEL),
+    }
+  );
+
+  return (await response.json()) as VercelConfigResponse;
+}
+
+export async function verifyDomain(domain: string): Promise<VercelDomainResponse> {
+  assertVercelEnvVars(process.env);
+  const normalizedDomain = domain.toLowerCase();
+
+  log.info(`Verifying domain on Vercel: ${normalizedDomain}`);
+
+  const response = await fetch(
+    buildUrl(
+      `/v9/projects/${process.env.PROJECT_ID_VERCEL}/domains/${normalizedDomain}/verify`,
+      process.env.TEAM_ID_VERCEL
+    ),
+    {
+      method: "POST",
+      headers: getHeaders(process.env.AUTH_BEARER_TOKEN_VERCEL),
+    }
+  );
+
+  const data = (await response.json()) as VercelDomainResponse;
+
+  if (data.verified) {
+    log.info(`Domain verified successfully: ${normalizedDomain}`);
+  } else {
+    log.info(`Domain not yet verified: ${normalizedDomain}`);
+  }
+
+  return data;
+}
+
 function handleDomainCreationError(error: {
   code?: string | null;
   domain?: string | null;
@@ -86,30 +208,14 @@ function handleDomainCreationError(error: {
   if (error.code === "forbidden") {
     const errorMessage =
       "Vercel denied permission to manage this domain. Please verify your Vercel project, team, and domain permissions.";
-    log.error(
-      safeStringify({
-        errorMessage,
-        vercelError: error,
-      })
-    );
-    throw new HttpError({
-      message: errorMessage,
-      statusCode: 400,
-    });
+    log.error(safeStringify({ errorMessage, vercelError: error }));
+    throw new HttpError({ message: errorMessage, statusCode: 400 });
   }
 
   if (error.code === "domain_taken") {
     const errorMessage = "Domain is already being used by a different project";
-    log.error(
-      safeStringify({
-        errorMessage,
-        vercelError: error,
-      })
-    );
-    throw new HttpError({
-      message: errorMessage,
-      statusCode: 400,
-    });
+    log.error(safeStringify({ errorMessage, vercelError: error }));
+    throw new HttpError({ message: errorMessage, statusCode: 400 });
   }
 
   if (error.code === "domain_already_in_use") {
@@ -119,10 +225,7 @@ function handleDomainCreationError(error: {
 
   const errorMessage = `Failed to create domain on Vercel: ${error.domain}`;
   log.error(safeStringify({ errorMessage, vercelError: error }));
-  throw new HttpError({
-    message: errorMessage,
-    statusCode: 400,
-  });
+  throw new HttpError({ message: errorMessage, statusCode: 400 });
 }
 
 function handleDomainDeletionError(error: {
@@ -140,38 +243,11 @@ function handleDomainDeletionError(error: {
   if (error.code === "forbidden") {
     const errorMessage =
       "Vercel denied permission to manage this domain. Please verify your Vercel project, team, and domain permissions.";
-    log.error(
-      safeStringify({
-        errorMessage,
-        vercelError: error,
-      })
-    );
-    throw new HttpError({
-      message: errorMessage,
-      statusCode: 400,
-    });
+    log.error(safeStringify({ errorMessage, vercelError: error }));
+    throw new HttpError({ message: errorMessage, statusCode: 400 });
   }
 
   const errorMessage = `Failed to take action for domain: ${error.domain}`;
   log.error(safeStringify({ errorMessage, vercelError: error }));
-  throw new HttpError({
-    message: errorMessage,
-    statusCode: 400,
-  });
-}
-
-function assertVercelEnvVars(env: typeof process.env): asserts env is {
-  PROJECT_ID_VERCEL: string;
-  TEAM_ID_VERCEL: string;
-  AUTH_BEARER_TOKEN_VERCEL: string;
-} & typeof process.env {
-  if (!env.PROJECT_ID_VERCEL) {
-    throw new Error("Missing env var: PROJECT_ID_VERCEL");
-  }
-
-  // TEAM_ID_VERCEL is optional
-
-  if (!env.AUTH_BEARER_TOKEN_VERCEL) {
-    throw new Error("Missing env var: AUTH_BEARER_TOKEN_VERCEL");
-  }
+  throw new HttpError({ message: errorMessage, statusCode: 400 });
 }
