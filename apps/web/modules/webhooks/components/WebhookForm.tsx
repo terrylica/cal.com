@@ -801,12 +801,12 @@ const WebhookForm = (props: {
     </div>
   );
 
-  const cancelButton = (
-    <Button
-      type="button"
-      variant="ghost"
-      onClick={props.onCancel}
-      {...(!props.onCancel ? { render: <Link href="/settings/developer/webhooks" /> } : {})}>
+  const cancelButton = props.onCancel ? (
+    <Button type="button" variant="ghost" onClick={props.onCancel}>
+      {t("cancel")}
+    </Button>
+  ) : (
+    <Button type="button" variant="ghost" render={<Link href="/settings/developer/webhooks" />}>
       {t("cancel")}
     </Button>
   );
