@@ -23,9 +23,9 @@ export function FullscreenUpgradeBannerForInsightsPage() {
       features={features}
       target="team"
       image={{
-        src: "/upgrade/roles_portrait.png",
-        width: 2160,
-        height: 3840,
+        src: "/upgrade/insights_portrait.png",
+        width: 2880,
+        height: 5120,
       }}
       learnMoreButton={{
         text: t("learn_more"),

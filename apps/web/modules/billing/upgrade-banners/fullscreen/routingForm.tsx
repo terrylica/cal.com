@@ -16,9 +16,9 @@ export function FullscreenUpgradeBannerForRoutingFormPage() {
       subtitle={t("upgrade_banner_routing_form_subtitle")}
       target="team"
       image={{
-        src: "/upgrade/roles_portrait.png",
-        width: 2160,
-        height: 3840,
+        src: "/upgrade/routing_portrait.png",
+        width: 2880,
+        height: 5120,
       }}
       learnMoreButton={{
         text: t("learn_more"),
