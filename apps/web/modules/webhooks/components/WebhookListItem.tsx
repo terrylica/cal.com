@@ -14,6 +14,7 @@ import {
   ListItem,
   ListItemActions,
   ListItemBadges,
+  ListItemTitle,
   ListItemContent,
   ListItemHeader,
 } from "@coss/ui/components/list-item";
@@ -79,6 +80,24 @@ export default function WebhookListItem(props: {
   return (
     <ListItem data-testid="webhook-list-item">
       <ListItemContent>
+        <ListItemHeader>
+          <ListItemTitle data-testid="webhook-url">
+            {webhook.subscriberUrl}
+          </ListItemTitle>
+        </ListItemHeader>
+        <ListItemBadges>
+          {webhook.eventTriggers.slice(0, MAX_BADGES_TWO_ROWS).map((trigger) => (
+            <Badge key={trigger} variant="outline">
+              <WebhookIcon />
+              {t(`${trigger.toLowerCase()}`)}
+            </Badge>
+          ))}
+          {webhook.eventTriggers.length > MAX_BADGES_TWO_ROWS && (
+            <Badge variant="outline">
+              +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
+            </Badge>
+          )}
+        </ListItemBadges>
         <div className="flex items-center gap-2">
           {props.profile && (
             <>
@@ -99,29 +118,8 @@ export default function WebhookListItem(props: {
             </>
           )}
           {!props.permissions.canEditWebhook && <Badge variant="outline">{t("readonly")}</Badge>}
-          <Badge variant="info">{getWebhookVersionLabel(webhook.version)}</Badge>
-        </div>
-        <ListItemHeader>
-          <h2
-            className="truncate text-sm font-medium"
-            data-slot="list-item-title"
-            data-testid="webhook-url">
-            {webhook.subscriberUrl}
-          </h2>
-        </ListItemHeader>
-        <ListItemBadges>
-          {webhook.eventTriggers.slice(0, MAX_BADGES_TWO_ROWS).map((trigger) => (
-            <Badge key={trigger} variant="outline">
-              <WebhookIcon />
-              {t(`${trigger.toLowerCase()}`)}
-            </Badge>
-          ))}
-          {webhook.eventTriggers.length > MAX_BADGES_TWO_ROWS && (
-            <Badge variant="outline">
-              +{webhook.eventTriggers.length - MAX_BADGES_TWO_ROWS} {t("more")}
-            </Badge>
-          )}
-        </ListItemBadges>
+          <Badge variant="info" size="sm">{getWebhookVersionLabel(webhook.version)}</Badge>
+        </div>        
       </ListItemContent>
       {(props.permissions.canEditWebhook || props.permissions.canDeleteWebhook) && (
         <ListItemActions>
