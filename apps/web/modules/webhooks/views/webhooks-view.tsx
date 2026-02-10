@@ -39,7 +39,9 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
   const { webhookGroups } = webhooksByViewer;
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
-  const flat = webhookGroups.flatMap((group) => group.webhooks.map((webhook) => ({ webhook, group })));
+  const flat = webhookGroups
+    .flatMap((group) => group.webhooks.map((webhook) => ({ webhook, group })))
+    .sort((a, b) => a.webhook.id.localeCompare(b.webhook.id));
   const filtered =
     selectedProfileIds.length > 0
       ? flat.filter(({ group }) => selectedProfileIds.includes(group.profile.slug ?? ""))
