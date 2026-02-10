@@ -11,7 +11,7 @@ import {
   ListItemBadges,
   ListItemContent,
   ListItemHeader,
-} from "@coss/ui/components/list-item";
+} from "@coss/ui/shared/list-item";
 import { Skeleton } from "@coss/ui/components/skeleton";
 import { WebhooksHeader } from "./webhooks-header";
 

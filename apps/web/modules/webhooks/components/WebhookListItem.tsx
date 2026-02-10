@@ -17,7 +17,7 @@ import {
   ListItemTitle,
   ListItemContent,
   ListItemHeader,
-} from "@coss/ui/components/list-item";
+} from "@coss/ui/shared/list-item";
 import {
   Menu,
   MenuCheckboxItem,
