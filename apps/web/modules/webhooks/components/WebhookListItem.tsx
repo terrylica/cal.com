@@ -37,7 +37,7 @@ import {
 } from "@coss/ui/shared/list-item";
 import { EllipsisIcon, ExternalLinkIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
 import type { ComponentType } from "react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 
 const MAX_BADGES_TWO_ROWS = 7;
@@ -56,10 +56,14 @@ export default function WebhookListItem(props: {
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const { webhook } = props;
-  const initialActive = useRef(webhook.active).current;
+  const [active, setActive] = useState(webhook.active);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
   const versionTooltipHandle = useMemo(() => TooltipCreateHandle<ComponentType>(), []);
+
+  useEffect(() => {
+    setActive(webhook.active);
+  }, [webhook.active]);
 
   const deleteWebhook = trpc.viewer.webhook.delete.useMutation({
     async onSuccess() {
@@ -77,12 +81,16 @@ export default function WebhookListItem(props: {
     },
   });
   const toggleWebhook = trpc.viewer.webhook.edit.useMutation({
-    async onSuccess(data) {
+    async onSuccess() {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
       revalidateWebhooksList();
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();
+    },
+    onError() {
+      setActive(webhook.active);
+      toastManager.add({ title: t("something_went_wrong"), type: "error" });
     },
   });
 
@@ -169,7 +177,7 @@ export default function WebhookListItem(props: {
               <TooltipTrigger
                 render={
                   <Switch
-                    defaultChecked={initialActive}
+                    checked={active}
                     data-testid="webhook-switch"
                     disabled={!props.permissions.canEditWebhook}
                     onCheckedChange={(checked, eventDetails) => {
@@ -177,18 +185,25 @@ export default function WebhookListItem(props: {
                         eventDetails.cancel();
                         return;
                       }
-                      toggleWebhook.mutate({
-                        id: webhook.id,
-                        active: checked,
-                        payloadTemplate: webhook.payloadTemplate,
-                        eventTypeId: webhook.eventTypeId || undefined,
-                      });
+                      const previous = active;
+                      setActive(checked);
+                      toggleWebhook.mutate(
+                        {
+                          id: webhook.id,
+                          active: checked,
+                          payloadTemplate: webhook.payloadTemplate,
+                          eventTypeId: webhook.eventTypeId || undefined,
+                        },
+                        {
+                          onError: () => setActive(previous),
+                        }
+                      );
                     }}
                   />
                 }
               />
               <TooltipPopup sideOffset={11}>
-                {webhook.active ? t("disable_webhook") : t("enable_webhook")}
+                {active ? t("disable_webhook") : t("enable_webhook")}
               </TooltipPopup>
             </Tooltip>
 
@@ -244,18 +259,25 @@ export default function WebhookListItem(props: {
               <MenuSeparator />
               <MenuGroup>
                 <MenuCheckboxItem
-                  defaultChecked={initialActive}
+                  checked={active}
                   onCheckedChange={(checked, eventDetails) => {
                     if (toggleWebhook.isPending) {
                       eventDetails.cancel();
                       return;
                     }
-                    toggleWebhook.mutate({
-                      id: webhook.id,
-                      active: checked,
-                      payloadTemplate: webhook.payloadTemplate,
-                      eventTypeId: webhook.eventTypeId || undefined,
-                    });
+                    const previous = active;
+                    setActive(checked);
+                    toggleWebhook.mutate(
+                      {
+                        id: webhook.id,
+                        active: checked,
+                        payloadTemplate: webhook.payloadTemplate,
+                        eventTypeId: webhook.eventTypeId || undefined,
+                      },
+                      {
+                        onError: () => setActive(previous),
+                      }
+                    );
                   }}
                   variant="switch">
                   {t("enable_webhook")}
