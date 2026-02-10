@@ -426,11 +426,9 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
       const subjectWithAddedVariable = `${currentEmailSubject.substring(0, cursorPosition)}{${variable
         .toUpperCase()
         .replace(/ /g, "_")}}${currentEmailSubject.substring(cursorPosition)}`;
-      form.setValue(
-        `steps.${step.stepNumber - 1}.emailSubject`,
-        subjectWithAddedVariable,
-        { shouldDirty: true }
-      );
+      form.setValue(`steps.${step.stepNumber - 1}.emailSubject`, subjectWithAddedVariable, {
+        shouldDirty: true,
+      });
     }
   };
 
@@ -804,11 +802,9 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
 
                         form.setValue(`steps.${step.stepNumber - 1}.sendTo`, null);
                         form.clearErrors(`steps.${step.stepNumber - 1}.sendTo`);
-                        form.setValue(
-                          `steps.${step.stepNumber - 1}.action`,
-                          val.value,
-                          { shouldDirty: true }
-                        );
+                        form.setValue(`steps.${step.stepNumber - 1}.action`, val.value, {
+                          shouldDirty: true,
+                        });
                         setUpdateTemplate(!updateTemplate);
                       }
                     }}
@@ -1146,11 +1142,9 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                       description={t("make_phone_number_required")}
                       descriptionClassName="ml-0"
                       onChange={(e) =>
-                        form.setValue(
-                          `steps.${step.stepNumber - 1}.numberRequired`,
-                          e.target.checked,
-                          { shouldDirty: true }
-                        )
+                        form.setValue(`steps.${step.stepNumber - 1}.numberRequired`, e.target.checked, {
+                          shouldDirty: true,
+                        })
                       }
                     />
                   )}
@@ -1306,11 +1300,9 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
                             }
                           }
                           field.onChange(value);
-                          form.setValue(
-                            `steps.${step.stepNumber - 1}.template`,
-                            value,
-                            { shouldDirty: true }
-                          );
+                          form.setValue(`steps.${step.stepNumber - 1}.template`, value, {
+                            shouldDirty: true,
+                          });
                           setUpdateTemplate(!updateTemplate);
                         }
                       }}
@@ -1388,11 +1380,9 @@ export default function WorkflowStepContainer(props: WorkflowStepProps) {
               <Editor
                 getText={() => props.form.getValues(`steps.${step.stepNumber - 1}.reminderBody`) || ""}
                 setText={(text: string) => {
-                  props.form.setValue(
-                    `steps.${step.stepNumber - 1}.reminderBody`,
-                    text,
-                    { shouldDirty: true }
-                  );
+                  props.form.setValue(`steps.${step.stepNumber - 1}.reminderBody`, text, {
+                    shouldDirty: true,
+                  });
                   props.form.clearErrors();
                 }}
                 variables={!isFormTrigger(trigger) ? DYNAMIC_TEXT_VARIABLES : undefined}
