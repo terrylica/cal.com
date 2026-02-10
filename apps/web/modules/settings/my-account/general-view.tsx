@@ -233,8 +233,12 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Controller
                   name="locale"
-                  render={({ field: { value, onChange } }) => (
-                    <Field className="max-md:col-span-2">
+                  control={formMethods.control}
+                  render={({
+                    field: { name, value, onChange },
+                    fieldState: { invalid, isTouched, isDirty },
+                  }) => (
+                    <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty} className="max-md:col-span-2">
                       <FieldLabel>{t("language")}</FieldLabel>
                       <Combobox
                         autoHighlight
@@ -282,21 +286,22 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                   <Controller
                     name="timeZone"
                     control={formMethods.control}
-                    render={({ field: { value } }) => {
+                    render={({
+                      field: { name, value, onChange },
+                      fieldState: { invalid, isTouched, isDirty },
+                    }) => {
                       const currentTimezone = formattedTimezones.find((tz) => tz.value === value);
                       return (
                         <Fieldset className="max-w-none gap-2">
                           <Label render={<FieldsetLegend />}>{t("timezone")}</Label>
                           <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-                            <Field className="contents">
+                            <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty} className="contents">
                               <Combobox
                                 autoHighlight
                                 value={currentTimezone}
                                 onValueChange={(newValue) => {
                                   if (newValue) {
-                                    formMethods.setValue("timeZone", newValue.value, {
-                                      shouldDirty: true,
-                                    });
+                                    onChange(newValue.value);
                                   }
                                 }}
                                 items={formattedTimezones}>
@@ -349,8 +354,11 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                   <Controller
                     name="timeFormat"
                     control={formMethods.control}
-                    render={({ field: { value } }) => (
-                      <Field>
+                    render={({
+                      field: { name, value, onChange },
+                      fieldState: { invalid, isTouched, isDirty },
+                    }) => (
+                      <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty}>
                         <FieldLabel>{t("time_format")}</FieldLabel>
                         <Select
                           aria-label={t("time_format")}
@@ -360,9 +368,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                               (opt) => String(opt.value) === newValue
                             );
                             if (selectedOption) {
-                              formMethods.setValue("timeFormat", selectedOption, {
-                                shouldDirty: true,
-                              });
+                              onChange(selectedOption);
                             }
                           }}>
                           <SelectTrigger>
@@ -383,8 +389,11 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                   <Controller
                     name="weekStart"
                     control={formMethods.control}
-                    render={({ field: { value } }) => (
-                      <Field>
+                    render={({
+                      field: { name, value, onChange },
+                      fieldState: { invalid, isTouched, isDirty },
+                    }) => (
+                      <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty}>
                         <FieldLabel>{t("start_of_week")}</FieldLabel>
                         <Select
                           aria-label={t("start_of_week")}
@@ -392,9 +401,7 @@ const GeneralView = ({ user, travelSchedules }: GeneralViewProps) => {
                           onValueChange={(newValue) => {
                             const selectedOption = weekStartOptions.find((opt) => opt.value === newValue);
                             if (selectedOption) {
-                              formMethods.setValue("weekStart", selectedOption, {
-                                shouldDirty: true,
-                              });
+                              onChange(selectedOption);
                             }
                           }}>
                           <SelectTrigger>
