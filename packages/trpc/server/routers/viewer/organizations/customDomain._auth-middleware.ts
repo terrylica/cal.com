@@ -1,27 +1,22 @@
-import prisma from "@calcom/prisma";
-import type { Prisma } from "@calcom/prisma/client";
+import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
+import type { MembershipRole } from "@calcom/prisma/enums";
 import { TRPCError } from "@trpc/server";
 
 export async function checkPermissions(args: {
   userId: number;
   teamId: number;
-  role: Prisma.MembershipWhereInput["role"];
+  allowedRoles: MembershipRole[];
 }) {
-  const { teamId, userId, role } = args;
+  const { teamId, userId, allowedRoles } = args;
 
-  const team = await prisma.team.findFirst({
-    where: {
-      id: teamId,
-      members: {
-        some: {
-          userId,
-          role,
-        },
-      },
-    },
-  });
+  const membershipRepository = new MembershipRepository();
+  const membership = await membershipRepository.findUniqueByUserIdAndTeamId({ userId, teamId });
 
-  if (!team) {
+  if (!membership) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  if (!allowedRoles.includes(membership.role)) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 }

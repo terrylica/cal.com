@@ -1,5 +1,4 @@
-import { CustomDomainService } from "@calcom/features/custom-domains/services/CustomDomainService";
-import prisma from "@calcom/prisma";
+import { getCustomDomainService } from "@calcom/features/custom-domains/di/CustomDomainService.container";
 import { MembershipRole } from "@calcom/prisma/enums";
 
 import type { TrpcSessionUser } from "../../../types";
@@ -17,13 +16,12 @@ export const getHandler = async ({ ctx, input }: GetHandlerOptions) => {
   await checkPermissions({
     userId: ctx.user.id,
     teamId: input.teamId,
-    role: { in: [MembershipRole.OWNER, MembershipRole.ADMIN, MembershipRole.MEMBER] },
+    allowedRoles: [MembershipRole.OWNER, MembershipRole.ADMIN, MembershipRole.MEMBER],
   });
 
-  const service = new CustomDomainService(prisma);
-  const domain = await service.getDomain(input.teamId);
+  const service = getCustomDomainService();
 
-  return domain;
+  return service.getDomain(input.teamId);
 };
 
 export default getHandler;

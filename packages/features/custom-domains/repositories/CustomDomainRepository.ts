@@ -1,6 +1,15 @@
+import type { CustomDomain } from "@calcom/prisma/client";
 import type { PrismaClient } from "@calcom/prisma";
 
-import type { CustomDomainWithTeam } from "../lib/types";
+type CustomDomainWithTeam = CustomDomain & {
+  team: {
+    id: number;
+    slug: string | null;
+    name: string;
+    isOrganization: boolean;
+    parentId: number | null;
+  };
+};
 
 const customDomainSelect = {
   id: true,
@@ -19,43 +28,45 @@ const customDomainWithTeamSelect = {
       id: true,
       slug: true,
       name: true,
+      isOrganization: true,
+      parentId: true,
     },
   },
 } as const;
 
 export class CustomDomainRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prismaClient: PrismaClient) {}
 
   async findById(id: string) {
-    return this.prisma.customDomain.findUnique({
+    return this.prismaClient.customDomain.findUnique({
       where: { id },
       select: customDomainSelect,
     });
   }
 
   async findBySlug(slug: string) {
-    return this.prisma.customDomain.findUnique({
+    return this.prismaClient.customDomain.findUnique({
       where: { slug: slug.toLowerCase() },
       select: customDomainSelect,
     });
   }
 
   async findBySlugWithTeam(slug: string): Promise<CustomDomainWithTeam | null> {
-    return this.prisma.customDomain.findUnique({
+    return this.prismaClient.customDomain.findUnique({
       where: { slug: slug.toLowerCase() },
       select: customDomainWithTeamSelect,
     });
   }
 
   async findByTeamId(teamId: number) {
-    return this.prisma.customDomain.findUnique({
+    return this.prismaClient.customDomain.findUnique({
       where: { teamId },
       select: customDomainSelect,
     });
   }
 
   async create(data: { teamId: number; slug: string }) {
-    return this.prisma.customDomain.create({
+    return this.prismaClient.customDomain.create({
       data: {
         teamId: data.teamId,
         slug: data.slug.toLowerCase(),
@@ -66,7 +77,7 @@ export class CustomDomainRepository {
   }
 
   async updateVerificationStatus(id: string, verified: boolean) {
-    return this.prisma.customDomain.update({
+    return this.prismaClient.customDomain.update({
       where: { id },
       data: {
         verified,
@@ -77,21 +88,21 @@ export class CustomDomainRepository {
   }
 
   async delete(id: string) {
-    return this.prisma.customDomain.delete({
+    return this.prismaClient.customDomain.delete({
       where: { id },
       select: customDomainSelect,
     });
   }
 
   async deleteByTeamId(teamId: number) {
-    return this.prisma.customDomain.delete({
+    return this.prismaClient.customDomain.delete({
       where: { teamId },
       select: customDomainSelect,
     });
   }
 
   async existsBySlug(slug: string): Promise<boolean> {
-    const domain = await this.prisma.customDomain.findUnique({
+    const domain = await this.prismaClient.customDomain.findUnique({
       where: { slug: slug.toLowerCase() },
       select: { id: true },
     });
@@ -99,7 +110,7 @@ export class CustomDomainRepository {
   }
 
   async getUnverifiedDomainsForCheck(limit: number = 30) {
-    return this.prisma.customDomain.findMany({
+    return this.prismaClient.customDomain.findMany({
       where: { verified: false },
       orderBy: { lastCheckedAt: "asc" },
       take: limit,

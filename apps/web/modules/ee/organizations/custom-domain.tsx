@@ -1,5 +1,6 @@
 "use client";
 
+import { DomainVerificationStatus } from "@calcom/features/custom-domains/services/CustomDomainService";
 import { useCopy } from "@calcom/lib/hooks/useCopy";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
@@ -29,7 +30,7 @@ const SkeletonLoader = () => {
   );
 };
 
-const DomainVerificationStatus = ({
+const DomainVerificationBanner = ({
   status,
   domainJson,
   configJson,
@@ -44,7 +45,7 @@ const DomainVerificationStatus = ({
 }) => {
   const { t } = useLocale();
 
-  if (status === "Valid Configuration") {
+  if (status === DomainVerificationStatus.VALID) {
     return (
       <div className="bg-success/10 text-success mt-4 flex items-center gap-2 rounded-lg p-4">
         <Icon name="circle-check" className="h-5 w-5" />
@@ -56,7 +57,7 @@ const DomainVerificationStatus = ({
     );
   }
 
-  if (status === "Pending Verification") {
+  if (status === DomainVerificationStatus.PENDING) {
     const txtVerification = domainJson?.verification?.find((v) => v.type === "TXT");
 
     return (
@@ -78,7 +79,7 @@ const DomainVerificationStatus = ({
     );
   }
 
-  if (status === "Conflicting DNS Records" && configJson?.conflicts) {
+  if (status === DomainVerificationStatus.CONFLICTING_DNS && configJson?.conflicts) {
     return (
       <div className="mt-4 space-y-4">
         <div className="bg-error/10 text-error flex items-center gap-2 rounded-lg p-4">
@@ -116,7 +117,7 @@ const DomainVerificationStatus = ({
     );
   }
 
-  if (status === "Invalid Configuration" || status === "Domain Not Found") {
+  if (status === DomainVerificationStatus.INVALID_CONFIGURATION || status === DomainVerificationStatus.NOT_FOUND) {
     return (
       <div className="mt-4 space-y-4">
         <div className="bg-error/10 text-error flex items-center gap-2 rounded-lg p-4">
@@ -322,7 +323,7 @@ const CustomDomainCard = ({
 
       {!domain.verified && verificationData && (
         <div className="border-subtle border-t px-4 pb-4">
-          <DomainVerificationStatus
+          <DomainVerificationBanner
             status={verificationData.status}
             domainJson={verificationData.domainJson}
             configJson={verificationData.configJson}
