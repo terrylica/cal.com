@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
@@ -82,7 +83,19 @@ export function BookingDetailsSheet({
     }
   );
 
-  const booking = storeBooking ?? fetchedBookingData?.bookings?.[0] ?? null;
+  const fetchedBooking = fetchedBookingData?.bookings?.[0] ?? null;
+  const booking = storeBooking ?? fetchedBooking;
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!fetchedBooking || storeBooking) return;
+    const correctTab = getClientBookingTabStatus(fetchedBooking);
+    const currentTab = pathname?.match(/\/bookings\/(\w+)/)?.[1];
+    if (correctTab && currentTab && correctTab !== currentTab) {
+      const newPath = pathname.replace(`/bookings/${currentTab}`, `/bookings/${correctTab}`);
+      window.history.replaceState(window.history.state, "", `${newPath}${window.location.search}`);
+    }
+  }, [fetchedBooking, storeBooking, pathname]);
 
   if (!booking) return null;
 
@@ -972,4 +985,23 @@ function Section({
       {children}
     </div>
   );
+}
+
+function getClientBookingTabStatus(booking: BookingOutput): string {
+  const now = new Date();
+  const isPast = new Date(booking.endTime) <= now;
+
+  if (booking.status === "CANCELLED" || booking.status === "REJECTED") {
+    return "cancelled";
+  }
+  if (booking.status === "PENDING" && !isPast) {
+    return "unconfirmed";
+  }
+  if (isPast) {
+    return "past";
+  }
+  if (booking.recurringEventId) {
+    return "recurring";
+  }
+  return "upcoming";
 }
