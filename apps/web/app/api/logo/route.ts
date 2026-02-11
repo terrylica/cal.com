@@ -14,7 +14,6 @@ import {
 import logger from "@calcom/lib/logger";
 import { isTrustedInternalUrl, logBlockedSSRFAttempt, validateUrlForSSRF } from "@calcom/lib/ssrfProtection";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
-import type { LogoType } from "@lib/logo-hash";
 import { getLogoHash, isValidLogoType as isValidLogoHashType } from "@lib/logo-hash";
 import { defaultResponderForAppDir } from "app/api/defaultResponderForAppDir";
 import { cookies, headers } from "next/headers";
