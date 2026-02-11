@@ -16,11 +16,11 @@ export function FullscreenUpgradeBannerForRoutingFormPage() {
       subtitle={t("upgrade_banner_routing_form_subtitle")}
       target="team"
       image={{
-        src: "/upgrade/full_routing.png",
+        src: "/upgrade/full_insights_routing.png",
         width: 572,
         height: 744,
       }}
-      youtube="https://www.youtube.com/watch?v=omM89sE7Jpg"
+      youtubeId="omM89sE7Jpg"
       learnMoreButton={{
         text: t("learn_more"),
         href: "https://cal.com/routing",

@@ -6,8 +6,17 @@ import useMediaQuery from "@calcom/lib/hooks/useMediaQuery";
 import { Icon } from "@calcom/ui/components/icon";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
+import {
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPopup,
+  DialogTitle,
+} from "@coss/ui/components/dialog";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import type { UpgradeTarget } from "./types";
 
 export type { UpgradeTarget };
@@ -35,7 +44,7 @@ export type FullScreenUpgradeBannerProps = {
     width: number;
     height: number;
   };
-  youtube?: string;
+  youtubeId?: string;
   children: React.ReactNode;
 };
 
@@ -69,8 +78,10 @@ export function FullScreenUpgradeBanner({
   learnMoreButton,
   extraOffset,
   image,
+  youtubeId,
   children,
 }: FullScreenUpgradeBannerProps): JSX.Element {
+  const [videoOpen, setVideoOpen] = useState(false);
   const deviceSpecificOffset = useResponsiveOffset(extraOffset);
   const { t } = useLocale();
   const ref = useFillRemainingHeight(deviceSpecificOffset);
@@ -136,7 +147,7 @@ export function FullScreenUpgradeBanner({
         </div>
 
         {/* Right Content - Image */}
-        <div className="-my-2 flex flex-1 items-center justify-center rounded-l-xl bg-subtle aspect-[3/4] overflow-hidden">
+        <div className="-my-2 flex flex-1 items-center justify-center rounded-l-xl bg-subtle aspect-[3/4] overflow-hidden border border-muted border-r-0 relative">
           <Image
             src={image.src}
             alt={name}
@@ -144,8 +155,44 @@ export function FullScreenUpgradeBanner({
             height={image.height}
             className="h-full w-full object-cover"
           />
+          {youtubeId && (
+            <button
+              type="button"
+              className="absolute inset-0 flex items-center justify-center cursor-pointer"
+              onClick={() => setVideoOpen(true)}>
+              <Image src="/play_button.svg" alt="Play video" width={48} height={48} />
+            </button>
+          )}
         </div>
       </div>
+
+      {youtubeId && (
+        <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
+          <DialogPopup className="max-w-3xl overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>{name}</DialogTitle>
+              <DialogDescription>
+                {t("available_on_plan", { plan: target === "organization" ? "Organization" : "Team" })}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="aspect-video w-full px-6 pb-6">
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeId}`}
+                title={title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full rounded-lg"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setVideoOpen(false)}>
+                {t("dismiss")}
+              </Button>
+              <Button onClick={() => {}}>{t("get_started")} →</Button>
+            </DialogFooter>
+          </DialogPopup>
+        </Dialog>
+      )}
     </div>
   );
 }

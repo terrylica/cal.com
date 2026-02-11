@@ -4589,6 +4589,7 @@
   "upgrade_info_team_insights_description": "Upgrade to surface all activity across your bookings pages",
   "orgs": "Orgs",
   "available_on": "Available on",
+  "available_on_plan": "Available on {{plan}} plan",
   "upgrade_banner_roles_name": "Roles and Permissions",
   "upgrade_banner_roles_title": "Manage team access with roles and permissions",
   "upgrade_banner_roles_subtitle": "Give teammates the right level of access to events, settings, and scheduling.",

@@ -21,7 +21,7 @@ export function FullscreenUpgradeBannerForInsightsPage() {
       title={t("upgrade_banner_insights_title")}
       subtitle={t("upgrade_banner_insights_subtitle")}
       features={features}
-      target="team"
+      target="organization"
       image={{
         src: "/upgrade/full_insights.png",
         width: 572,
