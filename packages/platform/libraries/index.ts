@@ -115,7 +115,7 @@ export { getTeamMemberEmailForResponseOrContactUsingUrlQuery };
 export { checkAdminOrOwner } from "@calcom/features/auth/lib/checkAdminOrOwner";
 export { getCalendarLinks } from "@calcom/features/bookings/lib/getCalendarLinks";
 export { findTeamMembersMatchingAttributeLogic } from "@calcom/features/routing-forms/lib/findTeamMembersMatchingAttributeLogic";
-export { SelectedCalendarRepository } from "@calcom/lib/server/repository/selectedCalendar";
+export { SelectedCalendarRepository } from "@calcom/features/selectedCalendar/repositories/SelectedCalendarRepository";
 export { encryptServiceAccountKey } from "@calcom/lib/server/serviceAccountKey";
 export { createHandler as createApiKeyHandler } from "@calcom/trpc/server/routers/viewer/apiKeys/create.handler";
 export type { TFindTeamMembersMatchingAttributeLogicInputSchema } from "@calcom/trpc/server/routers/viewer/attributes/findTeamMembersMatchingAttributeLogic.schema";
@@ -137,7 +137,7 @@ export { verifyCodeChallenge } from "@calcom/lib/pkce";
 export { validateUrlForSSRFSync } from "@calcom/lib/ssrfProtection";
 export { checkEmailVerificationRequired } from "@calcom/trpc/server/routers/publicViewer/checkIfUserEmailVerificationRequired.handler";
 export { verifyCode as verifyCodeAuthenticated } from "@calcom/trpc/server/routers/viewer/organizations/verifyCode.handler";
-export type { OrgMembershipLookup } from "@calcom/trpc/server/routers/viewer/slots/util";
+export type { OrgMembershipLookup } from "@calcom/features/di/modules/OrgMembershipLookup";
 
 export { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
 export { BookingReferenceRepository } from "@calcom/features/bookingReference/repositories/BookingReferenceRepository";
