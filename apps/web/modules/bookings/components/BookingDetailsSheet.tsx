@@ -64,9 +64,26 @@ export function BookingDetailsSheet({
   userEmail,
   bookingAuditEnabled = false,
 }: BookingDetailsSheetProps) {
-  const booking = useBookingDetailsSheetStore((state) => state.getSelectedBooking());
+  const selectedBookingUid = useBookingDetailsSheetStore((state) => state.selectedBookingUid);
+  const storeBooking = useBookingDetailsSheetStore((state) => state.getSelectedBooking());
 
-  // Return null if no booking is selected (sheet is closed)
+  const { data: fetchedBookingData } = trpc.viewer.bookings.get.useQuery(
+    {
+      limit: 1,
+      offset: 0,
+      filters: {
+        bookingUid: selectedBookingUid ?? undefined,
+        statuses: ["upcoming", "recurring", "past", "cancelled", "unconfirmed"],
+      },
+    },
+    {
+      enabled: !!selectedBookingUid && !storeBooking,
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  const booking = storeBooking ?? fetchedBookingData?.bookings?.[0] ?? null;
+
   if (!booking) return null;
 
   return (
