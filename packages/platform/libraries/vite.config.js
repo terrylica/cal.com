@@ -221,6 +221,8 @@ export default defineConfig({
       "@calcom/prisma/client": resolve("../../prisma/client"),
       "@calcom/platform-constants": path.resolve(__dirname, "../constants/index.ts"),
       "@calcom/platform-types": path.resolve(__dirname, "../types/index.ts"),
+      "@calcom/ics-feed": path.resolve(__dirname, "../../app-store/apps/ics-feedcalendar/src"),
+      "@calcom/applecalendar": path.resolve(__dirname, "../../app-store/apps/applecalendar/src"),
       tslog: path.resolve(__dirname, "../../../apps/api/v2/src/lib/logger.bridge.ts"),
     },
   },
