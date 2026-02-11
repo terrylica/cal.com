@@ -86,10 +86,13 @@ class StripePaymentService implements IAbstractPaymentService {
         bookerPhoneNumber
       );
 
+      const applicationFeeAmount = this.getApplicationFeeAmount(payment.amount);
+
       const params: Stripe.PaymentIntentCreateParams = {
         amount: payment.amount,
         currency: payment.currency,
         customer: customer.id,
+        ...(applicationFeeAmount ? { application_fee_amount: applicationFeeAmount } : {}),
         automatic_payment_methods: {
           enabled: true,
         },
@@ -129,7 +132,7 @@ class StripePaymentService implements IAbstractPaymentService {
             stripe_publishable_key: this.credentials.stripe_publishable_key,
             stripeAccount: this.credentials.stripe_user_id,
           }) as unknown as Prisma.InputJsonValue,
-          fee: 0,
+          fee: applicationFeeAmount || 0,
           refunded: false,
           success: false,
           paymentOption: paymentOption || "ON_BOOKING",
@@ -261,6 +264,8 @@ class StripePaymentService implements IAbstractPaymentService {
         throw new Error(`Booking attendees are empty for setupIntent ${setupIntent.id}`);
       }
 
+      const applicationFeeAmount = this.getApplicationFeeAmount(payment.amount);
+
       const params: Stripe.PaymentIntentCreateParams = {
         amount: payment.amount,
         currency: payment.currency,
@@ -268,6 +273,7 @@ class StripePaymentService implements IAbstractPaymentService {
         payment_method: setupIntent.payment_method as string,
         off_session: true,
         confirm: true,
+        ...(applicationFeeAmount ? { application_fee_amount: applicationFeeAmount } : {}),
         metadata: this.generateMetadata({
           bookingId,
           userId: booking.user?.id,
@@ -447,6 +453,15 @@ class StripePaymentService implements IAbstractPaymentService {
 
   isSetupAlready(): boolean {
     return !!this.credentials;
+  }
+
+  private getApplicationFeeAmount(amount: number): number | undefined {
+    const feePercentage = Number(process.env.PAYMENT_FEE_PERCENTAGE) || 0;
+    const feeFixed = Number(process.env.PAYMENT_FEE_FIXED) || 0;
+    if (feePercentage <= 0 && feeFixed <= 0) {
+      return undefined;
+    }
+    return Math.round(amount * feePercentage + feeFixed);
   }
 
   private generateMetadata({
