@@ -128,6 +128,8 @@ describe("Segment", () => {
         mainWarnings: null,
         fallbackWarnings: null,
         troubleshooter: undefined,
+        nextCursor: undefined,
+        total: 1,
         result: [
           {
             id: 1,
@@ -184,6 +186,8 @@ describe("Segment", () => {
         mainWarnings: null,
         fallbackWarnings: null,
         troubleshooter: undefined,
+        nextCursor: undefined,
+        total: 1,
         result: [
           {
             id: 1,
@@ -207,6 +211,8 @@ describe("Segment", () => {
         mainWarnings: null,
         fallbackWarnings: null,
         troubleshooter: undefined,
+        nextCursor: undefined,
+        total: 0,
         result: [] as MatchingTeamMembersData["result"],
       },
       isPending: false,

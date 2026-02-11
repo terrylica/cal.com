@@ -290,6 +290,30 @@ export type HostInput = {
   location?: HostLocationInput | null;
 };
 
+export type HostUpdateInput = {
+  userId: number;
+  isFixed?: boolean;
+  priority?: number | null;
+  weight?: number | null;
+  scheduleId?: number | null;
+  groupId?: string | null;
+  location?: HostLocationInput | null;
+};
+
+export type PendingHostChangesInput = {
+  hostsToAdd: HostInput[];
+  hostsToUpdate: HostUpdateInput[];
+  hostsToRemove: number[];
+  clearAllHosts?: boolean;
+};
+
+export type PendingChildrenChangesInput = {
+  childrenToAdd: { owner: { id: number; name: string; email: string }; hidden: boolean }[];
+  childrenToRemove: number[];
+  childrenToUpdate: { userId: number; hidden?: boolean }[];
+  clearAllChildren?: boolean;
+};
+
 export type HostGroupInput = {
   id: string;
   name: string;
@@ -456,6 +480,8 @@ export type EventTypeUpdateInput = {
   multiplePrivateLinks?: (string | HashedLinkInput)[];
   hostGroups?: HostGroupInput[];
   enablePerHostLocations?: boolean;
+  pendingHostChanges?: PendingHostChangesInput;
+  pendingChildrenChanges?: PendingChildrenChangesInput;
 };
 
 export type TabMap = {

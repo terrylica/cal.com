@@ -9,6 +9,9 @@ import type {
   HostGroupInput,
   HostInput,
   HostLocationInput,
+  HostUpdateInput,
+  PendingChildrenChangesInput,
+  PendingHostChangesInput,
 } from "@calcom/features/eventtypes/lib/types";
 import { MAX_SEATS_PER_TIME_SLOT } from "@calcom/lib/constants";
 import {
@@ -23,37 +26,7 @@ import {
 } from "@calcom/prisma/zod-utils";
 import { z } from "zod";
 
-type HostUpdateInput = {
-  userId: number;
-  isFixed?: boolean;
-  priority?: number | null;
-  weight?: number | null;
-  scheduleId?: number | null;
-  groupId?: string | null;
-  location?: HostLocationInput | null;
-};
-
-type PendingHostChangesInput = {
-  hostsToAdd: HostInput[];
-  hostsToUpdate: HostUpdateInput[];
-  hostsToRemove: number[];
-  clearAllHosts?: boolean;
-};
-
-type PendingChildrenChangesInput = {
-  childrenToAdd: {
-    owner: { id: number; name: string; email: string };
-    hidden: boolean;
-  }[];
-  childrenToRemove: number[];
-  childrenToUpdate: { userId: number; hidden?: boolean }[];
-  clearAllChildren?: boolean;
-};
-
-export type TUpdateInputSchema = EventTypeUpdateInput & {
-  pendingHostChanges?: PendingHostChangesInput;
-  pendingChildrenChanges?: PendingChildrenChangesInput;
-};
+export type TUpdateInputSchema = EventTypeUpdateInput;
 
 // ============================================================================
 // ZOD SCHEMAS
