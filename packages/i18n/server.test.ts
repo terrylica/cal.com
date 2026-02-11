@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeWithEnglishFallback } from "./i18n";
+import { mergeWithEnglishFallback } from "./server";
 
 describe("mergeWithEnglishFallback", () => {
   it("should merge locale translations with English fallback", () => {
