@@ -21,7 +21,7 @@ export function getAppName(candidatePath) {
   // Handle apps/ subdirectory paths from chokidar watch mode
   const appsPrefix = `apps${path.sep}`;
   if (dirName.startsWith(appsPrefix) || dirName.startsWith("apps/")) {
-    const appName = dirName.replace(/^apps[/\\]/, "");
+    const appName = dirName.replace(/^apps[/\\]/, "").split(/[\\/]/)[0];
     return isValidAppName(appName) ? appName : null;
   }
   return null;

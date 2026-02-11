@@ -8,6 +8,9 @@ export class PrismaAssignmentReasonRepository {
           uid: bookingUid,
         },
       },
+      select: {
+        reasonString: true,
+      },
       orderBy: {
         createdAt: "desc",
       },
