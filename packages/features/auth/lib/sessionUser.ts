@@ -1,5 +1,3 @@
-import type { Session } from "next-auth";
-
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -7,6 +5,7 @@ import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import { teamMetadataSchema, userMetadata } from "@calcom/prisma/zod-utils";
+import type { Session } from "next-auth";
 
 type Maybe<T> = T | null | undefined;
 
@@ -42,10 +41,10 @@ export async function getUserFromSession<TContext extends { req?: { url?: string
     safeStringify({ user, userFromDb, upId })
   );
 
-    const { email, username, id, uuid } = user;
-    if (!email || !id) {
-      return null; // should we return null here?
-    }
+  const { email, username, id, uuid } = user;
+  if (!email || !id) {
+    return null; // should we return null here?
+  }
 
   const userMetaData = userMetadata.parse(user.metadata || {});
   const orgMetadata = teamMetadataSchema.parse(user.profile?.organization?.metadata || {});
@@ -68,20 +67,20 @@ export async function getUserFromSession<TContext extends { req?: { url?: string
     requestedSlug: orgMetadata?.requestedSlug ?? null,
   };
 
-    return {
-      ...user,
-      avatar: `${WEBAPP_URL}/${user.username}/avatar.png${organization.id ? `?orgId=${organization.id}` : ""}`,
-      // TODO: OrgNewSchema - later -  We could consolidate the props in user.profile?.organization as organization is a profile thing now.
-      organization,
-      organizationId: organization.id,
-      id,
-      uuid,
-      email,
-      username,
-      locale,
-      defaultBookerLayouts: userMetaData?.defaultBookerLayouts || null,
-      requiresBookerEmailVerification: user.requiresBookerEmailVerification,
-    };
+  return {
+    ...user,
+    avatar: `${WEBAPP_URL}/${user.username}/avatar.png${organization.id ? `?orgId=${organization.id}` : ""}`,
+    // TODO: OrgNewSchema - later -  We could consolidate the props in user.profile?.organization as organization is a profile thing now.
+    organization,
+    organizationId: organization.id,
+    id,
+    uuid,
+    email,
+    username,
+    locale,
+    defaultBookerLayouts: userMetaData?.defaultBookerLayouts || null,
+    requiresBookerEmailVerification: user.requiresBookerEmailVerification,
+  };
 }
 
 export type SessionUser = Awaited<ReturnType<typeof getUserFromSession>>;
@@ -93,7 +92,7 @@ export const getSession = async <TContext extends { req?: unknown }>(ctx: TConte
 };
 
 export const getUserSession = async <
-  TContext extends { req?: { url?: string }; locale?: string; session?: Session | null }
+  TContext extends { req?: { url?: string }; locale?: string; session?: Session | null },
 >(
   ctx: TContext
 ) => {
