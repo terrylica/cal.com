@@ -3,6 +3,7 @@ import { eventTypeMetaDataSchemaWithTypedApps } from "@calcom/app-store/zod-util
 import { makeUserActor } from "@calcom/features/booking-audit/lib/makeActor";
 import type { ActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
 import { getBookingEventHandlerService } from "@calcom/features/bookings/di/BookingEventHandlerService.container";
+import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import { BookingEmailSmsHandler } from "@calcom/features/bookings/lib/BookingEmailSmsHandler";
 import { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
@@ -82,14 +83,21 @@ export const addGuestsHandler = async ({
   }
 
   const bookingEventHandlerService = getBookingEventHandlerService();
+  const featuresRepository = getFeaturesRepository();
+  const organizationId = user.organizationId ?? null;
+  const isBookingAuditEnabled = organizationId
+    ? await featuresRepository.checkIfTeamHasFeature(organizationId, "booking-audit")
+    : false;
+
   await bookingEventHandlerService.onAttendeeAdded({
     bookingUid: booking.uid,
     actor: makeUserActor(user.uuid),
-    organizationId: user.organizationId ?? null,
+    organizationId,
     source: actionSource,
     auditData: {
       added: uniqueGuestEmails,
     },
+    isBookingAuditEnabled,
   });
 
   return { message: "Guests added" };
