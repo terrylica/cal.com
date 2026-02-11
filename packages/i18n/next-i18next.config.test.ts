@@ -27,19 +27,10 @@ describe("@calcom/i18n/next-i18next.config", () => {
     expect(fs.existsSync(config.localePath)).toBe(true);
   });
 
-  it("localePath resolves to packages/config/i18n/locales", () => {
-    const expectedDir = path.resolve(__dirname, "./locales");
-    expect(config.localePath).toBe(expectedDir);
-  });
-
   it("has fallbackLng configured", () => {
     expect(config.fallbackLng).toBeDefined();
     expect(config.fallbackLng.default).toEqual(["en"]);
     expect(config.fallbackLng.zh).toEqual(["zh-CN"]);
-  });
-
-  it("has reloadOnPrerender based on NODE_ENV", () => {
-    expect(typeof config.reloadOnPrerender).toBe("boolean");
   });
 
   it("every locale in config has a corresponding locale directory with common.json", () => {

@@ -96,7 +96,7 @@ export default defineConfig(({ mode }) => {
         "@calcom/platform-constants": path.resolve(__dirname, "../constants/index.ts"),
         "@calcom/platform-types": path.resolve(__dirname, "../types/index.ts"),
         "@calcom/platform-utils": path.resolve(__dirname, "../constants/index.ts"),
-        "@calcom/i18n/locales": path.resolve(__dirname, "../../config/i18n/locales"),
+        "@calcom/i18n/locales": path.resolve(__dirname, "../../i18n/locales"),
       },
     },
   };
