@@ -4,7 +4,7 @@ import process from "node:process";
 
 const TEMPLATE_LANGUAGE = "en";
 const SPECIFIC_LOCALES = process.argv.slice(2) || [];
-const LOCALES_PATH = join(__dirname, "../../../packages/config/i18n/locales");
+const LOCALES_PATH = join(__dirname, "../../../packages/i18n/locales");
 
 const ALL_LOCALES = readdirSync(LOCALES_PATH);
 
