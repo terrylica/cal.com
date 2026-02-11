@@ -6,6 +6,7 @@ import {
 } from "@calcom/app-store/routing-forms/lib/formSubmissionUtils";
 import isRouter from "@calcom/app-store/routing-forms/lib/isRouter";
 import type { FormResponse } from "@calcom/app-store/routing-forms/types/types";
+import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
 import type { RoutingFormTraceService } from "@calcom/features/routing-trace/domains/RoutingFormTraceService";
 import type { RoutingTraceService } from "@calcom/features/routing-trace/services/RoutingTraceService";
 import { emailSchema } from "@calcom/lib/emailSchema";
@@ -13,7 +14,7 @@ import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { withReporting } from "@calcom/lib/sentryWrapper";
-import { RoutingFormResponseRepository } from "@calcom/lib/server/repository/formResponse";
+import { RoutingFormResponseRepository } from "@calcom/features/routing-forms/repositories/RoutingFormResponseRepository";
 import { prisma } from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
 import { z } from "zod";
@@ -137,9 +138,10 @@ const _handleResponse = async ({
             crmRecordId = contactOwnerQuery?.recordId ?? null;
           })(),
           (async () => {
-            // If fallbackAction is configured, skip fallbackAttributesQueryValue to prioritize fallbackAction
-            // This maintains backwards compatibility: only use fallbackAttributesQueryValue when fallbackAction is not set
             const hasFallbackAction = "fallbackAction" in chosenRoute && chosenRoute.fallbackAction;
+            const shouldUseFallbackAttributesQuery =
+              !hasFallbackAction ||
+              chosenRoute.fallbackAction?.type === RouteActionType.EventTypeRedirectUrl;
             const teamMembersMatchingAttributeLogicWithResult =
               formTeamId && formOrgId
                 ? await findTeamMembersMatchingAttributeLogic(
@@ -149,10 +151,9 @@ const _handleResponse = async ({
                         fields: form.fields || [],
                       },
                       attributesQueryValue: chosenRoute.attributesQueryValue ?? null,
-                      // Skip fallback attribute routing if fallbackAction is configured
-                      fallbackAttributesQueryValue: hasFallbackAction
-                        ? undefined
-                        : chosenRoute.fallbackAttributesQueryValue,
+                      fallbackAttributesQueryValue: shouldUseFallbackAttributesQuery
+                        ? chosenRoute.fallbackAttributesQueryValue
+                        : undefined,
                       teamId: formTeamId,
                       orgId: formOrgId,
                       routeName: chosenRoute.name,
@@ -235,7 +236,15 @@ const _handleResponse = async ({
         return null;
       }
 
-      // Check if attribute routing is configured on this route (has rules in attributesQueryValue)
+      const hasCrmContactOwner = crmContactOwnerEmail !== null;
+      if (hasCrmContactOwner) {
+        return null;
+      }
+
+      if (checkedFallback) {
+        return chosenRoute.fallbackAction;
+      }
+
       const attributesQueryValue =
         "attributesQueryValue" in chosenRoute ? chosenRoute.attributesQueryValue : null;
       const hasAttributeRoutingConfigured =
@@ -245,20 +254,7 @@ const _handleResponse = async ({
         attributesQueryValue.children1 &&
         Object.keys(attributesQueryValue.children1 as Record<string, unknown>).length > 0;
 
-      if (!hasAttributeRoutingConfigured) {
-        // Attribute routing wasn't configured on this route, fallbackAction doesn't apply
-        return null;
-      }
-
-      // Attribute routing was configured. Check if we got any team members.
-      // - null means routing couldn't run (e.g., missing orgId) or query was intentionally empty
-      // - [] means routing ran but found no matching members
-      const noTeamMembersFound =
-        teamMemberIdsMatchingAttributeLogic === null || teamMemberIdsMatchingAttributeLogic.length === 0;
-
-      const hasCrmContactOwner = crmContactOwnerEmail !== null;
-
-      if (noTeamMembersFound && !hasCrmContactOwner) {
+      if (hasAttributeRoutingConfigured && teamMemberIdsMatchingAttributeLogic === null) {
         return chosenRoute.fallbackAction;
       }
 
@@ -267,7 +263,6 @@ const _handleResponse = async ({
 
     const fallbackAction = getFallbackAction();
 
-    // Trigger fallback webhook if fallback action is being used
     if (fallbackAction && dbFormResponse && !isPreview) {
       await triggerFallbackWebhook({
         form: {
@@ -281,6 +276,7 @@ const _handleResponse = async ({
         fallbackAction,
       });
     }
+
 
     return {
       isPreview: !!isPreview,

@@ -7,7 +7,7 @@ import routerGetCrmContactOwnerEmail from "@calcom/app-store/routing-forms/lib/c
 import type { TargetRoutingFormForResponse } from "@calcom/app-store/routing-forms/lib/formSubmissionUtils";
 import { onSubmissionOfFormResponse } from "@calcom/app-store/routing-forms/lib/formSubmissionUtils";
 import isRouter from "@calcom/app-store/routing-forms/lib/isRouter";
-import { RoutingFormResponseRepository } from "@calcom/lib/server/repository/formResponse";
+import { RoutingFormResponseRepository } from "@calcom/features/routing-forms/repositories/RoutingFormResponseRepository";
 
 import { findTeamMembersMatchingAttributeLogic } from "./findTeamMembersMatchingAttributeLogic";
 import { handleResponse } from "./handleResponse";
@@ -16,7 +16,7 @@ vi.mock("./findTeamMembersMatchingAttributeLogic", () => ({
   findTeamMembersMatchingAttributeLogic: vi.fn(),
 }));
 
-vi.mock("@calcom/lib/server/repository/formResponse");
+vi.mock("@calcom/features/routing-forms/repositories/RoutingFormResponseRepository");
 
 const mockRoutingFormResponseRepository = {
   recordQueuedFormResponse: vi.fn(),
@@ -344,7 +344,6 @@ describe("handleResponse", () => {
   });
 
   describe("Fallback action", () => {
-    // Mock attributesQueryValue with actual rules
     const mockAttributesQueryValueWithRules = {
       type: "group",
       children1: {
@@ -385,7 +384,7 @@ describe("handleResponse", () => {
 
       vi.mocked(findTeamMembersMatchingAttributeLogic).mockResolvedValue({
         teamMembersMatchingAttributeLogic: [], // Empty array = no users found
-        checkedFallback: false,
+        checkedFallback: true, // Fallback was checked and triggered
         fallbackAttributeLogicBuildingWarnings: [],
         mainAttributeLogicBuildingWarnings: [],
         timeTaken: {},

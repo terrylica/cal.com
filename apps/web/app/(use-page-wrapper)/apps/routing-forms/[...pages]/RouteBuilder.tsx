@@ -1,43 +1,34 @@
 "use client";
 
-import { useAutoAnimate } from "@formkit/auto-animate/react";
-import Link from "next/link";
-import React, { useCallback, useState, useEffect } from "react";
-import { Query, Builder, Utils as QbUtils } from "react-awesome-query-builder";
-import type { ImmutableTree, BuilderProps, Config } from "react-awesome-query-builder";
-import type { JsonTree } from "react-awesome-query-builder";
-import type { UseFormReturn } from "react-hook-form";
-import { Toaster } from "sonner";
-
 import { buildEmptyQueryValue } from "@calcom/app-store/_utils/raqb/raqbUtils.client";
 import { raqbQueryValueUtils } from "@calcom/app-store/_utils/raqb/raqbUtils.server";
 import { routingFormAppComponents } from "@calcom/app-store/routing-forms/appComponents";
-import DynamicAppComponent from "@calcom/app-store/routing-forms/components/DynamicAppComponent";
 import { EmptyState } from "@calcom/app-store/routing-forms/components/_components/EmptyState";
 import { RoutingSkeleton } from "@calcom/app-store/routing-forms/components/_components/RoutingSkeleton";
+import DynamicAppComponent from "@calcom/app-store/routing-forms/components/DynamicAppComponent";
 import {
-  withRaqbSettingsAndWidgets,
   ConfigFor,
+  withRaqbSettingsAndWidgets,
 } from "@calcom/app-store/routing-forms/components/react-awesome-query-builder/config/uiConfig";
-import { RoutingPages } from "@calcom/app-store/routing-forms/lib/RoutingPages";
 import { createFallbackRoute } from "@calcom/app-store/routing-forms/lib/createFallbackRoute";
 import getEventTypeAppMetadata from "@calcom/app-store/routing-forms/lib/getEventTypeAppMetadata";
 import {
-  getQueryBuilderConfigForFormFields,
-  getQueryBuilderConfigForAttributes,
-  type FormFieldsQueryBuilderConfigWithRaqbFields,
   type AttributesQueryBuilderConfigWithRaqbFields,
+  type FormFieldsQueryBuilderConfigWithRaqbFields,
+  getQueryBuilderConfigForAttributes,
+  getQueryBuilderConfigForFormFields,
   isDynamicOperandField,
 } from "@calcom/app-store/routing-forms/lib/getQueryBuilderConfig";
 import isRouter from "@calcom/app-store/routing-forms/lib/isRouter";
-import type { RoutingFormWithResponseCount } from "@calcom/app-store/routing-forms/types/types";
+import { RoutingPages } from "@calcom/app-store/routing-forms/lib/RoutingPages";
 import type {
+  Attribute,
+  AttributeRoutingConfig,
+  EditFormRoute,
   GlobalRoute,
   LocalRoute,
+  RoutingFormWithResponseCount,
   SerializableRoute,
-  Attribute,
-  EditFormRoute,
-  AttributeRoutingConfig,
 } from "@calcom/app-store/routing-forms/types/types";
 import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
@@ -52,15 +43,25 @@ import classNames from "@calcom/ui/classNames";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { FormCard } from "@calcom/ui/components/card";
-import { SelectWithValidation as Select, TextArea } from "@calcom/ui/components/form";
-import { TextField } from "@calcom/ui/components/form";
-import { SelectField } from "@calcom/ui/components/form";
-import { Switch } from "@calcom/ui/components/form";
+import {
+  SelectWithValidation as Select,
+  SelectField,
+  Switch,
+  TextArea,
+  TextField,
+} from "@calcom/ui/components/form";
 import type { IconName } from "@calcom/ui/components/icon";
 import { Icon } from "@calcom/ui/components/icon";
 import type { getServerSidePropsForSingleFormView as getServerSideProps } from "@calcom/web/lib/apps/routing-forms/[...pages]/getServerSidePropsSingleForm";
-
 import SingleForm from "@components/apps/routing-forms/SingleForm";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import Link from "next/link";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { BuilderProps, Config, ImmutableTree, JsonTree } from "react-awesome-query-builder";
+import { Builder, Utils as QbUtils, Query } from "react-awesome-query-builder";
+import type { UseFormReturn } from "react-hook-form";
+import { Toaster } from "sonner";
 
 type Form = inferSSRProps<typeof getServerSideProps>["form"];
 
@@ -464,7 +465,8 @@ const RouteActionSelector = ({
             {showCustomEventTypeInput &&
             eventTypeOptions.length !== 0 &&
             action.value !== "" &&
-            (!eventTypeOptions.find((eventOption) => eventOption.value === action.value) ||
+            (action.value === "custom" ||
+              !eventTypeOptions.find((eventOption) => eventOption.value === action.value) ||
               customEventTypeSlug.length) ? (
               <>
                 <TextField
@@ -500,6 +502,7 @@ const RouteActionSelector = ({
     </div>
   );
 };
+
 
 const Route = ({
   form,
@@ -554,10 +557,20 @@ const Route = ({
       ? eventOptions[0].value.substring(0, eventOptions[0].value.lastIndexOf("/") + 1)
       : "";
 
+  const getCustomSlug = (actionValue: string | undefined) => {
+    if (!actionValue) return "";
+    const isCustom = !eventOptions.find((eventOption) => eventOption.value === actionValue);
+    return isCustom ? (actionValue.split("/").pop() ?? "") : "";
+  };
+
   const [customEventTypeSlug, setCustomEventTypeSlug] = useState<string>(() => {
-    const isCustom =
-      !isRouter(route) && !eventOptions.find((eventOption) => eventOption.value === route.action.value);
-    return isCustom && !isRouter(route) ? route.action.value.split("/").pop() ?? "" : "";
+    if (isRouter(route)) return "";
+    return getCustomSlug(route.action.value);
+  });
+
+  const [customFallbackEventTypeSlug, setCustomFallbackEventTypeSlug] = useState<string>(() => {
+    if (isRouter(route)) return "";
+    return getCustomSlug(route.fallbackAction?.value);
   });
 
   useEnsureEventTypeIdInRedirectUrlAction({
@@ -717,7 +730,7 @@ const Route = ({
   const attributesQueryBuilder =
     // team member attributes are only available for organization teams
     route.action?.type === RouteActionType.EventTypeRedirectUrl && isTeamForm && isOrganization ? (
-      <div className="mt-4">
+      <div>
         {/* TODO: */}
         {eventTypeRedirectUrlSelectedOption?.eventTypeAppMetadata &&
         "salesforce" in eventTypeRedirectUrlSelectedOption.eventTypeAppMetadata ? (
@@ -732,13 +745,13 @@ const Route = ({
           </div>
         ) : null}
 
-        <div className="bg-default border-subtle cal-query-builder-container mt-2 rounded-2xl border p-2">
+        <div className="cal-query-builder-container mt-4" data-testid="attributes-query-builder">
           <div className="ml-2 flex items-center gap-0.5">
             <div className="border-subtle rounded-lg border p-1">
               <Icon name="user-check" className="text-subtle h-4 w-4" />
             </div>
             <span className="text-emphasis ml-2 text-sm font-medium">
-              And connect with specific team members
+              {t("connect_with_specific_team_members")}
             </span>
           </div>
           {route.attributesQueryBuilderState && attributesQueryBuilderConfigWithRaqbSettingsAndWidgets && (
@@ -764,8 +777,12 @@ const Route = ({
     ? eventTypeRedirectUrlOptions.find((option) => option.eventTypeId === route.fallbackAction?.eventTypeId)
     : eventTypeRedirectUrlOptions.find((option) => option.value === route.fallbackAction?.value);
 
-  const fallbackAttributesQueryBuilder =
-    route.action?.type === RouteActionType.EventTypeRedirectUrl && isTeamForm ? (
+  const hasValidEventTypeSelected =
+    route.action?.type === RouteActionType.EventTypeRedirectUrl &&
+    (route.action?.eventTypeId || route.action?.value);
+
+  const matchingMembersFallbackRoute =
+    hasValidEventTypeSelected && isTeamForm ? (
       <div className="bg-default border-subtle cal-query-builder-container mt-2 rounded-2xl border p-2">
         <div className="ml-2 flex items-center gap-0.5">
           <div className="border-subtle rounded-lg border p-1">
@@ -774,48 +791,50 @@ const Route = ({
           <span className="text-emphasis ml-2 text-sm font-medium">{t("fallback_action")}</span>
         </div>
         <div className="bg-cal-muted mt-2 rounded-xl p-2">
-          <div className="mb-2 ml-2 flex items-center gap-0.5">
-            <div className="border-subtle rounded-lg border p-1">
-              <Icon name="arrow-right" className="text-subtle h-4 w-4" />
-            </div>
-            <span className="text-emphasis ml-2 text-sm font-medium">{t("send_booker_to")}</span>
-          </div>
           <RouteActionSelector
             action={route.fallbackAction}
             onActionChange={(newAction) => setRoute(route.id, { fallbackAction: newAction })}
             eventTypeOptions={fallbackActionOptions}
             selectedEventTypeOption={fallbackActionSelectedOption}
             disabled={disabled}
+            showCustomEventTypeInput
+            customEventTypeSlug={customFallbackEventTypeSlug}
+            onCustomEventTypeSlugChange={setCustomFallbackEventTypeSlug}
+            eventTypePrefix={eventTypePrefix}
+            fieldIdentifiers={fieldIdentifiers}
             t={t}
           />
         </div>
-        {(route.fallbackAction?.type === RouteActionType.EventTypeRedirectUrl ||
-          (!route.fallbackAction && route.fallbackAttributesQueryBuilderState)) &&
-          route.fallbackAttributesQueryBuilderState &&
-          attributesQueryBuilderConfigWithRaqbSettingsAndWidgets && (
-            <div className="mt-2">
-              <div className="ml-2 flex items-center gap-0.5">
-                <div className="border-subtle rounded-lg border p-1">
-                  <Icon name="user-check" className="text-subtle h-4 w-4" />
+        {isOrganization && (
+          <div className="mt-4">
+            {route.fallbackAction?.type === RouteActionType.EventTypeRedirectUrl &&
+              route.fallbackAttributesQueryBuilderState &&
+              attributesQueryBuilderConfigWithRaqbSettingsAndWidgets && (
+                <div>
+                  <div className="ml-2 flex items-center gap-0.5">
+                    <div className="border-subtle rounded-lg border p-1">
+                      <Icon name="user-check" className="text-subtle h-4 w-4" />
+                    </div>
+                    <span className="text-emphasis ml-2 text-sm font-medium">
+                      {t("connect_with_specific_team_members")}
+                    </span>
+                  </div>
+                  <Query
+                    {...attributesQueryBuilderConfigWithRaqbSettingsAndWidgets}
+                    value={route.fallbackAttributesQueryBuilderState.tree}
+                    onChange={(immutableTree, attributesQueryBuilderConfig) => {
+                      onChangeFallbackTeamMembersQuery(
+                        route,
+                        immutableTree,
+                        attributesQueryBuilderConfig as unknown as AttributesQueryBuilderConfigWithRaqbFields
+                      );
+                    }}
+                    renderBuilder={renderBuilder}
+                  />
                 </div>
-                <span className="text-emphasis ml-2 text-sm font-medium">
-                  And connect with specific team members
-                </span>
-              </div>
-              <Query
-                {...attributesQueryBuilderConfigWithRaqbSettingsAndWidgets}
-                value={route.fallbackAttributesQueryBuilderState.tree}
-                onChange={(immutableTree, attributesQueryBuilderConfig) => {
-                  onChangeFallbackTeamMembersQuery(
-                    route,
-                    immutableTree,
-                    attributesQueryBuilderConfig as unknown as AttributesQueryBuilderConfigWithRaqbFields
-                  );
-                }}
-                renderBuilder={renderBuilder}
-              />
-            </div>
-          )}
+              )}
+          </div>
+        )}
       </div>
     ) : null;
 
@@ -855,7 +874,18 @@ const Route = ({
                 action={route.action}
                 onActionChange={(newAction) => setRoute(route.id, { action: newAction })}
                 onEventTypeChange={(newAction) => {
-                  setRoute(route.id, { action: newAction, attributeRoutingConfig: {} });
+                  const hasValidFallbackEventType =
+                    route.fallbackAction?.eventTypeId || route.fallbackAction?.value;
+                  const fallbackAction = hasValidFallbackEventType
+                    ? route.fallbackAction
+                    : newAction.type === RouteActionType.EventTypeRedirectUrl
+                      ? {
+                          type: newAction.type,
+                          value: newAction.value,
+                          eventTypeId: newAction.eventTypeId,
+                        }
+                      : undefined;
+                  setRoute(route.id, { action: newAction, attributeRoutingConfig: {}, fallbackAction });
                   setCustomEventTypeSlug("");
                 }}
                 eventTypeOptions={eventTypeRedirectUrlOptions}
@@ -881,7 +911,18 @@ const Route = ({
                     action={route.action}
                     onActionChange={(newAction) => setRoute(route.id, { action: newAction })}
                     onEventTypeChange={(newAction) => {
-                      setRoute(route.id, { action: newAction, attributeRoutingConfig: {} });
+                      const hasValidFallbackEventType =
+                        route.fallbackAction?.eventTypeId || route.fallbackAction?.value;
+                      const fallbackAction = hasValidFallbackEventType
+                        ? route.fallbackAction
+                        : newAction.type === RouteActionType.EventTypeRedirectUrl
+                          ? {
+                              type: newAction.type,
+                              value: newAction.value,
+                              eventTypeId: newAction.eventTypeId,
+                            }
+                          : undefined;
+                      setRoute(route.id, { action: newAction, attributeRoutingConfig: {}, fallbackAction });
                       setCustomEventTypeSlug("");
                     }}
                     eventTypeOptions={eventTypeRedirectUrlOptions}
@@ -895,17 +936,17 @@ const Route = ({
                     t={t}
                   />
                 </div>
+                {attributesQueryBuilder}
               </div>
             )}
 
-            {attributesQueryBuilder}
             <WeightedAttributesSelector
               attributes={attributes}
               route={route}
               eventTypeRedirectUrlSelectedOption={eventTypeRedirectUrlSelectedOption}
               setRoute={setRoute}
             />
-            {fallbackAttributesQueryBuilder ? <>{fallbackAttributesQueryBuilder}</> : null}
+            {matchingMembersFallbackRoute ? <>{matchingMembersFallbackRoute}</> : null}
           </div>
         </div>
       </div>
@@ -922,7 +963,7 @@ const buildState = <
     | {
         queryValue: AttributesQueryValue;
         config: AttributesQueryBuilderConfigWithRaqbFields;
-      }
+      },
 >({
   queryValue,
   config,
@@ -1036,6 +1077,17 @@ function useRoutes({
         if (isRouter(route)) {
           return route;
         }
+        // Initialize fallbackAction from action if not set and action is EventTypeRedirectUrl
+        // This handles the case where user creates a new route and changes action to an event type
+        const fallbackAction =
+          route.fallbackAction ??
+          (route.action?.type === RouteActionType.EventTypeRedirectUrl
+            ? {
+                type: route.action.type,
+                value: route.action.value,
+                eventTypeId: route.action.eventTypeId,
+              }
+            : undefined);
         return {
           id: route.id,
           name: route.name,
@@ -1046,7 +1098,7 @@ function useRoutes({
           attributesQueryValue: route.attributesQueryValue,
           fallbackAttributesQueryValue: route.fallbackAttributesQueryValue,
           attributeIdForWeights: route.attributeIdForWeights,
-          fallbackAction: route.fallbackAction,
+          fallbackAction,
         };
       });
     }
@@ -1068,10 +1120,21 @@ const useCreateRoute = ({
 }) => {
   const createRoute = useCallback(() => {
     const newEmptyRoute = getEmptyRoute();
+    // Initialize fallbackAction with the main action for new routes
+    // This ensures new routes have a valid fallbackAction when saved
+    const fallbackAction =
+      newEmptyRoute.action?.type === RouteActionType.EventTypeRedirectUrl
+        ? {
+            type: newEmptyRoute.action.type,
+            value: newEmptyRoute.action.value,
+            eventTypeId: newEmptyRoute.action.eventTypeId,
+          }
+        : undefined;
     const newRoutes = [
       ...routes,
       {
         ...newEmptyRoute,
+        fallbackAction,
         formFieldsQueryBuilderState: buildState({
           queryValue: newEmptyRoute.queryValue,
           config: formFieldsQueryBuilderConfig,
