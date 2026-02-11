@@ -9,8 +9,8 @@ import {
 
 enum Rating {
   "Extremely unsatisfied" = 1,
-  "Unsatisfied" = 2,
-  "Satisfied" = 3,
+  Unsatisfied = 2,
+  Satisfied = 3,
   "Extremely satisfied" = 4,
 }
 
