@@ -17,12 +17,14 @@ import {
 } from "@coss/ui/components/dialog";
 import Image from "next/image";
 import Link from "next/link";
+import posthog from "posthog-js";
 import { useState } from "react";
 import type { UpgradeTarget } from "./types";
 
 export type { UpgradeTarget };
 
 export type FullScreenUpgradeBannerProps = {
+  tracking: string;
   name: string;
   title: string;
   subtitle: string;
@@ -70,6 +72,7 @@ function useResponsiveOffset(
 }
 
 export function FullScreenUpgradeBanner({
+  tracking,
   name,
   title,
   subtitle,
@@ -128,12 +131,16 @@ export function FullScreenUpgradeBanner({
             {/* Buttons */}
             <div className="mt-6 flex items-center gap-2">
               <UpgradePlanDialog
+                tracking={tracking}
                 info={{
                   title,
                   description: subtitle,
                 }}
                 target={target}>
-                <Button>
+                <Button
+                  onClick={() =>
+                    posthog.capture("fullscreen_upgrade_banner_cta_clicked", { source: tracking, target })
+                  }>
                   {t("try_for_free")}
                   <Icon name="arrow-right" />
                 </Button>
@@ -143,11 +150,20 @@ export function FullScreenUpgradeBanner({
                   <Button
                     variant="ghost"
                     className="text-subtle"
+                    onClick={() =>
+                      posthog.capture("fullscreen_upgrade_banner_learn_more_clicked", { source: tracking, target })
+                    }
                     render={<Link href={learnMoreButton.href} target="_blank" rel="noopener noreferrer" />}>
                     {learnMoreButton.text}
                   </Button>
                 ) : (
-                  <Button variant="ghost" className="text-subtle" onClick={learnMoreButton.onClick}>
+                  <Button
+                    variant="ghost"
+                    className="text-subtle"
+                    onClick={() => {
+                      posthog.capture("fullscreen_upgrade_banner_learn_more_clicked", { source: tracking, target });
+                      learnMoreButton.onClick?.();
+                    }}>
                     {learnMoreButton.text}
                   </Button>
                 ))}
@@ -168,7 +184,10 @@ export function FullScreenUpgradeBanner({
             <button
               type="button"
               className="absolute inset-0 flex items-center justify-center cursor-pointer"
-              onClick={() => setVideoOpen(true)}>
+              onClick={() => {
+                posthog.capture("fullscreen_upgrade_banner_video_played", { source: tracking, target });
+                setVideoOpen(true);
+              }}>
               <Image src="/play_button.svg" alt="Play video" width={48} height={48} />
             </button>
           )}
@@ -194,16 +213,25 @@ export function FullScreenUpgradeBanner({
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setVideoOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  posthog.capture("fullscreen_upgrade_banner_video_dismissed", { source: tracking, target });
+                  setVideoOpen(false);
+                }}>
                 {t("dismiss")}
               </Button>
               <UpgradePlanDialog
+                tracking={tracking}
                 info={{
                   title,
                   description: subtitle,
                 }}
                 target={target}>
-                <Button>
+                <Button
+                  onClick={() =>
+                    posthog.capture("fullscreen_upgrade_banner_video_cta_clicked", { source: tracking, target })
+                  }>
                   {t("get_started")}
                   <Icon name="arrow-right" />
                 </Button>

@@ -14,6 +14,7 @@ export function FullscreenUpgradeBannerForInsightsPage() {
 
   return (
     <FullScreenUpgradeBanner
+      tracking="fullscreen-upgrade-banner-for-insights-page"
       name={t("upgrade_banner_insights_name")}
       title={t("upgrade_banner_insights_title")}
       subtitle={t("upgrade_banner_insights_subtitle")}

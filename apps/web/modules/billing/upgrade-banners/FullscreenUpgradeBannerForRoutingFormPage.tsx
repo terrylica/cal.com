@@ -8,6 +8,7 @@ export function FullscreenUpgradeBannerForRoutingFormPage() {
 
   return (
     <FullScreenUpgradeBanner
+      tracking="fullscreen-upgrade-banner-for-routing-form-page"
       name={t("upgrade_banner_routing_form_name")}
       title={t("upgrade_banner_routing_form_title")}
       subtitle={t("upgrade_banner_routing_form_subtitle")}

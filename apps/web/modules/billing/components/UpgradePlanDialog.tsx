@@ -23,6 +23,7 @@ import {
 } from "@coss/ui/components/dialog";
 import { Toggle, ToggleGroup } from "@coss/ui/components/toggle-group";
 import Link from "next/link";
+import posthog from "posthog-js";
 import { useState } from "react";
 
 type BillingPeriod = "annual" | "monthly";
@@ -41,6 +42,7 @@ interface PlanColumnProps {
   buttonText: string;
   buttonHref: string;
   primaryButton?: boolean;
+  onCtaClick?: () => void;
 }
 
 function PlanColumn({
@@ -53,6 +55,7 @@ function PlanColumn({
   buttonText,
   buttonHref,
   primaryButton,
+  onCtaClick,
 }: PlanColumnProps): JSX.Element {
   return (
     <Card className="flex-1 gap-0 rounded-xl border-subtle p-4 py-0">
@@ -67,6 +70,7 @@ function PlanColumn({
         <Button
           className="mt-4 w-full"
           variant={primaryButton ? "default" : "outline"}
+          onClick={onCtaClick}
           render={<Link href={buttonHref} />}>
           <Icon name="circle-arrow-up" />
           <span>{buttonText}</span>
@@ -88,6 +92,7 @@ function PlanColumn({
 }
 
 export type UpgradePlanDialogProps = {
+  tracking: string;
   target: "team" | "organization";
   info?: {
     title: string;
@@ -96,7 +101,7 @@ export type UpgradePlanDialogProps = {
   children: React.ReactNode;
 };
 
-export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogProps): JSX.Element {
+export function UpgradePlanDialog({ tracking, target, info, children }: UpgradePlanDialogProps): JSX.Element {
   const { t } = useLocale();
   const flags = useFlagMap();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("annual");
@@ -147,7 +152,13 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
               value={[billingPeriod]}
               onValueChange={(value): void => {
                 if (value.length > 0) {
-                  setBillingPeriod(value[0] as BillingPeriod);
+                  const newPeriod = value[0] as BillingPeriod;
+                  setBillingPeriod(newPeriod);
+                  posthog.capture("upgrade_plan_dialog_billing_period_changed", {
+                    source: tracking,
+                    target,
+                    billingPeriod: newPeriod,
+                  });
                 }
               }}
               className="rounded-lg bg-muted p-1"
@@ -188,6 +199,9 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
                 buttonText={t("upgrade_cta_teams")}
                 buttonHref={teamHref}
                 primaryButton={target === "team"}
+                onCtaClick={() =>
+                  posthog.capture("upgrade_plan_dialog_cta_clicked", { source: tracking, plan: "team", target, billingPeriod })
+                }
               />
             )}
 
@@ -200,6 +214,14 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
               buttonText={t("upgrade_cta_orgs")}
               buttonHref={organizationHref}
               primaryButton={target === "organization"}
+              onCtaClick={() =>
+                posthog.capture("upgrade_plan_dialog_cta_clicked", {
+                  page,
+                  plan: "organization",
+                  target,
+                  billingPeriod,
+                })
+              }
             />
 
             <PlanColumn
@@ -210,6 +232,14 @@ export function UpgradePlanDialog({ target, info, children }: UpgradePlanDialogP
               features={enterpriseFeatures}
               buttonText={t("upgrade_cta_enterprise")}
               buttonHref="https://cal.com/sales"
+              onCtaClick={() =>
+                posthog.capture("upgrade_plan_dialog_cta_clicked", {
+                  page,
+                  plan: "enterprise",
+                  target,
+                  billingPeriod,
+                })
+              }
             />
           </div>
 

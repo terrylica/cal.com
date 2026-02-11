@@ -5,9 +5,11 @@ import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import Image from "next/image";
 import Link from "next/link";
+import posthog from "posthog-js";
 import type { UpgradeTarget } from "./types";
 
 export type LargeUpgradeBannerProps = {
+  tracking: string;
   title: string;
   subtitle: string;
   target: UpgradeTarget;
@@ -26,6 +28,7 @@ export type LargeUpgradeBannerProps = {
 };
 
 export function LargeUpgradeBanner({
+  tracking,
   title,
   subtitle,
   target,
@@ -54,11 +57,20 @@ export function LargeUpgradeBanner({
               <Button
                 variant="ghost"
                 className="text-subtle"
+                onClick={() =>
+                  posthog.capture("large_upgrade_banner_learn_more_clicked", { source: tracking, target })
+                }
                 render={<Link href={learnMoreButton.href} target="_blank" rel="noopener noreferrer" />}>
                 {learnMoreButton.text}
               </Button>
             ) : (
-              <Button variant="ghost" className="text-subtle" onClick={learnMoreButton.onClick}>
+              <Button
+                variant="ghost"
+                className="text-subtle"
+                onClick={() => {
+                  posthog.capture("large_upgrade_banner_learn_more_clicked", { source: tracking, target });
+                  learnMoreButton.onClick?.();
+                }}>
                 {learnMoreButton.text}
               </Button>
             ))}

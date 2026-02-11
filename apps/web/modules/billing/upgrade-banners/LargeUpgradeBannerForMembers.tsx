@@ -11,6 +11,7 @@ export function LargeUpgradeBannerForMembers() {
 
   return (
     <LargeUpgradeBanner
+      tracking="large-upgrade-banner-for-members"
       title={t("upgrade_banner_team_attributes_title")}
       subtitle={t("upgrade_banner_team_attributes_subtitle")}
       target="organization"
@@ -23,7 +24,7 @@ export function LargeUpgradeBannerForMembers() {
         text: t("learn_more"),
         href: "https://cal.com/help/routing/routing-with-attributes",
       }}>
-      <UpgradePlanDialog target="organization">
+      <UpgradePlanDialog tracking="members" target="organization">
         <Button variant="outline">
           {t("try_for_free")}
           <Icon name="arrow-right" />

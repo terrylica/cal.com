@@ -8,6 +8,7 @@ export function FullscreenUpgradeBannerForRolesAndPermissions() {
 
   return (
     <FullScreenUpgradeBanner
+      tracking="fullscreen-upgrade-banner-for-roles-and-permissions"
       name={t("upgrade_banner_roles_name")}
       title={t("upgrade_banner_roles_title")}
       subtitle={t("upgrade_banner_roles_subtitle")}

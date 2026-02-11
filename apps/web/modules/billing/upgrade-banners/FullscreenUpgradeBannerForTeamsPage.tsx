@@ -15,6 +15,7 @@ export function FullscreenUpgradeBannerForTeamsPage() {
 
   return (
     <FullScreenUpgradeBanner
+      tracking="fullscreen-upgrade-banner-for-teams-page"
       name={t("upgrade_banner_teams_name")}
       title={t("upgrade_banner_teams_title")}
       subtitle={t("upgrade_banner_teams_subtitle")}
