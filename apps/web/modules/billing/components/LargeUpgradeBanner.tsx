@@ -1,12 +1,42 @@
 "use client";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import { localStorage } from "@calcom/lib/webstorage";
+import { Icon } from "@calcom/ui/components/icon";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import Image from "next/image";
 import Link from "next/link";
 import posthog from "posthog-js";
+import { useState } from "react";
 import type { UpgradeTarget } from "./types";
+
+const STORAGE_KEY = "dismissed-large-upgrade-banners";
+
+function isDismissed(tracking: string): boolean {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+  try {
+    const dismissed = JSON.parse(raw) as Record<string, boolean>;
+    return dismissed[tracking] === true;
+  } catch {
+    return false;
+  }
+}
+
+function dismiss(tracking: string): void {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  let dismissed: Record<string, boolean> = {};
+  if (raw) {
+    try {
+      dismissed = JSON.parse(raw) as Record<string, boolean>;
+    } catch {
+      // corrupted data, start fresh
+    }
+  }
+  dismissed[tracking] = true;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(dismissed));
+}
 
 export type LargeUpgradeBannerProps = {
   tracking: string;
@@ -38,9 +68,23 @@ export function LargeUpgradeBanner({
   children,
 }: LargeUpgradeBannerProps) {
   const { t } = useLocale();
+  const [visible, setVisible] = useState(() => !isDismissed(tracking));
+
+  if (!visible) return null;
 
   return (
-    <div className="flex w-full overflow-hidden rounded-xl bg-muted border-muted border">
+    <div className="relative flex w-full overflow-hidden rounded-xl bg-muted border-muted border">
+      <Button
+        variant="ghost"
+        color="minimal"
+        className="absolute right-2 top-2"
+        onClick={() => {
+          dismiss(tracking);
+          setVisible(false);
+          posthog.capture("large_upgrade_banner_dismissed", { source: tracking, target });
+        }}>
+        <Icon name="x" className="h-4 w-4 text-subtle" />
+      </Button>
       {/* Left Content */}
       <div className="flex flex-1 flex-col p-6">
         <div className="flex items-center gap-2">

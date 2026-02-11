@@ -216,7 +216,7 @@ export function UpgradePlanDialog({ tracking, target, info, children }: UpgradeP
               primaryButton={target === "organization"}
               onCtaClick={() =>
                 posthog.capture("upgrade_plan_dialog_cta_clicked", {
-                  page,
+                  source: tracking,
                   plan: "organization",
                   target,
                   billingPeriod,
@@ -234,7 +234,7 @@ export function UpgradePlanDialog({ tracking, target, info, children }: UpgradeP
               buttonHref="https://cal.com/sales"
               onCtaClick={() =>
                 posthog.capture("upgrade_plan_dialog_cta_clicked", {
-                  page,
+                  source: tracking,
                   plan: "enterprise",
                   target,
                   billingPeriod,
