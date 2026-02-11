@@ -741,7 +741,7 @@ const ProfileForm = ({
         so essentially there's no point in allowing them to disconnect, since when they log in they will get logged into the same account */}
         {!isCALIdentityProvider && user.email !== user.identityProviderEmail && (
           <div className="mt-6">
-            <Label>Connected accounts</Label>
+            <Label>{t("connected_accounts")}</Label>
             <div className="flex items-center">
               <span className="text-default text-sm capitalize">{user.identityProvider.toLowerCase()}</span>
               {user.identityProviderEmail && (

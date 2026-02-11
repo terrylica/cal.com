@@ -4615,6 +4615,7 @@
   "upgrade_cta_teams": "Upgrade to Teams",
   "upgrade_cta_orgs": "Upgrade to Orgs",
   "upgrade_cta_enterprise": "Get in touch",
+  "upgrade_info_team_insights_description": "Upgrade to surface all activity across your bookings pages",
   "orgs": "Orgs",
   "available_on": "Available on",
   "available_on_plan": "Available on {{plan}} plan",
@@ -4639,5 +4640,7 @@
   "upgrade_banner_routing_form_subtitle": "Use routing rules to qualify bookers and assign meetings to the best team member.",
   "upgrade_banner_team_attributes_title": "Route meetings based on team member attributes",
   "upgrade_banner_team_attributes_subtitle": "Define attributes like role, region, or specialty and use them to route bookings to the right people automatically.",
+  "play_video": "Play Video",
+  "connected_accounts": "Connected accounts",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }

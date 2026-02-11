@@ -151,7 +151,10 @@ export function FullScreenUpgradeBanner({
                     variant="ghost"
                     className="text-subtle"
                     onClick={() =>
-                      posthog.capture("fullscreen_upgrade_banner_learn_more_clicked", { source: tracking, target })
+                      posthog.capture("fullscreen_upgrade_banner_learn_more_clicked", {
+                        source: tracking,
+                        target,
+                      })
                     }
                     render={<Link href={learnMoreButton.href} target="_blank" rel="noopener noreferrer" />}>
                     {learnMoreButton.text}
@@ -161,7 +164,10 @@ export function FullScreenUpgradeBanner({
                     variant="ghost"
                     className="text-subtle"
                     onClick={() => {
-                      posthog.capture("fullscreen_upgrade_banner_learn_more_clicked", { source: tracking, target });
+                      posthog.capture("fullscreen_upgrade_banner_learn_more_clicked", {
+                        source: tracking,
+                        target,
+                      });
                       learnMoreButton.onClick?.();
                     }}>
                     {learnMoreButton.text}
@@ -188,7 +194,7 @@ export function FullScreenUpgradeBanner({
                 posthog.capture("fullscreen_upgrade_banner_video_played", { source: tracking, target });
                 setVideoOpen(true);
               }}>
-              <Image src="/play_button.svg" alt="Play video" width={48} height={48} />
+              <Image src="/play_button.svg" alt={t("play_video")} width={48} height={48} />
             </button>
           )}
         </div>
@@ -200,7 +206,7 @@ export function FullScreenUpgradeBanner({
             <DialogHeader>
               <DialogTitle>{name}</DialogTitle>
               <DialogDescription>
-                {t("available_on_plan", { plan: target === "organization" ? "Organization" : "Team" })}
+                {t("available_on_plan", { plan: target === "organization" ? t("organization") : t("team") })}
               </DialogDescription>
             </DialogHeader>
             <div className="aspect-video w-full px-6 pb-6">
@@ -230,7 +236,10 @@ export function FullScreenUpgradeBanner({
                 target={target}>
                 <Button
                   onClick={() =>
-                    posthog.capture("fullscreen_upgrade_banner_video_cta_clicked", { source: tracking, target })
+                    posthog.capture("fullscreen_upgrade_banner_video_cta_clicked", {
+                      source: tracking,
+                      target,
+                    })
                   }>
                   {t("get_started")}
                   <Icon name="arrow-right" />
