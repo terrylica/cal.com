@@ -87,7 +87,7 @@ export class RescheduledAuditActionService implements IAuditActionService {
                 oldDate,
                 newDate,
             },
-            components: rescheduledToUid ? [{ type: "link", href: `/bookings/upcoming?uid=${rescheduledToUid}&activeSegment=history` }] : undefined,
+            components: rescheduledToUid ? [{ type: "link", href: `/bookings?uid=${rescheduledToUid}&activeSegment=history` }] : undefined,
         };
     }
 
@@ -117,7 +117,7 @@ export class RescheduledAuditActionService implements IAuditActionService {
                 oldDate,
                 newDate,
             },
-            components: [{ type: "link", href: `/bookings/upcoming?uid=${fromRescheduleUid}&activeSegment=history` }],
+            components: [{ type: "link", href: `/bookings?uid=${fromRescheduleUid}&activeSegment=history` }],
         };
     }
 

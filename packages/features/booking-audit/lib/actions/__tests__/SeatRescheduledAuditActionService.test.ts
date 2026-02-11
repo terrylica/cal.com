@@ -57,9 +57,9 @@ describe("SeatRescheduledAuditActionService - getDisplayTitle", () => {
 
     expect(result.components).toBeDefined();
     expect(result.components).toHaveLength(1);
-    expect(result.components![0].href).toBe(
-      `/bookings/upcoming?uid=${rescheduledToBookingUid}&activeSegment=history`
-    );
+        expect(result.components![0].href).toBe(
+          `/bookings?uid=${rescheduledToBookingUid}&activeSegment=history`
+        );
   });
 
   it("should not include components when rescheduledToBookingUid is null", async () => {
