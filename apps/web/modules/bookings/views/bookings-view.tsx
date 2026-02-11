@@ -1,13 +1,13 @@
 "use client";
 
 import { ColumnFilterType, DataTableProvider, type SystemFilterSegment } from "@calcom/features/data-table";
-import { useSegments } from "~/data-table/hooks/useSegments";
-import FeatureOptInBannerWrapper from "~/feature-opt-in/components/FeatureOptInBannerWrapper";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import classNames from "@calcom/ui/classNames";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
+import { useSegments } from "~/data-table/hooks/useSegments";
+import FeatureOptInBannerWrapper from "~/feature-opt-in/components/FeatureOptInBannerWrapper";
 import { useFeatureOptInBanner } from "../../feature-opt-in/hooks/useFeatureOptInBanner";
 import { BookingListContainer } from "../components/BookingListContainer";
 import { useActiveFiltersValidator } from "../hooks/useActiveFiltersValidator";
@@ -28,6 +28,7 @@ type BookingsProps = {
   };
   bookingsV3Enabled: boolean;
   bookingAuditEnabled: boolean;
+  initialBookingUid?: string;
 };
 
 function useSystemSegments(userId?: number) {
@@ -76,7 +77,13 @@ export default function Bookings(props: BookingsProps) {
   );
 }
 
-function BookingsContent({ status, permissions, bookingsV3Enabled, bookingAuditEnabled }: BookingsProps) {
+function BookingsContent({
+  status,
+  permissions,
+  bookingsV3Enabled,
+  bookingAuditEnabled,
+  initialBookingUid,
+}: BookingsProps) {
   const [view] = useBookingsView({ bookingsV3Enabled });
   const optInBanner = useFeatureOptInBanner("bookings-v3");
 
@@ -88,6 +95,7 @@ function BookingsContent({ status, permissions, bookingsV3Enabled, bookingAuditE
           permissions={permissions}
           bookingsV3Enabled={bookingsV3Enabled}
           bookingAuditEnabled={bookingAuditEnabled}
+          initialBookingUid={initialBookingUid}
         />
       )}
       {bookingsV3Enabled && view === "calendar" && (
