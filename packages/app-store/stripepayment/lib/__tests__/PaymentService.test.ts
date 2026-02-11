@@ -2,7 +2,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import type { Prisma } from "@calcom/prisma/client";
 
-const mockPaymentIntentCreate = vi.fn();
+const { mockPaymentIntentCreate, mockCustomersRetrieve, mockPaymentMethodsRetrieve, mockPrisma } = vi.hoisted(
+  () => ({
+    mockPaymentIntentCreate: vi.fn(),
+    mockCustomersRetrieve: vi.fn(),
+    mockPaymentMethodsRetrieve: vi.fn(),
+    mockPrisma: {
+      payment: {
+        create: vi.fn(),
+        update: vi.fn(),
+        findFirst: vi.fn(),
+      },
+    },
+  })
+);
 
 vi.mock("stripe", () => {
   function StripeMock() {
@@ -11,7 +24,9 @@ vi.mock("stripe", () => {
       customers: {
         list: vi.fn().mockResolvedValue({ data: [{ id: "cus_test_123" }] }),
         create: vi.fn().mockResolvedValue({ id: "cus_new_123" }),
+        retrieve: mockCustomersRetrieve,
       },
+      paymentMethods: { retrieve: mockPaymentMethodsRetrieve },
     };
   }
   return { default: StripeMock };
@@ -31,23 +46,22 @@ vi.mock("../customer", () => ({
 }));
 
 vi.mock("@calcom/prisma", () => ({
-  default: {
-    payment: {
-      create: vi.fn().mockResolvedValue({
-        id: 1,
-        uid: "test-uid",
-        amount: 1000,
-        currency: "usd",
-        externalId: "pi_test_123",
-        fee: 0,
-        refunded: false,
-        success: false,
-      }),
-    },
-  },
+  default: mockPrisma,
 }));
 
-vi.mock("@calcom/features/bookings/repositories/BookingRepository");
+vi.mock("@calcom/features/bookings/repositories/BookingRepository", () => {
+  return {
+    BookingRepository: class MockBookingRepository {
+      findByIdIncludeUserAndAttendees = vi.fn().mockResolvedValue({
+        id: 1,
+        title: "Test Booking",
+        user: { id: 1, username: "testuser" },
+        attendees: [{ name: "Booker", email: "booker@example.com", phoneNumber: null }],
+        eventType: { title: "Test Event" },
+      });
+    },
+  };
+});
 vi.mock("@calcom/features/tasker", () => ({
   default: { create: vi.fn() },
 }));
@@ -80,6 +94,31 @@ describe("StripePaymentService - Application Fee", () => {
       amount: 1000,
       currency: "usd",
       status: "requires_payment_method",
+    });
+
+    mockCustomersRetrieve.mockResolvedValue({ id: "cus_test_123" });
+    mockPaymentMethodsRetrieve.mockResolvedValue({ id: "pm_test_123" });
+
+    mockPrisma.payment.create.mockResolvedValue({
+      id: 1,
+      uid: "test-uid",
+      amount: 1000,
+      currency: "usd",
+      externalId: "pi_test_123",
+      fee: 0,
+      refunded: false,
+      success: false,
+    });
+
+    mockPrisma.payment.update.mockResolvedValue({
+      id: 1,
+      uid: "test-uid",
+      amount: 1000,
+      currency: "usd",
+      externalId: "pi_test_123",
+      fee: 0,
+      refunded: false,
+      success: true,
     });
   });
 
@@ -253,6 +292,96 @@ describe("StripePaymentService - Application Fee", () => {
       expect(mockPaymentIntentCreate).toHaveBeenCalledWith(
         expect.objectContaining({ application_fee_amount: 250 }),
         expect.objectContaining({ stripeAccount: "acct_test_123" })
+      );
+    });
+  });
+
+  describe("chargeCard() - HOLD payments (no-show fee)", () => {
+    const mockPayment = {
+      id: 1,
+      uid: "test-uid",
+      amount: 1000,
+      currency: "usd",
+      externalId: "si_test_123",
+      fee: 0,
+      refunded: false,
+      success: false,
+      data: {
+        setupIntent: {
+          id: "si_test_123",
+          customer: "cus_test_123",
+          payment_method: "pm_test_123",
+        },
+      },
+    };
+
+    it("should include application_fee_amount in chargeCard when PAYMENT_FEE_PERCENTAGE is set", async () => {
+      process.env.PAYMENT_FEE_PERCENTAGE = "0.05";
+
+      const service = BuildPaymentService(createValidCredentials());
+
+      await service.chargeCard(mockPayment, 1);
+
+      expect(mockPaymentIntentCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ application_fee_amount: 50 }),
+        expect.objectContaining({ stripeAccount: "acct_test_123" })
+      );
+    });
+
+    it("should persist fee in database when charging card with PAYMENT_FEE_PERCENTAGE", async () => {
+      process.env.PAYMENT_FEE_PERCENTAGE = "0.05";
+
+      const service = BuildPaymentService(createValidCredentials());
+
+      await service.chargeCard(mockPayment, 1);
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ fee: 50 }),
+        })
+      );
+    });
+
+    it("should not include application_fee_amount in chargeCard when env vars are not set", async () => {
+      const service = BuildPaymentService(createValidCredentials());
+
+      await service.chargeCard(mockPayment, 1);
+
+      expect(mockPaymentIntentCreate).toHaveBeenCalledWith(
+        expect.not.objectContaining({ application_fee_amount: expect.anything() }),
+        expect.objectContaining({ stripeAccount: "acct_test_123" })
+      );
+    });
+
+    it("should persist fee as 0 when no fee env vars are set", async () => {
+      const service = BuildPaymentService(createValidCredentials());
+
+      await service.chargeCard(mockPayment, 1);
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ fee: 0 }),
+        })
+      );
+    });
+
+    it("should combine percentage and fixed fee in chargeCard", async () => {
+      process.env.PAYMENT_FEE_PERCENTAGE = "0.10";
+      process.env.PAYMENT_FEE_FIXED = "50";
+
+      const service = BuildPaymentService(createValidCredentials());
+
+      await service.chargeCard(mockPayment, 1);
+
+      expect(mockPaymentIntentCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ application_fee_amount: 150 }),
+        expect.objectContaining({ stripeAccount: "acct_test_123" })
+      );
+
+      expect(mockPrisma.payment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ fee: 150 }),
+        })
       );
     });
   });
