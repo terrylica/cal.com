@@ -87,7 +87,8 @@ export const createTeams = async ({ ctx, input }: CreateTeamsOptions) => {
     .flatMap((ts) => ts.slug ?? [])
     .concat(userSlugs.flatMap((us) => us.username ?? []));
 
-  const duplicatedSlugs = existingSlugs.filter((slug) => teamNames.map((item) => slugify(item)).includes(slug));
+  const slugifiedNameSet = new Set(teamNames.map((item) => slugify(item)));
+  const duplicatedSlugs = new Set(existingSlugs.filter((slug) => slugifiedNameSet.has(slug)));
 
   for (const team of moveTeams.filter((team) => team.shouldMove)) {
     await moveTeam({
@@ -101,13 +102,13 @@ export const createTeams = async ({ ctx, input }: CreateTeamsOptions) => {
     });
   }
 
-  if (duplicatedSlugs.length === teamNames.length) {
-    return { duplicatedSlugs } as const;
+  if (duplicatedSlugs.size === teamNames.length) {
+    return { duplicatedSlugs: [...duplicatedSlugs] } as const;
   }
 
   await prisma.$transaction(
     teamNames.flatMap((name) => {
-      if (!duplicatedSlugs.includes(slugify(name))) {
+      if (!duplicatedSlugs.has(slugify(name))) {
         return prisma.team.create({
           data: {
             name,
@@ -122,7 +123,7 @@ export const createTeams = async ({ ctx, input }: CreateTeamsOptions) => {
     })
   );
 
-  return { duplicatedSlugs } as const;
+  return { duplicatedSlugs: [...duplicatedSlugs] } as const;
 };
 
 async function moveTeam({
