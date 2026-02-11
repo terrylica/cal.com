@@ -1,6 +1,8 @@
 import { ProfileRepository } from "@calcom/features/profile/repositories/ProfileRepository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { WEBAPP_URL } from "@calcom/lib/constants";
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
@@ -115,7 +117,7 @@ export const getUserSession = async (ctx: SessionContext) => {
         safeStringify({ profileId: session.profileId, userId: user?.id })
       );
       // TODO: Test that logout should happen automatically
-      throw new Error("Profile not found or not authorized");
+      throw new ErrorWithCode(ErrorCode.Unauthorized, "Profile not found or not authorized");
     }
   }
 
@@ -127,7 +129,7 @@ export const getUserSession = async (ctx: SessionContext) => {
     }
 
     if (!upId) {
-      throw new Error("No upId found for session");
+      throw new ErrorWithCode(ErrorCode.InternalServerError, "No upId found for session");
     }
     sessionWithUpId = {
       ...session,
