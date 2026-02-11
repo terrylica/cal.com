@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
+import { checkIfFreeEmailDomain } from "@calcom/features/watchlist/lib/freeEmailDomainCheck/checkIfFreeEmailDomain";
 import getLabelValueMapFromResponses from "@calcom/lib/bookings/getLabelValueMapFromResponses";
 import { getLocation } from "@calcom/lib/CalEventParser";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
-import { PrismaTrackingRepository } from "@calcom/lib/server/repository/PrismaTrackingRepository";
+import { PrismaTrackingRepository } from "@calcom/features/bookings/repositories/PrismaTrackingRepository";
 import prisma from "@calcom/prisma";
 import type { CalEventResponses, CalendarEvent } from "@calcom/types/Calendar";
 import type { CredentialPayload } from "@calcom/types/Credential";
@@ -326,7 +327,12 @@ class HubspotCalendarService implements CRM {
 
     try {
       await this.hubspotClient.crm.contacts.basicApi.update(contactId, {
-        properties: confirmedCustomFieldInputs as Record<string, string>,
+        properties: Object.fromEntries(
+          Object.entries(confirmedCustomFieldInputs).map(([key, value]) => [
+            key,
+            typeof value === "boolean" ? (value ? "true" : "false") : value,
+          ])
+        ),
       });
     } catch (error) {
       this.log.error(`Error writing to contact record ${contactId}:`, error);
@@ -537,11 +543,24 @@ class HubspotCalendarService implements CRM {
     await this.hubspotCancelMeeting(uid);
   }
 
-  async getContacts({ emails }: { emails: string | string[] }): Promise<Contact[]> {
+  async getContacts({
+    emails,
+    includeOwner,
+    forRoundRobinSkip,
+  }: {
+    emails: string | string[];
+    includeOwner?: boolean;
+    forRoundRobinSkip?: boolean;
+  }): Promise<Contact[]> {
     const auth = await this.auth;
     await auth.getToken();
 
     const emailArray = Array.isArray(emails) ? emails : [emails];
+
+    const shouldIncludeOwner = includeOwner || forRoundRobinSkip;
+
+    const skipDueToFreeEmail =
+      forRoundRobinSkip && (await this.shouldSkipAttendeeIfFreeEmailDomain(emailArray[0]));
 
     const publicObjectSearchRequest: PublicObjectSearchRequest = {
       filterGroups: emailArray.map((attendeeEmail) => ({
@@ -554,7 +573,10 @@ class HubspotCalendarService implements CRM {
         ],
       })),
       sorts: ["hs_object_id"],
-      properties: ["hs_object_id", "email"],
+      properties:
+        shouldIncludeOwner && !skipDueToFreeEmail
+          ? ["hs_object_id", "email", "hubspot_owner_id"]
+          : ["hs_object_id", "email"],
       limit: 10,
       after: 0,
     };
@@ -562,6 +584,27 @@ class HubspotCalendarService implements CRM {
     const contacts = await this.hubspotClient.crm.contacts.searchApi
       .doSearch(publicObjectSearchRequest)
       .then((apiResponse) => apiResponse.results);
+
+    if (shouldIncludeOwner && !skipDueToFreeEmail) {
+      return await Promise.all(
+        contacts.map(async (contact) => {
+          const ownerId = contact.properties.hubspot_owner_id;
+          let ownerEmail: string | undefined;
+
+          if (ownerId) {
+            ownerEmail = await this.getOwnerEmailFromId(ownerId);
+          }
+
+          return {
+            id: contact.id,
+            email: contact.properties.email,
+            ownerId,
+            ownerEmail,
+            recordType: "CONTACT",
+          };
+        })
+      );
+    }
 
     return contacts.map((contact) => {
       return {
@@ -577,12 +620,18 @@ class HubspotCalendarService implements CRM {
 
     const simplePublicObjectInputs = contactsToCreate.map((attendee) => {
       const [firstname, lastname] = attendee.name ? attendee.name.split(" ") : [attendee.email, ""];
+      const properties: Record<string, string> = {
+        firstname,
+        lastname,
+        email: attendee.email,
+      };
+
+      if (attendee.phone) {
+        properties.phone = attendee.phone;
+      }
+
       return {
-        properties: {
-          firstname,
-          lastname,
-          email: attendee.email,
-        },
+        properties,
       };
     });
     const createdContacts = await Promise.all(
@@ -669,6 +718,24 @@ class HubspotCalendarService implements CRM {
     } catch (error) {
       this.log.error("Error fetching contact owner, skipping owner update:", error);
     }
+  }
+
+  private async getOwnerEmailFromId(ownerId: string): Promise<string | undefined> {
+    try {
+      const owner = await this.hubspotClient.crm.owners.ownersApi.getById(parseInt(ownerId, 10));
+      return owner.email ?? undefined;
+    } catch (error) {
+      this.log.error("Error fetching owner by ID:", error);
+      return undefined;
+    }
+  }
+
+  private async shouldSkipAttendeeIfFreeEmailDomain(attendeeEmail: string): Promise<boolean> {
+    const appOptions = this.getAppOptions();
+    if (!appOptions.ifFreeEmailDomainSkipOwnerCheck) return false;
+
+    const response = await checkIfFreeEmailDomain({ email: attendeeEmail });
+    return response;
   }
 }
 
