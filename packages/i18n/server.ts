@@ -1,6 +1,6 @@
 import { createInstance } from "i18next";
 
-const { i18n } = require("@calcom/i18n/next-i18next.config");
+const { i18n } = require("./next-i18next.config");
 
 // Import only English translations directly to avoid HTTP requests
 // Other languages will be loaded dynamically to minimize bundle size
