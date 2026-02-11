@@ -4,6 +4,7 @@ import { useFillRemainingHeight } from "@calcom/lib/hooks/useFillRemainingHeight
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMediaQuery from "@calcom/lib/hooks/useMediaQuery";
 import { Icon } from "@calcom/ui/components/icon";
+import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import {
@@ -45,7 +46,6 @@ export type FullScreenUpgradeBannerProps = {
     height: number;
   };
   youtubeId?: string;
-  children: React.ReactNode;
 };
 
 function useResponsiveOffset(
@@ -79,7 +79,6 @@ export function FullScreenUpgradeBanner({
   extraOffset,
   image,
   youtubeId,
-  children,
 }: FullScreenUpgradeBannerProps): JSX.Element {
   const [videoOpen, setVideoOpen] = useState(false);
   const deviceSpecificOffset = useResponsiveOffset(extraOffset);
@@ -128,7 +127,17 @@ export function FullScreenUpgradeBanner({
             <div className="mt-4 h-px w-full border border-t-subtle border-dashed" />
             {/* Buttons */}
             <div className="mt-6 flex items-center gap-2">
-              {children}
+              <UpgradePlanDialog
+                info={{
+                  title,
+                  description: subtitle,
+                }}
+                target={target}>
+                <Button>
+                  {t("try_for_free")}
+                  <Icon name="arrow-right" />
+                </Button>
+              </UpgradePlanDialog>
               {learnMoreButton &&
                 (learnMoreButton.href ? (
                   <Button
@@ -188,7 +197,17 @@ export function FullScreenUpgradeBanner({
               <Button variant="outline" onClick={() => setVideoOpen(false)}>
                 {t("dismiss")}
               </Button>
-              <Button onClick={() => {}}>{t("get_started")} →</Button>
+              <UpgradePlanDialog
+                info={{
+                  title,
+                  description: subtitle,
+                }}
+                target={target}>
+                <Button>
+                  {t("get_started")}
+                  <Icon name="arrow-right" />
+                </Button>
+              </UpgradePlanDialog>
             </DialogFooter>
           </DialogPopup>
         </Dialog>
