@@ -45,7 +45,7 @@ import { plainToInstance } from "class-transformer";
 import { Request } from "express";
 import { stringify } from "querystring";
 
-import { GOOGLE_MEET, ZOOM, SUCCESS_STATUS, OFFICE_365_VIDEO, CAL_VIDEO } from "@calcom/platform-constants";
+import { ZOOM, SUCCESS_STATUS, OFFICE_365_VIDEO, CAL_VIDEO } from "@calcom/platform-constants";
 
 export type OAuthCallbackState = {
   accessToken: string;
@@ -73,7 +73,7 @@ export class OrganizationsConferencingController {
   @ApiParam({
     name: "app",
     description: "Conferencing application type",
-    enum: [GOOGLE_MEET],
+    enum: [ZOOM, OFFICE_365_VIDEO],
     required: true,
   })
   @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
@@ -82,10 +82,8 @@ export class OrganizationsConferencingController {
   @ApiOperation({
     summary: "Connect your conferencing application to a team",
     description:
-      "Note: Google Meet is currently not supported for team-level connections. " +
-      "Connecting Google Meet to a team requires a Google Calendar to be connected to that team first, " +
-      "but there is currently no way to connect Google Calendar at the team level. " +
-      "Only OAuth-based conferencing apps (Zoom, Office365 Video) can be connected to teams at the moment.",
+      "Google Meet is not supported for team-level connections because it requires a Google Calendar " +
+      "to be connected to the team first, which is not yet available.",
   })
   async connectTeamApp(
     @GetUser() user: UserWithProfile,
@@ -169,13 +167,13 @@ export class OrganizationsConferencingController {
   @ApiOperation({
     summary: "Set team default conferencing application",
     description:
-      "Note: Google Meet cannot currently be set as a team default because it requires a Google Calendar " +
-      "connection at the team level, which is not yet supported.",
+      "Google Meet is not supported for team-level connections because it requires a Google Calendar " +
+      "to be connected to the team first, which is not yet available.",
   })
   @ApiParam({
     name: "app",
     description: "Conferencing application type",
-    enum: [GOOGLE_MEET, ZOOM, OFFICE_365_VIDEO, CAL_VIDEO],
+    enum: [ZOOM, OFFICE_365_VIDEO, CAL_VIDEO],
     required: true,
   })
   async setTeamDefaultApp(
@@ -199,7 +197,7 @@ export class OrganizationsConferencingController {
   @ApiParam({
     name: "app",
     description: "Conferencing application type",
-    enum: [GOOGLE_MEET, ZOOM, OFFICE_365_VIDEO, CAL_VIDEO],
+    enum: [ZOOM, OFFICE_365_VIDEO, CAL_VIDEO],
     required: true,
   })
   async getTeamDefaultApp(
@@ -221,12 +219,13 @@ export class OrganizationsConferencingController {
   @ApiOperation({
     summary: "Disconnect team conferencing application",
     description:
-      "Note: Google Meet is currently not supported for team-level connections, so there would be nothing to disconnect for it.",
+      "Google Meet is not supported for team-level connections because it requires a Google Calendar " +
+      "to be connected to the team first, which is not yet available.",
   })
   @ApiParam({
     name: "app",
     description: "Conferencing application type",
-    enum: [GOOGLE_MEET, ZOOM, OFFICE_365_VIDEO],
+    enum: [ZOOM, OFFICE_365_VIDEO],
     required: true,
   })
   async disconnectTeamApp(
