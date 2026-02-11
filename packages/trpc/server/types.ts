@@ -1,3 +1,3 @@
-import type { UserFromSession } from "./middlewares/sessionMiddleware";
+import type { SessionUser } from "@calcom/features/auth/lib/sessionUser";
 
-export type TrpcSessionUser = UserFromSession;
+export type TrpcSessionUser = SessionUser;
