@@ -14,7 +14,7 @@ vi.mock("@calcom/features/bookings/services/BookingAccessService");
 vi.mock("@calcom/features/webhooks/lib/getWebhooks");
 vi.mock("@calcom/features/webhooks/lib/sendPayload");
 vi.mock("@calcom/prisma", () => ({ default: {} }));
-vi.mock("@calcom/config/i18n/server", () => ({
+vi.mock("@calcom/i18n/server", () => ({
   getTranslation: vi.fn().mockResolvedValue((key: string) => {
     const translations: Record<string, string> = {
       wrong_assignment_already_reported: "A wrong assignment report has already been submitted for this booking",

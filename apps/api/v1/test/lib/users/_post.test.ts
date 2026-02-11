@@ -14,7 +14,7 @@ import handler from "../../../pages/api/users/_post";
 type CustomNextApiRequest = NextApiRequest & Request;
 type CustomNextApiResponse = NextApiResponse & Response;
 
-vi.mock("@calcom/config/i18n/server", () => {
+vi.mock("@calcom/i18n/server", () => {
   return {
     getTranslation: (key: string) => {
       return () => key;

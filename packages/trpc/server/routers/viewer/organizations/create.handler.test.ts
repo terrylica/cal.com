@@ -18,7 +18,7 @@ vi.mock("@calcom/lib/domainManager/organization", () => ({
   createDomain: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock("@calcom/config/i18n/server", () => ({
+vi.mock("@calcom/i18n/server", () => ({
   getTranslation: vi.fn().mockResolvedValue((key: string) => key),
 }));
 

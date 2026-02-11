@@ -4,7 +4,7 @@ import { BookingAccessService } from "@calcom/features/bookings/services/Booking
 import getWebhooks from "@calcom/features/webhooks/lib/getWebhooks";
 import { sendGenericWebhookPayload } from "@calcom/features/webhooks/lib/sendPayload";
 import logger from "@calcom/lib/logger";
-import { getTranslation } from "@calcom/config/i18n/server";
+import { getTranslation } from "@calcom/i18n/server";
 import prisma from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
 import { WebhookTriggerEvents } from "@calcom/prisma/enums";

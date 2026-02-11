@@ -26,7 +26,7 @@ vi.mock("@calcom/emails/oauth-email-service", () => ({
   sendAdminOAuthClientNotification: mocks.sendAdminOAuthClientNotification,
 }));
 
-vi.mock("@calcom/config/i18n/server", () => ({
+vi.mock("@calcom/i18n/server", () => ({
   getTranslation: mocks.getTranslation,
 }));
 

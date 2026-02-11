@@ -54,7 +54,7 @@ vi.mock(
   })
 );
 
-vi.mock("@calcom/config/i18n/server", () => ({
+vi.mock("@calcom/i18n/server", () => ({
   getTranslation: vi
     .fn()
     .mockImplementation(async (locale: string, namespace: string) => {
