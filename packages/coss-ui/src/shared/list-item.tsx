@@ -1,5 +1,6 @@
 import { cn } from "@coss/ui/lib/utils";
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 interface ListItemProps {
   children: ReactNode;
@@ -50,6 +51,14 @@ function ListItemTitle({ children, className }: ListItemTitleProps) {
   );
 }
 
+function ListItemTitleLink({ children, className, href }: ListItemTitleProps & { href: string }) {
+  return (
+    <Link className={cn("before:absolute before:inset-0", className)} data-slot="list-item-title" href={href}>
+      {children}
+    </Link>
+  );
+}
+
 interface ListItemDescriptionProps {
   children: ReactNode;
   className?: string;
@@ -97,4 +106,5 @@ export {
   ListItemDescription,
   ListItemHeader,
   ListItemTitle,
+  ListItemTitleLink,
 };

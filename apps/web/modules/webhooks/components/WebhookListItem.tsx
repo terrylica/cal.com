@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@coss/ui/components/tooltip";
+import { useIsMobile } from "@coss/ui/hooks/use-mobile";
 import {
   ListItem,
   ListItemActions,
@@ -34,9 +35,10 @@ import {
   ListItemContent,
   ListItemHeader,
   ListItemTitle,
+  ListItemTitleLink,
 } from "@coss/ui/shared/list-item";
 import { EllipsisIcon, ExternalLinkIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
-import type { ComponentType } from "react";
+import type { ComponentProps, ComponentType } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 
@@ -46,6 +48,7 @@ export default function WebhookListItem(props: {
   webhook: Webhook;
   profile?: { name: string | null; image?: string; slug?: string | null };
   canEditWebhook?: boolean;
+  editHref?: string;
   onEditWebhookAction: () => void;
   lastItem: boolean;
   permissions: {
@@ -56,9 +59,12 @@ export default function WebhookListItem(props: {
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const { webhook } = props;
+  const canEditorDelete =
+    props.permissions.canEditWebhook || props.permissions.canDeleteWebhook;
   const [active, setActive] = useState(webhook.active);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [badgesExpanded, setBadgesExpanded] = useState(false);
+  const isMobile = useIsMobile();
   const versionTooltipHandle = useMemo(() => TooltipCreateHandle<ComponentType>(), []);
 
   useEffect(() => {
@@ -84,6 +90,7 @@ export default function WebhookListItem(props: {
     async onSuccess() {
       if (webhook.eventTypeId) revalidateEventTypeEditPage(webhook.eventTypeId);
       revalidateWebhooksList();
+      toastManager.add({ title: t("webhook_updated_successfully"), type: "success" });
       await utils.viewer.webhook.getByViewer.invalidate();
       await utils.viewer.webhook.list.invalidate();
       await utils.viewer.eventTypes.get.invalidate();
@@ -98,11 +105,17 @@ export default function WebhookListItem(props: {
     <ListItem data-testid="webhook-list-item">
       <ListItemContent>
         <ListItemHeader>
-          <ListItemTitle data-testid="webhook-url">{webhook.subscriberUrl}</ListItemTitle>
+          {props.permissions.canEditWebhook && props.editHref ? (
+            <ListItemTitle data-testid="webhook-url">
+              <ListItemTitleLink href={props.editHref}>{webhook.subscriberUrl}</ListItemTitleLink>
+            </ListItemTitle>
+          ) : (
+            <ListItemTitle data-testid="webhook-url">{webhook.subscriberUrl}</ListItemTitle>
+          )}
         </ListItemHeader>
         <ListItemBadges>
           {webhook.eventTriggers.slice(0, badgesExpanded ? undefined : MAX_BADGES_TWO_ROWS).map((trigger) => (
-            <Badge key={trigger} variant="outline">
+            <Badge key={trigger} variant="outline" className="pointer-events-none">
               <WebhookIcon />
               {t(`${trigger.toLowerCase()}`)}
             </Badge>
@@ -133,7 +146,7 @@ export default function WebhookListItem(props: {
                 </span>
               </div>
             )}
-            {!props.permissions.canEditWebhook && <Badge variant="warning">{t("readonly")}</Badge>}
+            {!canEditorDelete && <Badge variant="warning">{t("readonly")}</Badge>}
             <div className="flex items-center">
               <TooltipProvider delay={0}>
                 <TooltipTrigger
@@ -144,14 +157,13 @@ export default function WebhookListItem(props: {
                   {getWebhookVersionLabel(webhook.version)}
                 </TooltipTrigger>
                 <TooltipTrigger
-                  className="after:absolute after:left-full after:h-full after:w-1"
                   handle={versionTooltipHandle}
                   payload={() => (
                     <>{t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}</>
                   )}
                   render={
                     <a
-                      className="flex h-5 items-center justify-center px-2 sm:h-4.5"
+                      className="relative flex h-5 items-center justify-center px-2 sm:h-4.5"
                       href={`https://cal.com/docs/developing/guides/automation/webhooks#${webhook.version}`}
                       rel="noopener noreferrer"
                       target="_blank"
@@ -170,96 +182,82 @@ export default function WebhookListItem(props: {
           </div>
         </div>
       </ListItemContent>
-      {(props.permissions.canEditWebhook || props.permissions.canDeleteWebhook) && (
-        <ListItemActions>
-          <div className="flex items-center gap-4 max-md:hidden">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Switch
-                    checked={active}
-                    data-testid="webhook-switch"
-                    disabled={!props.permissions.canEditWebhook}
-                    onCheckedChange={(checked, eventDetails) => {
-                      if (toggleWebhook.isPending) {
-                        eventDetails.cancel();
-                        return;
-                      }
-                      const previous = active;
-                      setActive(checked);
-                      toggleWebhook.mutate(
-                        {
-                          id: webhook.id,
-                          active: checked,
-                          payloadTemplate: webhook.payloadTemplate,
-                          eventTypeId: webhook.eventTypeId || undefined,
-                        },
-                        {
-                          onError: () => setActive(previous),
-                        }
-                      );
-                    }}
+      <ListItemActions>
+        {!isMobile && (
+          <div className="flex items-center gap-4">
+            {canEditorDelete ? (
+              <TooltipProvider delay={0}>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Switch
+                        checked={active}
+                        data-testid="webhook-switch"
+                        disabled={!props.permissions.canEditWebhook}
+                        onCheckedChange={(checked, eventDetails) => {
+                          if (toggleWebhook.isPending) {
+                            eventDetails.cancel();
+                            return;
+                          }
+                          const previous = active;
+                          setActive(checked);
+                          toggleWebhook.mutate(
+                            {
+                              id: webhook.id,
+                              active: checked,
+                              payloadTemplate: webhook.payloadTemplate,
+                              eventTypeId: webhook.eventTypeId || undefined,
+                            },
+                            {
+                              onError: () => setActive(previous),
+                            }
+                          );
+                        }}
+                      />
+                    }
                   />
-                }
-              />
-              <TooltipPopup sideOffset={11}>
-                {active ? t("disable_webhook") : t("enable_webhook")}
-              </TooltipPopup>
-            </Tooltip>
-
-            <Menu>
-              <MenuTrigger
-                render={
-                  <Button
-                    aria-label={t("options")}
-                    size="icon"
-                    variant="outline"
-                    data-testid="webhook-options">
-                    <EllipsisIcon />
-                  </Button>
-                }
-              />
-              <MenuPopup align="end">
-                {props.permissions.canEditWebhook && (
-                  <MenuItem onClick={props.onEditWebhookAction} data-testid="webhook-edit-button">
-                    <PencilIcon />
-                    {t("edit")}
-                  </MenuItem>
-                )}
-                {props.permissions.canDeleteWebhook && (
-                  <MenuItem
-                    variant="destructive"
-                    onClick={() => setDeleteDialogOpen(true)}
-                    disabled={deleteWebhook.isPending}
-                    data-testid="delete-webhook">
-                    <TrashIcon />
-                    {t("delete")}
-                  </MenuItem>
-                )}
-              </MenuPopup>
-            </Menu>
-          </div>
-
-          <Menu>
-            <MenuTrigger
-              className="md:hidden"
-              render={
-                <Button aria-label={t("options")} size="icon" variant="outline">
-                  <EllipsisIcon />
+                  <TooltipPopup sideOffset={11}>
+                    {active ? t("disable_webhook") : t("enable_webhook")}
+                  </TooltipPopup>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        aria-label={t("delete")}
+                        data-testid="delete-webhook"
+                        size="icon"
+                        variant="destructive-outline"
+                        onClick={() => setDeleteDialogOpen(true)}
+                      >
+                        <TrashIcon />
+                      </Button>
+                    }
+                  />
+                  <TooltipPopup>{t("delete")}</TooltipPopup>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <>
+                <Switch defaultChecked={webhook.active} disabled />
+                <Button aria-label={t("delete")} size="icon" variant="destructive-outline" disabled>
+                  <TrashIcon />
                 </Button>
-              }
-            />
+              </>
+            )}
+          </div>
+        )}
+
+        {isMobile && (
+          <Menu>
+            <MenuTrigger render={<Button aria-label={t("options")} data-testid="webhook-options" size="icon" variant="outline" />}>
+              <EllipsisIcon />
+            </MenuTrigger>
             <MenuPopup align="end">
-              {props.permissions.canEditWebhook && (
-                <MenuItem onClick={props.onEditWebhookAction}>
-                  <PencilIcon />
-                  {t("edit")}
-                </MenuItem>
-              )}
-              <MenuSeparator />
-              <MenuGroup>
+              {canEditorDelete ? (
                 <MenuCheckboxItem
                   checked={active}
+                  disabled={toggleWebhook.isPending}
                   onCheckedChange={(checked, eventDetails) => {
                     if (toggleWebhook.isPending) {
                       eventDetails.cancel();
@@ -279,12 +277,21 @@ export default function WebhookListItem(props: {
                       }
                     );
                   }}
-                  variant="switch">
+                  variant="switch"
+                >
                   {t("enable_webhook")}
                 </MenuCheckboxItem>
-              </MenuGroup>
+              ) : (
+                <MenuCheckboxItem
+                  defaultChecked={webhook.active}
+                  disabled
+                  variant="switch"
+                >
+                  {t("enable_webhook")}
+                </MenuCheckboxItem>
+              )}
               <MenuSeparator />
-              {props.permissions.canDeleteWebhook && (
+              {props.permissions.canDeleteWebhook ? (
                 <MenuItem
                   variant="destructive"
                   onClick={() => setDeleteDialogOpen(true)}
@@ -292,11 +299,16 @@ export default function WebhookListItem(props: {
                   <TrashIcon />
                   {t("delete")}
                 </MenuItem>
+              ) : (
+                <MenuItem variant="destructive" disabled>
+                  <TrashIcon />
+                  {t("delete")}
+                </MenuItem>
               )}
             </MenuPopup>
           </Menu>
-        </ListItemActions>
-      )}
+        )}
+      </ListItemActions>
       <DeleteWebhookDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
