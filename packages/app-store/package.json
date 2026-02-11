@@ -25,9 +25,9 @@
   },
   "dependencies": {
     "@calcom/dailyvideo": "workspace:*",
-    "@calcom/i18n": "workspace:*",
     "@calcom/dayjs": "workspace:*",
     "@calcom/features": "workspace:*",
+    "@calcom/i18n": "workspace:*",
     "@calcom/lib": "workspace:*",
     "@calcom/office365video": "workspace:*",
     "@calcom/ui": "workspace:*",
