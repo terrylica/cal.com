@@ -7,6 +7,7 @@ import {
 import isRouter from "@calcom/app-store/routing-forms/lib/isRouter";
 import type { FormResponse } from "@calcom/app-store/routing-forms/types/types";
 import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
+import { RoutingFormResponseRepository } from "@calcom/features/routing-forms/repositories/RoutingFormResponseRepository";
 import type { RoutingFormTraceService } from "@calcom/features/routing-trace/domains/RoutingFormTraceService";
 import type { RoutingTraceService } from "@calcom/features/routing-trace/services/RoutingTraceService";
 import { emailSchema } from "@calcom/lib/emailSchema";
@@ -14,7 +15,6 @@ import { HttpError } from "@calcom/lib/http-error";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { withReporting } from "@calcom/lib/sentryWrapper";
-import { RoutingFormResponseRepository } from "@calcom/features/routing-forms/repositories/RoutingFormResponseRepository";
 import { prisma } from "@calcom/prisma";
 import { Prisma } from "@calcom/prisma/client";
 import { z } from "zod";
@@ -140,8 +140,7 @@ const _handleResponse = async ({
           (async () => {
             const hasFallbackAction = "fallbackAction" in chosenRoute && chosenRoute.fallbackAction;
             const shouldUseFallbackAttributesQuery =
-              !hasFallbackAction ||
-              chosenRoute.fallbackAction?.type === RouteActionType.EventTypeRedirectUrl;
+              !hasFallbackAction || chosenRoute.fallbackAction?.type === RouteActionType.EventTypeRedirectUrl;
             const teamMembersMatchingAttributeLogicWithResult =
               formTeamId && formOrgId
                 ? await findTeamMembersMatchingAttributeLogic(
@@ -276,7 +275,6 @@ const _handleResponse = async ({
         fallbackAction,
       });
     }
-
 
     return {
       isPreview: !!isPreview,
