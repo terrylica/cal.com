@@ -32,7 +32,6 @@ import {
 } from "@calcom/ui/components/sheet";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
-import { useBookingLocation } from "@calcom/web/modules/bookings/hooks/useBookingLocation";
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
@@ -173,10 +172,8 @@ function BookingDetailsSheetInner({
 
   const joinButtonRef = useRef<HTMLAnchorElement>(null);
 
-  // Keyboard shortcuts for navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in input fields
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
@@ -255,7 +252,8 @@ function BookingDetailsSheetInner({
         .map(([question, answer]) => [question, answer] as [string, unknown])
     : [];
 
-  const reason = booking.assignmentReasonSortedByCreatedAt?.[booking.assignmentReasonSortedByCreatedAt.length - 1];
+  const reason =
+    booking.assignmentReasonSortedByCreatedAt?.[booking.assignmentReasonSortedByCreatedAt.length - 1];
   const reasonTitle = reason && assignmentReasonBadgeTitleMap(reason.reasonEnum);
 
   return (
