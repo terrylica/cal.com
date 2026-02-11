@@ -223,6 +223,7 @@ export class BookingsController_2024_04_15 {
           platformBookingUrl: bookingRequest.platformBookingUrl,
           platformBookingLocation: bookingRequest.platformBookingLocation,
           areCalendarEventsEnabled: bookingRequest.areCalendarEventsEnabled,
+          impersonatedByUserUuid: null,
         },
       });
       if (booking.userId && booking.uid && booking.startTime && booking.user?.isPlatformManaged) {
@@ -317,6 +318,7 @@ export class BookingsController_2024_04_15 {
         userId: user.id,
         actor: makeUserActor(user.uuid),
         actionSource: "API_V2",
+        impersonatedByUserUuid: null,
       });
 
       return { status: SUCCESS_STATUS, data: markNoShowResponse };
@@ -354,6 +356,7 @@ export class BookingsController_2024_04_15 {
           platformBookingUrl: bookingRequest.platformBookingUrl,
           platformBookingLocation: bookingRequest.platformBookingLocation,
           noEmail: bookingRequest.body.noEmail,
+          impersonatedByUserUuid: null,
         },
         creationSource: "API_V2",
       });

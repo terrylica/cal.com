@@ -53,7 +53,7 @@ async function handler(req: NextApiRequest & RequestMeta) {
       platformRescheduleUrl: req.platformRescheduleUrl,
       platformBookingLocation: req.platformBookingLocation,
       noEmail: req.noEmail,
-      impersonatedByUserUuid: session?.user?.impersonatedBy?.uuid,
+      impersonatedByUserUuid: session?.user?.impersonatedBy?.uuid ?? null,
     },
     creationSource: "WEBAPP",
   });

@@ -3035,14 +3035,22 @@ export class RegularBookingService implements IBookingService {
 
   async createBooking(input: { bookingData: CreateRegularBookingData; bookingMeta?: CreateBookingMeta }) {
     return handler.bind(this)(
-      { bookingData: input.bookingData, ...input.bookingMeta },
+      {
+        bookingData: input.bookingData,
+        impersonatedByUserUuid: input.bookingMeta?.impersonatedByUserUuid ?? null,
+        ...input.bookingMeta,
+      },
       this.deps
     );
   }
 
   async rescheduleBooking(input: { bookingData: CreateRegularBookingData; bookingMeta?: CreateBookingMeta }) {
     return handler.bind(this)(
-      { bookingData: input.bookingData, ...input.bookingMeta },
+      {
+        bookingData: input.bookingData,
+        impersonatedByUserUuid: input.bookingMeta?.impersonatedByUserUuid ?? null,
+        ...input.bookingMeta,
+      },
       this.deps
     );
   }
@@ -3055,11 +3063,11 @@ export class RegularBookingService implements IBookingService {
     bookingMeta?: CreateBookingMeta;
     bookingDataSchemaGetter: BookingDataSchemaGetter;
   }) {
-    const bookingMeta = input.bookingMeta ?? {};
     return handler.bind(this)(
       {
         bookingData: input.bookingData,
-        ...bookingMeta,
+        impersonatedByUserUuid: input.bookingMeta?.impersonatedByUserUuid ?? null,
+        ...input.bookingMeta,
       },
       this.deps,
       input.bookingDataSchemaGetter

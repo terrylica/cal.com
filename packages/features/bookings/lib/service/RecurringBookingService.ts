@@ -77,6 +77,7 @@ export const handleNewRecurringBooking = async function (
       bookingMeta: {
         hostname: input.hostname || "",
         forcedSlug: input.forcedSlug as string | undefined,
+        impersonatedByUserUuid: input.impersonatedByUserUuid ?? null,
         ...handleBookingMeta,
       },
     });
@@ -120,11 +121,12 @@ export const handleNewRecurringBooking = async function (
       bookingMeta: {
         hostname: input.hostname || "",
         forcedSlug: input.forcedSlug as string | undefined,
+        impersonatedByUserUuid: input.impersonatedByUserUuid ?? null,
         ...handleBookingMeta,
       },
     });
 
-    const eachRecurringBooking = await promiseEachRecurringBooking;
+    const eachRecurringBooking= await promiseEachRecurringBooking;
 
     createdBookings.push(eachRecurringBooking);
 
@@ -148,7 +150,7 @@ export const handleNewRecurringBooking = async function (
       actorUserUuid: input.userUuid ?? null,
       rescheduledBy: firstBooking.rescheduledBy ?? null,
       creationSource,
-      impersonatedByUserUuid: input.impersonatedByUserUuid,
+      impersonatedByUserUuid: input.impersonatedByUserUuid ?? null,
     });
   }
 
@@ -298,7 +300,11 @@ export class RecurringBookingService implements IBookingService {
     bookingMeta?: CreateBookingMeta;
     creationSource: CreationSource;
   }): Promise<BookingResponse[]> {
-    const handlerInput = { bookingData: input.bookingData, ...(input.bookingMeta || {}) };
+    const handlerInput = {
+      bookingData: input.bookingData,
+      impersonatedByUserUuid: input.bookingMeta?.impersonatedByUserUuid ?? null,
+      ...(input.bookingMeta || {}),
+    };
     return handleNewRecurringBooking.bind(this)({
       input: handlerInput,
       deps: this.deps,
@@ -311,7 +317,11 @@ export class RecurringBookingService implements IBookingService {
     bookingMeta?: CreateBookingMeta;
     creationSource: CreationSource;
   }): Promise<BookingResponse[]> {
-    const handlerInput = { bookingData: input.bookingData, ...(input.bookingMeta || {}) };
+    const handlerInput = {
+      bookingData: input.bookingData,
+      impersonatedByUserUuid: input.bookingMeta?.impersonatedByUserUuid ?? null,
+      ...(input.bookingMeta || {}),
+    };
     return handleNewRecurringBooking.bind(this)({
       input: handlerInput,
       deps: this.deps,

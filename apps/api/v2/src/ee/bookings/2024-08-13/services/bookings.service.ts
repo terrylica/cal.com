@@ -468,6 +468,7 @@ export class BookingsService_2024_08_13 {
         platformBookingLocation: bookingRequest.platformBookingLocation,
         noEmail: bookingRequest.noEmail,
         areCalendarEventsEnabled: bookingRequest.areCalendarEventsEnabled,
+        impersonatedByUserUuid: null,
       },
       creationSource: "API_V2",
     });
@@ -497,6 +498,7 @@ export class BookingsService_2024_08_13 {
         platformBookingUrl: bookingRequest.platformBookingUrl,
         platformBookingLocation: bookingRequest.platformBookingLocation,
         areCalendarEventsEnabled: bookingRequest.areCalendarEventsEnabled,
+        impersonatedByUserUuid: null,
       },
       creationSource: "API_V2",
     });
@@ -527,6 +529,7 @@ export class BookingsService_2024_08_13 {
         platformBookingUrl: bookingRequest.platformBookingUrl,
         platformBookingLocation: bookingRequest.platformBookingLocation,
         areCalendarEventsEnabled: bookingRequest.areCalendarEventsEnabled,
+        impersonatedByUserUuid: null,
       },
     });
 
@@ -569,6 +572,7 @@ export class BookingsService_2024_08_13 {
           platformBookingUrl: bookingRequest.platformBookingUrl,
           platformBookingLocation: bookingRequest.platformBookingLocation,
           areCalendarEventsEnabled: bookingRequest.areCalendarEventsEnabled,
+          impersonatedByUserUuid: null,
         },
       });
 
@@ -828,6 +832,7 @@ export class BookingsService_2024_08_13 {
           platformBookingUrl: bookingRequest.platformBookingUrl,
           platformBookingLocation: bookingRequest.platformBookingLocation,
           areCalendarEventsEnabled: bookingRequest.areCalendarEventsEnabled,
+          impersonatedByUserUuid: null,
         },
       });
       if (!booking.uid) {

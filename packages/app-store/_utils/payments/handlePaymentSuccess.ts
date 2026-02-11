@@ -250,6 +250,7 @@ export async function handlePaymentSuccess(params: {
         platformClientParams,
         traceContext: updatedTraceContext,
         actionSource: "WEBHOOK",
+        impersonatedByUserUuid: null,
         actor,
       });
     } else {
