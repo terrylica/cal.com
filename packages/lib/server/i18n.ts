@@ -13,7 +13,7 @@ const log = logger.getSubLogger({ prefix: ["[i18n]"] });
 const englishTranslations: Record<
   string,
   string
-> = require("@calcom/web/public/static/locales/en/common.json");
+> = require("../../../apps/web/public/static/locales/en/common.json");
 
 const translationCache = new Map<string, Record<string, string>>();
 const i18nInstanceCache = new Map<string, any>();
@@ -54,7 +54,7 @@ export async function loadTranslations(_locale: string, _ns: string) {
 
   try {
     const { default: localeTranslations } = await import(
-      `@calcom/web/public/static/locales/${locale}/${ns}.json`
+      `../../../apps/web/public/static/locales/${locale}/${ns}.json`
     );
 
     const mergedTranslations = mergeWithEnglishFallback(localeTranslations);
