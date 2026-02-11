@@ -308,7 +308,6 @@ export const getPublicEvent = async (
     const defaultEvent = getDefaultEvent(eventSlug);
     let locations = defaultEvent.locations ? (defaultEvent.locations as LocationObject[]) : [];
 
-    // Get the preferred location type from the first user
     const firstUsersMetadata = userMetadataSchema.parse(users[0].metadata || {});
     const preferedLocationType = firstUsersMetadata?.defaultConferencingApp;
 
