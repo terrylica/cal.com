@@ -161,6 +161,7 @@ describe("getSchedule duration limits (integration)", () => {
   });
 
   afterAll(async () => {
+    vi.useRealTimers();
     if (createdBookingIds.length > 0) {
       await prisma.booking.deleteMany({
         where: { id: { in: createdBookingIds } },

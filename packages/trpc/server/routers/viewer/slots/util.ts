@@ -461,6 +461,7 @@ export class AvailableSlotsService {
 
     // Pre-fetch yearly duration totals per event type to avoid N+1 queries
     const yearlyDurationTotals = new Map<string, number>();
+    const missingYearlyDurationTotals = new Set<string>();
     if (durationLimits?.PER_YEAR) {
       const yearPeriodStartDates = this.dependencies.userAvailabilityService.getPeriodStartDatesBetween(
         dateFrom,
@@ -567,6 +568,17 @@ export class AvailableSlotsService {
 
             if (unit === "year") {
               const yearKey = periodStart.format("YYYY");
+              if (!yearlyDurationTotals.has(yearKey) && !missingYearlyDurationTotals.has(yearKey)) {
+                missingYearlyDurationTotals.add(yearKey);
+                log.warn("[DURATION LIMIT CACHE MISS] Missing pre-fetched yearly duration total", {
+                  eventTypeId: eventType.id,
+                  durationLimitKey: key,
+                  yearKey,
+                  dateFrom: dateFrom.toISOString(),
+                  dateTo: dateTo.toISOString(),
+                  timeZone,
+                });
+              }
               const totalYearlyDuration = yearlyDurationTotals.get(yearKey) ?? 0;
               if (totalYearlyDuration + selectedDuration > limit) {
                 limitManager.addBusyTime(periodStart, unit, timeZone);
