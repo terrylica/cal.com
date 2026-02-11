@@ -6,7 +6,7 @@ import type {
   SettingsToggleClassNames,
 } from "@calcom/features/eventtypes/lib/types";
 import { useSearchTeamMembers } from "@calcom/features/eventtypes/lib/useSearchTeamMembers";
-import { Segment } from "@calcom/features/Segment";
+import { Segment } from "./Segment";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { AttributesQueryValue } from "@calcom/lib/raqb/types";
 import { AssignedSearchInput } from "@calcom/features/eventtypes/components/AssignedSearchInput";
@@ -18,7 +18,10 @@ import type { Options } from "react-select";
 import { AddMembersWithSwitchWebWrapper } from "./AddMembersWithSwitchWebWrapper";
 
 import AssignAllTeamMembers from "@calcom/features/eventtypes/components/AssignAllTeamMembers";
-import type { CheckedSelectOption, CheckedTeamSelectCustomClassNames } from "@calcom/features/eventtypes/components/CheckedTeamSelect";
+import type {
+  CheckedSelectOption,
+  CheckedTeamSelectCustomClassNames,
+} from "@calcom/features/eventtypes/components/CheckedTeamSelect";
 import CheckedTeamSelect from "@calcom/features/eventtypes/components/CheckedTeamSelect";
 
 interface IUserToValue {
