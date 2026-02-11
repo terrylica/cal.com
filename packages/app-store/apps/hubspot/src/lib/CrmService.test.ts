@@ -129,7 +129,7 @@ vi.mock("@hubspot/api-client", () => {
   };
 });
 
-vi.mock("../../_utils/getAppKeysFromSlug", () => ({
+vi.mock("@calcom/app-store/_utils/getAppKeysFromSlug", () => ({
   default: mockGetAppKeysFromSlug,
 }));
 

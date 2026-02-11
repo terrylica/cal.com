@@ -34,6 +34,7 @@
     "@boxyhq/saml-jackson": "1.52.2",
     "@calcom/app-store": "workspace:*",
     "@calcom/app-store-cli": "workspace:*",
+    "@calcom/dailyvideo": "workspace:*",
     "@calcom/dayjs": "workspace:*",
     "@calcom/embed-core": "workspace:*",
     "@calcom/embed-react": "workspace:*",

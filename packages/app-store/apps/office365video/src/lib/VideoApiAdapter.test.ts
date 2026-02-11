@@ -18,7 +18,7 @@ const URLS = {
   },
 };
 
-vi.mock("../../_utils/getParsedAppKeysFromSlug", () => ({
+vi.mock("@calcom/app-store/_utils/getParsedAppKeysFromSlug", () => ({
   default: vi.fn().mockImplementation((slug) => {
     if (slug !== config.slug) {
       throw new Error(
@@ -33,7 +33,7 @@ vi.mock("../../_utils/getParsedAppKeysFromSlug", () => ({
 }));
 
 const mockRequestRaw = vi.fn();
-vi.mock("../../_utils/oauth/OAuthManager", () => ({
+vi.mock("@calcom/app-store/_utils/oauth/OAuthManager", () => ({
   OAuthManager: vi.fn().mockImplementation(function() {
     return { requestRaw: mockRequestRaw };
   }),
