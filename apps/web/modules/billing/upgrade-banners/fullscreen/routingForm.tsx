@@ -16,13 +16,14 @@ export function FullscreenUpgradeBannerForRoutingFormPage() {
       subtitle={t("upgrade_banner_routing_form_subtitle")}
       target="team"
       image={{
-        src: "/upgrade/routing_portrait.png",
-        width: 2880,
-        height: 5120,
+        src: "/upgrade/full_routing.png",
+        width: 572,
+        height: 744,
       }}
+      youtube="https://www.youtube.com/watch?v=omM89sE7Jpg"
       learnMoreButton={{
         text: t("learn_more"),
-        href: "https://go.cal.com/teams",
+        href: "https://cal.com/routing",
       }}>
       <UpgradePlanDialog
         info={{

@@ -17,13 +17,14 @@ export function FullscreenUpgradeBannerForRolesAndPermissions() {
       target="organization"
       extraOffset={20}
       image={{
-        src: "/upgrade/roles_portrait.png",
-        width: 2160,
-        height: 3840,
+        src: "/upgrade/full_roles.png",
+        width: 572,
+        height: 744,
       }}
+      youtube="https://youtu.be/J8HsK-8W39U"
       learnMoreButton={{
         text: t("learn_more"),
-        href: "https://go.cal.com/teams",
+        href: "https://cal.com/blog/role-based-access-control",
       }}>
       <UpgradePlanDialog
         info={{

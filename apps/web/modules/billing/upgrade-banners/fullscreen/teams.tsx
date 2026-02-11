@@ -24,13 +24,14 @@ export function FullscreenUpgradeBannerForTeamsPage() {
       features={features}
       target="team"
       image={{
-        src: "/upgrade/teams_portrait.png",
-        width: 2304,
-        height: 4096,
+        src: "/upgrade/full_teams.png",
+        width: 572,
+        height: 744,
       }}
+      youtube="https://youtu.be/hp-l5oRVD-U"
       learnMoreButton={{
         text: t("learn_more"),
-        href: "https://go.cal.com/teams",
+        href: "https://cal.com/teams",
       }}>
       <UpgradePlanDialog
         info={{

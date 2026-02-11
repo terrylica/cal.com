@@ -12,9 +12,10 @@ export type LargeUpgradeBannerProps = {
   subtitle: string;
   target: UpgradeTarget;
   showBadge?: boolean;
-  image?: {
+  image: {
     src: string;
-    alt: string;
+    width: number;
+    height: number;
   };
   learnMoreButton?: {
     text: string;
@@ -64,12 +65,16 @@ export function LargeUpgradeBanner({
         </div>
       </div>
 
-      {/* Right Content - Optional Image */}
-      {image && (
-        <div className="hidden flex-1 items-center justify-center md:flex">
-          <Image src={image.src} alt={image.alt} width={400} height={200} className="object-contain" />
-        </div>
-      )}
+      {/* Right Content - Image */}
+      <div className="hidden flex-1 items-end justify-center md:flex">
+        <Image
+          src={image.src}
+          alt={title}
+          width={image.width}
+          height={image.height}
+          className="object-contain"
+        />
+      </div>
     </div>
   );
 }

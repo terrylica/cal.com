@@ -11,15 +11,20 @@ export function LargeUpgradeBannerForMembers() {
 
   return (
     <LargeUpgradeBanner
-      title={t("members")}
-      subtitle="Create a team and route people to other people on your team based on their responses."
+      title={t("upgrade_banner_team_attributes_title")}
+      subtitle={t("upgrade_banner_team_attributes_subtitle")}
       target="organization"
+      image={{
+        src: "/upgrade/large_members.png",
+        width: 1010,
+        height: 340,
+      }}
       learnMoreButton={{
         text: t("learn_more"),
-        href: "https://go.cal.com/teams",
+        href: "https://cal.com/help/routing/routing-with-attributes",
       }}>
       <UpgradePlanDialog target="organization">
-        <Button>
+        <Button variant="outline">
           {t("try_for_free")}
           <Icon name="arrow-right" />
         </Button>

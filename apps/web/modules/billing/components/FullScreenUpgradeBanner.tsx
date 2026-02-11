@@ -35,6 +35,7 @@ export type FullScreenUpgradeBannerProps = {
     width: number;
     height: number;
   };
+  youtube?: string;
   children: React.ReactNode;
 };
 
@@ -135,7 +136,7 @@ export function FullScreenUpgradeBanner({
         </div>
 
         {/* Right Content - Image */}
-        <div className="-my-2 flex flex-1 items-center justify-center rounded-l-xl bg-subtle aspect-[9/16] overflow-hidden">
+        <div className="-my-2 flex flex-1 items-center justify-center rounded-l-xl bg-subtle aspect-[3/4] overflow-hidden">
           <Image
             src={image.src}
             alt={name}

@@ -23,13 +23,13 @@ export function FullscreenUpgradeBannerForInsightsPage() {
       features={features}
       target="team"
       image={{
-        src: "/upgrade/insights_portrait.png",
-        width: 2880,
-        height: 5120,
+        src: "/upgrade/full_insights.png",
+        width: 572,
+        height: 744,
       }}
       learnMoreButton={{
         text: t("learn_more"),
-        href: "https://go.cal.com/teams",
+        href: "https://cal.com/blog/insight-2-0-calcom-scheduling",
       }}>
       <UpgradePlanDialog
         info={{
