@@ -84,7 +84,7 @@ export enum INVITE_STATUS {
 
 export function canBeInvited(invitee: UserWithMembership, team: TeamWithParent) {
   const myLog = log.getSubLogger({ prefix: ["canBeInvited"] });
-  myLog.debug("Checking if user can be invited", safeStringify({ inviteeId: invitee.id, visitorEmail: invitee.email, teamId: team.id }));
+  myLog.debug("Checking if user can be invited", safeStringify({ inviteeId: invitee.id, teamId: team.id }));
   const alreadyInvited = invitee.teams?.find(({ teamId: membershipTeamId }) => team.id === membershipTeamId);
   if (alreadyInvited) {
     return INVITE_STATUS.USER_ALREADY_INVITED_OR_MEMBER;
@@ -534,8 +534,8 @@ export async function handleExistingUsersInvites({
     log.debug(
       "Inviting existing users to a team",
       safeStringify({
-        autoJoinUsers: autoJoinUsers.map((u) => ({ id: u.id, email: u.email, newRole: u.newRole })),
-        regularUsers: regularUsers.map((u) => ({ id: u.id, email: u.email, newRole: u.newRole })),
+        autoJoinUsers: autoJoinUsers.map((u) => ({ id: u.id, newRole: u.newRole })),
+        regularUsers: regularUsers.map((u) => ({ id: u.id, newRole: u.newRole })),
       })
     );
 
