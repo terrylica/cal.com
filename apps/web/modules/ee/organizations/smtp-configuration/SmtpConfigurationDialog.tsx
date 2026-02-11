@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const formSchema = z.object({
+const createFormSchema = z.object({
   fromEmail: z.string().email(),
   fromName: z.string().min(1),
   smtpHost: z.string().min(1),
@@ -23,14 +23,37 @@ const formSchema = z.object({
   smtpSecure: z.boolean(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const editFormSchema = z.object({
+  fromEmail: z.string().email(),
+  fromName: z.string().min(1),
+  smtpHost: z.string().min(1),
+  smtpPort: z.coerce.number().int().min(1).max(65535),
+  smtpSecure: z.boolean(),
+});
 
-interface AddSmtpConfigurationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+type CreateFormValues = z.infer<typeof createFormSchema>;
+type EditFormValues = z.infer<typeof editFormSchema>;
+
+interface SmtpConfiguration {
+  id: number;
+  teamId: number;
+  fromEmail: string;
+  fromName: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfigurationDialogProps) => {
+interface SmtpConfigurationDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  config?: SmtpConfiguration;
+}
+
+const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurationDialogProps) => {
+  const isEditing = !!config;
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,29 +64,50 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
     error?: string;
   } | null>(null);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      fromEmail: "",
-      fromName: "",
-      smtpHost: "",
-      smtpPort: 465,
-      smtpUser: "",
-      smtpPassword: "",
-      smtpSecure: true,
-    },
+  const form = useForm<CreateFormValues | EditFormValues>({
+    resolver: zodResolver(isEditing ? editFormSchema : createFormSchema),
+    defaultValues: isEditing
+      ? {
+          fromEmail: config.fromEmail,
+          fromName: config.fromName,
+          smtpHost: config.smtpHost,
+          smtpPort: config.smtpPort,
+          smtpSecure: config.smtpSecure,
+        }
+      : {
+          fromEmail: "",
+          fromName: "",
+          smtpHost: "",
+          smtpPort: 465,
+          smtpUser: "",
+          smtpPassword: "",
+          smtpSecure: true,
+        },
   });
 
   const smtpHost = form.watch("smtpHost");
   const smtpPort = form.watch("smtpPort");
-  const smtpUser = form.watch("smtpUser");
-  const smtpPassword = form.watch("smtpPassword");
+  const smtpUser = !isEditing ? form.watch("smtpUser" as keyof CreateFormValues) : null;
+  const smtpPassword = !isEditing ? form.watch("smtpPassword" as keyof CreateFormValues) : null;
+
+  // Reset form when config changes (switching between add/edit modes)
+  useEffect(() => {
+    if (config) {
+      form.reset({
+        fromEmail: config.fromEmail,
+        fromName: config.fromName,
+        smtpHost: config.smtpHost,
+        smtpPort: config.smtpPort,
+        smtpSecure: config.smtpSecure,
+      });
+    }
+  }, [config, form]);
 
   useEffect(() => {
-    if (connectionStatus) {
+    if (connectionStatus && !isEditing) {
       setConnectionStatus(null);
     }
-  }, [smtpHost, smtpPort, smtpUser, smtpPassword]);
+  }, [smtpHost, smtpPort, smtpUser, smtpPassword, isEditing, connectionStatus]);
 
   const testConnectionMutation = trpc.viewer.organizations.testSmtpConnection.useMutation({
     onSuccess: (result) => {
@@ -102,6 +146,20 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
     },
   });
 
+  const updateMutation = trpc.viewer.organizations.updateSmtpConfiguration.useMutation({
+    onSuccess: () => {
+      showToast(t("smtp_configuration_updated"), "success");
+      utils.viewer.organizations.listSmtpConfigurations.invalidate();
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      showToast(error.message, "error");
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    },
+  });
+
   const handleTestConnection = () => {
     const values = form.getValues();
     if (!values.smtpHost || !values.smtpPort || !values.smtpUser || !values.smtpPassword) {
@@ -119,17 +177,41 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
     });
   };
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = (values: CreateFormValues | EditFormValues) => {
     setIsSubmitting(true);
-    createMutation.mutate({
-      fromEmail: values.fromEmail,
-      fromName: values.fromName,
-      smtpHost: values.smtpHost,
-      smtpPort: values.smtpPort,
-      smtpUser: values.smtpUser,
-      smtpPassword: values.smtpPassword,
-      smtpSecure: values.smtpSecure,
-    });
+
+    if (isEditing && config) {
+      const editValues = values as EditFormValues;
+      const updateData: {
+        id: number;
+        fromEmail?: string;
+        fromName?: string;
+        smtpHost?: string;
+        smtpPort?: number;
+        smtpSecure?: boolean;
+      } = {
+        id: config.id,
+      };
+
+      if (editValues.fromEmail !== config.fromEmail) updateData.fromEmail = editValues.fromEmail;
+      if (editValues.fromName !== config.fromName) updateData.fromName = editValues.fromName;
+      if (editValues.smtpHost !== config.smtpHost) updateData.smtpHost = editValues.smtpHost;
+      if (editValues.smtpPort !== config.smtpPort) updateData.smtpPort = editValues.smtpPort;
+      if (editValues.smtpSecure !== config.smtpSecure) updateData.smtpSecure = editValues.smtpSecure;
+
+      updateMutation.mutate(updateData);
+    } else {
+      const createValues = values as CreateFormValues;
+      createMutation.mutate({
+        fromEmail: createValues.fromEmail,
+        fromName: createValues.fromName,
+        smtpHost: createValues.smtpHost,
+        smtpPort: createValues.smtpPort,
+        smtpUser: createValues.smtpUser,
+        smtpPassword: createValues.smtpPassword,
+        smtpSecure: createValues.smtpSecure,
+      });
+    }
   };
 
   const handleDialogChange = (isOpen: boolean) => {
@@ -146,8 +228,10 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
         <Form form={form} handleSubmit={onSubmit}>
           <div className="space-y-6 p-4">
             <DialogHeader
-              title={t("add_smtp_configuration")}
-              subtitle={t("add_smtp_configuration_description")}
+              title={isEditing ? t("edit_smtp_configuration") : t("add_smtp_configuration")}
+              subtitle={
+                isEditing ? t("edit_smtp_configuration_description") : t("add_smtp_configuration_description")
+              }
             />
             <div className="mt-2 stack-y-4">
               <TextField
@@ -179,10 +263,12 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
                 />
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <TextField label={t("smtp_username")} {...form.register("smtpUser")} />
-                <TextField type="password" label={t("smtp_password")} {...form.register("smtpPassword")} />
-              </div>
+              {!isEditing && (
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <TextField label={t("smtp_username")} {...form.register("smtpUser")} />
+                  <TextField type="password" label={t("smtp_password")} {...form.register("smtpPassword")} />
+                </div>
+              )}
 
               <div className="mt-4 flex items-center justify-between">
                 <div>
@@ -203,28 +289,33 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
                 />
               </div>
 
-              <div className="mt-4 flex items-center gap-3">
-                <Button type="button" color="secondary" onClick={handleTestConnection} loading={isTesting}>
-                  {t("test_connection")}
-                </Button>
-                {connectionStatus?.tested &&
-                  (connectionStatus.success ? (
-                    <Badge variant="green" startIcon="circle-check">
-                      {t("connection_successful")}
-                    </Badge>
-                  ) : (
-                    <Badge variant="red" startIcon="circle-x">
-                      {t("connection_failed")}
-                    </Badge>
-                  ))}
-              </div>
+              {!isEditing && (
+                <div className="mt-4 flex items-center gap-3">
+                  <Button type="button" color="secondary" onClick={handleTestConnection} loading={isTesting}>
+                    {t("test_connection")}
+                  </Button>
+                  {connectionStatus?.tested &&
+                    (connectionStatus.success ? (
+                      <Badge variant="green" startIcon="circle-check">
+                        {t("connection_successful")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="red" startIcon="circle-x">
+                        {t("connection_failed")}
+                      </Badge>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex items-center justify-end gap-2 bg-muted px-4 py-3">
             <DialogClose />
-            <Button type="submit" loading={isSubmitting} disabled={!connectionStatus?.success}>
-              {t("create")}
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              disabled={!isEditing && !connectionStatus?.success}>
+              {isEditing ? t("save") : t("create")}
             </Button>
           </div>
         </Form>
@@ -233,4 +324,4 @@ const AddSmtpConfigurationDialog = ({ open, onOpenChange }: AddSmtpConfiguration
   );
 };
 
-export default AddSmtpConfigurationDialog;
+export default SmtpConfigurationDialog;

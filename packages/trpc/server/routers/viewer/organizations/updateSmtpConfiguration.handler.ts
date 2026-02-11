@@ -1,15 +1,13 @@
 import { getSmtpConfigurationService } from "@calcom/features/di/smtpConfiguration/containers/smtpConfiguration";
-
 import { TRPCError } from "@trpc/server";
-
 import type { TrpcSessionUser } from "../../../types";
-import type { TToggleSmtpConfigurationInputSchema } from "./toggleSmtpConfiguration.schema";
+import type { TUpdateSmtpConfigurationInput } from "./updateSmtpConfiguration.schema";
 
-type ToggleSmtpConfigurationOptions = {
+type UpdateSmtpConfigurationOptions = {
   ctx: {
     user: NonNullable<TrpcSessionUser>;
   };
-  input: TToggleSmtpConfigurationInputSchema;
+  input: TUpdateSmtpConfigurationInput;
 };
 
 function getOrganizationId(user: NonNullable<TrpcSessionUser>): number {
@@ -23,9 +21,17 @@ function getOrganizationId(user: NonNullable<TrpcSessionUser>): number {
   return organizationId;
 }
 
-export default async function handler({ ctx, input }: ToggleSmtpConfigurationOptions) {
+export const updateSmtpConfigurationHandler = async ({ ctx, input }: UpdateSmtpConfigurationOptions) => {
   const organizationId = getOrganizationId(ctx.user);
   const service = getSmtpConfigurationService();
 
-  return service.toggleEnabled(input.id, organizationId, input.isEnabled);
-}
+  return service.update(input.id, organizationId, {
+    fromEmail: input.fromEmail,
+    fromName: input.fromName,
+    smtpHost: input.smtpHost,
+    smtpPort: input.smtpPort,
+    smtpSecure: input.smtpSecure,
+  });
+};
+
+export default updateSmtpConfigurationHandler;

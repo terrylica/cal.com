@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { Dialog } from "@calcom/features/components/controlled-dialog";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { ConfirmationDialogContent } from "@calcom/ui/components/dialog";
 import {
@@ -18,36 +15,20 @@ import {
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 import { SkeletonContainer, SkeletonText } from "@calcom/ui/components/skeleton";
 import { showToast } from "@calcom/ui/components/toast";
-import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@coss/ui/components/collapsible";
-import { ChevronDownIcon, MailIcon, UserIcon, ServerIcon, HashIcon, ShieldCheckIcon } from "lucide-react";
-
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@coss/ui/components/collapsible";
+import { ChevronDownIcon, HashIcon, MailIcon, ServerIcon, ShieldCheckIcon, UserIcon } from "lucide-react";
+import { useState } from "react";
 import LicenseRequired from "~/ee/common/components/LicenseRequired";
-import AddSmtpConfigurationDialog from "./AddSmtpConfigurationDialog";
-
-export const smtpConfigModalRef = {
-  current: null as null | ((show: boolean) => void),
-};
-
-export const NewSmtpConfigurationButton = () => {
-  const { t } = useLocale();
-  return (
-    <Button color="secondary" StartIcon="plus" onClick={() => smtpConfigModalRef.current?.(true)}>
-      {t("add")}
-    </Button>
-  );
-};
+import SmtpConfigurationDialog from "./SmtpConfigurationDialog";
 
 interface SmtpConfiguration {
   id: number;
-  organizationId: number;
+  teamId: number;
   fromEmail: string;
   fromName: string;
   smtpHost: string;
   smtpPort: number;
   smtpSecure: boolean;
-  isEnabled: boolean;
-  lastTestedAt: Date | null;
-  lastError: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,32 +49,28 @@ const SmtpConfigurationItem = ({
   config,
   canEdit,
   onDelete,
-  onToggleEnabled,
+  onEdit,
   onSendTestEmail,
   isSendingTestEmail,
 }: {
   config: SmtpConfiguration;
   canEdit: boolean;
   onDelete: (config: SmtpConfiguration) => void;
-  onToggleEnabled: (id: number, isEnabled: boolean) => void;
+  onEdit: (config: SmtpConfiguration) => void;
   onSendTestEmail: (id: number) => void;
   isSendingTestEmail: boolean;
 }) => {
   const { t } = useLocale();
 
   return (
-    <Collapsible className="bg-default border-subtle border-b last:border-b-0">
+    <Collapsible className="bg-default border-subtle overflow-hidden rounded-xl border shadow-sm">
       <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-5 py-5 text-left">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="bg-subtle flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
             <MailIcon className="text-default h-5 w-5" />
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-emphasis min-w-0 truncate text-base font-medium">{config.fromEmail}</span>
-              {config.isEnabled && <Badge variant="blue">{t("enabled")}</Badge>}
-              {!config.isEnabled && <Badge variant="gray">{t("disabled")}</Badge>}
-            </div>
+            <span className="text-emphasis min-w-0 truncate text-base font-medium">{config.fromEmail}</span>
             <span className="text-subtle truncate text-sm">{config.fromName || t("no_name_provided")}</span>
           </div>
         </div>
@@ -115,11 +92,10 @@ const SmtpConfigurationItem = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onSendTestEmail(config.id);
+                      onEdit(config);
                     }}
-                    StartIcon="mail"
-                    disabled={isSendingTestEmail}>
-                    {t("send_test_email")}
+                    StartIcon="pencil">
+                    {t("edit")}
                   </DropdownItem>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
@@ -127,10 +103,11 @@ const SmtpConfigurationItem = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onToggleEnabled(config.id, !config.isEnabled);
+                      onSendTestEmail(config.id);
                     }}
-                    StartIcon={config.isEnabled ? "x" : "check"}>
-                    {config.isEnabled ? t("disable") : t("enable")}
+                    StartIcon="mail"
+                    disabled={isSendingTestEmail}>
+                    {t("send_test_email")}
                   </DropdownItem>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
@@ -162,7 +139,9 @@ const SmtpConfigurationItem = ({
             <div className="flex items-center gap-3 px-4 py-3">
               <UserIcon className="text-subtle h-4 w-4 shrink-0" />
               <span className="text-subtle w-24 shrink-0 text-sm">{t("from_name")}</span>
-              <span className="text-emphasis min-w-0 truncate text-sm font-medium">{config.fromName || "-"}</span>
+              <span className="text-emphasis min-w-0 truncate text-sm font-medium">
+                {config.fromName || "-"}
+              </span>
             </div>
             <div className="flex items-start gap-3 px-4 py-3">
               <ServerIcon className="text-subtle mt-0.5 h-4 w-4 shrink-0" />
@@ -177,47 +156,14 @@ const SmtpConfigurationItem = ({
             <div className="flex items-center gap-3 px-4 py-3">
               <ShieldCheckIcon className="text-subtle h-4 w-4 shrink-0" />
               <span className="text-subtle w-24 shrink-0 text-sm">{t("connection")}</span>
-              <span className="text-emphasis text-sm font-medium">{config.smtpSecure ? t("connection_ssl_tls") : t("connection_starttls")}</span>
+              <span className="text-emphasis text-sm font-medium">
+                {config.smtpSecure ? t("connection_ssl_tls") : t("connection_starttls")}
+              </span>
             </div>
           </div>
-          {config.lastError && (
-            <div className="bg-error/10 text-error mt-4 rounded-lg p-3 text-sm">{config.lastError}</div>
-          )}
         </div>
       </CollapsiblePanel>
     </Collapsible>
-  );
-};
-
-const SmtpConfigurationList = ({
-  configs,
-  canEdit,
-  onDelete,
-  onToggleEnabled,
-  onSendTestEmail,
-  isSendingTestEmail,
-}: {
-  configs: SmtpConfiguration[];
-  canEdit: boolean;
-  onDelete: (config: SmtpConfiguration) => void;
-  onToggleEnabled: (id: number, isEnabled: boolean) => void;
-  onSendTestEmail: (id: number) => void;
-  isSendingTestEmail: boolean;
-}) => {
-  return (
-    <div className="bg-default border-subtle overflow-hidden rounded-xl border shadow-sm">
-      {configs.map((config) => (
-        <SmtpConfigurationItem
-          key={config.id}
-          config={config}
-          canEdit={canEdit}
-          onDelete={onDelete}
-          onToggleEnabled={onToggleEnabled}
-          onSendTestEmail={onSendTestEmail}
-          isSendingTestEmail={isSendingTestEmail}
-        />
-      ))}
-    </div>
   );
 };
 
@@ -225,35 +171,16 @@ const SmtpConfigurationsView = ({ permissions }: { permissions: { canRead: boole
   const { t } = useLocale();
   const utils = trpc.useUtils();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editConfig, setEditConfig] = useState<SmtpConfiguration | null>(null);
   const [deleteConfig, setDeleteConfig] = useState<SmtpConfiguration | null>(null);
 
-  useEffect(() => {
-    smtpConfigModalRef.current = setShowAddDialog;
-    return () => {
-      smtpConfigModalRef.current = null;
-    };
-  }, []);
-
-  const { data: configs, isPending } = trpc.viewer.organizations.listSmtpConfigurations.useQuery();
+  const { data: config, isPending } = trpc.viewer.organizations.listSmtpConfigurations.useQuery();
 
   const deleteMutation = trpc.viewer.organizations.deleteSmtpConfiguration.useMutation({
     onSuccess: () => {
       showToast(t("smtp_configuration_deleted"), "success");
       utils.viewer.organizations.listSmtpConfigurations.invalidate();
       setDeleteConfig(null);
-    },
-    onError: (error) => {
-      showToast(error.message, "error");
-    },
-  });
-
-  const toggleMutation = trpc.viewer.organizations.toggleSmtpConfiguration.useMutation({
-    onSuccess: (data) => {
-      showToast(
-        data.isEnabled ? t("smtp_configuration_enabled") : t("smtp_configuration_disabled"),
-        "success"
-      );
-      utils.viewer.organizations.listSmtpConfigurations.invalidate();
     },
     onError: (error) => {
       showToast(error.message, "error");
@@ -277,8 +204,8 @@ const SmtpConfigurationsView = ({ permissions }: { permissions: { canRead: boole
     setDeleteConfig(config);
   };
 
-  const handleToggleEnabled = (id: number, isEnabled: boolean) => {
-    toggleMutation.mutate({ id, isEnabled });
+  const handleEdit = (config: SmtpConfiguration) => {
+    setEditConfig(config);
   };
 
   const handleSendTestEmail = (id: number) => {
@@ -290,19 +217,19 @@ const SmtpConfigurationsView = ({ permissions }: { permissions: { canRead: boole
   return (
     <LicenseRequired>
       <div className="space-y-6">
-        {configs && configs.length > 0 ? (
-          <SmtpConfigurationList
-            configs={configs as SmtpConfiguration[]}
+        {config ? (
+          <SmtpConfigurationItem
+            config={config as SmtpConfiguration}
             canEdit={permissions.canEdit}
             onDelete={handleDelete}
-            onToggleEnabled={handleToggleEnabled}
+            onEdit={handleEdit}
             onSendTestEmail={handleSendTestEmail}
             isSendingTestEmail={sendTestEmailMutation.isPending}
           />
         ) : (
           <EmptyScreen
             Icon="mail"
-            headline={t("no_smtp_configurations")}
+            headline={t("no_smtp_configuration")}
             description={t("add_smtp_configuration_to_get_started")}
             className="rounded-b-lg"
             buttonRaw={
@@ -316,7 +243,16 @@ const SmtpConfigurationsView = ({ permissions }: { permissions: { canRead: boole
           />
         )}
 
-        <AddSmtpConfigurationDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+        <SmtpConfigurationDialog
+          open={showAddDialog || !!editConfig}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowAddDialog(false);
+              setEditConfig(null);
+            }
+          }}
+          config={editConfig || undefined}
+        />
 
         {deleteConfig && (
           <Dialog open={!!deleteConfig} onOpenChange={(open) => !open && setDeleteConfig(null)}>

@@ -742,9 +742,9 @@ model OrganizationSettings {
 }
 
 model SmtpConfiguration {
-  id             Int  @id @default(autoincrement())
-  organizationId Int
-  organization   Team @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id     Int  @id @default(autoincrement())
+  teamId Int  @unique
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   fromEmail String
   fromName  String
@@ -755,16 +755,8 @@ model SmtpConfiguration {
   smtpPassword String  @db.Text
   smtpSecure   Boolean @default(true)
 
-  lastTestedAt DateTime?
-  lastError    String?
-
-  isEnabled Boolean @default(false)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@unique([organizationId, fromEmail])
-  @@index([organizationId])
 }
 
 enum MembershipRole {

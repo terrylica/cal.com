@@ -37,7 +37,7 @@ export default class BaseEmail {
 
     try {
       const service = getSmtpConfigurationService();
-      return await service.getActiveConfigForOrg(this.organizationId);
+      return await service.getConfigForOrg(this.organizationId);
     } catch (error) {
       log.warn("Failed to fetch org SMTP config, falling back to default", {
         organizationId: this.organizationId,
@@ -139,7 +139,6 @@ export default class BaseEmail {
       return new Promise((r) => r(`Skipped Sending Email to faux email: ${to}`));
     }
 
-
     const parseSubject = z.string().safeParse(payload?.subject);
 
     const defaultOptions = this.getMailerOptions();
@@ -149,10 +148,7 @@ export default class BaseEmail {
     const orgConfig = await this.getOrgSmtpConfig();
     if (orgConfig) {
       transport = this.buildOrgTransport(orgConfig);
-      from =
-        orgConfig.fromName
-          ? `${orgConfig.fromName} <${orgConfig.fromEmail}>`
-          : orgConfig.fromEmail
+      from = orgConfig.fromName ? `${orgConfig.fromName} <${orgConfig.fromEmail}>` : orgConfig.fromEmail;
       usingOrgSmtp = true;
       log.info("Using custom SMTP config", {
         organizationId: this.organizationId,

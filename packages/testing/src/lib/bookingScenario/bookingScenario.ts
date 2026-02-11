@@ -1155,7 +1155,7 @@ export async function createSmtpConfiguration(data: SmtpConfigurationTestData) {
 
   return prismock.smtpConfiguration.create({
     data: {
-      organizationId: data.organizationId,
+      teamId: data.organizationId,
       fromEmail: data.fromEmail,
       fromName: data.fromName,
       smtpHost: data.smtpHost ?? "test-smtp.example.com",
@@ -1163,7 +1163,6 @@ export async function createSmtpConfiguration(data: SmtpConfigurationTestData) {
       smtpUser: JSON.stringify(encryptSecret({ ring: "SMTP", plaintext: smtpUser, aad })),
       smtpPassword: JSON.stringify(encryptSecret({ ring: "SMTP", plaintext: smtpPassword, aad })),
       smtpSecure: data.smtpSecure ?? true,
-      isEnabled: data.isEnabled ?? false,
     },
   });
 }
@@ -1771,7 +1770,7 @@ export function mockNoTranslations() {
   });
 }
 
-export const enum BookingLocations {
+export enum BookingLocations {
   CalVideo = "integrations:daily",
   ZoomVideo = "integrations:zoom",
   GoogleMeet = "integrations:google:meet",

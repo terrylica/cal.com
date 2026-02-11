@@ -179,9 +179,9 @@ const getTabs = (orgBranding: OrganizationBranding | null) => {
           href: "/settings/organizations/guest-notifications",
         },
         {
-          name: "smtp_configurations",
-          href: "/settings/organizations/smtp-configurations",
-          trackingMetadata: { section: "organization", page: "smtp_configurations" },
+          name: "smtp_configuration",
+          href: "/settings/organizations/smtp-configuration",
+          trackingMetadata: { section: "organization", page: "smtp_configuration" },
         },
         ...(orgBranding
           ? [

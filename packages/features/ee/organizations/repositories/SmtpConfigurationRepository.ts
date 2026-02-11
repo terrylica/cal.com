@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@calcom/prisma/client";
 
 export interface CreateSmtpConfigurationInput {
-  organizationId: number;
+  teamId: number;
   fromEmail: string;
   fromName: string;
   smtpHost: string;
@@ -13,7 +13,7 @@ export interface CreateSmtpConfigurationInput {
 
 const smtpConfigurationSelect = {
   id: true,
-  organizationId: true,
+  teamId: true,
   fromEmail: true,
   fromName: true,
   smtpHost: true,
@@ -21,9 +21,6 @@ const smtpConfigurationSelect = {
   smtpUser: true,
   smtpPassword: true,
   smtpSecure: true,
-  lastTestedAt: true,
-  lastError: true,
-  isEnabled: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.SmtpConfigurationSelect;
@@ -34,15 +31,12 @@ export type SmtpConfigurationWithCredentials = Prisma.SmtpConfigurationGetPayloa
 
 const smtpConfigurationSelectPublic = {
   id: true,
-  organizationId: true,
+  teamId: true,
   fromEmail: true,
   fromName: true,
   smtpHost: true,
   smtpPort: true,
   smtpSecure: true,
-  lastTestedAt: true,
-  lastError: true,
-  isEnabled: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.SmtpConfigurationSelect;
@@ -57,7 +51,7 @@ export class SmtpConfigurationRepository {
   async create(data: CreateSmtpConfigurationInput): Promise<SmtpConfigurationWithCredentials> {
     return this.prisma.smtpConfiguration.create({
       data: {
-        organizationId: data.organizationId,
+        teamId: data.teamId,
         fromEmail: data.fromEmail,
         fromName: data.fromName,
         smtpHost: data.smtpHost,
@@ -84,34 +78,18 @@ export class SmtpConfigurationRepository {
     });
   }
 
-  async findByOrgId(organizationId: number): Promise<SmtpConfigurationPublic[]> {
-    return this.prisma.smtpConfiguration.findMany({
-      where: { organizationId },
+  async findByTeamId(teamId: number): Promise<SmtpConfigurationPublic | null> {
+    return this.prisma.smtpConfiguration.findUnique({
+      where: { teamId },
       select: smtpConfigurationSelectPublic,
-      orderBy: { createdAt: "desc" },
     });
   }
 
-  async findFirstEnabledByOrgId(organizationId: number): Promise<SmtpConfigurationWithCredentials | null> {
-    return this.prisma.smtpConfiguration.findFirst({
-      where: {
-        organizationId,
-        isEnabled: true,
-      },
-      select: smtpConfigurationSelect,
-    });
-  }
-
-  async setEnabled(id: number, organizationId: number, isEnabled: boolean): Promise<SmtpConfigurationWithCredentials> {
-    if (isEnabled) {
-      await this.prisma.smtpConfiguration.updateMany({
-        where: { organizationId, isEnabled: true },
-        data: { isEnabled: false },
-      });
-    }
-    return this.prisma.smtpConfiguration.update({
-      where: { id },
-      data: { isEnabled },
+  async findByTeamIdWithCredentials(
+    teamId: number
+  ): Promise<SmtpConfigurationWithCredentials | null> {
+    return this.prisma.smtpConfiguration.findUnique({
+      where: { teamId },
       select: smtpConfigurationSelect,
     });
   }
@@ -122,16 +100,35 @@ export class SmtpConfigurationRepository {
     });
   }
 
-  async existsByOrgAndEmail(organizationId: number, fromEmail: string): Promise<boolean> {
+  async existsByTeamId(teamId: number): Promise<boolean> {
     const count = await this.prisma.smtpConfiguration.count({
-      where: { organizationId, fromEmail },
+      where: { teamId },
     });
     return count > 0;
   }
 
-  async countByOrgId(organizationId: number): Promise<number> {
-    return this.prisma.smtpConfiguration.count({
-      where: { organizationId },
+  async update(
+    id: number,
+    teamId: number,
+    data: {
+      fromEmail?: string;
+      fromName?: string;
+      smtpHost?: string;
+      smtpPort?: number;
+      smtpSecure?: boolean;
+    }
+  ): Promise<SmtpConfigurationWithCredentials> {
+    const updateData: Prisma.SmtpConfigurationUpdateInput = {};
+    if (data.fromEmail !== undefined) updateData.fromEmail = data.fromEmail;
+    if (data.fromName !== undefined) updateData.fromName = data.fromName;
+    if (data.smtpHost !== undefined) updateData.smtpHost = data.smtpHost;
+    if (data.smtpPort !== undefined) updateData.smtpPort = data.smtpPort;
+    if (data.smtpSecure !== undefined) updateData.smtpSecure = data.smtpSecure;
+
+    return this.prisma.smtpConfiguration.update({
+      where: { id, teamId },
+      data: updateData,
+      select: smtpConfigurationSelect,
     });
   }
 }

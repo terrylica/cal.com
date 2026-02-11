@@ -28,7 +28,7 @@ export const createSmtpConfigurationHandler = async ({ ctx, input }: CreateSmtpC
   const service = getSmtpConfigurationService();
 
   return service.create({
-    organizationId,
+    teamId: organizationId,
     fromEmail: input.fromEmail,
     fromName: input.fromName,
     smtpHost: input.smtpHost,

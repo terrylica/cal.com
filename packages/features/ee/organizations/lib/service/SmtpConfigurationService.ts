@@ -3,7 +3,6 @@ import { decryptSecret, encryptSecret } from "@calcom/lib/crypto/keyring";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
 import type { TFunction } from "i18next";
-
 import type {
   CreateSmtpConfigurationInput,
   SmtpConfigurationPublic,
@@ -15,7 +14,7 @@ import type { SmtpService } from "./SmtpService";
 const SMTP_KEYRING = "SMTP" as const;
 
 export interface CreateSmtpConfigurationParams {
-  organizationId: number;
+  teamId: number;
   fromEmail: string;
   fromName: string;
   smtpHost: string;
@@ -54,9 +53,9 @@ export class SmtpConfigurationService {
   private encryptCredentials(
     user: string,
     password: string,
-    organizationId: number
+    teamId: number
   ): { user: string; password: string } {
-    const aad = { organizationId };
+    const aad = { teamId };
     return {
       user: JSON.stringify(encryptSecret({ ring: SMTP_KEYRING, plaintext: user, aad })),
       password: JSON.stringify(encryptSecret({ ring: SMTP_KEYRING, plaintext: password, aad })),
@@ -66,9 +65,9 @@ export class SmtpConfigurationService {
   private decryptCredentials(
     encryptedUser: string,
     encryptedPassword: string,
-    organizationId: number
+    teamId: number
   ): { user: string; password: string } {
-    const aad = { organizationId };
+    const aad = { teamId };
     return {
       user: decryptSecret({ envelope: JSON.parse(encryptedUser) as SecretEnvelopeV1, aad }),
       password: decryptSecret({ envelope: JSON.parse(encryptedPassword) as SecretEnvelopeV1, aad }),
@@ -76,15 +75,18 @@ export class SmtpConfigurationService {
   }
 
   async create(params: CreateSmtpConfigurationParams): Promise<SmtpConfigurationPublic> {
-    const exists = await this.repository.existsByOrgAndEmail(params.organizationId, params.fromEmail);
+    const exists = await this.repository.existsByTeamId(params.teamId);
     if (exists) {
-      throw new ErrorWithCode(ErrorCode.BadRequest, "SMTP configuration already exists for this email");
+      throw new ErrorWithCode(
+        ErrorCode.BadRequest,
+        "Organization already has an SMTP configuration. Please delete the existing one first."
+      );
     }
 
-    const encrypted = this.encryptCredentials(params.smtpUser, params.smtpPassword, params.organizationId);
+    const encrypted = this.encryptCredentials(params.smtpUser, params.smtpPassword, params.teamId);
 
     const input: CreateSmtpConfigurationInput = {
-      organizationId: params.organizationId,
+      teamId: params.teamId,
       fromEmail: params.fromEmail,
       fromName: params.fromName,
       smtpHost: params.smtpHost,
@@ -98,49 +100,32 @@ export class SmtpConfigurationService {
     return this.toPublic(config);
   }
 
-  async delete(id: number, organizationId: number): Promise<void> {
+  async delete(id: number, teamId: number): Promise<void> {
     const config = await this.repository.findById(id);
     if (!config) {
       throw new ErrorWithCode(ErrorCode.NotFound, "SMTP configuration not found");
     }
-    if (config.organizationId !== organizationId) {
+    if (config.teamId !== teamId) {
       throw new ErrorWithCode(ErrorCode.Forbidden, "Not authorized to delete this SMTP configuration");
     }
 
     await this.repository.delete(id);
   }
 
-  async toggleEnabled(
-    id: number,
-    organizationId: number,
-    isEnabled: boolean
-  ): Promise<SmtpConfigurationPublic> {
-    const config = await this.repository.findById(id);
-    if (!config) {
-      throw new ErrorWithCode(ErrorCode.NotFound, "SMTP configuration not found");
-    }
-    if (config.organizationId !== organizationId) {
-      throw new ErrorWithCode(ErrorCode.Forbidden, "Not authorized to update this SMTP configuration");
-    }
-
-    const updated = await this.repository.setEnabled(id, organizationId, isEnabled);
-    return this.toPublic(updated);
+  async listByOrganization(teamId: number): Promise<SmtpConfigurationPublic | null> {
+    return this.repository.findByTeamId(teamId);
   }
 
-  async listByOrganization(organizationId: number): Promise<SmtpConfigurationPublic[]> {
-    return this.repository.findByOrgId(organizationId);
-  }
-
-  async getById(id: number, organizationId: number): Promise<SmtpConfigurationPublic | null> {
+  async getById(id: number, teamId: number): Promise<SmtpConfigurationPublic | null> {
     const config = await this.repository.findByIdPublic(id);
-    if (!config || config.organizationId !== organizationId) {
+    if (!config || config.teamId !== teamId) {
       return null;
     }
     return config;
   }
 
-  async getActiveConfigForOrg(organizationId: number): Promise<SmtpEmailConfig | null> {
-    const config = await this.repository.findFirstEnabledByOrgId(organizationId);
+  async getConfigForOrg(teamId: number): Promise<SmtpEmailConfig | null> {
+    const config = await this.repository.findByTeamIdWithCredentials(teamId);
     if (!config) {
       return null;
     }
@@ -148,7 +133,7 @@ export class SmtpConfigurationService {
     const { user, password } = this.decryptCredentials(
       config.smtpUser,
       config.smtpPassword,
-      config.organizationId
+      config.teamId
     );
 
     return {
@@ -162,9 +147,46 @@ export class SmtpConfigurationService {
     };
   }
 
+  async update(
+    id: number,
+    teamId: number,
+    params: {
+      fromEmail?: string;
+      fromName?: string;
+      smtpHost?: string;
+      smtpPort?: number;
+      smtpSecure?: boolean;
+    }
+  ): Promise<SmtpConfigurationPublic> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      throw new ErrorWithCode(ErrorCode.NotFound, "SMTP configuration not found");
+    }
+    if (existing.teamId !== teamId) {
+      throw new ErrorWithCode(ErrorCode.Forbidden, "Not authorized to update this SMTP configuration");
+    }
+
+    const updateData: {
+      fromEmail?: string;
+      fromName?: string;
+      smtpHost?: string;
+      smtpPort?: number;
+      smtpSecure?: boolean;
+    } = {};
+
+    if (params.fromEmail) updateData.fromEmail = params.fromEmail;
+    if (params.fromName) updateData.fromName = params.fromName;
+    if (params.smtpHost) updateData.smtpHost = params.smtpHost;
+    if (params.smtpPort) updateData.smtpPort = params.smtpPort;
+    if (params.smtpSecure !== undefined) updateData.smtpSecure = params.smtpSecure;
+
+    const updated = await this.repository.update(id, teamId, updateData);
+    return this.toPublic(updated);
+  }
+
   async sendTestEmail(
     id: number,
-    organizationId: number,
+    teamId: number,
     toEmail: string,
     language: TFunction
   ): Promise<{ success: boolean; error?: string }> {
@@ -172,14 +194,14 @@ export class SmtpConfigurationService {
     if (!config) {
       throw new ErrorWithCode(ErrorCode.NotFound, "SMTP configuration not found");
     }
-    if (config.organizationId !== organizationId) {
+    if (config.teamId !== teamId) {
       throw new ErrorWithCode(ErrorCode.Forbidden, "Not authorized to test this SMTP configuration");
     }
 
     const { user, password } = this.decryptCredentials(
       config.smtpUser,
       config.smtpPassword,
-      config.organizationId
+      config.teamId
     );
 
     return this.smtpService.sendTestEmail({

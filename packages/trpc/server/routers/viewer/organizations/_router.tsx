@@ -1,7 +1,6 @@
 import { createPhoneCallSchema } from "@calcom/features/calAIPhone/zod-utils";
 import { ZVerifyCodeInputSchema } from "@calcom/prisma/zod-utils";
 import type { NextApiRequest } from "next";
-
 import authedProcedure, {
   authedAdminProcedure,
   authedOrgAdminProcedure,
@@ -39,11 +38,11 @@ import { ZListOtherTeamMembersSchema } from "./listOtherTeamMembers.handler";
 import { ZListWatchlistEntriesInputSchema } from "./listWatchlistEntries.schema";
 import { ZRemoveHostsFromEventTypes } from "./removeHostsFromEventTypes.schema";
 import { ZOrgPasswordResetSchema } from "./sendPasswordReset.schema";
+import { ZSendSmtpTestEmailInputSchema } from "./sendSmtpTestEmail.schema";
 import { ZSetPasswordSchema } from "./setPassword.schema";
 import { ZTestSmtpConnectionInputSchema } from "./testSmtpConnection.schema";
-import { ZToggleSmtpConfigurationInputSchema } from "./toggleSmtpConfiguration.schema";
-import { ZSendSmtpTestEmailInputSchema } from "./sendSmtpTestEmail.schema";
 import { ZUpdateInputSchema } from "./update.schema";
+import { ZUpdateSmtpConfigurationInputSchema } from "./updateSmtpConfiguration.schema";
 import { ZUpdateUserInputSchema } from "./updateUser.schema";
 
 export const viewerOrganizationsRouter = router({
@@ -250,10 +249,10 @@ export const viewerOrganizationsRouter = router({
       const { default: handler } = await import("./deleteSmtpConfiguration.handler");
       return handler(opts);
     }),
-  toggleSmtpConfiguration: authedOrgAdminProcedure
-    .input(ZToggleSmtpConfigurationInputSchema)
+  updateSmtpConfiguration: authedOrgAdminProcedure
+    .input(ZUpdateSmtpConfigurationInputSchema)
     .mutation(async (opts) => {
-      const { default: handler } = await import("./toggleSmtpConfiguration.handler");
+      const { default: handler } = await import("./updateSmtpConfiguration.handler");
       return handler(opts);
     }),
   testSmtpConnection: authedOrgAdminProcedure.input(ZTestSmtpConnectionInputSchema).mutation(async (opts) => {
