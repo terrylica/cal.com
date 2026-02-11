@@ -11667,6 +11667,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "webhookId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -11693,6 +11701,14 @@
             "in": "header",
             "description": "OAuth client secret key",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "webhookId",
+            "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
@@ -12466,6 +12482,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "webhookId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -12491,6 +12515,14 @@
             "in": "header",
             "description": "value must be `Bearer <token>` where `<token>` is api key prefixed with cal_ or managed user access token",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "webhookId",
+            "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
@@ -15425,6 +15457,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "webhookId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -15450,6 +15490,14 @@
             "in": "header",
             "description": "value must be `Bearer <token>` where `<token>` is api key prefixed with cal_",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "webhookId",
+            "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
@@ -16736,6 +16784,14 @@
             "in": "header",
             "description": "value must be `Bearer <token>` where `<token>` is api key prefixed with cal_",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "webhookId",
+            "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
