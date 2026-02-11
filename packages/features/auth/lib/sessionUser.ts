@@ -87,7 +87,7 @@ async function getUserFromSession(ctx: SessionContext, session: Maybe<Session>) 
   };
 }
 
-export type SessionUser = Awaited<ReturnType<typeof getUserFromSession>>;
+export type UserFromSession = Awaited<ReturnType<typeof getUserFromSession>>;
 
 export const getSession = async (ctx: SessionContext) => {
   const { req } = ctx;

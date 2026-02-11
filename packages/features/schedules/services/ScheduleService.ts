@@ -5,7 +5,7 @@ import { HttpError } from "@calcom/lib/http-error";
 import { transformScheduleToAvailabilityForAtom } from "@calcom/lib/schedules/transformers/for-atom";
 import type { PrismaClient } from "@calcom/prisma";
 import { z } from "zod";
-import type { SessionUser } from "@calcom/features/auth/lib/sessionUser";
+import type { UserFromSession } from "@calcom/features/auth/lib/sessionUser";
 import { ScheduleRepository } from "../repositories/ScheduleRepository";
 
 export const ZUpdateInputSchema = z.object({
