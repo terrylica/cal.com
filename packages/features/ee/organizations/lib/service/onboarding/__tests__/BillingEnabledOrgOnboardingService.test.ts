@@ -5,7 +5,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import * as constants from "@calcom/lib/constants";
 import { createDomain } from "@calcom/lib/domainManager/organization";
 import { UserPermissionRole, CreationSource, MembershipRole, BillingPeriod } from "@calcom/prisma/enums";
-import { createTeamsHandler } from "@calcom/trpc/server/routers/viewer/organizations/createTeams.handler";
+import { createTeams } from "@calcom/features/ee/organizations/lib/createTeams";
 import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/features/ee/teams/lib/inviteMembers";
 
 import type { CreateOnboardingIntentInput } from "../../onboarding/types";
@@ -25,8 +25,8 @@ vi.mock("@calcom/features/ee/teams/lib/inviteMembers", () => ({
   inviteMembersWithNoInviterPermissionCheck: vi.fn(),
 }));
 
-vi.mock("@calcom/trpc/server/routers/viewer/organizations/createTeams.handler", () => ({
-  createTeamsHandler: vi.fn(),
+vi.mock("@calcom/features/ee/organizations/lib/createTeams", () => ({
+  createTeams: vi.fn(),
 }));
 
 vi.mock("@calcom/lib/domainManager/organization", () => ({
@@ -793,7 +793,7 @@ describe("BillingEnabledOrgOnboardingService", () => {
 
       expect(createDomain).toHaveBeenCalledWith(organization.slug);
       expect(inviteMembersWithNoInviterPermissionCheck).toHaveBeenCalled();
-      expect(createTeamsHandler).toHaveBeenCalled();
+      expect(createTeams).toHaveBeenCalled();
     });
 
     it("should reuse existing organization if organizationId is already set (idempotency)", async () => {
@@ -987,8 +987,8 @@ describe("BillingEnabledOrgOnboardingService", () => {
         ],
       };
 
-      // Setup: createTeamsHandler will be called and we need teams to exist for inviteMembers
-      vi.mocked(createTeamsHandler).mockImplementation(async (options) => {
+      // Setup: createTeams will be called and we need teams to exist for inviteMembers
+      vi.mocked(createTeams).mockImplementation(async (options) => {
         const marketing = await prismock.team.create({
           data: {
             name: "Marketing",
@@ -1102,7 +1102,7 @@ describe("BillingEnabledOrgOnboardingService", () => {
         ],
       };
 
-      vi.mocked(createTeamsHandler).mockImplementation(async (options) => {
+      vi.mocked(createTeams).mockImplementation(async (options) => {
         const salesTeam = await prismock.team.create({
           data: {
             name: "Sales",
@@ -1164,7 +1164,7 @@ describe("BillingEnabledOrgOnboardingService", () => {
         ],
       };
 
-      vi.mocked(createTeamsHandler).mockResolvedValue({
+      vi.mocked(createTeams).mockResolvedValue({
         teams: [{ id: 300, name: "Marketing" }],
       } as any);
 

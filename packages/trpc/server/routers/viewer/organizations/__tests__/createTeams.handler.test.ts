@@ -5,7 +5,7 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import slugify from "@calcom/lib/slugify";
 import { MembershipRole, UserPermissionRole, CreationSource, RedirectType } from "@calcom/prisma/enums";
 
-import { TRPCError } from "@trpc/server";
+import { ErrorWithCode } from "@calcom/lib/errors";
 
 import { createTeamsHandler } from "../createTeams.handler";
 
@@ -168,7 +168,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
             creationSource: CreationSource.WEBAPP,
           },
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ErrorWithCode);
 
       await expect(
         createTeamsHandler({
@@ -186,7 +186,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
           },
         })
       ).rejects.toMatchObject({
-        code: "FORBIDDEN",
+        code: "forbidden_error",
         message: "not_authorized",
       });
     });
@@ -221,7 +221,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
           },
         })
       ).rejects.toMatchObject({
-        code: "FORBIDDEN",
+        code: "forbidden_error",
         message: "not_authorized",
       });
     });
@@ -249,7 +249,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
           },
         })
       ).rejects.toMatchObject({
-        code: "FORBIDDEN",
+        code: "forbidden_error",
         message: "not_authorized",
       });
     });
@@ -287,7 +287,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
           },
         })
       ).rejects.toMatchObject({
-        code: "FORBIDDEN",
+        code: "forbidden_error",
         message: "not_authorized",
       });
     });
@@ -323,7 +323,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
           },
         })
       ).rejects.toMatchObject({
-        code: "BAD_REQUEST",
+        code: "bad_request_error",
         message: "invalid_organization_metadata",
       });
     });
@@ -356,7 +356,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
           },
         })
       ).rejects.toMatchObject({
-        code: "BAD_REQUEST",
+        code: "bad_request_error",
         message: "no_organization_slug",
       });
     });
@@ -1215,7 +1215,7 @@ describe("createTeams handler - Comprehensive Tests", () => {
         role: MembershipRole.ADMIN,
       });
 
-      const inviteModule = await import("../../teams/inviteMember/inviteMember.handler");
+      const inviteModule = await import("@calcom/features/ee/teams/lib/inviteMembers");
       const inviteSpy = vi
         .spyOn(inviteModule, "inviteMembersWithNoInviterPermissionCheck")
         .mockResolvedValue({

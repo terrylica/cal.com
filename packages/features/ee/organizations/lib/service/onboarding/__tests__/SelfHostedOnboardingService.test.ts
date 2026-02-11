@@ -6,7 +6,7 @@ import { LicenseKeySingleton } from "@calcom/ee/common/server/LicenseKeyService"
 import { OrganizationOnboardingRepository } from "@calcom/features/organizations/repositories/OrganizationOnboardingRepository";
 import * as constants from "@calcom/lib/constants";
 import { UserPermissionRole, CreationSource, MembershipRole, BillingPeriod } from "@calcom/prisma/enums";
-import { createTeamsHandler } from "@calcom/trpc/server/routers/viewer/organizations/createTeams.handler";
+import { createTeams } from "@calcom/features/ee/organizations/lib/createTeams";
 import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/features/ee/teams/lib/inviteMembers";
 
 import { SelfHostedOrganizationOnboardingService } from "../SelfHostedOnboardingService";
@@ -32,8 +32,8 @@ vi.mock("@calcom/features/ee/teams/lib/inviteMembers", () => ({
   inviteMembersWithNoInviterPermissionCheck: vi.fn(),
 }));
 
-vi.mock("@calcom/trpc/server/routers/viewer/organizations/createTeams.handler", () => ({
-  createTeamsHandler: vi.fn(),
+vi.mock("@calcom/features/ee/organizations/lib/createTeams", () => ({
+  createTeams: vi.fn(),
 }));
 
 vi.mock("@calcom/lib/domainManager/organization", () => ({
@@ -355,7 +355,7 @@ describe("SelfHostedOrganizationOnboardingService", () => {
 
       // Verify teams and members
       expect(inviteMembersWithNoInviterPermissionCheck).toHaveBeenCalled();
-      expect(createTeamsHandler).toHaveBeenCalled();
+      expect(createTeams).toHaveBeenCalled();
     });
 
     it("should throw error if organization with same slug exists", async () => {
@@ -486,8 +486,8 @@ describe("SelfHostedOrganizationOnboardingService", () => {
         ],
       };
 
-      // Setup: createTeamsHandler will be called and we need teams to exist for inviteMembers
-      vi.mocked(createTeamsHandler).mockImplementation(async (options) => {
+      // Setup: createTeams will be called and we need teams to exist for inviteMembers
+      vi.mocked(createTeams).mockImplementation(async (options) => {
         const marketing = await prismock.team.create({
           data: {
             name: "Marketing",

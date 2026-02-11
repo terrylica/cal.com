@@ -24,7 +24,7 @@ import { prisma } from "@calcom/prisma";
 import type { Prisma, Team, User } from "@calcom/prisma/client";
 import { CreationSource, MembershipRole, UserPermissionRole } from "@calcom/prisma/enums";
 import { userMetadata, teamMetadataStrictSchema } from "@calcom/prisma/zod-utils";
-import { createTeamsHandler } from "@calcom/trpc/server/routers/viewer/organizations/createTeams.handler";
+import { createTeams } from "@calcom/features/ee/organizations/lib/createTeams";
 import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/features/ee/teams/lib/inviteMembers";
 
 import { OrganizationPaymentService } from "../../OrganizationPaymentService";
@@ -536,7 +536,7 @@ export abstract class BaseOnboardingService implements IOrganizationOnboardingSe
       )} teams for organization ${organizationId}`
     );
 
-    await createTeamsHandler({
+    await createTeams({
       ctx: {
         user: {
           ...owner,
