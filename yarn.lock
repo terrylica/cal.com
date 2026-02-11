@@ -2088,7 +2088,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/applecalendar@workspace:packages/app-store/apps/applecalendar":
+"@calcom/applecalendar@workspace:*, @calcom/applecalendar@workspace:packages/app-store/apps/applecalendar":
   version: 0.0.0-use.local
   resolution: "@calcom/applecalendar@workspace:packages/app-store/apps/applecalendar"
   dependencies:
@@ -2727,7 +2727,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/ics-feed@workspace:packages/app-store/apps/ics-feedcalendar":
+"@calcom/ics-feed@workspace:*, @calcom/ics-feed@workspace:packages/app-store/apps/ics-feedcalendar":
   version: 0.0.0-use.local
   resolution: "@calcom/ics-feed@workspace:packages/app-store/apps/ics-feedcalendar"
   dependencies:
@@ -2990,7 +2990,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@calcom/platform-libraries@workspace:packages/platform/libraries"
   dependencies:
+    "@calcom/applecalendar": "workspace:*"
     "@calcom/features": "workspace:*"
+    "@calcom/ics-feed": "workspace:*"
     "@calcom/lib": "workspace:*"
     "@types/node": "npm:20.17.23"
     "@vitejs/plugin-react": "npm:5.1.2"

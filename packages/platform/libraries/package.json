@@ -17,7 +17,9 @@
     "publish-npm": "yarn && node scripts/prepublish.js && npx rimraf dist && yarn build && npm publish --access public && node scripts/postpublish.js"
   },
   "dependencies": {
+    "@calcom/applecalendar": "workspace:*",
     "@calcom/features": "workspace:*",
+    "@calcom/ics-feed": "workspace:*",
     "@calcom/lib": "workspace:*"
   },
   "peerDependencies": {
