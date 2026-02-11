@@ -8,6 +8,20 @@ import { AssignmentReasonEnum } from "@calcom/prisma/enums";
 
 const { getAttributesQueryValue } = acrossQueryValueCompatiblity;
 
+function isFieldTemplate(str: string): boolean {
+  const trimmed = str.trim();
+  return trimmed.startsWith("{field:") && trimmed.endsWith("}");
+}
+
+function ruleHasFieldTemplates(originalValue: unknown[] | null | undefined): boolean {
+  if (!originalValue || !originalValue[0]) return false;
+  const firstValue = originalValue[0];
+  if (Array.isArray(firstValue)) {
+    return firstValue.some((v) => typeof v === "string" && isFieldTemplate(v));
+  }
+  return typeof firstValue === "string" && isFieldTemplate(firstValue);
+}
+
 export enum RRReassignmentType {
   ROUND_ROBIN = "round_robin",
   MANUAL = "manual",
@@ -91,6 +105,8 @@ export default class AssignmentReasonRecorder {
 
     if (!attributesUsedToRoute) return;
 
+    const originalChildren = formAttributesQuery?.children1;
+
     const attributeValues: string[] = [];
 
     for (const attribute of Object.keys(attributesUsedToRoute)) {
@@ -103,6 +119,10 @@ export default class AssignmentReasonRecorder {
       const attributeValue = attributeToFilter.value;
 
       if (!userAttribute || !attributeValue || attributeValue[0] === null) continue;
+
+      const originalRule = originalChildren?.[attribute];
+      const originalValue = originalRule?.properties?.value;
+      if (!ruleHasFieldTemplates(originalValue)) continue;
 
       if (attributeValue && attributeValue[0]) {
         const attributeValueString = (() => {

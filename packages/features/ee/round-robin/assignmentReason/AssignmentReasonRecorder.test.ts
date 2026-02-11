@@ -57,18 +57,33 @@ function buildRoute({
   };
 }
 
+function mockUserAttributes(attributes: Array<{ id: string; name: string; slug: string; type: string }>) {
+  vi.mocked(getUsersAttributes).mockResolvedValue(
+    attributes.map((attr) => ({
+      ...attr,
+      isWeightsEnabled: false,
+      options: [],
+    })) as never
+  );
+}
+
+function fieldTpl(fieldId: string) {
+  return "{" + "field:" + fieldId + "}";
+}
+
 describe("AssignmentReasonRecorder._routingFormRoute", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should join all multiselect attribute values in assignment reason", async () => {
+  it("should include multiselect values when rule uses field template", async () => {
     const routeId = "route-1";
     const attrId = "attr-region";
+    const formFieldId = "field-location";
 
     const routingFormResponse = buildRoutingFormResponse({
       chosenRouteId: routeId,
-      response: { location: { value: ["north", "south", "west"] } },
+      response: { [formFieldId]: { value: ["north", "south", "west"] } },
       routes: [
         buildRoute({
           id: routeId,
@@ -81,7 +96,7 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
                 properties: {
                   field: attrId,
                   operator: "multiselect_some_in",
-                  value: [["north", "south", "west"]],
+                  value: [[fieldTpl(formFieldId)]],
                   valueSrc: ["value"],
                   valueType: ["multiselect"],
                 },
@@ -90,25 +105,11 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
           },
         }),
       ],
-      fields: [],
+      fields: [{ id: formFieldId, type: "multiselect", label: "Location" }],
     });
 
     prismaMock.app_RoutingForms_FormResponse.findUnique.mockResolvedValue(routingFormResponse as never);
-
-    vi.mocked(getUsersAttributes).mockResolvedValue([
-      {
-        id: attrId,
-        name: "Region",
-        slug: "region",
-        type: "MULTI_SELECT",
-        isWeightsEnabled: false,
-        options: [
-          { id: "opt-1", value: "North", slug: "north", contains: [], isGroup: false },
-          { id: "opt-2", value: "South", slug: "south", contains: [], isGroup: false },
-          { id: "opt-3", value: "West", slug: "west", contains: [], isGroup: false },
-        ],
-      },
-    ] as never);
+    mockUserAttributes([{ id: attrId, name: "Region", slug: "region", type: "MULTI_SELECT" }]);
 
     vi.mocked(getAttributesQueryValue).mockReturnValue({
       id: "qv1",
@@ -150,20 +151,31 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
     });
   });
 
-  it("should handle single select attribute value (non-array)", async () => {
+  it("should skip rules with only static values (no field templates)", async () => {
     const routeId = "route-1";
-    const attrId = "attr-city";
+    const attrId = "attr-region";
 
     const routingFormResponse = buildRoutingFormResponse({
       chosenRouteId: routeId,
-      response: { city: { value: "mumbai" } },
+      response: {},
       routes: [
         buildRoute({
           id: routeId,
           attributesQueryValue: {
             id: "qv1",
             type: "group",
-            children1: {},
+            children1: {
+              rule1: {
+                type: "rule",
+                properties: {
+                  field: attrId,
+                  operator: "multiselect_some_in",
+                  value: [["option-id-1", "option-id-2"]],
+                  valueSrc: ["value"],
+                  valueType: ["multiselect"],
+                },
+              },
+            },
           },
         }),
       ],
@@ -171,19 +183,80 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
     });
 
     prismaMock.app_RoutingForms_FormResponse.findUnique.mockResolvedValue(routingFormResponse as never);
+    mockUserAttributes([{ id: attrId, name: "Region", slug: "region", type: "MULTI_SELECT" }]);
 
-    vi.mocked(getUsersAttributes).mockResolvedValue([
-      {
-        id: attrId,
-        name: "City",
-        slug: "city",
-        type: "SINGLE_SELECT",
-        isWeightsEnabled: false,
-        options: [
-          { id: "opt-1", value: "Mumbai", slug: "mumbai", contains: [], isGroup: false },
-        ],
+    vi.mocked(getAttributesQueryValue).mockReturnValue({
+      id: "qv1",
+      type: "group",
+      children1: {
+        rule1: {
+          type: "rule",
+          properties: {
+            field: attrId,
+            operator: "multiselect_some_in",
+            value: [["north", "south"]],
+            valueSrc: ["value"],
+            valueType: ["multiselect"],
+          },
+        },
       },
-    ] as never);
+    });
+
+    prismaMock.assignmentReason.create.mockResolvedValue({} as never);
+
+    const result = await AssignmentReasonRecorder._routingFormRoute({
+      bookingId: 2,
+      routingFormResponseId: 2,
+      organizerId: 10,
+      teamId: 100,
+      isRerouting: false,
+    });
+
+    expect(result).toBeDefined();
+    expect(result?.reasonString?.trim()).toBe("");
+    expect(prismaMock.assignmentReason.create).toHaveBeenCalledWith({
+      data: {
+        bookingId: 2,
+        reasonEnum: AssignmentReasonEnum.ROUTING_FORM_ROUTING,
+        reasonString: expect.not.stringContaining("Region"),
+      },
+    });
+  });
+
+  it("should handle single select with field template", async () => {
+    const routeId = "route-1";
+    const attrId = "attr-city";
+    const formFieldId = "field-city";
+
+    const routingFormResponse = buildRoutingFormResponse({
+      chosenRouteId: routeId,
+      response: { [formFieldId]: { value: "mumbai" } },
+      routes: [
+        buildRoute({
+          id: routeId,
+          attributesQueryValue: {
+            id: "qv1",
+            type: "group",
+            children1: {
+              rule1: {
+                type: "rule",
+                properties: {
+                  field: attrId,
+                  operator: "select_equals",
+                  value: [fieldTpl(formFieldId)],
+                  valueSrc: ["value"],
+                  valueType: ["select"],
+                },
+              },
+            },
+          },
+        }),
+      ],
+      fields: [{ id: formFieldId, type: "select", label: "City" }],
+    });
+
+    prismaMock.app_RoutingForms_FormResponse.findUnique.mockResolvedValue(routingFormResponse as never);
+    mockUserAttributes([{ id: attrId, name: "City", slug: "city", type: "SINGLE_SELECT" }]);
 
     vi.mocked(getAttributesQueryValue).mockReturnValue({
       id: "qv1",
@@ -205,8 +278,8 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
     prismaMock.assignmentReason.create.mockResolvedValue({} as never);
 
     const result = await AssignmentReasonRecorder._routingFormRoute({
-      bookingId: 2,
-      routingFormResponseId: 2,
+      bookingId: 3,
+      routingFormResponseId: 3,
       organizerId: 10,
       teamId: 100,
       isRerouting: false,
@@ -217,38 +290,40 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
     expect(result?.reasonEnum).toBe(AssignmentReasonEnum.ROUTING_FORM_ROUTING);
   });
 
-  it("should include rerouting info when isRerouting is true", async () => {
+  it("should include rerouting info with field-template-derived values", async () => {
     const routeId = "route-1";
     const attrId = "attr-region";
+    const formFieldId = "field-region";
 
     const routingFormResponse = buildRoutingFormResponse({
       chosenRouteId: routeId,
-      response: {},
+      response: { [formFieldId]: { value: ["east", "west"] } },
       routes: [
         buildRoute({
           id: routeId,
           attributesQueryValue: {
             id: "qv1",
             type: "group",
-            children1: {},
+            children1: {
+              rule1: {
+                type: "rule",
+                properties: {
+                  field: attrId,
+                  operator: "multiselect_some_in",
+                  value: [[fieldTpl(formFieldId)]],
+                  valueSrc: ["value"],
+                  valueType: ["multiselect"],
+                },
+              },
+            },
           },
         }),
       ],
-      fields: [],
+      fields: [{ id: formFieldId, type: "multiselect", label: "Region" }],
     });
 
     prismaMock.app_RoutingForms_FormResponse.findUnique.mockResolvedValue(routingFormResponse as never);
-
-    vi.mocked(getUsersAttributes).mockResolvedValue([
-      {
-        id: attrId,
-        name: "Region",
-        slug: "region",
-        type: "MULTI_SELECT",
-        isWeightsEnabled: false,
-        options: [],
-      },
-    ] as never);
+    mockUserAttributes([{ id: attrId, name: "Region", slug: "region", type: "MULTI_SELECT" }]);
 
     vi.mocked(getAttributesQueryValue).mockReturnValue({
       id: "qv1",
@@ -270,8 +345,8 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
     prismaMock.assignmentReason.create.mockResolvedValue({} as never);
 
     const result = await AssignmentReasonRecorder._routingFormRoute({
-      bookingId: 3,
-      routingFormResponseId: 3,
+      bookingId: 4,
+      routingFormResponseId: 4,
       organizerId: 10,
       teamId: 100,
       isRerouting: true,
@@ -284,47 +359,54 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
     expect(result?.reasonEnum).toBe(AssignmentReasonEnum.REROUTED);
   });
 
-  it("should handle multiple attributes in the route", async () => {
+  it("should include only field-template rules when mixed with static rules", async () => {
     const routeId = "route-1";
     const regionAttrId = "attr-region";
     const deptAttrId = "attr-dept";
+    const formFieldId = "field-dept";
 
     const routingFormResponse = buildRoutingFormResponse({
       chosenRouteId: routeId,
-      response: {},
+      response: { [formFieldId]: { value: "engineering" } },
       routes: [
         buildRoute({
           id: routeId,
           attributesQueryValue: {
             id: "qv1",
             type: "group",
-            children1: {},
+            children1: {
+              rule1: {
+                type: "rule",
+                properties: {
+                  field: regionAttrId,
+                  operator: "multiselect_some_in",
+                  value: [["option-id-north", "option-id-south"]],
+                  valueSrc: ["value"],
+                  valueType: ["multiselect"],
+                },
+              },
+              rule2: {
+                type: "rule",
+                properties: {
+                  field: deptAttrId,
+                  operator: "select_equals",
+                  value: [fieldTpl(formFieldId)],
+                  valueSrc: ["value"],
+                  valueType: ["select"],
+                },
+              },
+            },
           },
         }),
       ],
-      fields: [],
+      fields: [{ id: formFieldId, type: "select", label: "Department" }],
     });
 
     prismaMock.app_RoutingForms_FormResponse.findUnique.mockResolvedValue(routingFormResponse as never);
-
-    vi.mocked(getUsersAttributes).mockResolvedValue([
-      {
-        id: regionAttrId,
-        name: "Region",
-        slug: "region",
-        type: "MULTI_SELECT",
-        isWeightsEnabled: false,
-        options: [],
-      },
-      {
-        id: deptAttrId,
-        name: "Department",
-        slug: "department",
-        type: "SINGLE_SELECT",
-        isWeightsEnabled: false,
-        options: [],
-      },
-    ] as never);
+    mockUserAttributes([
+      { id: regionAttrId, name: "Region", slug: "region", type: "MULTI_SELECT" },
+      { id: deptAttrId, name: "Department", slug: "department", type: "SINGLE_SELECT" },
+    ]);
 
     vi.mocked(getAttributesQueryValue).mockReturnValue({
       id: "qv1",
@@ -356,15 +438,15 @@ describe("AssignmentReasonRecorder._routingFormRoute", () => {
     prismaMock.assignmentReason.create.mockResolvedValue({} as never);
 
     const result = await AssignmentReasonRecorder._routingFormRoute({
-      bookingId: 4,
-      routingFormResponseId: 4,
+      bookingId: 5,
+      routingFormResponseId: 5,
       organizerId: 10,
       teamId: 100,
       isRerouting: false,
     });
 
     expect(result).toBeDefined();
-    expect(result?.reasonString).toContain("Region: north, south");
+    expect(result?.reasonString).not.toContain("Region");
     expect(result?.reasonString).toContain("Department: engineering");
   });
 
