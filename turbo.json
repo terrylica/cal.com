@@ -317,11 +317,6 @@
       "outputLogs": "new-only",
       "outputs": ["public/app-store/**"]
     },
-    "@calcom/web#copy-locales": {
-      "inputs": ["../../packages/config/i18n/locales/**/*"],
-      "outputLogs": "new-only",
-      "outputs": ["public/static/locales/**"]
-    },
     "@calcom/prisma#build": {
       "cache": false,
       "dependsOn": ["post-install"]
@@ -350,7 +345,7 @@
       "outputs": ["./types"]
     },
     "@calcom/web#build": {
-      "dependsOn": ["^build", "copy-app-store-static", "copy-locales"],
+      "dependsOn": ["^build", "copy-app-store-static"],
       "outputs": [".next/**"],
       "env": [
         "NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL",
@@ -538,10 +533,7 @@
     },
     "post-install": {
       "dependsOn": [],
-      "outputs": [
-        "../../node_modules/@prisma/client/**",
-        "../../node_modules/@prisma/admin-client/**"
-      ],
+      "outputs": ["../../node_modules/@prisma/client/**", "../../node_modules/@prisma/admin-client/**"],
       "inputs": ["./schema.prisma", "./prisma/schema.prisma"],
       "env": ["PRISMA_GENERATE_DATAPROXY"]
     },
@@ -582,10 +574,7 @@
         "../../packages/app-store/**/pages/**",
         "../../packages/app-store-cli/src/**"
       ],
-      "outputs": [
-        "../../packages/app-store/*.generated.ts",
-        "../../packages/app-store/*.generated.tsx"
-      ]
+      "outputs": ["../../packages/app-store/*.generated.ts", "../../packages/app-store/*.generated.tsx"]
     },
     "@calcom/embed-react#type-check": {
       "dependsOn": ["@calcom/embed-core#build", "@calcom/embed-snippet#build"],

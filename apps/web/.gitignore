@@ -70,7 +70,7 @@ public/embed
 public/app-store
 
 # Copied locale files
-public/static/locales
+# Locales are now loaded directly from packages/config/i18n/locales
 
 certificates
 # Sentry Config File

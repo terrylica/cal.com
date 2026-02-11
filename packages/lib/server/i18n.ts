@@ -1,8 +1,4 @@
 import { createInstance } from "i18next";
-
-import { WEBAPP_URL } from "@calcom/lib/constants";
-
-import { fetchWithTimeout } from "../fetchWithTimeout";
 import logger from "../logger";
 
 const { i18n } = require("@calcom/config/i18n/next-i18next.config");
@@ -10,10 +6,7 @@ const log = logger.getSubLogger({ prefix: ["[i18n]"] });
 
 // Import only English translations directly to avoid HTTP requests
 // Other languages will be loaded dynamically to minimize bundle size
-const englishTranslations: Record<
-  string,
-  string
-> = require("../../../apps/web/public/static/locales/en/common.json");
+const englishTranslations: Record<string, string> = require("@calcom/config/i18n/locales/en/common.json");
 
 const translationCache = new Map<string, Record<string, string>>();
 const i18nInstanceCache = new Map<string, any>();
@@ -30,8 +23,8 @@ export function mergeWithEnglishFallback(localeTranslations: Record<string, stri
 
 /**
  * Loads translations for a specific locale and namespace with optimized caching
- * English translations are bundled as englishTranslations for reliability,
- * other languages use dynamic imports with HTTP fallback to minimize bundle size
+ * Server-side only function that loads translations directly from file system for best performance
+ * Uses @calcom/config package alias for reliable access across all packages in the monorepo
  * @param {string} _locale - The locale code (e.g., 'en', 'fr', 'zh')
  * @param {string} ns - The namespace for the translations
  * @returns {Promise<Record<string, string>>} Translations object or fallback translations on failure
@@ -53,35 +46,14 @@ export async function loadTranslations(_locale: string, _ns: string) {
   }
 
   try {
-    const { default: localeTranslations } = await import(
-      `../../../apps/web/public/static/locales/${locale}/${ns}.json`
-    );
+    // Load directly from source using package alias for file system access
+    const { default: localeTranslations } = await import(`@calcom/config/i18n/locales/${locale}/${ns}.json`);
 
     const mergedTranslations = mergeWithEnglishFallback(localeTranslations);
     translationCache.set(cacheKey, mergedTranslations);
     return mergedTranslations;
-  } catch (dynamicImportErr) {
-    log.warn(`Dynamic import failed for locale ${locale}:`, dynamicImportErr);
-
-    // Try HTTP fallback as second option
-    try {
-      const response = await fetchWithTimeout(
-        `${WEBAPP_URL}/static/locales/${locale}/${ns}.json`,
-        {
-          cache: "no-store",
-        },
-        3000
-      );
-      if (response.ok) {
-        const httpTranslations = await response.json();
-        const mergedTranslations = mergeWithEnglishFallback(httpTranslations);
-        translationCache.set(cacheKey, mergedTranslations);
-        return mergedTranslations;
-      }
-    } catch (httpErr) {
-      log.error(`HTTP fallback also failed for locale ${locale}:`, httpErr);
-    }
-
+  } catch (importErr) {
+    log.error(`Failed to load translations for locale ${locale}:`, importErr);
     log.info(`Falling back to English for locale: ${locale}`);
     return englishTranslations;
   }
