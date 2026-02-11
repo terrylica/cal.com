@@ -2,6 +2,7 @@ import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getFeatureOptInService } from "@calcom/features/di/containers/FeatureOptInService";
 import { getUserFeatureRepository } from "@calcom/features/di/containers/UserFeatureRepository";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
+import { prisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import type { PageProps } from "app/_types";
@@ -10,6 +11,7 @@ import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppD
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { getBookingTabStatus } from "~/bookings/lib/getBookingTabStatus";
 import { validStatuses } from "~/bookings/lib/validStatuses";
 import BookingsList from "~/bookings/views/bookings-view";
 
@@ -26,7 +28,7 @@ export const generateMetadata = async ({ params }: { params: Promise<{ status: s
     `/bookings/${(await params).status}`
   );
 
-const Page = async ({ params }: PageProps) => {
+const Page = async ({ params, searchParams }: PageProps) => {
   const parsed = querySchema.safeParse(await params);
   if (!parsed.success) {
     redirect("/bookings/upcoming");
@@ -39,6 +41,31 @@ const Page = async ({ params }: PageProps) => {
   }
 
   const userId = session.user.id;
+
+  // Handle deep linking via uid parameter
+  const awaitedSearchParams = await searchParams;
+  const uid = awaitedSearchParams?.uid as string | undefined;
+
+  if (uid && typeof uid === "string") {
+    // Fetch booking to determine its correct tab
+    const booking = await prisma.booking.findUnique({
+      where: { uid },
+      select: {
+        status: true,
+        endTime: true,
+        recurringEventId: true,
+      },
+    });
+
+    if (booking) {
+      const correctTab = getBookingTabStatus(booking);
+      // If current tab doesn't match the booking's status, redirect to the correct tab
+      if (correctTab !== parsed.data.status) {
+        const params = new URLSearchParams(awaitedSearchParams as Record<string, string>);
+        redirect(`/bookings/${correctTab}?${params.toString()}`);
+      }
+    }
+  }
   const permissionService = new PermissionCheckService();
   const userFeatureRepository = getUserFeatureRepository();
 
@@ -69,9 +96,9 @@ const Page = async ({ params }: PageProps) => {
     <ShellMainAppDir
       {...(!bookingsV3Enabled
         ? {
-            heading: t("bookings"),
-            subtitle: t("bookings_description"),
-          }
+          heading: t("bookings"),
+          subtitle: t("bookings_description"),
+        }
         : {})}>
       <BookingsList
         status={parsed.data.status}
@@ -79,6 +106,7 @@ const Page = async ({ params }: PageProps) => {
         permissions={{ canReadOthersBookings }}
         bookingsV3Enabled={bookingsV3Enabled}
         bookingAuditEnabled={bookingAuditEnabled}
+        initialBookingUid={uid}
       />
     </ShellMainAppDir>
   );

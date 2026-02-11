@@ -12,7 +12,7 @@ import { ToggleGroup } from "@calcom/ui/components/form";
 import { WipeMyCalActionButton } from "@calcom/web/components/apps/wipemycalother/wipeMyCalActionButton";
 import { getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBookingFilters } from "~/bookings/hooks/useBookingFilters";
 import { useBookingListColumns } from "~/bookings/hooks/useBookingListColumns";
 import { useBookingListData } from "~/bookings/hooks/useBookingListData";
@@ -64,6 +64,7 @@ interface BookingListContainerProps {
   };
   bookingsV3Enabled: boolean;
   bookingAuditEnabled: boolean;
+  initialBookingUid?: string;
 }
 
 interface BookingListInnerProps extends BookingListContainerProps {
@@ -73,6 +74,7 @@ interface BookingListInnerProps extends BookingListContainerProps {
   errorMessage?: string;
   totalRowCount?: number;
   bookings: BookingsGetOutput["bookings"];
+  initialBookingUid?: string;
 }
 
 function BookingListInner({
@@ -86,15 +88,24 @@ function BookingListInner({
   hasError,
   errorMessage,
   totalRowCount,
+  initialBookingUid,
 }: BookingListInnerProps) {
   const { t } = useLocale();
   const user = useMeQuery().data;
   const setSelectedBookingUid = useBookingDetailsSheetStore((state) => state.setSelectedBookingUid);
+  const selectedBookingUid = useBookingDetailsSheetStore((state) => state.selectedBookingUid);
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(true);
 
   // Handle auto-selection for list view
   useListAutoSelector(bookings);
+
+  // Auto-open booking sheet when initialBookingUid is provided
+  useEffect(() => {
+    if (initialBookingUid && !selectedBookingUid) {
+      setSelectedBookingUid(initialBookingUid);
+    }
+  }, [initialBookingUid, selectedBookingUid, setSelectedBookingUid]);
 
   const ErrorView = errorMessage ? (
     <Alert severity="error" title={t("something_went_wrong")} message={errorMessage} />
