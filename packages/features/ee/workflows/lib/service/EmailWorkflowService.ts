@@ -21,7 +21,11 @@ import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 import { CalendarEvent } from "@calcom/types/Calendar";
 
 import type { WorkflowReminderRepository } from "../../repositories/WorkflowReminderRepository";
-import { isEmailAction, getTemplateBodyForAction, getTemplateSubjectForAction } from "../actionHelperFunctions";
+import {
+  isEmailAction,
+  getTemplateBodyForAction,
+  getTemplateSubjectForAction,
+} from "../actionHelperFunctions";
 import { detectMatchedTemplate } from "../detectMatchedTemplate";
 import { getWorkflowRecipientEmail } from "../getWorkflowReminders";
 import type { VariablesType } from "../reminders/templates/customTemplate";
@@ -93,9 +97,10 @@ export class EmailWorkflowService {
       evtOrganizationId: evt.organizationId,
     });
 
-    const hideBranding = await getHideBranding({
-      userId: workflow.userId ?? undefined,
-      teamId: workflow.teamId ?? undefined,
+    const hideBranding = await this.shouldHideBranding({
+      platformClientId: evt.platformClientId,
+      userId: workflow.userId,
+      teamId: workflow.teamId,
     });
 
     const emailWorkflowContentParams = await this.generateParametersToBuildEmailWorkflowContent({
@@ -247,6 +252,27 @@ export class EmailWorkflowService {
       verifiedAt: workflowStep.verifiedAt,
       isOrganization,
     } as const;
+  }
+
+  private async shouldHideBranding({
+    platformClientId,
+    userId,
+    teamId,
+  }: {
+    platformClientId?: string | null;
+    userId?: number | null;
+    teamId?: number | null;
+  }): Promise<boolean> {
+    if (platformClientId) {
+      return true;
+    }
+
+    const hideBranding = await getHideBranding({
+      userId: userId ?? undefined,
+      teamId: teamId ?? undefined,
+    });
+
+    return hideBranding;
   }
 
   async generateEmailPayloadForEvtWorkflow({
@@ -408,7 +434,7 @@ export class EmailWorkflowService {
 
     if (matchedTemplate === WorkflowTemplates.REMINDER) {
       const t = await getTranslation(locale, "common");
-      const meetingUrl =  
+      const meetingUrl =
         getVideoCallUrlFromCalEvent({
           videoCallData: evt.videoCallData,
           uid: evt.uid,
@@ -428,6 +454,7 @@ export class EmailWorkflowService {
         meetingUrl,
         otherPerson: attendeeName,
         name,
+        isBrandingDisabled: hideBranding,
       });
     } else if (matchedTemplate === WorkflowTemplates.RATING) {
       emailContent = emailRatingTemplate({
@@ -442,6 +469,7 @@ export class EmailWorkflowService {
         timeZone,
         organizer: evt.organizer.name,
         name,
+        isBrandingDisabled: hideBranding,
         ratingUrl: `${bookerUrl}/booking/${evt.uid}?rating`,
         noShowUrl: `${bookerUrl}/booking/${evt.uid}?noShow=true`,
       });
@@ -539,10 +567,9 @@ export class EmailWorkflowService {
     };
 
     const shouldIncludeCalendarEvent =
-    includeCalendarEvent &&
-    triggerEvent !== WorkflowTriggerEvents.BOOKING_REQUESTED;
+      includeCalendarEvent && triggerEvent !== WorkflowTriggerEvents.BOOKING_REQUESTED;
 
-  const attachments = shouldIncludeCalendarEvent
+    const attachments = shouldIncludeCalendarEvent
       ? [
           {
             content:
