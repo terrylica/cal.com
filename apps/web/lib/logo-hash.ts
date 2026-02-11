@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
   ANDROID_CHROME_ICON_192,
@@ -35,6 +35,27 @@ const logoFileMap: Record<LogoType, string> = {
 
 const hashCache: Map<string, string> = new Map<string, string>();
 
+let resolvedPublicDir: string | null | undefined;
+
+function findPublicDir(): string | null {
+  if (resolvedPublicDir !== undefined) return resolvedPublicDir;
+
+  const candidates = [
+    path.join(process.cwd(), "public"),
+    path.join(process.cwd(), "apps", "web", "public"),
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(path.join(candidate, "favicon-32x32.png"))) {
+      resolvedPublicDir = candidate;
+      return candidate;
+    }
+  }
+
+  resolvedPublicDir = null;
+  return null;
+}
+
 function isValidLogoType(type: string): type is LogoType {
   return type in logoFileMap;
 }
@@ -47,7 +68,8 @@ function getLogoHash(type: LogoType): string {
   if (!filePath) return "";
 
   try {
-    const publicDir = path.resolve(__dirname, "..", "public");
+    const publicDir = findPublicDir();
+    if (!publicDir) return "";
     const fullPath = path.join(publicDir, filePath);
     const content = readFileSync(fullPath);
     const hash = createHash("sha256").update(content).digest("hex").slice(0, 8);
