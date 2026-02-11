@@ -57,18 +57,18 @@ export const ServerTeamsListing = async ({
     }
   }
 
-  const allTeams = await getCachedTeams(userId);
+  const teams = await getCachedTeams(userId);
   const userProfile = session?.user?.profile;
   const orgId = userProfile?.organizationId ?? session?.user.org?.id;
 
   // Filter to get accepted non-organization teams (same logic as TeamsListing)
-  const teams = allTeams.filter((m) => m.accepted && !m.isOrganization);
+  const acceptedTeams = teams.filter((m) => m.accepted && !m.isOrganization);
 
   // Check if user has a team plan (any accepted team with a slug)
-  const hasTeamPlan = allTeams.some((team) => team.accepted === true && team.slug !== null);
+  const hasTeamPlan = teams.some((team) => team.accepted === true && team.slug !== null);
 
   // Show header unless we're showing the upgrade banner (no teams and no team plan)
-  const showHeader = teams.length > 0 || hasTeamPlan;
+  const showHeader = acceptedTeams.length > 0 || hasTeamPlan;
 
   const permissionCheckService = new PermissionCheckService();
   const canCreateTeam = orgId
@@ -84,7 +84,7 @@ export const ServerTeamsListing = async ({
     Main: (
       <TeamsListing
         invitationAccepted={invitationAccepted}
-        teams={allTeams}
+        teams={teams}
         orgId={orgId ?? null}
         permissions={{
           canCreateTeam: canCreateTeam,
