@@ -10,11 +10,16 @@
     "./components/EventTypeAppSettingsInterface": "./src/components/EventTypeAppSettingsInterface.tsx",
     "./components/KeyInput": "./src/components/KeyInput.tsx",
     "./pages/setup/_getServerSideProps": "./src/pages/setup/_getServerSideProps.tsx",
+    "./lib": "./src/lib/index.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {
     "*": {
+      "lib": [
+        "./src/lib/index.ts"
+      ],
       "*": [
         "./src/*"
       ]

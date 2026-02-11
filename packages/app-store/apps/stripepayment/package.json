@@ -9,6 +9,8 @@
     "./lib/client": "./src/lib/client/index.ts",
     "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
     "./components/EventTypeAppSettingsInterface": "./src/components/EventTypeAppSettingsInterface.tsx",
+    "./lib": "./src/lib/index.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
@@ -16,6 +18,9 @@
     "*": {
       "lib/client": [
         "./src/lib/client/index.ts"
+      ],
+      "lib": [
+        "./src/lib/index.ts"
       ],
       "*": [
         "./src/*"

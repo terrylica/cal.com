@@ -9,11 +9,16 @@
     "./components/EventTypeAppSettingsInterface": "./src/components/EventTypeAppSettingsInterface.tsx",
     "./components/SearchDialog": "./src/components/SearchDialog.tsx",
     "./components/SelectGifInput": "./src/components/SelectGifInput.tsx",
+    "./lib": "./src/lib/index.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {
     "*": {
+      "lib": [
+        "./src/lib/index.ts"
+      ],
       "*": [
         "./src/*"
       ]

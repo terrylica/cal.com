@@ -6,11 +6,16 @@
   "main": "./src/index.ts",
   "exports": {
     "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
+    "./lib": "./src/lib/index.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {
     "*": {
+      "lib": [
+        "./src/lib/index.ts"
+      ],
       "*": [
         "./src/*"
       ]

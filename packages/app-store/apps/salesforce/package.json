@@ -8,11 +8,16 @@
     "./components/RoutingFormOptions": "./src/components/RoutingFormOptions.tsx",
     "./components/components/FieldRulesSettings": "./src/components/components/FieldRulesSettings.tsx",
     "./components/components/WriteToObjectSettings": "./src/components/components/WriteToObjectSettings.tsx",
+    "./lib": "./src/lib/index.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {
     "*": {
+      "lib": [
+        "./src/lib/index.ts"
+      ],
       "*": [
         "./src/*"
       ]

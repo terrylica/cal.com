@@ -8,6 +8,8 @@
     "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
     "./components/EventTypeAppSettingsInterface": "./src/components/EventTypeAppSettingsInterface.tsx",
     "./pages/setup/_getStaticProps": "./src/pages/setup/_getStaticProps.tsx",
+    "./lib": "./src/lib/index.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },

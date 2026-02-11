@@ -6,11 +6,16 @@
   "exports": {
     "./components/AccountDialog": "./src/components/AccountDialog.tsx",
     "./components/InstallAppButton": "./src/components/InstallAppButton.tsx",
+    "./lib": "./src/lib/index.ts",
+    "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {
     "*": {
+      "lib": [
+        "./src/lib/index.ts"
+      ],
       "*": [
         "./src/*"
       ]
