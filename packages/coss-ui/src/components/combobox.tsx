@@ -16,21 +16,39 @@ const ComboboxContext = React.createContext<{
   multiple: false,
 });
 
-type ComboboxRootProps<
-  ItemValue,
-  Multiple extends boolean | undefined,
-> = Parameters<typeof ComboboxPrimitive.Root<ItemValue, Multiple>>[0];
-
-function Combobox<ItemValue, Multiple extends boolean | undefined = false>(
-  props: ComboboxPrimitive.Root.Props<ItemValue, Multiple>,
-) {
+function Combobox<Value, Multiple extends boolean | undefined = false>(
+  props: ComboboxPrimitive.Root.Props<Value, Multiple>,
+): React.JSX.Element {
   const chipsRef = React.useRef<Element | null>(null);
   return (
     <ComboboxContext.Provider value={{ chipsRef, multiple: !!props.multiple }}>
-      <ComboboxPrimitive.Root
-        {...(props as ComboboxRootProps<ItemValue, Multiple>)}
-      />
+      <ComboboxPrimitive.Root {...props} />
     </ComboboxContext.Provider>
+  );
+}
+
+function ComboboxChipsInput({
+  className,
+  size,
+  ...props
+}: Omit<ComboboxPrimitive.Input.Props, "size"> & {
+  size?: "sm" | "default" | "lg" | number;
+  ref?: React.Ref<HTMLInputElement>;
+}) {
+  const sizeValue = (size ?? "default") as "sm" | "default" | "lg" | number;
+
+  return (
+    <ComboboxPrimitive.Input
+      className={cn(
+        "min-w-12 flex-1 text-base outline-none sm:text-sm [[data-slot=combobox-chip]+&]:ps-0.5",
+        sizeValue === "sm" ? "ps-1.5" : "ps-2",
+        className,
+      )}
+      data-size={typeof sizeValue === "string" ? sizeValue : undefined}
+      data-slot="combobox-chips-input"
+      size={typeof sizeValue === "number" ? sizeValue : undefined}
+      {...props}
+    />
   );
 }
 
@@ -48,27 +66,8 @@ function ComboboxInput({
   size?: "sm" | "default" | "lg" | number;
   ref?: React.Ref<HTMLInputElement>;
 }) {
-  const { multiple } = React.useContext(ComboboxContext);
   const sizeValue = (size ?? "default") as "sm" | "default" | "lg" | number;
 
-  // multiple mode
-  if (multiple) {
-    return (
-      <ComboboxPrimitive.Input
-        className={cn(
-          "min-w-12 flex-1 text-base outline-none [transition:background-color_5000000s_ease-in-out_0s] sm:text-sm [[data-slot=combobox-chip]+&]:ps-0.5",
-          sizeValue === "sm" ? "ps-1.5" : "ps-2",
-          className,
-        )}
-        data-size={typeof sizeValue === "string" ? sizeValue : undefined}
-        data-slot="combobox-input"
-        size={typeof sizeValue === "number" ? sizeValue : undefined}
-        {...props}
-      />
-    );
-  }
-
-  // single mode
   return (
     <div className="relative not-has-[>*.w-full]:w-fit w-full text-foreground has-disabled:opacity-64">
       {startAddon && (
@@ -139,20 +138,28 @@ function ComboboxTrigger({
 function ComboboxPopup({
   className,
   children,
+  side = "bottom",
   sideOffset = 4,
+  alignOffset,
+  align = "start",
   ...props
 }: ComboboxPrimitive.Popup.Props & {
-  sideOffset?: number;
+  align?: ComboboxPrimitive.Positioner.Props["align"];
+  sideOffset?: ComboboxPrimitive.Positioner.Props["sideOffset"];
+  alignOffset?: ComboboxPrimitive.Positioner.Props["alignOffset"];
+  side?: ComboboxPrimitive.Positioner.Props["side"];
 }) {
   const { chipsRef } = React.useContext(ComboboxContext);
 
   return (
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
-        align="start"
+        align={align}
+        alignOffset={alignOffset}
         anchor={chipsRef}
         className="z-50 select-none"
         data-slot="combobox-positioner"
+        side={side}
         sideOffset={sideOffset}
       >
         <span
@@ -396,6 +403,7 @@ const useComboboxFilter = ComboboxPrimitive.useFilter;
 
 export {
   Combobox,
+  ComboboxChipsInput,
   ComboboxInput,
   ComboboxTrigger,
   ComboboxPopup,
