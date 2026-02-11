@@ -8,6 +8,7 @@ import { sendRequestRescheduleEmailAndSMS } from "@calcom/emails/email-manager";
 import { makeUserActor } from "@calcom/features/booking-audit/lib/makeActor";
 import type { ActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
 import { getBookingEventHandlerService } from "@calcom/features/bookings/di/BookingEventHandlerService.container";
+import { getFeaturesRepository } from "@calcom/features/di/containers/FeaturesRepository";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
 import { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";
 import { deleteMeeting } from "@calcom/features/conferencing/lib/videoClient";
@@ -317,6 +318,11 @@ export const requestRescheduleHandler = async ({ ctx, input, source, impersonate
 
   const bookingEventHandlerService = getBookingEventHandlerService();
   const context = impersonatedByUserUuid ? { impersonatedBy: impersonatedByUserUuid } : undefined;
+  const featuresRepository = getFeaturesRepository();
+  const isBookingAuditEnabled = orgId
+    ? await featuresRepository.checkIfTeamHasFeature(orgId, "booking-audit")
+    : false;
+
   await bookingEventHandlerService.onRescheduleRequested({
     bookingUid: bookingToReschedule.uid,
     actor: makeUserActor(user.uuid),
@@ -327,5 +333,6 @@ export const requestRescheduleHandler = async ({ ctx, input, source, impersonate
       rescheduledRequestedBy: user.email,
     },
     context,
+    isBookingAuditEnabled,
   });
 };

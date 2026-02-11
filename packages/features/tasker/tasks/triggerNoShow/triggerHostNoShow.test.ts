@@ -33,6 +33,22 @@ vi.mock("@calcom/features/bookings/di/BookingEventHandlerService.container", () 
   }),
 }));
 
+const { mockOnNoShowUpdated } = vi.hoisted(() => ({
+  mockOnNoShowUpdated: vi.fn(),
+}));
+
+vi.mock("@calcom/features/bookings/di/BookingEventHandlerService.container", () => ({
+  getBookingEventHandlerService: vi.fn().mockReturnValue({
+    onNoShowUpdated: mockOnNoShowUpdated,
+  }),
+}));
+
+vi.mock("@calcom/features/di/containers/FeaturesRepository", () => ({
+  getFeaturesRepository: vi.fn().mockReturnValue({
+    checkIfTeamHasFeature: vi.fn().mockResolvedValue(false),
+  }),
+}));
+
 const timeout = process.env.CI ? 5000 : 20000;
 
 const EMPTY_MEETING_SESSIONS = {
@@ -64,6 +80,38 @@ type ExpectNoShowAuditParams = {
       };
     }>;
   };
+};
+
+function expectNoShowAuditToBeDone(expected: ExpectNoShowAuditParams): void {
+  expect(mockOnNoShowUpdated).toHaveBeenCalledTimes(1);
+  expect(mockOnNoShowUpdated).toHaveBeenCalledWith(expected);
+}
+
+type ExpectNoShowAuditParams = {
+  bookingUid: string;
+  source: string;
+  actor: {
+    identifiedBy: string;
+    id: string;
+  };
+  organizationId: number | null;
+  auditData: {
+    host?: {
+      userUuid: string;
+      noShow: {
+        old: boolean | null;
+        new: boolean;
+      };
+    };
+    attendeesNoShow?: Array<{
+      attendeeEmail: string;
+      noShow: {
+        new: boolean;
+        old: boolean | null;
+      };
+    }>;
+  };
+  isBookingAuditEnabled: boolean;
 };
 
 function expectNoShowAuditToBeDone(expected: ExpectNoShowAuditParams): void {
@@ -224,6 +272,17 @@ describe("Trigger Host No Show:", () => {
         auditData: {
           host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
         },
+      });
+
+      expectNoShowAuditToBeDone({
+        bookingUid: uidOfBooking,
+        source: "SYSTEM",
+        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
+        organizationId: null,
+        auditData: {
+          host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
+        },
+        isBookingAuditEnabled: false,
       });
     },
     timeout
@@ -401,6 +460,17 @@ describe("Trigger Host No Show:", () => {
         auditData: {
           host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
         },
+      });
+
+      expectNoShowAuditToBeDone({
+        bookingUid: uidOfBooking,
+        source: "SYSTEM",
+        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
+        organizationId: null,
+        auditData: {
+          host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
+        },
+        isBookingAuditEnabled: false,
       });
     },
     timeout
@@ -619,6 +689,17 @@ describe("Trigger Host No Show:", () => {
           host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
         },
       });
+
+      expectNoShowAuditToBeDone({
+        bookingUid: newUidOfBooking,
+        source: "SYSTEM",
+        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
+        organizationId: null,
+        auditData: {
+          host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
+        },
+        isBookingAuditEnabled: false,
+      });
     },
     timeout
   );
@@ -782,6 +863,172 @@ describe("Trigger Host No Show:", () => {
         auditData: {
           host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
         },
+      });
+    },
+    timeout
+  );
+
+  test(
+    `Should not trigger host no show webhook when host joined the call`,
+    async () => {
+      const organizer = getOrganizer({
+        name: "Organizer",
+        email: "organizer@example.com",
+        id: 101,
+        schedules: [TestData.schedules.IstWorkHours],
+        credentials: [getGoogleCalendarCredential()],
+        selectedCalendars: [TestData.selectedCalendars.google],
+      });
+      const { dateString: plus1DateString } = getDate({ dateIncrement: 1 });
+
+      const uidOfBooking = "n5Wv3eHgconAED2j4gcVhP";
+      const iCalUID = `${uidOfBooking}@Cal.com`;
+      const subscriberUrl = "http://my-webhook.example.com";
+      const bookingStartTime = `${plus1DateString}T05:00:00.000Z`;
+
+      await createBookingScenario(
+        getScenarioData({
+          webhooks: [
+            {
+              id: "22",
+              userId: organizer.id,
+              eventTriggers: [WebhookTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW],
+              subscriberUrl,
+              active: true,
+              eventTypeId: 1,
+              appId: null,
+              time: 5,
+              timeUnit: TimeUnit.MINUTE,
+            },
+          ],
+          eventTypes: [
+            {
+              id: 1,
+              slotInterval: 15,
+              length: 15,
+              users: [
+                {
+                  id: 101,
+                },
+              ],
+            },
+          ],
+          bookings: [
+            {
+              id: 222,
+              uid: uidOfBooking,
+              eventTypeId: 1,
+              status: BookingStatus.ACCEPTED,
+              startTime: bookingStartTime,
+              endTime: `${plus1DateString}T05:15:00.000Z`,
+              user: { id: organizer.id },
+              attendees: [
+                {
+                  email: "guest@example.com",
+                  name: "Guest User",
+                  timeZone: "UTC",
+                  locale: "en",
+                },
+              ],
+              metadata: {
+                videoCallUrl: "https://existing-daily-video-call-url.example.com",
+              },
+              references: [
+                {
+                  type: appStoreMetadata.dailyvideo.type,
+                  uid: "MOCK_ID",
+                  meetingId: "MOCK_ID",
+                  meetingPassword: "MOCK_PASS",
+                  meetingUrl: "http://mock-dailyvideo.example.com",
+                  credentialId: null,
+                },
+                {
+                  type: appStoreMetadata.googlecalendar.type,
+                  uid: "MOCK_ID",
+                  meetingId: "MOCK_ID",
+                  meetingPassword: "MOCK_PASSWORD",
+                  meetingUrl: "https://UNUSED_URL",
+                  externalCalendarId: "MOCK_EXTERNAL_CALENDAR_ID",
+                  credentialId: undefined,
+                },
+              ],
+              iCalUID,
+            },
+          ],
+          organizer,
+          apps: [TestData.apps["google-calendar"], TestData.apps["daily-video"]],
+        })
+      );
+
+      const MOCKED_PARTICIPANTS = [
+        {
+          user_id: "101",
+          email: "organizer@example.com",
+          participant_id: "MOCK_PARTICIPANT_ID",
+          user_name: "Organizer",
+          join_time: 0,
+          duration: 15,
+          isLoggedIn: true,
+        },
+      ];
+
+      const MOCKED_MEETING_SESSIONS = {
+        total_count: 1,
+        data: [
+          {
+            id: "MOCK_ID",
+            room: "MOCK_ROOM",
+            start_time: 1234567890,
+            duration: 15,
+            max_participants: 1,
+            participants: MOCKED_PARTICIPANTS,
+          },
+        ],
+      };
+
+      vi.mocked(getMeetingSessionsFromRoomName).mockResolvedValue(MOCKED_MEETING_SESSIONS);
+
+      const TEST_WEBHOOK = {
+        id: "22",
+        eventTriggers: [WebhookTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW],
+        subscriberUrl,
+        active: true,
+        eventTypeId: 1,
+        appId: null,
+        time: 5,
+        timeUnit: TimeUnit.MINUTE,
+        payloadTemplate: null,
+        secret: null,
+        version: WebhookVersion.V_2021_10_20,
+      };
+
+      const payload = JSON.stringify({
+        triggerEvent: WebhookTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW,
+        bookingId: 222,
+        webhook: TEST_WEBHOOK,
+      } satisfies TSendNoShowWebhookPayloadSchema);
+
+      await triggerHostNoShow(payload);
+
+      // This will throw an error if the webhook was called
+      expect(() =>
+        expectWebhookToHaveBeenCalledWith(subscriberUrl, {
+          triggerEvent: WebhookTriggerEvents.AFTER_HOSTS_CAL_VIDEO_NO_SHOW,
+          payload: expect.any(Object),
+        })
+      ).toThrow();
+
+      expect(mockOnNoShowUpdated).not.toHaveBeenCalled();
+
+      expectNoShowAuditToBeDone({
+        bookingUid: uidOfBooking,
+        source: "SYSTEM",
+        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
+        organizationId: null,
+        auditData: {
+          host: { userUuid: expect.any(String), noShow: { old: false, new: true } },
+        },
+        isBookingAuditEnabled: false,
       });
     },
     timeout

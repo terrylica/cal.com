@@ -33,6 +33,22 @@ vi.mock("@calcom/features/bookings/di/BookingEventHandlerService.container", () 
   }),
 }));
 
+const { mockOnNoShowUpdated } = vi.hoisted(() => ({
+  mockOnNoShowUpdated: vi.fn(),
+}));
+
+vi.mock("@calcom/features/bookings/di/BookingEventHandlerService.container", () => ({
+  getBookingEventHandlerService: vi.fn().mockReturnValue({
+    onNoShowUpdated: mockOnNoShowUpdated,
+  }),
+}));
+
+vi.mock("@calcom/features/di/containers/FeaturesRepository", () => ({
+  getFeaturesRepository: vi.fn().mockReturnValue({
+    checkIfTeamHasFeature: vi.fn().mockResolvedValue(false),
+  }),
+}));
+
 const timeout = process.env.CI ? 5000 : 20000;
 
 const EMPTY_MEETING_SESSIONS = {
@@ -57,6 +73,31 @@ type ExpectNoShowAuditParams = {
       };
     }>;
   };
+};
+
+function expectNoShowAuditToBeDone(expected: ExpectNoShowAuditParams): void {
+  expect(mockOnNoShowUpdated).toHaveBeenCalledTimes(1);
+  expect(mockOnNoShowUpdated).toHaveBeenCalledWith(expected);
+}
+
+type ExpectNoShowAuditParams = {
+  bookingUid: string;
+  source: string;
+  actor: {
+    identifiedBy: string;
+    id: string;
+  };
+  organizationId: number | null;
+  auditData: {
+    attendeesNoShow: Array<{
+      attendeeEmail: string;
+      noShow: {
+        new: boolean;
+        old: boolean | null;
+      };
+    }>;
+  };
+  isBookingAuditEnabled: boolean;
 };
 
 function expectNoShowAuditToBeDone(expected: ExpectNoShowAuditParams): void {
@@ -240,6 +281,19 @@ describe("Trigger Guest No Show:", () => {
             { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
           ],
         },
+      });
+
+      expectNoShowAuditToBeDone({
+        bookingUid: uidOfBooking,
+        source: "SYSTEM",
+        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
+        organizationId: null,
+        auditData: {
+          attendeesNoShow: [
+            { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
+          ],
+        },
+        isBookingAuditEnabled: false,
       });
     },
     timeout
@@ -442,6 +496,19 @@ describe("Trigger Guest No Show:", () => {
             { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
           ],
         },
+      });
+
+      expectNoShowAuditToBeDone({
+        bookingUid: uidOfBooking,
+        source: "SYSTEM",
+        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
+        organizationId: null,
+        auditData: {
+          attendeesNoShow: [
+            { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
+          ],
+        },
+        isBookingAuditEnabled: false,
       });
     },
     timeout
@@ -683,6 +750,19 @@ describe("Trigger Guest No Show:", () => {
             { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
           ],
         },
+      });
+
+      expectNoShowAuditToBeDone({
+        bookingUid: newUidOfBooking,
+        source: "SYSTEM",
+        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
+        organizationId: null,
+        auditData: {
+          attendeesNoShow: [
+            { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
+          ],
+        },
+        isBookingAuditEnabled: false,
       });
     },
     timeout

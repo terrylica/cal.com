@@ -15,6 +15,12 @@ import {
 } from "@calcom/prisma/selects/booking";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
 
+import type {
+  BookingWhereInput,
+  IBookingRepository,
+  BookingUpdateData,
+  BookingWhereUniqueInput,
+} from "./IBookingRepository";
 import { workflowSelect } from "../../ee/workflows/lib/getAllWorkflows";
 
 const workflowReminderSelect = {
@@ -2160,6 +2166,11 @@ export class BookingRepository implements IBookingRepository {
           select: {
             reasonString: true,
             reasonEnum: true,
+          },
+        },
+        routedFromRoutingFormReponse: {
+          select: {
+            formId: true,
           },
         },
       },
