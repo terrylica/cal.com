@@ -3,8 +3,7 @@ import { describe, expect, vi } from "vitest";
 import { ORGANIZER_EMAIL_EXEMPT_DOMAINS } from "@calcom/lib/constants";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
-import { buildCalendarEvent, buildPerson } from "@calcom/lib/test/builder";
-import { buildVideoCallData } from "@calcom/lib/test/builder";
+import { buildCalendarEvent, buildPerson, buildVideoCallData } from "@calcom/testing/builders/builder";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 import { test } from "@calcom/testing/lib/fixtures/fixtures";
 

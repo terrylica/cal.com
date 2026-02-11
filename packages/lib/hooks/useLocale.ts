@@ -4,8 +4,8 @@ import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAtomsContext } from "@calcom/atoms/hooks/useAtomsContext";
-import { AppRouterI18nContext } from "@calcom/web/app/AppRouterI18nProvider";
-import { CustomI18nContext } from "@calcom/web/app/CustomI18nProvider";
+
+import { AppRouterI18nContext, CustomI18nContext } from "./i18nContexts";
 
 type useLocaleReturnType = {
   i18n: i18n;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import dayjs from "@calcom/dayjs";
-import { getHolidayService } from "@calcom/lib/holidays";
+import { getHolidayService } from "@calcom/features/holidays";
 
 import { UserAvailabilityService } from "./getUserAvailability";
 

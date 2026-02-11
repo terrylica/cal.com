@@ -6,7 +6,7 @@ import { createMocks } from "node-mocks-http";
 import { describe, expect, test, vi, afterEach } from "vitest";
 
 import { getAllTranscriptsAccessLinkFromRoomName } from "@calcom/features/conferencing/lib/videoClient";
-import { buildBooking } from "@calcom/lib/test/builder";
+import { buildBooking } from "@calcom/testing/builders/builder";
 
 import { getAccessibleUsers } from "~/lib/utils/retrieveScopedAccessibleUsers";
 

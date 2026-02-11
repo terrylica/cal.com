@@ -2,7 +2,7 @@
 import prismaMock from "@calcom/testing/lib/__mocks__/prismaMock";
 import updateChildrenEventTypes from "@calcom/features/ee/managed-event-types/lib/handleChildrenEventTypes";
 import logger from "@calcom/lib/logger";
-import { buildEventType } from "@calcom/lib/test/builder";
+import { buildEventType } from "@calcom/testing/builders/builder";
 import type { EventType, Prisma, User, WorkflowsOnEventTypes } from "@calcom/prisma/client";
 import { SchedulingType } from "@calcom/prisma/enums";
 import { describe, expect, it, vi } from "vitest";

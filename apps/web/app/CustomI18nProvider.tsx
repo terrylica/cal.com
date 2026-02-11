@@ -1,15 +1,9 @@
 "use client";
 
-import { createContext, useMemo } from "react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
 
-type CustomI18nContextType = {
-  translations: Record<string, string>;
-  ns: string;
-  locale: string;
-};
-
-export const CustomI18nContext = createContext<CustomI18nContextType | null>(null);
+import { CustomI18nContext, type CustomI18nContextType } from "@calcom/lib/hooks/i18nContexts";
 
 export function CustomI18nProvider({
   children,

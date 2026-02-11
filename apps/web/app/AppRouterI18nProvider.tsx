@@ -1,15 +1,12 @@
 "use client";
 
-import { createContext, useMemo } from "react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
 
-type AppRouterI18nContextType = {
-  translations: Record<string, string>;
-  ns: string;
-  locale: string;
-};
-
-export const AppRouterI18nContext = createContext<AppRouterI18nContextType | null>(null);
+import {
+  AppRouterI18nContext,
+  type AppRouterI18nContextType,
+} from "@calcom/lib/hooks/i18nContexts";
 
 export function AppRouterI18nProvider({
   children,
