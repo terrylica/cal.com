@@ -77,7 +77,7 @@ type HandleMarkHostNoShowArgs = {
   actionSource: ValidActionSource;
   locale?: string;
   platformClientParams?: PlatformClientParams;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
 };
 
 type HandleMarkAttendeesAndHostNoShowArgs = {
@@ -89,7 +89,7 @@ type HandleMarkAttendeesAndHostNoShowArgs = {
   actionSource: ValidActionSource;
   locale?: string;
   platformClientParams?: PlatformClientParams;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
 };
 
 type HandleMarkNoShowArgs = {
@@ -102,7 +102,7 @@ type HandleMarkNoShowArgs = {
   locale?: string;
   platformClientParams?: PlatformClientParams;
   actor: Actor;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
 };
 
 const buildResultPayload = async ({
@@ -213,7 +213,7 @@ async function fireNoShowUpdated({
   actor: Actor;
   orgId: number | null;
   actionSource: ValidActionSource;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
 }): Promise<void> {
   const auditData: {
     host?: { userUuid: string; noShow: { old: boolean | null; new: boolean } };

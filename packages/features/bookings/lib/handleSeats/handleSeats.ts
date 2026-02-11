@@ -43,7 +43,7 @@ const fireBookingEvents = async ({
   rescheduledBy: string | undefined;
   actionSource: ActionSource;
   actorUserUuid: string | null;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
   isBookingAuditEnabled: boolean;
   deps: {
     bookingEventHandler: BookingEventHandlerService;

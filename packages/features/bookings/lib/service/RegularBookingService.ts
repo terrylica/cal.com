@@ -2956,7 +2956,7 @@ export class RegularBookingService implements IBookingService {
     isRecurringBooking: boolean;
     tracingLogger: ReturnType<typeof distributedTracing.getTracingLogger>;
     attendeeSeatId: string | null;
-    impersonatedByUserUuid?: string;
+    impersonatedByUserUuid?: string | null;
     isBookingAuditEnabled: boolean;
   }) {
     try {

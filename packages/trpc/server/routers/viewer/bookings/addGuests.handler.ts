@@ -35,7 +35,7 @@ type AddGuestsOptions = {
   input: TAddGuestsInputSchema;
   emailsEnabled?: boolean;
   actionSource: ActionSource;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
 };
 
 type Booking = NonNullable<Awaited<ReturnType<BookingRepository["findByIdIncludeDestinationCalendar"]>>>;

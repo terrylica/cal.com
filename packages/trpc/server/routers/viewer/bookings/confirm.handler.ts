@@ -47,7 +47,7 @@ type ConfirmOptions = {
     >;
     traceContext: TraceContext;
   };
-  input: TConfirmInputSchema & { actionSource: ValidActionSource; actor: Actor; impersonatedByUserUuid?: string };
+  input: TConfirmInputSchema & { actionSource: ValidActionSource; actor: Actor; impersonatedByUserUuid?: string | null };
 };
 
 async function fireRejectionEvent({
@@ -70,7 +70,7 @@ async function fireRejectionEvent({
   }[];
   isBookingAuditEnabled: boolean;
   tracingLogger: ISimpleLogger;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
 }): Promise<void> {
   try {
     const bookingEventHandlerService = getBookingEventHandlerService();

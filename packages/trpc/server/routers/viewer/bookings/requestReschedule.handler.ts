@@ -48,7 +48,7 @@ type RequestRescheduleOptions = {
   };
   input: TRequestRescheduleInputSchema;
   source: ActionSource;
-  impersonatedByUserUuid?: string;
+  impersonatedByUserUuid?: string | null;
 };
 const log = logger.getSubLogger({ prefix: ["requestRescheduleHandler"] });
 export const requestRescheduleHandler = async ({ ctx, input, source, impersonatedByUserUuid }: RequestRescheduleOptions) => {
