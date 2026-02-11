@@ -79,7 +79,14 @@ export class OrganizationsConferencingController {
   @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
   @Post("/teams/:teamId/conferencing/:app/connect")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Connect your conferencing application to a team" })
+  @ApiOperation({
+    summary: "Connect your conferencing application to a team",
+    description:
+      "Note: Google Meet is currently not supported for team-level connections. " +
+      "Connecting Google Meet to a team requires a Google Calendar to be connected to that team first, " +
+      "but there is currently no way to connect Google Calendar at the team level. " +
+      "Only OAuth-based conferencing apps (Zoom, Office365 Video) can be connected to teams at the moment.",
+  })
   async connectTeamApp(
     @GetUser() user: UserWithProfile,
     @Param("teamId", ParseIntPipe) teamId: number,
@@ -159,7 +166,12 @@ export class OrganizationsConferencingController {
   @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
   @Post("/teams/:teamId/conferencing/:app/default")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Set team default conferencing application" })
+  @ApiOperation({
+    summary: "Set team default conferencing application",
+    description:
+      "Note: Google Meet cannot currently be set as a team default because it requires a Google Calendar " +
+      "connection at the team level, which is not yet supported.",
+  })
   @ApiParam({
     name: "app",
     description: "Conferencing application type",
@@ -206,7 +218,11 @@ export class OrganizationsConferencingController {
   @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
   @Delete("/teams/:teamId/conferencing/:app/disconnect")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Disconnect team conferencing application" })
+  @ApiOperation({
+    summary: "Disconnect team conferencing application",
+    description:
+      "Note: Google Meet is currently not supported for team-level connections, so there would be nothing to disconnect for it.",
+  })
   @ApiParam({
     name: "app",
     description: "Conferencing application type",
