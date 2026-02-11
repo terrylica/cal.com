@@ -4,7 +4,7 @@ import type {
   BookingWhereInput,
   BookingWhereUniqueInput,
   IBookingRepository,
-} from "@calcom/lib/server/repository/dto/IBookingRepository";
+} from "./IBookingRepository";
 import type { PrismaClient } from "@calcom/prisma";
 import type { Booking } from "@calcom/prisma/client";
 import { Prisma } from "@calcom/prisma/client";
@@ -15,6 +15,8 @@ import {
   bookingMinimalSelect,
 } from "@calcom/prisma/selects/booking";
 import { credentialForCalendarServiceSelect } from "@calcom/prisma/selects/credential";
+
+import { workflowSelect } from "../../ee/workflows/lib/getAllWorkflows";
 
 const workflowReminderSelect = {
   id: true,
@@ -390,6 +392,103 @@ export class BookingRepository implements IBookingRepository {
             teamId: true,
           },
         },
+      },
+    });
+  }
+
+  async findByUidIncludeEventTypeAttendeesAndUser({ bookingUid }: { bookingUid: string }) {
+    return await this.prismaClient.booking.findUnique({
+      where: { uid: bookingUid },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        title: true,
+        metadata: true,
+        uid: true,
+        location: true,
+        destinationCalendar: true,
+        smsReminderNumber: true,
+        userPrimaryEmail: true,
+        eventType: {
+          select: {
+            id: true,
+            hideOrganizerEmail: true,
+            customReplyToEmail: true,
+            schedulingType: true,
+            slug: true,
+            title: true,
+            metadata: true,
+            parentId: true,
+            teamId: true,
+            userId: true,
+            hosts: {
+              select: {
+                user: {
+                  select: {
+                    email: true,
+                    destinationCalendar: {
+                      select: {
+                        primaryEmail: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            parent: {
+              select: {
+                teamId: true,
+              },
+            },
+            workflows: {
+              select: {
+                workflow: {
+                  select: workflowSelect,
+                },
+              },
+            },
+            owner: {
+              select: {
+                hideBranding: true,
+                email: true,
+                name: true,
+                timeZone: true,
+                locale: true,
+              },
+            },
+            team: {
+              select: {
+                parentId: true,
+                name: true,
+                id: true,
+              },
+            },
+          },
+        },
+        attendees: {
+          select: {
+            email: true,
+            name: true,
+            timeZone: true,
+            locale: true,
+            phoneNumber: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            uuid: true,
+            email: true,
+            name: true,
+            destinationCalendar: true,
+            timeZone: true,
+            locale: true,
+            username: true,
+            timeFormat: true,
+          },
+        },
+        noShowHost: true,
       },
     });
   }
@@ -1523,6 +1622,20 @@ export class BookingRepository implements IBookingRepository {
     });
   }
 
+  async updateNoShowHost({
+    bookingUid,
+    noShowHost,
+  }: {
+    bookingUid: string;
+    noShowHost: boolean;
+  }): Promise<{ id: number }> {
+    return await this.prismaClient.booking.update({
+      where: { uid: bookingUid },
+      data: { noShowHost },
+      select: { id: true },
+    });
+  }
+
   /**
    * Update a booking and return it with workflow reminders and references
    * Used during booking cancellation to update status and retrieve related data in one query
@@ -2049,6 +2162,11 @@ export class BookingRepository implements IBookingRepository {
           select: {
             reasonString: true,
             reasonEnum: true,
+          },
+        },
+        routedFromRoutingFormReponse: {
+          select: {
+            formId: true,
           },
         },
       },
