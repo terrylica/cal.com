@@ -1,9 +1,6 @@
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LogoType } from "../logo-hash";
-import { getLogoHash, getLogoUrl, isValidLogoType } from "../logo-hash";
+import { getLogoHash, getLogoHashes, getLogoUrl, isValidLogoType } from "../logo-hash";
 
 const LOGO_TYPES: LogoType[] = [
   "logo",
@@ -15,6 +12,17 @@ const LOGO_TYPES: LogoType[] = [
   "android-chrome-192",
   "android-chrome-256",
 ];
+
+const MOCK_HASHES: Record<string, string> = {
+  logo: "abc12345",
+  icon: "def67890",
+  "favicon-16": "11112222",
+  "favicon-32": "33334444",
+  "apple-touch-icon": "55556666",
+  mstile: "77778888",
+  "android-chrome-192": "99990000",
+  "android-chrome-256": "aabbccdd",
+};
 
 describe("isValidLogoType", () => {
   it.each(LOGO_TYPES)("returns true for valid type '%s'", (type) => {
@@ -31,35 +39,66 @@ describe("isValidLogoType", () => {
 });
 
 describe("getLogoHash", () => {
-  it.each(LOGO_TYPES)("returns a non-empty 8-char hex hash for '%s'", (type) => {
-    const hash = getLogoHash(type);
-    expect(hash).toMatch(/^[a-f0-9]{8}$/);
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_LOGO_HASHES", JSON.stringify(MOCK_HASHES));
   });
 
-  it("returns consistent hash for the same type", () => {
-    const hash1 = getLogoHash("logo");
-    const hash2 = getLogoHash("logo");
-    expect(hash1).toBe(hash2);
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
-  it("matches sha256 of the actual file content", () => {
-    const filePath = path.resolve(__dirname, "..", "..", "public", "favicon-32x32.png");
-    const content = readFileSync(filePath);
-    const expected = createHash("sha256").update(content).digest("hex").slice(0, 8);
-    expect(getLogoHash("favicon-32")).toBe(expected);
+  it.each(LOGO_TYPES)("returns the hash from env for '%s'", (type) => {
+    expect(getLogoHash(type)).toBe(MOCK_HASHES[type]);
+  });
+
+  it("returns empty string when env is not set", () => {
+    vi.stubEnv("NEXT_PUBLIC_LOGO_HASHES", "");
+    expect(getLogoHash("logo")).toBe("");
+  });
+
+  it("returns empty string for invalid JSON in env", () => {
+    vi.stubEnv("NEXT_PUBLIC_LOGO_HASHES", "not-json");
+    expect(getLogoHash("logo")).toBe("");
+  });
+});
+
+describe("getLogoHashes", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("parses hashes from env var", () => {
+    vi.stubEnv("NEXT_PUBLIC_LOGO_HASHES", JSON.stringify(MOCK_HASHES));
+    expect(getLogoHashes()).toEqual(MOCK_HASHES);
+  });
+
+  it("returns empty object when env is not set", () => {
+    vi.stubEnv("NEXT_PUBLIC_LOGO_HASHES", "");
+    expect(getLogoHashes()).toEqual({});
   });
 });
 
 describe("getLogoUrl", () => {
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_LOGO_HASHES", JSON.stringify(MOCK_HASHES));
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("includes the type and hash in the URL", () => {
-    const url = getLogoUrl("favicon-32");
-    const hash = getLogoHash("favicon-32");
-    expect(url).toBe(`/api/logo?type=favicon-32&v=${hash}`);
+    expect(getLogoUrl("favicon-32")).toBe("/api/logo?type=favicon-32&v=33334444");
   });
 
   it.each(LOGO_TYPES)("returns a URL with v= param for '%s'", (type) => {
     const url = getLogoUrl(type);
     expect(url).toContain(`type=${type}`);
-    expect(url).toMatch(/&v=[a-f0-9]{8}$/);
+    expect(url).toContain(`&v=${MOCK_HASHES[type]}`);
+  });
+
+  it("returns URL without hash when env is empty", () => {
+    vi.stubEnv("NEXT_PUBLIC_LOGO_HASHES", "");
+    expect(getLogoUrl("logo")).toBe("/api/logo?type=logo");
   });
 });

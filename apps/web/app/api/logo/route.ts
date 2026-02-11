@@ -14,6 +14,7 @@ import {
 import logger from "@calcom/lib/logger";
 import { isTrustedInternalUrl, logBlockedSSRFAttempt, validateUrlForSSRF } from "@calcom/lib/ssrfProtection";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
+import type { LogoType as LogoHashType } from "@lib/logo-hash";
 import { getLogoHash, isValidLogoType as isValidLogoHashType } from "@lib/logo-hash";
 import { defaultResponderForAppDir } from "app/api/defaultResponderForAppDir";
 import { cookies, headers } from "next/headers";
@@ -191,21 +192,6 @@ async function getHandler(request: NextRequest) {
   const isTeamLogo = !!teamLogos[logoDefinition.source];
   const filteredLogo = teamLogos[logoDefinition.source] ?? logoDefinition.fallback;
 
-  if (!isTeamLogo && isValidLogoHashType(type)) {
-    const hash = getLogoHash(type);
-    if (hash && parsedQuery.v !== hash) {
-      const redirectUrl = new URL(request.url);
-      redirectUrl.searchParams.set("v", hash);
-      return new NextResponse(null, {
-        status: 307,
-        headers: {
-          Location: redirectUrl.toString(),
-          "Cache-Control": "no-store",
-        },
-      });
-    }
-  }
-
   try {
     let response: Response;
 
@@ -250,7 +236,12 @@ async function getHandler(request: NextRequest) {
 
     // Set the appropriate headers
     imageResponse.headers.set("Content-Type", contentType);
-    if (!isTeamLogo && parsedQuery.v) {
+    const hasValidHash =
+      !isTeamLogo &&
+      parsedQuery.v &&
+      isValidLogoHashType(type) &&
+      getLogoHash(type as LogoHashType) === parsedQuery.v;
+    if (hasValidHash) {
       imageResponse.headers.set("Cache-Control", "public, max-age=31536000, immutable");
     } else {
       imageResponse.headers.set("Cache-Control", "s-maxage=86400, stale-while-revalidate=60");
