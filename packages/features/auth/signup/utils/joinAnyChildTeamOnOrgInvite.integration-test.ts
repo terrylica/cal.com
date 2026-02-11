@@ -84,6 +84,7 @@ async function createTestEventType(data: {
   slug: string;
   assignAllTeamMembers?: boolean;
   schedulingType?: SchedulingType;
+  locations?: { type: string }[];
 }) {
   const uniqueId = generateUniqueId();
   return await prisma.eventType.create({
@@ -94,6 +95,7 @@ async function createTestEventType(data: {
       length: 30,
       assignAllTeamMembers: data.assignAllTeamMembers ?? false,
       schedulingType: data.schedulingType ?? SchedulingType.COLLECTIVE,
+      ...(data.locations && { locations: data.locations }),
     },
   });
 }
@@ -676,6 +678,142 @@ describe("joinAnyChildTeamOnOrgInvite Integration Tests", () => {
 
       expect(hostRecord).not.toBeNull();
       expect(hostRecord?.isFixed).toBe(false);
+    });
+
+    it("should create child event type for MANAGED scheduling type with assignAllTeamMembers=true", async () => {
+      const org = trackTeam(
+        await createTestOrganization({
+          name: "Test Org",
+          slug: "test-org",
+          orgAutoAcceptEmail: "example.com",
+        })
+      );
+
+      const childTeam = trackTeam(
+        await createTestSubteam({
+          name: "Child Team",
+          slug: "child-team",
+          parentId: org.id,
+        })
+      );
+
+      const managedEventType = await createTestEventType({
+        teamId: childTeam.id,
+        title: "Managed Meeting",
+        slug: "managed-meeting",
+        assignAllTeamMembers: true,
+        schedulingType: SchedulingType.MANAGED,
+        locations: [],
+      });
+      trackEventType(managedEventType);
+
+      const user = trackUser(
+        await createTestUser({
+          email: "user@example.com",
+          username: "testuser",
+        })
+      );
+
+      await prisma.membership.create({
+        data: {
+          userId: user.id,
+          teamId: org.id,
+          role: MembershipRole.MEMBER,
+          accepted: false,
+        },
+      });
+
+      await prisma.membership.create({
+        data: {
+          userId: user.id,
+          teamId: childTeam.id,
+          role: MembershipRole.MEMBER,
+          accepted: false,
+        },
+      });
+
+      await joinAnyChildTeamOnOrgInvite({
+        userId: user.id,
+        org: {
+          id: org.id,
+          organizationSettings: org.organizationSettings,
+        },
+      });
+
+      const childEventType = await prisma.eventType.findFirst({
+        where: {
+          parentId: managedEventType.id,
+          userId: user.id,
+        },
+      });
+
+      expect(childEventType).not.toBeNull();
+      expect(childEventType?.parentId).toBe(managedEventType.id);
+      expect(childEventType?.userId).toBe(user.id);
+
+      if (childEventType) {
+        testEventTypeIds.push(childEventType.id);
+      }
+    });
+
+    it("should not create host records when there are no pending child team memberships", async () => {
+      const org = trackTeam(
+        await createTestOrganization({
+          name: "Test Org",
+          slug: "test-org",
+          orgAutoAcceptEmail: "example.com",
+        })
+      );
+
+      const childTeam = trackTeam(
+        await createTestSubteam({
+          name: "Child Team",
+          slug: "child-team",
+          parentId: org.id,
+        })
+      );
+
+      const eventType = await createTestEventType({
+        teamId: childTeam.id,
+        title: "Team Meeting",
+        slug: "team-meeting",
+        assignAllTeamMembers: true,
+        schedulingType: SchedulingType.ROUND_ROBIN,
+      });
+      trackEventType(eventType);
+
+      const user = trackUser(
+        await createTestUser({
+          email: "user@example.com",
+          username: "testuser",
+        })
+      );
+
+      await prisma.membership.create({
+        data: {
+          userId: user.id,
+          teamId: org.id,
+          role: MembershipRole.MEMBER,
+          accepted: false,
+        },
+      });
+
+      await joinAnyChildTeamOnOrgInvite({
+        userId: user.id,
+        org: {
+          id: org.id,
+          organizationSettings: org.organizationSettings,
+        },
+      });
+
+      const hostRecord = await prisma.host.findFirst({
+        where: {
+          userId: user.id,
+          eventTypeId: eventType.id,
+        },
+      });
+
+      expect(hostRecord).toBeNull();
     });
   });
 
