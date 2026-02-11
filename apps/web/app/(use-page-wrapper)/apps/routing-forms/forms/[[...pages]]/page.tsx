@@ -1,6 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
-import { FullscreenUpgradeBannerForRoutingFormPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/routingForm";
+import { FullscreenUpgradeBannerForRoutingFormPage } from "@calcom/web/modules/billing/upgrade-banners/FullscreenUpgradeBannerForRoutingFormPage";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { _generateMetadata } from "app/_utils";
 import { cookies, headers } from "next/headers";

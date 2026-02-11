@@ -9,7 +9,7 @@ import { Label } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
 import { useHasTeamPlan } from "@calcom/web/modules/billing/hooks/useHasPaidPlan";
-import { FullscreenUpgradeBannerForTeamsPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/teams";
+import { FullscreenUpgradeBannerForTeamsPage } from "@calcom/web/modules/billing/upgrade-banners/FullscreenUpgradeBannerForTeamsPage";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import SkeletonLoaderTeamList from "~/ee/teams/components/SkeletonloaderTeamList";

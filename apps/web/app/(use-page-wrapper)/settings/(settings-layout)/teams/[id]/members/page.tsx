@@ -1,9 +1,3 @@
-import { createRouterCaller } from "app/_trpc/context";
-import { _generateMetadata, getTranslate } from "app/_utils";
-import { unstable_cache } from "next/cache";
-import { headers, cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { PrismaAttributeRepository } from "@calcom/features/attributes/repositories/PrismaAttributeRepository";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getTeamMemberPermissions } from "@calcom/features/pbac/lib/team-member-permissions";
@@ -11,10 +5,14 @@ import { RoleManagementFactory } from "@calcom/features/pbac/services/role-manag
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { prisma } from "@calcom/prisma";
 import { viewerTeamsRouter } from "@calcom/trpc/server/routers/viewer/teams/_router";
+import { LargeUpgradeBannerForMembers } from "@calcom/web/modules/billing/upgrade-banners/LargeUpgradeBannerForMembers";
 import { TeamMembersView } from "@calcom/web/modules/ee/teams/views/team-members-view";
-import { LargeUpgradeBannerForMembers } from "@calcom/web/modules/billing/upgrade-banners/large/members";
-
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
+import { createRouterCaller } from "app/_trpc/context";
+import { _generateMetadata, getTranslate } from "app/_utils";
+import { unstable_cache } from "next/cache";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const generateMetadata = async ({ params }: { params: Promise<{ id: string }> }) =>
   await _generateMetadata(

@@ -1,7 +1,7 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { CTA_CONTAINER_CLASS_NAME } from "@calcom/features/data-table/lib/utils";
 import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
-import { FullscreenUpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/fullscreen/insights";
+import { FullscreenUpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/FullscreenUpgradeBannerForInsightsPage";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { getTranslate } from "app/_utils";
 import { ShellMainAppDir } from "app/(use-page-wrapper)/(main-nav)/ShellMainAppDir";
