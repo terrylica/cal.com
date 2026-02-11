@@ -5,14 +5,18 @@ import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import prisma from "@calcom/prisma";
 import { teamMetadataSchema, userMetadata } from "@calcom/prisma/zod-utils";
+import type { GetServerSidePropsContext, NextApiRequest } from "next";
 import type { Session } from "next-auth";
 
 type Maybe<T> = T | null | undefined;
 
-export async function getUserFromSession<TContext extends { req?: { url?: string }; locale?: string }>(
-  ctx: TContext,
-  session: Maybe<Session>
-) {
+export type SessionContext = {
+  req?: NextApiRequest | GetServerSidePropsContext["req"];
+  locale?: string;
+  session?: Session | null;
+};
+
+async function getUserFromSession(ctx: SessionContext, session: Maybe<Session>) {
   if (!session) {
     return null;
   }
@@ -85,18 +89,13 @@ export async function getUserFromSession<TContext extends { req?: { url?: string
 
 export type SessionUser = Awaited<ReturnType<typeof getUserFromSession>>;
 
-export const getSession = async <TContext extends { req?: unknown }>(ctx: TContext) => {
+export const getSession = async (ctx: SessionContext) => {
   const { req } = ctx;
   const { getServerSession } = await import("@calcom/features/auth/lib/getServerSession");
-  // Type assertion is safe here because getServerSession enforces the correct type at runtime
-  return req ? await getServerSession({ req: req as any }) : null;
+  return req ? await getServerSession({ req }) : null;
 };
 
-export const getUserSession = async <
-  TContext extends { req?: { url?: string }; locale?: string; session?: Session | null },
->(
-  ctx: TContext
-) => {
+export const getUserSession = async (ctx: SessionContext) => {
   /**
    * It is possible that the session and user have already been added to the context by a previous middleware
    * or when creating the context
