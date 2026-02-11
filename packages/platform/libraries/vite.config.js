@@ -58,6 +58,8 @@ export default defineConfig({
     rollupOptions: {
       external: [
         "@calcom/i18n",
+        "@calcom/i18n/server",
+        "@calcom/i18n/next-i18next.config",
         "react",
         "fs",
         "path",
