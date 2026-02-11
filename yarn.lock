@@ -1904,9 +1904,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@calcom/alby@workspace:packages/app-store/apps/alby":
+"@calcom/alby@workspace:packages/app-store/alby":
   version: 0.0.0-use.local
-  resolution: "@calcom/alby@workspace:packages/app-store/apps/alby"
+  resolution: "@calcom/alby@workspace:packages/app-store/alby"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -1915,12 +1915,6 @@ __metadata:
     "@webbtc/webln-types": "npm:3.0.0"
     react-qr-code: "npm:2.0.18"
     svix: "npm:0.85.1"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/amie@workspace:packages/app-store/apps/amie":
-  version: 0.0.0-use.local
-  resolution: "@calcom/amie@workspace:packages/app-store/apps/amie"
   languageName: unknown
   linkType: soft
 
@@ -2088,9 +2082,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/applecalendar@workspace:packages/app-store/apps/applecalendar":
+"@calcom/applecalendar@workspace:packages/app-store/applecalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/applecalendar@workspace:packages/app-store/apps/applecalendar"
+  resolution: "@calcom/applecalendar@workspace:packages/app-store/applecalendar"
   dependencies:
     "@calcom/prisma": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -2144,24 +2138,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/attio@workspace:packages/app-store/apps/attio":
+"@calcom/attio@workspace:packages/app-store/attio":
   version: 0.0.0-use.local
-  resolution: "@calcom/attio@workspace:packages/app-store/apps/attio"
+  resolution: "@calcom/attio@workspace:packages/app-store/attio"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/autocheckin@workspace:packages/app-store/apps/autocheckin":
-  version: 0.0.0-use.local
-  resolution: "@calcom/autocheckin@workspace:packages/app-store/apps/autocheckin"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/baa-for-hipaa@workspace:packages/app-store/apps/baa-for-hipaa":
-  version: 0.0.0-use.local
-  resolution: "@calcom/baa-for-hipaa@workspace:packages/app-store/apps/baa-for-hipaa"
   languageName: unknown
   linkType: soft
 
@@ -2188,33 +2170,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/basecamp3@workspace:packages/app-store/apps/basecamp3":
+"@calcom/basecamp3@workspace:packages/app-store/basecamp3":
   version: 0.0.0-use.local
-  resolution: "@calcom/basecamp3@workspace:packages/app-store/apps/basecamp3"
+  resolution: "@calcom/basecamp3@workspace:packages/app-store/basecamp3"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/bolna@workspace:packages/app-store/apps/bolna":
+"@calcom/btcpayserver@workspace:packages/app-store/btcpayserver":
   version: 0.0.0-use.local
-  resolution: "@calcom/bolna@workspace:packages/app-store/apps/bolna"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/btcpayserver@workspace:packages/app-store/apps/btcpayserver":
-  version: 0.0.0-use.local
-  resolution: "@calcom/btcpayserver@workspace:packages/app-store/apps/btcpayserver"
+  resolution: "@calcom/btcpayserver@workspace:packages/app-store/btcpayserver"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/caldavcalendar@workspace:packages/app-store/apps/caldavcalendar":
+"@calcom/caldavcalendar@workspace:packages/app-store/caldavcalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/caldavcalendar@workspace:packages/app-store/apps/caldavcalendar"
+  resolution: "@calcom/caldavcalendar@workspace:packages/app-store/caldavcalendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2227,30 +2203,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/campfire@workspace:packages/app-store/apps/campfire":
+"@calcom/campfire@workspace:packages/app-store/campfire":
   version: 0.0.0-use.local
-  resolution: "@calcom/campfire@workspace:packages/app-store/apps/campfire"
+  resolution: "@calcom/campfire@workspace:packages/app-store/campfire"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/chatbase@workspace:packages/app-store/apps/chatbase":
+"@calcom/closecom@workspace:packages/app-store/closecom":
   version: 0.0.0-use.local
-  resolution: "@calcom/chatbase@workspace:packages/app-store/apps/chatbase"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/clic@workspace:packages/app-store/apps/clic":
-  version: 0.0.0-use.local
-  resolution: "@calcom/clic@workspace:packages/app-store/apps/clic"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/closecom@workspace:packages/app-store/apps/closecom":
-  version: 0.0.0-use.local
-  resolution: "@calcom/closecom@workspace:packages/app-store/apps/closecom"
+  resolution: "@calcom/closecom@workspace:packages/app-store/closecom"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2271,15 +2235,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/cron@workspace:packages/app-store/apps/cron":
+"@calcom/dailyvideo@workspace:*, @calcom/dailyvideo@workspace:packages/app-store/dailyvideo":
   version: 0.0.0-use.local
-  resolution: "@calcom/cron@workspace:packages/app-store/apps/cron"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/dailyvideo@workspace:*, @calcom/dailyvideo@workspace:packages/app-store/apps/dailyvideo":
-  version: 0.0.0-use.local
-  resolution: "@calcom/dailyvideo@workspace:packages/app-store/apps/dailyvideo"
+  resolution: "@calcom/dailyvideo@workspace:packages/app-store/dailyvideo"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2287,9 +2245,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/databuddy@workspace:packages/app-store/apps/databuddy":
+"@calcom/databuddy@workspace:packages/app-store/databuddy":
   version: 0.0.0-use.local
-  resolution: "@calcom/databuddy@workspace:packages/app-store/apps/databuddy"
+  resolution: "@calcom/databuddy@workspace:packages/app-store/databuddy"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -2310,42 +2268,36 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/deel@workspace:packages/app-store/apps/deel":
+"@calcom/demodesk@workspace:packages/app-store/demodesk":
   version: 0.0.0-use.local
-  resolution: "@calcom/deel@workspace:packages/app-store/apps/deel"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/demodesk@workspace:packages/app-store/apps/demodesk":
-  version: 0.0.0-use.local
-  resolution: "@calcom/demodesk@workspace:packages/app-store/apps/demodesk"
+  resolution: "@calcom/demodesk@workspace:packages/app-store/demodesk"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/dialpad@workspace:packages/app-store/apps/dialpad":
+"@calcom/dialpad@workspace:packages/app-store/dialpad":
   version: 0.0.0-use.local
-  resolution: "@calcom/dialpad@workspace:packages/app-store/apps/dialpad"
+  resolution: "@calcom/dialpad@workspace:packages/app-store/dialpad"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/discord@workspace:packages/app-store/apps/discord":
+"@calcom/discord@workspace:packages/app-store/discord":
   version: 0.0.0-use.local
-  resolution: "@calcom/discord@workspace:packages/app-store/apps/discord"
+  resolution: "@calcom/discord@workspace:packages/app-store/discord"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/dub@workspace:packages/app-store/apps/dub":
+"@calcom/dub@workspace:packages/app-store/dub":
   version: 0.0.0-use.local
-  resolution: "@calcom/dub@workspace:packages/app-store/apps/dub"
+  resolution: "@calcom/dub@workspace:packages/app-store/dub"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -2374,27 +2326,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/eightxeight@workspace:packages/app-store/apps/eightxeight":
+"@calcom/eightxeight@workspace:packages/app-store/eightxeight":
   version: 0.0.0-use.local
-  resolution: "@calcom/eightxeight@workspace:packages/app-store/apps/eightxeight"
+  resolution: "@calcom/eightxeight@workspace:packages/app-store/eightxeight"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/element-call@workspace:packages/app-store/apps/element-call":
+"@calcom/element-call@workspace:packages/app-store/element-call":
   version: 0.0.0-use.local
-  resolution: "@calcom/element-call@workspace:packages/app-store/apps/element-call"
+  resolution: "@calcom/element-call@workspace:packages/app-store/element-call"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/elevenlabs@workspace:packages/app-store/apps/elevenlabs":
-  version: 0.0.0-use.local
-  resolution: "@calcom/elevenlabs@workspace:packages/app-store/apps/elevenlabs"
   languageName: unknown
   linkType: soft
 
@@ -2483,9 +2429,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/exchange2013calendar@workspace:packages/app-store/apps/exchange2013calendar":
+"@calcom/exchange2013calendar@workspace:packages/app-store/exchange2013calendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/exchange2013calendar@workspace:packages/app-store/apps/exchange2013calendar"
+  resolution: "@calcom/exchange2013calendar@workspace:packages/app-store/exchange2013calendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2499,9 +2445,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/exchange2016calendar@workspace:packages/app-store/apps/exchange2016calendar":
+"@calcom/exchange2016calendar@workspace:packages/app-store/exchange2016calendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/exchange2016calendar@workspace:packages/app-store/apps/exchange2016calendar"
+  resolution: "@calcom/exchange2016calendar@workspace:packages/app-store/exchange2016calendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2515,9 +2461,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/exchangecalendar@workspace:packages/app-store/apps/exchangecalendar":
+"@calcom/exchangecalendar@workspace:packages/app-store/exchangecalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/exchangecalendar@workspace:packages/app-store/apps/exchangecalendar"
+  resolution: "@calcom/exchangecalendar@workspace:packages/app-store/exchangecalendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2527,18 +2473,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/facetime@workspace:packages/app-store/apps/facetime":
+"@calcom/facetime@workspace:packages/app-store/facetime":
   version: 0.0.0-use.local
-  resolution: "@calcom/facetime@workspace:packages/app-store/apps/facetime"
+  resolution: "@calcom/facetime@workspace:packages/app-store/facetime"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/fathom@workspace:packages/app-store/apps/fathom":
+"@calcom/fathom@workspace:packages/app-store/fathom":
   version: 0.0.0-use.local
-  resolution: "@calcom/fathom@workspace:packages/app-store/apps/fathom"
+  resolution: "@calcom/fathom@workspace:packages/app-store/fathom"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -2608,9 +2554,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/feishucalendar@workspace:packages/app-store/apps/feishucalendar":
+"@calcom/feishucalendar@workspace:packages/app-store/feishucalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/feishucalendar@workspace:packages/app-store/apps/feishucalendar"
+  resolution: "@calcom/feishucalendar@workspace:packages/app-store/feishucalendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2618,39 +2564,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/fonio-ai@workspace:packages/app-store/apps/fonio-ai":
+"@calcom/ga4@workspace:packages/app-store/ga4":
   version: 0.0.0-use.local
-  resolution: "@calcom/fonio-ai@workspace:packages/app-store/apps/fonio-ai"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/framer@workspace:packages/app-store/apps/framer":
-  version: 0.0.0-use.local
-  resolution: "@calcom/framer@workspace:packages/app-store/apps/framer"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/ga4@workspace:packages/app-store/apps/ga4":
-  version: 0.0.0-use.local
-  resolution: "@calcom/ga4@workspace:packages/app-store/apps/ga4"
+  resolution: "@calcom/ga4@workspace:packages/app-store/ga4"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/giphy@workspace:packages/app-store/apps/giphy":
+"@calcom/giphy@workspace:packages/app-store/giphy":
   version: 0.0.0-use.local
-  resolution: "@calcom/giphy@workspace:packages/app-store/apps/giphy"
+  resolution: "@calcom/giphy@workspace:packages/app-store/giphy"
   dependencies:
     "@calcom/prisma": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/googlecalendar@workspace:packages/app-store/apps/googlecalendar":
+"@calcom/googlecalendar@workspace:packages/app-store/googlecalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/googlecalendar@workspace:packages/app-store/apps/googlecalendar"
+  resolution: "@calcom/googlecalendar@workspace:packages/app-store/googlecalendar"
   dependencies:
     "@calcom/prisma": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -2658,39 +2592,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/googlevideo@workspace:packages/app-store/apps/googlevideo":
+"@calcom/googlevideo@workspace:packages/app-store/googlevideo":
   version: 0.0.0-use.local
-  resolution: "@calcom/googlevideo@workspace:packages/app-store/apps/googlevideo"
+  resolution: "@calcom/googlevideo@workspace:packages/app-store/googlevideo"
   dependencies:
     "@calcom/prisma": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/granola@workspace:packages/app-store/apps/granola":
+"@calcom/gtm@workspace:packages/app-store/gtm":
   version: 0.0.0-use.local
-  resolution: "@calcom/granola@workspace:packages/app-store/apps/granola"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/greetmate-ai@workspace:packages/app-store/apps/greetmate-ai":
-  version: 0.0.0-use.local
-  resolution: "@calcom/greetmate-ai@workspace:packages/app-store/apps/greetmate-ai"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/gtm@workspace:packages/app-store/apps/gtm":
-  version: 0.0.0-use.local
-  resolution: "@calcom/gtm@workspace:packages/app-store/apps/gtm"
+  resolution: "@calcom/gtm@workspace:packages/app-store/gtm"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/hitpay@workspace:packages/app-store/apps/hitpay":
+"@calcom/hitpay@workspace:packages/app-store/hitpay":
   version: 0.0.0-use.local
-  resolution: "@calcom/hitpay@workspace:packages/app-store/apps/hitpay"
+  resolution: "@calcom/hitpay@workspace:packages/app-store/hitpay"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2698,18 +2620,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/horizon-workrooms@workspace:packages/app-store/apps/horizon-workrooms":
+"@calcom/horizon-workrooms@workspace:packages/app-store/horizon-workrooms":
   version: 0.0.0-use.local
-  resolution: "@calcom/horizon-workrooms@workspace:packages/app-store/apps/horizon-workrooms"
+  resolution: "@calcom/horizon-workrooms@workspace:packages/app-store/horizon-workrooms"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/hubspot@workspace:packages/app-store/apps/hubspot":
+"@calcom/hubspot@workspace:packages/app-store/hubspot":
   version: 0.0.0-use.local
-  resolution: "@calcom/hubspot@workspace:packages/app-store/apps/hubspot"
+  resolution: "@calcom/hubspot@workspace:packages/app-store/hubspot"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2718,18 +2640,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/huddle01video@workspace:packages/app-store/apps/huddle01video":
+"@calcom/huddle01video@workspace:packages/app-store/huddle01video":
   version: 0.0.0-use.local
-  resolution: "@calcom/huddle01video@workspace:packages/app-store/apps/huddle01video"
+  resolution: "@calcom/huddle01video@workspace:packages/app-store/huddle01video"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/ics-feed@workspace:packages/app-store/apps/ics-feedcalendar":
+"@calcom/ics-feed@workspace:packages/app-store/ics-feedcalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/ics-feed@workspace:packages/app-store/apps/ics-feedcalendar"
+  resolution: "@calcom/ics-feed@workspace:packages/app-store/ics-feedcalendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2742,36 +2664,36 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/insihts@workspace:packages/app-store/apps/insihts":
+"@calcom/insihts@workspace:packages/app-store/insihts":
   version: 0.0.0-use.local
-  resolution: "@calcom/insihts@workspace:packages/app-store/apps/insihts"
+  resolution: "@calcom/insihts@workspace:packages/app-store/insihts"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/intercom@workspace:packages/app-store/apps/intercom":
+"@calcom/intercom@workspace:packages/app-store/intercom":
   version: 0.0.0-use.local
-  resolution: "@calcom/intercom@workspace:packages/app-store/apps/intercom"
+  resolution: "@calcom/intercom@workspace:packages/app-store/intercom"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/jelly@workspace:packages/app-store/apps/jelly":
+"@calcom/jelly@workspace:packages/app-store/jelly":
   version: 0.0.0-use.local
-  resolution: "@calcom/jelly@workspace:packages/app-store/apps/jelly"
+  resolution: "@calcom/jelly@workspace:packages/app-store/jelly"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/jitsivideo@workspace:packages/app-store/apps/jitsivideo":
+"@calcom/jitsivideo@workspace:packages/app-store/jitsivideo":
   version: 0.0.0-use.local
-  resolution: "@calcom/jitsivideo@workspace:packages/app-store/apps/jitsivideo"
+  resolution: "@calcom/jitsivideo@workspace:packages/app-store/jitsivideo"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -2788,9 +2710,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/larkcalendar@workspace:packages/app-store/apps/larkcalendar":
+"@calcom/larkcalendar@workspace:packages/app-store/larkcalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/larkcalendar@workspace:packages/app-store/apps/larkcalendar"
+  resolution: "@calcom/larkcalendar@workspace:packages/app-store/larkcalendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2829,24 +2751,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/lindy@workspace:packages/app-store/apps/lindy":
+"@calcom/linear@workspace:packages/app-store/linear":
   version: 0.0.0-use.local
-  resolution: "@calcom/lindy@workspace:packages/app-store/apps/lindy"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/linear@workspace:packages/app-store/apps/linear":
-  version: 0.0.0-use.local
-  resolution: "@calcom/linear@workspace:packages/app-store/apps/linear"
+  resolution: "@calcom/linear@workspace:packages/app-store/linear"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/make@workspace:packages/app-store/apps/make":
+"@calcom/make@workspace:packages/app-store/make":
   version: 0.0.0-use.local
-  resolution: "@calcom/make@workspace:packages/app-store/apps/make"
+  resolution: "@calcom/make@workspace:packages/app-store/make"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -2854,72 +2770,54 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/matomo@workspace:packages/app-store/apps/matomo":
+"@calcom/matomo@workspace:packages/app-store/matomo":
   version: 0.0.0-use.local
-  resolution: "@calcom/matomo@workspace:packages/app-store/apps/matomo"
+  resolution: "@calcom/matomo@workspace:packages/app-store/matomo"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/metapixel@workspace:packages/app-store/apps/metapixel":
+"@calcom/metapixel@workspace:packages/app-store/metapixel":
   version: 0.0.0-use.local
-  resolution: "@calcom/metapixel@workspace:packages/app-store/apps/metapixel"
+  resolution: "@calcom/metapixel@workspace:packages/app-store/metapixel"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/millis-ai@workspace:packages/app-store/apps/millis-ai":
+"@calcom/mirotalk@workspace:packages/app-store/mirotalk":
   version: 0.0.0-use.local
-  resolution: "@calcom/millis-ai@workspace:packages/app-store/apps/millis-ai"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/mirotalk@workspace:packages/app-store/apps/mirotalk":
-  version: 0.0.0-use.local
-  resolution: "@calcom/mirotalk@workspace:packages/app-store/apps/mirotalk"
+  resolution: "@calcom/mirotalk@workspace:packages/app-store/mirotalk"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/mock-payment-app@workspace:packages/app-store/apps/mock-payment-app":
+"@calcom/mock-payment-app@workspace:packages/app-store/mock-payment-app":
   version: 0.0.0-use.local
-  resolution: "@calcom/mock-payment-app@workspace:packages/app-store/apps/mock-payment-app"
+  resolution: "@calcom/mock-payment-app@workspace:packages/app-store/mock-payment-app"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/monobot@workspace:packages/app-store/apps/monobot":
+"@calcom/nextcloudtalk@workspace:packages/app-store/nextcloudtalk":
   version: 0.0.0-use.local
-  resolution: "@calcom/monobot@workspace:packages/app-store/apps/monobot"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/n8n@workspace:packages/app-store/apps/n8n":
-  version: 0.0.0-use.local
-  resolution: "@calcom/n8n@workspace:packages/app-store/apps/n8n"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/nextcloudtalk@workspace:packages/app-store/apps/nextcloudtalk":
-  version: 0.0.0-use.local
-  resolution: "@calcom/nextcloudtalk@workspace:packages/app-store/apps/nextcloudtalk"
+  resolution: "@calcom/nextcloudtalk@workspace:packages/app-store/nextcloudtalk"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/office365calendar@workspace:packages/app-store/apps/office365calendar":
+"@calcom/office365calendar@workspace:packages/app-store/office365calendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/office365calendar@workspace:packages/app-store/apps/office365calendar"
+  resolution: "@calcom/office365calendar@workspace:packages/app-store/office365calendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2929,9 +2827,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/office365video@workspace:*, @calcom/office365video@workspace:packages/app-store/apps/office365video":
+"@calcom/office365video@workspace:*, @calcom/office365video@workspace:packages/app-store/office365video":
   version: 0.0.0-use.local
-  resolution: "@calcom/office365video@workspace:packages/app-store/apps/office365video"
+  resolution: "@calcom/office365video@workspace:packages/app-store/office365video"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -2939,33 +2837,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/paypal@workspace:packages/app-store/apps/paypal":
+"@calcom/paypal@workspace:packages/app-store/paypal":
   version: 0.0.0-use.local
-  resolution: "@calcom/paypal@workspace:packages/app-store/apps/paypal"
+  resolution: "@calcom/paypal@workspace:packages/app-store/paypal"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/ping@workspace:packages/app-store/apps/ping":
+"@calcom/ping@workspace:packages/app-store/ping":
   version: 0.0.0-use.local
-  resolution: "@calcom/ping@workspace:packages/app-store/apps/ping"
+  resolution: "@calcom/ping@workspace:packages/app-store/ping"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/pipedream@workspace:packages/app-store/apps/pipedream":
+"@calcom/pipedrive-crm@workspace:packages/app-store/pipedrive-crm":
   version: 0.0.0-use.local
-  resolution: "@calcom/pipedream@workspace:packages/app-store/apps/pipedream"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/pipedrive-crm@workspace:packages/app-store/apps/pipedrive-crm":
-  version: 0.0.0-use.local
-  resolution: "@calcom/pipedrive-crm@workspace:packages/app-store/apps/pipedrive-crm"
+  resolution: "@calcom/pipedrive-crm@workspace:packages/app-store/pipedrive-crm"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -3035,18 +2927,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/plausible@workspace:packages/app-store/apps/plausible":
+"@calcom/plausible@workspace:packages/app-store/plausible":
   version: 0.0.0-use.local
-  resolution: "@calcom/plausible@workspace:packages/app-store/apps/plausible"
+  resolution: "@calcom/plausible@workspace:packages/app-store/plausible"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/posthog@workspace:packages/app-store/apps/posthog":
+"@calcom/posthog@workspace:packages/app-store/posthog":
   version: 0.0.0-use.local
-  resolution: "@calcom/posthog@workspace:packages/app-store/apps/posthog"
+  resolution: "@calcom/posthog@workspace:packages/app-store/posthog"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -3071,48 +2963,36 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/qr_code@workspace:packages/app-store/apps/qr_code":
+"@calcom/qr_code@workspace:packages/app-store/qr_code":
   version: 0.0.0-use.local
-  resolution: "@calcom/qr_code@workspace:packages/app-store/apps/qr_code"
+  resolution: "@calcom/qr_code@workspace:packages/app-store/qr_code"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/raycast@workspace:packages/app-store/apps/raycast":
+"@calcom/riverside@workspace:packages/app-store/riverside":
   version: 0.0.0-use.local
-  resolution: "@calcom/raycast@workspace:packages/app-store/apps/raycast"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/retell-ai@workspace:packages/app-store/apps/retell-ai":
-  version: 0.0.0-use.local
-  resolution: "@calcom/retell-ai@workspace:packages/app-store/apps/retell-ai"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/riverside@workspace:packages/app-store/apps/riverside":
-  version: 0.0.0-use.local
-  resolution: "@calcom/riverside@workspace:packages/app-store/apps/riverside"
+  resolution: "@calcom/riverside@workspace:packages/app-store/riverside"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/roam@workspace:packages/app-store/apps/roam":
+"@calcom/roam@workspace:packages/app-store/roam":
   version: 0.0.0-use.local
-  resolution: "@calcom/roam@workspace:packages/app-store/apps/roam"
+  resolution: "@calcom/roam@workspace:packages/app-store/roam"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/routing-forms@workspace:packages/app-store/apps/routing-forms":
+"@calcom/routing-forms@workspace:packages/app-store/routing-forms":
   version: 0.0.0-use.local
-  resolution: "@calcom/routing-forms@workspace:packages/app-store/apps/routing-forms"
+  resolution: "@calcom/routing-forms@workspace:packages/app-store/routing-forms"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -3123,9 +3003,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/salesforce@workspace:packages/app-store/apps/salesforce":
+"@calcom/salesforce@workspace:packages/app-store/salesforce":
   version: 0.0.0-use.local
-  resolution: "@calcom/salesforce@workspace:packages/app-store/apps/salesforce"
+  resolution: "@calcom/salesforce@workspace:packages/app-store/salesforce"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -3141,18 +3021,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/salesroom@workspace:packages/app-store/apps/salesroom":
+"@calcom/salesroom@workspace:packages/app-store/salesroom":
   version: 0.0.0-use.local
-  resolution: "@calcom/salesroom@workspace:packages/app-store/apps/salesroom"
+  resolution: "@calcom/salesroom@workspace:packages/app-store/salesroom"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/sendgrid@workspace:packages/app-store/apps/sendgrid":
+"@calcom/sendgrid@workspace:packages/app-store/sendgrid":
   version: 0.0.0-use.local
-  resolution: "@calcom/sendgrid@workspace:packages/app-store/apps/sendgrid"
+  resolution: "@calcom/sendgrid@workspace:packages/app-store/sendgrid"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -3161,45 +3041,45 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/shimmer-video@workspace:packages/app-store/apps/shimmervideo":
+"@calcom/shimmer-video@workspace:packages/app-store/shimmervideo":
   version: 0.0.0-use.local
-  resolution: "@calcom/shimmer-video@workspace:packages/app-store/apps/shimmervideo"
+  resolution: "@calcom/shimmer-video@workspace:packages/app-store/shimmervideo"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/signal@workspace:packages/app-store/apps/signal":
+"@calcom/signal@workspace:packages/app-store/signal":
   version: 0.0.0-use.local
-  resolution: "@calcom/signal@workspace:packages/app-store/apps/signal"
+  resolution: "@calcom/signal@workspace:packages/app-store/signal"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/sirius_video@workspace:packages/app-store/apps/sirius_video":
+"@calcom/sirius_video@workspace:packages/app-store/sirius_video":
   version: 0.0.0-use.local
-  resolution: "@calcom/sirius_video@workspace:packages/app-store/apps/sirius_video"
+  resolution: "@calcom/sirius_video@workspace:packages/app-store/sirius_video"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/skype@workspace:packages/app-store/apps/skype":
+"@calcom/skype@workspace:packages/app-store/skype":
   version: 0.0.0-use.local
-  resolution: "@calcom/skype@workspace:packages/app-store/apps/skype"
+  resolution: "@calcom/skype@workspace:packages/app-store/skype"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/stripepayment@workspace:packages/app-store/apps/stripepayment":
+"@calcom/stripepayment@workspace:packages/app-store/stripepayment":
   version: 0.0.0-use.local
-  resolution: "@calcom/stripepayment@workspace:packages/app-store/apps/stripepayment"
+  resolution: "@calcom/stripepayment@workspace:packages/app-store/stripepayment"
   dependencies:
     "@calcom/app-store": "workspace:*"
     "@calcom/dayjs": "workspace:*"
@@ -3217,24 +3097,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/sylapsvideo@workspace:packages/app-store/apps/sylapsvideo":
+"@calcom/sylapsvideo@workspace:packages/app-store/sylapsvideo":
   version: 0.0.0-use.local
-  resolution: "@calcom/sylapsvideo@workspace:packages/app-store/apps/sylapsvideo"
+  resolution: "@calcom/sylapsvideo@workspace:packages/app-store/sylapsvideo"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/synthflow@workspace:packages/app-store/apps/synthflow":
+"@calcom/tandemvideo@workspace:packages/app-store/tandemvideo":
   version: 0.0.0-use.local
-  resolution: "@calcom/synthflow@workspace:packages/app-store/apps/synthflow"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/tandemvideo@workspace:packages/app-store/apps/tandemvideo":
-  version: 0.0.0-use.local
-  resolution: "@calcom/tandemvideo@workspace:packages/app-store/apps/tandemvideo"
+  resolution: "@calcom/tandemvideo@workspace:packages/app-store/tandemvideo"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -3242,18 +3116,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/telegram@workspace:packages/app-store/apps/telegram":
+"@calcom/telegram@workspace:packages/app-store/telegram":
   version: 0.0.0-use.local
-  resolution: "@calcom/telegram@workspace:packages/app-store/apps/telegram"
+  resolution: "@calcom/telegram@workspace:packages/app-store/telegram"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/telli@workspace:packages/app-store/apps/telli":
-  version: 0.0.0-use.local
-  resolution: "@calcom/telli@workspace:packages/app-store/apps/telli"
   languageName: unknown
   linkType: soft
 
@@ -3304,9 +3172,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/twipla@workspace:packages/app-store/apps/twipla":
+"@calcom/twipla@workspace:packages/app-store/twipla":
   version: 0.0.0-use.local
-  resolution: "@calcom/twipla@workspace:packages/app-store/apps/twipla"
+  resolution: "@calcom/twipla@workspace:packages/app-store/twipla"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -3383,24 +3251,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/umami@workspace:packages/app-store/apps/umami":
+"@calcom/umami@workspace:packages/app-store/umami":
   version: 0.0.0-use.local
-  resolution: "@calcom/umami@workspace:packages/app-store/apps/umami"
+  resolution: "@calcom/umami@workspace:packages/app-store/umami"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/vimcal@workspace:packages/app-store/apps/vimcal":
+"@calcom/vital@workspace:packages/app-store/vital":
   version: 0.0.0-use.local
-  resolution: "@calcom/vimcal@workspace:packages/app-store/apps/vimcal"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/vital@workspace:packages/app-store/apps/vital":
-  version: 0.0.0-use.local
-  resolution: "@calcom/vital@workspace:packages/app-store/apps/vital"
+  resolution: "@calcom/vital@workspace:packages/app-store/vital"
   dependencies:
     "@calcom/prisma": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -3409,9 +3271,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/weather_in_your_calendar@workspace:packages/app-store/apps/weather_in_your_calendar":
+"@calcom/weather_in_your_calendar@workspace:packages/app-store/weather_in_your_calendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/weather_in_your_calendar@workspace:packages/app-store/apps/weather_in_your_calendar"
+  resolution: "@calcom/weather_in_your_calendar@workspace:packages/app-store/weather_in_your_calendar"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -3588,42 +3450,36 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/webex@workspace:packages/app-store/apps/webex":
+"@calcom/webex@workspace:packages/app-store/webex":
   version: 0.0.0-use.local
-  resolution: "@calcom/webex@workspace:packages/app-store/apps/webex"
+  resolution: "@calcom/webex@workspace:packages/app-store/webex"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/whatsapp@workspace:packages/app-store/apps/whatsapp":
+"@calcom/whatsapp@workspace:packages/app-store/whatsapp":
   version: 0.0.0-use.local
-  resolution: "@calcom/whatsapp@workspace:packages/app-store/apps/whatsapp"
+  resolution: "@calcom/whatsapp@workspace:packages/app-store/whatsapp"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/whereby@workspace:packages/app-store/apps/whereby":
+"@calcom/whereby@workspace:packages/app-store/whereby":
   version: 0.0.0-use.local
-  resolution: "@calcom/whereby@workspace:packages/app-store/apps/whereby"
+  resolution: "@calcom/whereby@workspace:packages/app-store/whereby"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/wordpress@workspace:packages/app-store/apps/wordpress":
+"@calcom/zapier@workspace:packages/app-store/zapier":
   version: 0.0.0-use.local
-  resolution: "@calcom/wordpress@workspace:packages/app-store/apps/wordpress"
-  languageName: unknown
-  linkType: soft
-
-"@calcom/zapier@workspace:packages/app-store/apps/zapier":
-  version: 0.0.0-use.local
-  resolution: "@calcom/zapier@workspace:packages/app-store/apps/zapier"
+  resolution: "@calcom/zapier@workspace:packages/app-store/zapier"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -3632,27 +3488,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/zoho-bigin@workspace:packages/app-store/apps/zoho-bigin":
+"@calcom/zoho-bigin@workspace:packages/app-store/zoho-bigin":
   version: 0.0.0-use.local
-  resolution: "@calcom/zoho-bigin@workspace:packages/app-store/apps/zoho-bigin"
+  resolution: "@calcom/zoho-bigin@workspace:packages/app-store/zoho-bigin"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/zohocalendar@workspace:packages/app-store/apps/zohocalendar":
+"@calcom/zohocalendar@workspace:packages/app-store/zohocalendar":
   version: 0.0.0-use.local
-  resolution: "@calcom/zohocalendar@workspace:packages/app-store/apps/zohocalendar"
+  resolution: "@calcom/zohocalendar@workspace:packages/app-store/zohocalendar"
   dependencies:
     "@calcom/prisma": "workspace:*"
     "@calcom/types": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@calcom/zohocrm@workspace:packages/app-store/apps/zohocrm":
+"@calcom/zohocrm@workspace:packages/app-store/zohocrm":
   version: 0.0.0-use.local
-  resolution: "@calcom/zohocrm@workspace:packages/app-store/apps/zohocrm"
+  resolution: "@calcom/zohocrm@workspace:packages/app-store/zohocrm"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -3660,9 +3516,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@calcom/zoomvideo@workspace:*, @calcom/zoomvideo@workspace:packages/app-store/apps/zoomvideo":
+"@calcom/zoomvideo@workspace:*, @calcom/zoomvideo@workspace:packages/app-store/zoomvideo":
   version: 0.0.0-use.local
-  resolution: "@calcom/zoomvideo@workspace:packages/app-store/apps/zoomvideo"
+  resolution: "@calcom/zoomvideo@workspace:packages/app-store/zoomvideo"
   dependencies:
     "@calcom/lib": "workspace:*"
     "@calcom/prisma": "workspace:*"
@@ -5903,12 +5759,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hono/node-server@npm:^1.19.7":
-  version: 1.19.8
-  resolution: "@hono/node-server@npm:1.19.8"
+"@hono/node-server@npm:^1.19.9":
+  version: 1.19.9
+  resolution: "@hono/node-server@npm:1.19.9"
   peerDependencies:
     hono: ^4
-  checksum: 10/c41a7bc34494e86e67e3dd12226f4205b6c926b9b6138ee72c4fb72be19f5c7ad9f7edff32a0f4b25b331b658266c3ec401d0691753e02bfeb22340597cd4ac8
+  checksum: 10/d4915c2e736ee1e3934b5538cde92b19914dc71346340528a04e4c7219afc7367965080cd1a5291ac9cbda7b0780b89b6ca93472a9418aa105d6d1183033dc8a
   languageName: node
   linkType: hard
 
@@ -8006,11 +7862,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@modelcontextprotocol/sdk@npm:1.25.2":
-  version: 1.25.2
-  resolution: "@modelcontextprotocol/sdk@npm:1.25.2"
+"@modelcontextprotocol/sdk@npm:1.26.0":
+  version: 1.26.0
+  resolution: "@modelcontextprotocol/sdk@npm:1.26.0"
   dependencies:
-    "@hono/node-server": "npm:^1.19.7"
+    "@hono/node-server": "npm:^1.19.9"
     ajv: "npm:^8.17.1"
     ajv-formats: "npm:^3.0.1"
     content-type: "npm:^1.0.5"
@@ -8018,14 +7874,15 @@ __metadata:
     cross-spawn: "npm:^7.0.5"
     eventsource: "npm:^3.0.2"
     eventsource-parser: "npm:^3.0.0"
-    express: "npm:^5.0.1"
-    express-rate-limit: "npm:^7.5.0"
-    jose: "npm:^6.1.1"
+    express: "npm:^5.2.1"
+    express-rate-limit: "npm:^8.2.1"
+    hono: "npm:^4.11.4"
+    jose: "npm:^6.1.3"
     json-schema-typed: "npm:^8.0.2"
     pkce-challenge: "npm:^5.0.0"
     raw-body: "npm:^3.0.0"
     zod: "npm:^3.25 || ^4.0"
-    zod-to-json-schema: "npm:^3.25.0"
+    zod-to-json-schema: "npm:^3.25.1"
   peerDependencies:
     "@cfworker/json-schema": ^4.1.1
     zod: ^3.25 || ^4.0
@@ -8034,7 +7891,7 @@ __metadata:
       optional: true
     zod:
       optional: false
-  checksum: 10/32ce322664e03aa038986ee60a5d3b92ddbec45cf1a023d07f7d90fec3e2926ba40bb21fc6f723bf1d50979995ae76bc440001f4d5eec3f5b55aa824091c20ab
+  checksum: 10/a206b2a4d61a23be8b8f4c886528dd9348d11b17ce36013b350edf5c082b1c1f07941d52ea098f721daf3828085b6f6276bb844c484a0e9913edbc028517a3d5
   languageName: node
   linkType: hard
 
@@ -17266,9 +17123,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"WipeMyCal@workspace:packages/app-store/apps/wipemycalother":
+"WipeMyCal@workspace:packages/app-store/wipemycalother":
   version: 0.0.0-use.local
-  resolution: "WipeMyCal@workspace:packages/app-store/apps/wipemycalother"
+  resolution: "WipeMyCal@workspace:packages/app-store/wipemycalother"
   dependencies:
     "@calcom/prisma": "workspace:*"
     "@calcom/types": "workspace:*"
@@ -22552,12 +22409,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express-rate-limit@npm:^7.5.0":
-  version: 7.5.1
-  resolution: "express-rate-limit@npm:7.5.1"
+"express-rate-limit@npm:^8.2.1":
+  version: 8.2.1
+  resolution: "express-rate-limit@npm:8.2.1"
+  dependencies:
+    ip-address: "npm:10.0.1"
   peerDependencies:
     express: ">= 4.11"
-  checksum: 10/357c3398450144ab7bbce2841d0bf4f93a0f3fd9d1d5ed9a0ee331b557af969cc790941dc37b47f8d9b5672964aa0e31666f770e1f48b334dc7d1e69f6433040
+  checksum: 10/7cbf70df2e88e590e463d2d8f93380775b2ea181d97f2c50c2ff9f2c666c247f83109a852b21d9c99ccc5762119101f281f54a27252a2f1a0a918be6d71f955b
   languageName: node
   linkType: hard
 
@@ -22635,7 +22494,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express@npm:^5.0.1":
+"express@npm:^5.2.1":
   version: 5.2.1
   resolution: "express@npm:5.2.1"
   dependencies:
@@ -24499,6 +24358,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hono@npm:^4.11.4":
+  version: 4.11.7
+  resolution: "hono@npm:4.11.7"
+  checksum: 10/16f5a715f70430bd4050b250207adf7c567774c1d91386d5454577fbc191fc4a50b912628845ce8392fae0e3fd9f364a947412961e3747a9f0b2f714790b738e
+  languageName: node
+  linkType: hard
+
 "hosted-git-info@npm:^2.1.4":
   version: 2.8.9
   resolution: "hosted-git-info@npm:2.8.9"
@@ -25386,6 +25252,13 @@ __metadata:
     redis-parser: "npm:^3.0.0"
     standard-as-callback: "npm:^2.1.0"
   checksum: 10/0140f055ef81d28e16ca8400b99dabb9ce82009f54afd83cba952c7d0c5d736841e43247765b8ee1af1f02843531c5b8df240af18bd3d7e2ca3d60b36e76213f
+  languageName: node
+  linkType: hard
+
+"ip-address@npm:10.0.1":
+  version: 10.0.1
+  resolution: "ip-address@npm:10.0.1"
+  checksum: 10/09731acda32cd8e14c46830c137e7e5940f47b36d63ffb87c737331270287d631cf25aa95570907a67d3f919fdb25f4470c404eda21e62f22e0a55927f4dd0fb
   languageName: node
   linkType: hard
 
@@ -26816,7 +26689,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:^6.0.10, jose@npm:^6.1.1":
+"jose@npm:^6.0.10, jose@npm:^6.1.3":
   version: 6.1.3
   resolution: "jose@npm:6.1.3"
   checksum: 10/9626c51e8c3792b505e954f3094698c182208617b62dfb27269230f31e57560b083985ed8128b8a9753aa92daf18d3a2341cc826d149503f14569abe87d42389
@@ -40231,7 +40104,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod-to-json-schema@npm:^3.25.0":
+"zod-to-json-schema@npm:^3.25.1":
   version: 3.25.1
   resolution: "zod-to-json-schema@npm:3.25.1"
   peerDependencies:
