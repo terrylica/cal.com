@@ -1,8 +1,8 @@
-import process from "node:process";
 import classNames from "@calcom/ui/classNames";
 
 function getHashedLogoUrl(type: string): string {
   try {
+    // biome-ignore lint/correctness/noProcessGlobal: Next.js inlines NEXT_PUBLIC_ env vars at compile time via the global process object
     const hashes = JSON.parse(process.env.NEXT_PUBLIC_LOGO_HASHES || "{}") as Record<string, string>;
     const hash = hashes[type];
     if (hash) {
