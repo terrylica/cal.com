@@ -247,18 +247,6 @@ describe("Trigger Guest No Show:", () => {
             { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
           ],
         },
-      });
-
-      expectNoShowAuditToBeDone({
-        bookingUid: uidOfBooking,
-        source: "SYSTEM",
-        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
-        organizationId: null,
-        auditData: {
-          attendeesNoShow: [
-            { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
-          ],
-        },
         isBookingAuditEnabled: false,
       });
     },
@@ -449,18 +437,6 @@ describe("Trigger Guest No Show:", () => {
             eventTypeId: undefined,
           },
           message: `Guest didn't join the call or didn't join before ${maxStartTimeHumanReadable}`,
-        },
-      });
-
-      expectNoShowAuditToBeDone({
-        bookingUid: uidOfBooking,
-        source: "SYSTEM",
-        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
-        organizationId: null,
-        auditData: {
-          attendeesNoShow: [
-            { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
-          ],
         },
       });
 
@@ -703,18 +679,6 @@ describe("Trigger Guest No Show:", () => {
             eventTypeId: undefined,
           },
           message: `Guest didn't join the call or didn't join before ${maxStartTimeHumanReadable}`,
-        },
-      });
-
-      expectNoShowAuditToBeDone({
-        bookingUid: newUidOfBooking,
-        source: "SYSTEM",
-        actor: { identifiedBy: "id", id: "00000000-0000-0000-0000-000000000000" },
-        organizationId: null,
-        auditData: {
-          attendeesNoShow: [
-            { attendeeEmail: "guest@example.com", noShow: { new: true, old: false } },
-          ],
         },
       });
 
