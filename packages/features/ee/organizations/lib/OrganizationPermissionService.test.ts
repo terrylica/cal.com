@@ -19,7 +19,7 @@ vi.mock("@calcom/prisma", () => ({
 
 describe("OrganizationPermissionService", () => {
   let service: OrganizationPermissionService;
-  const mockUser: SessionUser = {
+  const mockUser: UserFromSession = {
     id: 1,
     email: "test@example.com",
     role: "USER",

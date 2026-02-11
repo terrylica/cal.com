@@ -57,7 +57,7 @@ vi.mock("@calcom/features/ee/billing/di/containers/Billing", () => ({
 describe("OrganizationPaymentService", () => {
   let service: OrganizationPaymentService;
   let mockPermissionService: IOrganizationPermissionService;
-  const mockUser: SessionUser = {
+  const mockUser: UserFromSession = {
     id: 1,
     email: "test@example.com",
     role: "USER",
