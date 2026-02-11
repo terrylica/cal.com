@@ -10,6 +10,9 @@
   },
   "typesVersions": {
     "*": {
+      "lib": [
+        "./src/lib/index.ts"
+      ],
       "*": [
         "./src/*"
       ]
