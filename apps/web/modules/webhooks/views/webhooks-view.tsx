@@ -81,7 +81,7 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
                   canEditWebhook: group?.metadata?.canModify ?? false,
                   canDeleteWebhook: group?.metadata?.canDelete ?? false,
                 }}
-                onEditWebhook={() => router.push(`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`)}
+                onEditWebhookAction={() => router.push(`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`)}
               />
             ))}
           </CardPanel>

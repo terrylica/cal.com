@@ -46,7 +46,7 @@ export default function WebhookListItem(props: {
   webhook: Webhook;
   profile?: { name: string | null; image?: string; slug?: string | null };
   canEditWebhook?: boolean;
-  onEditWebhook: () => void;
+  onEditWebhookAction: () => void;
   lastItem: boolean;
   permissions: {
     canEditWebhook?: boolean;
@@ -221,7 +221,7 @@ export default function WebhookListItem(props: {
               />
               <MenuPopup align="end">
                 {props.permissions.canEditWebhook && (
-                  <MenuItem onClick={props.onEditWebhook} data-testid="webhook-edit-button">
+                  <MenuItem onClick={props.onEditWebhookAction} data-testid="webhook-edit-button">
                     <PencilIcon />
                     {t("edit")}
                   </MenuItem>
@@ -251,7 +251,7 @@ export default function WebhookListItem(props: {
             />
             <MenuPopup align="end">
               {props.permissions.canEditWebhook && (
-                <MenuItem onClick={props.onEditWebhook}>
+                <MenuItem onClick={props.onEditWebhookAction}>
                   <PencilIcon />
                   {t("edit")}
                 </MenuItem>
