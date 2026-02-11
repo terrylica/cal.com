@@ -1,4 +1,4 @@
-import { getTranslation } from "@calcom/config/i18n/server";
+import { getTranslation } from "@calcom/i18n/server";
 import type { CalendarEvent } from "@calcom/types/Calendar";
 
 import type { getBookingResponse } from "./getBooking";

@@ -24,8 +24,8 @@
     "lint:report": "biome lint --reporter json . > ../../lint-results/app-store.json"
   },
   "dependencies": {
-    "@calcom/config": "workspace:*",
     "@calcom/dailyvideo": "workspace:*",
+    "@calcom/i18n": "workspace:*",
     "@calcom/dayjs": "workspace:*",
     "@calcom/features": "workspace:*",
     "@calcom/lib": "workspace:*",

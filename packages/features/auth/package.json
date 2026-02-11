@@ -7,8 +7,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "@calcom/config": "workspace:*",
     "@calcom/dayjs": "workspace:*",
+    "@calcom/i18n": "workspace:*",
     "@calcom/lib": "workspace:*",
     "@calcom/prisma": "workspace:*",
     "@calcom/trpc": "workspace:*",

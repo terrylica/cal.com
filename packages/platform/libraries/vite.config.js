@@ -57,7 +57,7 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
-        "@calcom/config",
+        "@calcom/i18n",
         "react",
         "fs",
         "path",

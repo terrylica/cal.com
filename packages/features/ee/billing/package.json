@@ -5,6 +5,6 @@
   "version": "1.0.0",
   "main": "./index.js",
   "dependencies": {
-    "@calcom/config": "workspace:*"
+    "@calcom/i18n": "workspace:*"
   }
 }
