@@ -7,6 +7,7 @@ import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/
 import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
 import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getDefaultEvent, getUsernameList } from "@calcom/features/eventtypes/lib/defaultEvents";
+import { getBrandingForTeam } from "@calcom/features/profile/lib/getBranding";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { MembershipRole } from "@calcom/prisma/enums";
@@ -110,6 +111,9 @@ export const getPublicEventSelect = (fetchAllUsers: boolean) => {
         hideTeamProfileLink: true,
         parent: {
           select: {
+            brandColor: true,
+            darkBrandColor: true,
+            theme: true,
             slug: true,
             name: true,
             bannerUrl: true,
@@ -616,6 +620,8 @@ export function getProfileFromEvent(event: GetProfileFromEventInput) {
   const eventMetaData = eventTypeMetaDataSchemaWithTypedApps.parse(event.metadata || {});
   const userMetaData = userMetadataSchema.parse(profile.metadata || {});
 
+  const branding = team ? getBrandingForTeam({ team }) : null;
+
   return {
     username,
     name: profile.name,
@@ -625,9 +631,9 @@ export function getProfileFromEvent(event: GetProfileFromEventInput) {
       : getUserAvatarUrl({
           avatarUrl: nonTeamProfile?.avatarUrl,
         }),
-    brandColor: styleProfile.brandColor,
-    darkBrandColor: styleProfile.darkBrandColor,
-    theme: styleProfile.theme,
+    brandColor: branding?.brandColor ?? styleProfile.brandColor,
+    darkBrandColor: branding?.darkBrandColor ?? styleProfile.darkBrandColor,
+    theme: branding?.theme ?? styleProfile.theme,
     bookerLayouts: bookerLayoutsSchema.parse(
       eventMetaData?.bookerLayouts ||
         (userMetaData && "defaultBookerLayouts" in userMetaData ? userMetaData.defaultBookerLayouts : null)
