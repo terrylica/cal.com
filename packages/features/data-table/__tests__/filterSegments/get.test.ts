@@ -12,7 +12,7 @@ describe("FilterSegmentRepository.get()", () => {
   const mockUser = {
     id: userId,
     name: "Test User",
-  } as NonNullable<SessionUser>;
+  } as NonNullable<UserFromSession>;
 
   it("should return user-scoped filter segments", async () => {
     // Create user-scoped segments

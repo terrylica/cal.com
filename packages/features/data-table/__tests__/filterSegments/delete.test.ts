@@ -12,7 +12,7 @@ describe("FilterSegmentRepository.delete()", () => {
   const mockUser = {
     id: userId,
     name: "Test User",
-  } as NonNullable<SessionUser>;
+  } as NonNullable<UserFromSession>;
 
   it("should delete a user-scoped filter segment", async () => {
     // Create a user-scoped segment first

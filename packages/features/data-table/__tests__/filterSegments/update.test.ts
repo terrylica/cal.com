@@ -13,7 +13,7 @@ describe("FilterSegmentRepository.update()", () => {
   const mockUser = {
     id: userId,
     name: "Test User",
-  } as NonNullable<SessionUser>;
+  } as NonNullable<UserFromSession>;
 
   const baseInput = {
     tableIdentifier: "bookings",
