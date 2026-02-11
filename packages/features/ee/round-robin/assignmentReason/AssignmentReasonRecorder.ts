@@ -107,7 +107,7 @@ export default class AssignmentReasonRecorder {
       if (attributeValue && attributeValue[0]) {
         const attributeValueString = (() => {
           if (Array.isArray(attributeValue[0])) {
-            return attributeValue[0][0];
+            return attributeValue[0].join(", ");
           } else {
             return attributeValue[0];
           }
