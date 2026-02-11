@@ -122,7 +122,7 @@ test.describe("Team Event Type - Round Robin Weights", () => {
     await expect(form.getByText("Enable weights")).toBeVisible();
   });
 
-  test("Can open edit weights sheet and see team members", async ({ page, users }) => {
+  test("Can open edit weights sheet and edit a host weight", async ({ page, users }) => {
     test.slow();
     const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
     const form = await navigateToAssignmentTab(page, teamEvent.id);
@@ -140,23 +140,7 @@ test.describe("Team Event Type - Round Robin Weights", () => {
     const memberRow = sheet.locator("div.flex.h-12.items-center").filter({ hasText: TARGET_HOST });
     await memberRow.scrollIntoViewIfNeeded();
     await expect(memberRow).toBeVisible();
-  });
 
-  test("Can edit a host weight via the weights sheet", async ({ page, users }) => {
-    test.slow();
-    const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
-    const form = await navigateToAssignmentTab(page, teamEvent.id);
-
-    const weightsSection = form.locator("fieldset").filter({ hasText: "Enable weights" });
-    await weightsSection.getByRole("switch").click();
-
-    await form.getByRole("button", { name: "Edit weights" }).click();
-
-    const sheet = page.locator("[role=dialog]");
-    await expect(sheet).toBeVisible();
-
-    const memberRow = sheet.locator("div.flex.h-12.items-center").filter({ hasText: TARGET_HOST });
-    await memberRow.scrollIntoViewIfNeeded();
     const weightButton = memberRow.locator("button");
     await expect(weightButton).toContainText("100%");
     await weightButton.click();
@@ -235,13 +219,29 @@ test.describe("Team Event Type - Host Assignment and Removal", () => {
     const { teamEvent } = await createTeamWithEvent(users, SchedulingType.COLLECTIVE);
     const form = await navigateToAssignmentTab(page, teamEvent.id);
 
+    const initialHosts = await prisma.host.findMany({
+      where: { eventTypeId: teamEvent.id },
+      select: { userId: true },
+    });
+
     const hostRow = form.locator("li").filter({ hasText: TARGET_HOST });
     await hostRow.scrollIntoViewIfNeeded();
     await expect(hostRow).toBeVisible();
 
     await hostRow.locator("svg").last().click();
-
     await expect(hostRow).not.toBeVisible();
+
+    await saveEventType(page);
+
+    const hostsAfterSave = await prisma.host.findMany({
+      where: { eventTypeId: teamEvent.id },
+      select: {
+        userId: true,
+        user: { select: { name: true } },
+      },
+    });
+    expect(hostsAfterSave).toHaveLength(initialHosts.length - 1);
+    expect(hostsAfterSave.map((h) => h.user.name)).not.toContain(TARGET_HOST);
   });
 
   test("Can remove a host from a Round Robin event type", async ({ page, users }) => {
@@ -249,19 +249,40 @@ test.describe("Team Event Type - Host Assignment and Removal", () => {
     const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
     const form = await navigateToAssignmentTab(page, teamEvent.id);
 
+    const initialHosts = await prisma.host.findMany({
+      where: { eventTypeId: teamEvent.id },
+      select: { userId: true },
+    });
+
     const hostRow = form.locator("li").filter({ hasText: TARGET_HOST });
     await hostRow.scrollIntoViewIfNeeded();
     await expect(hostRow).toBeVisible();
 
     await hostRow.locator("svg").last().click();
-
     await expect(hostRow).not.toBeVisible();
+
+    await saveEventType(page);
+
+    const hostsAfterSave = await prisma.host.findMany({
+      where: { eventTypeId: teamEvent.id },
+      select: {
+        userId: true,
+        user: { select: { name: true } },
+      },
+    });
+    expect(hostsAfterSave).toHaveLength(initialHosts.length - 1);
+    expect(hostsAfterSave.map((h) => h.user.name)).not.toContain(TARGET_HOST);
   });
 
   test("Can add a host back after removal on a Round Robin event", async ({ page, users }) => {
     test.slow();
     const { teamEvent } = await createTeamWithEvent(users, SchedulingType.ROUND_ROBIN);
     const form = await navigateToAssignmentTab(page, teamEvent.id);
+
+    const initialHosts = await prisma.host.findMany({
+      where: { eventTypeId: teamEvent.id },
+      select: { userId: true },
+    });
 
     const hostRow = form.locator("li").filter({ hasText: TARGET_HOST });
     await hostRow.scrollIntoViewIfNeeded();
@@ -275,6 +296,18 @@ test.describe("Team Event Type - Host Assignment and Removal", () => {
     await page.locator('[id*="-option-"]').filter({ hasText: TARGET_HOST }).click();
 
     await expect(form.locator("li").filter({ hasText: TARGET_HOST })).toBeVisible();
+
+    await saveEventType(page);
+
+    const hostsAfterSave = await prisma.host.findMany({
+      where: { eventTypeId: teamEvent.id },
+      select: {
+        userId: true,
+        user: { select: { name: true } },
+      },
+    });
+    expect(hostsAfterSave).toHaveLength(initialHosts.length);
+    expect(hostsAfterSave.map((h) => h.user.name)).toContain(TARGET_HOST);
   });
 
   test("Can toggle assign all team members on a Round Robin event", async ({ page, users }) => {
