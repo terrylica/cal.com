@@ -17,6 +17,8 @@ import { ProfileRepository } from "@calcom/features/profile/repositories/Profile
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { DEFAULT_SCHEDULE, getAvailabilityFromSchedule } from "@calcom/lib/availability";
 import { ENABLE_PROFILE_SWITCHER } from "@calcom/lib/constants";
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { getTranslation } from "@calcom/lib/server/i18n";
@@ -25,8 +27,6 @@ import { prisma } from "@calcom/prisma";
 import type { OrganizationSettings, Team } from "@calcom/prisma/client";
 import type { CreationSource } from "@calcom/prisma/enums";
 import { MembershipRole } from "@calcom/prisma/enums";
-
-import { TRPCError } from "@trpc/server";
 
 const isEmail = (str: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
 
@@ -53,10 +53,7 @@ type InvitableExistingUserWithProfile = InvitableExistingUser & {
 
 export function checkInputEmailIsValid(email: string) {
   if (!isEmail(email))
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Invite failed because ${email} is not a valid email address`,
-    });
+    throw new ErrorWithCode(ErrorCode.BadRequest, `Invite failed because ${email} is not a valid email address`);
 }
 
 export async function getUniqueInvitationsOrThrowIfEmpty(invitations: Invitation[]) {
@@ -72,10 +69,7 @@ export async function getUniqueInvitationsOrThrowIfEmpty(invitations: Invitation
   });
 
   if (uniqueInvitations.length === 0) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "You must provide at least one email address to invite.",
-    });
+    throw new ErrorWithCode(ErrorCode.BadRequest, "You must provide at least one email address to invite.");
   }
 
   return uniqueInvitations;
@@ -841,10 +835,7 @@ function throwIfInvalidInvitationStatus({
   translation: TFunction;
 }) {
   if (firstExistingUser && firstExistingUser.canBeInvited !== INVITE_STATUS.CAN_BE_INVITED) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: translation(firstExistingUser.canBeInvited),
-    });
+    throw new ErrorWithCode(ErrorCode.BadRequest, translation(firstExistingUser.canBeInvited));
   }
 }
 
