@@ -1249,6 +1249,7 @@ export class BookingsService_2024_08_13 {
         platformClientParams,
         actionSource: "API_V2",
         actor: makeUserActor(requestUser.uuid),
+        impersonatedByUserUuid: null,
       },
     });
 
@@ -1284,6 +1285,7 @@ export class BookingsService_2024_08_13 {
         platformClientParams,
         actionSource: "API_V2",
         actor: makeUserActor(requestUser.uuid),
+        impersonatedByUserUuid: null,
       },
     });
 
