@@ -4,12 +4,12 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { MembershipRole } from "@calcom/prisma/enums";
 import { CreationSource } from "@calcom/prisma/enums";
-import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler";
+import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/features/ee/teams/lib/inviteMembers";
 
 import { moveUserToMatchingOrg } from "./verify-email";
 
 // TODO: This test passes but coverage is very low.
-vi.mock("@calcom/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler");
+vi.mock("@calcom/features/ee/teams/lib/inviteMembers");
 vi.mock("@calcom/prisma", () => {
   return {
     prisma: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock("@calcom/features/ee/billing/stripe-billing-service", () => {
   };
 });
 
-vi.mock("@calcom/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler", () => {
+vi.mock("@calcom/features/ee/teams/lib/inviteMembers", () => {
   return {
     inviteMembersWithNoInviterPermissionCheck: vi.fn(),
   };

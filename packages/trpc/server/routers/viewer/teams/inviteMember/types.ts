@@ -1,4 +1,3 @@
-import type { Team } from "@calcom/prisma/client";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
 
 import type { TInviteMemberInputSchema } from "./inviteMember.schema";
@@ -10,9 +9,7 @@ export type InviteMemberOptions = {
   input: TInviteMemberInputSchema;
 };
 
-export type TeamWithParent = Team & {
-  parent: Team | null;
-};
+export type { TeamWithParent } from "@calcom/features/ee/teams/lib/inviteMembers";
 
 export const enum INVITE_STATUS {
   USER_PENDING_MEMBER_OF_THE_ORG = "USER_PENDING_MEMBER_OF_THE_ORG",

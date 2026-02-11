@@ -7,7 +7,7 @@ import { OrganizationOnboardingRepository } from "@calcom/features/organizations
 import * as constants from "@calcom/lib/constants";
 import { UserPermissionRole, CreationSource, MembershipRole, BillingPeriod } from "@calcom/prisma/enums";
 import { createTeamsHandler } from "@calcom/trpc/server/routers/viewer/organizations/createTeams.handler";
-import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler";
+import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/features/ee/teams/lib/inviteMembers";
 
 import { SelfHostedOrganizationOnboardingService } from "../SelfHostedOnboardingService";
 import type { CreateOnboardingIntentInput, OrganizationOnboardingData } from "../types";
@@ -28,7 +28,7 @@ vi.mock("@calcom/emails/email-manager", () => ({
   sendOrganizationCreationEmail: vi.fn(),
 }));
 
-vi.mock("@calcom/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler", () => ({
+vi.mock("@calcom/features/ee/teams/lib/inviteMembers", () => ({
   inviteMembersWithNoInviterPermissionCheck: vi.fn(),
 }));
 

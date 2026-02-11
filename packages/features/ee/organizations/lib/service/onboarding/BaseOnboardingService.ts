@@ -25,7 +25,7 @@ import type { Prisma, Team, User } from "@calcom/prisma/client";
 import { CreationSource, MembershipRole, UserPermissionRole } from "@calcom/prisma/enums";
 import { userMetadata, teamMetadataStrictSchema } from "@calcom/prisma/zod-utils";
 import { createTeamsHandler } from "@calcom/trpc/server/routers/viewer/organizations/createTeams.handler";
-import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler";
+import { inviteMembersWithNoInviterPermissionCheck } from "@calcom/features/ee/teams/lib/inviteMembers";
 
 import { OrganizationPaymentService } from "../../OrganizationPaymentService";
 import { OrganizationPermissionService } from "../../OrganizationPermissionService";
