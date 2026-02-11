@@ -6,7 +6,22 @@
   "main": "./src/index.ts",
   "exports": {
     "./emails/components": "./src/emails/components/index.tsx",
-    "./*": "./src/*",
+    "./components/DynamicAppComponent": "./src/components/DynamicAppComponent.tsx",
+    "./components/FormInputFields": "./src/components/FormInputFields.tsx",
+    "./components/InfoLostWarningDialog": "./src/components/InfoLostWarningDialog.tsx",
+    "./lib/InitialConfig": "./src/lib/InitialConfig.tsx",
+    "./lib/processRoute": "./src/lib/processRoute.tsx",
+    "./components/_components/EmptyState": "./src/components/_components/EmptyState.tsx",
+    "./components/_components/ResultSection": "./src/components/_components/ResultSection.tsx",
+    "./components/_components/RoutingSkeleton": "./src/components/_components/RoutingSkeleton.tsx",
+    "./components/_components/TeamMemberSelect": "./src/components/_components/TeamMemberSelect.tsx",
+    "./components/_components/TeamMembersMatchResult": "./src/components/_components/TeamMembersMatchResult.tsx",
+    "./components/react-awesome-query-builder/widgets.test": "./src/components/react-awesome-query-builder/widgets.test.tsx",
+    "./components/react-awesome-query-builder/widgets": "./src/components/react-awesome-query-builder/widgets.tsx",
+    "./emails/components/ResponseEmail": "./src/emails/components/ResponseEmail.tsx",
+    "./emails/components/index": "./src/emails/components/index.tsx",
+    "./components/react-awesome-query-builder/config/uiConfig": "./src/components/react-awesome-query-builder/config/uiConfig.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

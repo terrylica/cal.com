@@ -5,7 +5,11 @@
   "version": "0.0.0",
   "main": "./src/index.ts",
   "exports": {
-    "./*": "./src/*",
+    "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
+    "./components/EventTypeAppSettingsInterface": "./src/components/EventTypeAppSettingsInterface.tsx",
+    "./components/SearchDialog": "./src/components/SearchDialog.tsx",
+    "./components/SelectGifInput": "./src/components/SelectGifInput.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

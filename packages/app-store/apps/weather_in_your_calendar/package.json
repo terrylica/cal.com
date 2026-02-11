@@ -5,7 +5,8 @@
   "version": "0.0.0",
   "main": "./src/index.ts",
   "exports": {
-    "./*": "./src/*",
+    "./components/AppSettingsInterface": "./src/components/AppSettingsInterface.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

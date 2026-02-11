@@ -5,7 +5,9 @@
   "version": "0.1.0",
   "main": "./src/index.ts",
   "exports": {
-    "./*": "./src/*",
+    "./components/AppConfiguration": "./src/components/AppConfiguration.tsx",
+    "./components/InstallAppButton": "./src/components/InstallAppButton.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

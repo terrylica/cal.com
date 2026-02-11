@@ -7,7 +7,9 @@
   "main": "./src/index.ts",
   "exports": {
     "./lib/client": "./src/lib/client/index.ts",
-    "./*": "./src/*",
+    "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
+    "./components/EventTypeAppSettingsInterface": "./src/components/EventTypeAppSettingsInterface.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

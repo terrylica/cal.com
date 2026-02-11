@@ -4,7 +4,11 @@
   "version": "0.0.0",
   "main": "./src/index.ts",
   "exports": {
-    "./*": "./src/*",
+    "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
+    "./components/RoutingFormOptions": "./src/components/RoutingFormOptions.tsx",
+    "./components/components/FieldRulesSettings": "./src/components/components/FieldRulesSettings.tsx",
+    "./components/components/WriteToObjectSettings": "./src/components/components/WriteToObjectSettings.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

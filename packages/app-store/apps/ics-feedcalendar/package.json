@@ -6,7 +6,7 @@
   "main": "./src/index.ts",
   "exports": {
     "./lib": "./src/lib/index.ts",
-    "./*": "./src/*",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

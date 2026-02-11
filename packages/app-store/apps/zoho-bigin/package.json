@@ -5,7 +5,8 @@
   "version": "1.0.0",
   "main": "./src/index.ts",
   "exports": {
-    "./*": "./src/*",
+    "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

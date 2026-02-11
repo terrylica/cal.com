@@ -5,7 +5,10 @@
   "version": "0.0.0",
   "main": "./src/index.ts",
   "exports": {
-    "./*": "./src/*",
+    "./components/EventTypeAppCardInterface": "./src/components/EventTypeAppCardInterface.tsx",
+    "./components/EventTypeAppSettingsInterface": "./src/components/EventTypeAppSettingsInterface.tsx",
+    "./pages/setup/_getStaticProps": "./src/pages/setup/_getStaticProps.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {

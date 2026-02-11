@@ -5,7 +5,8 @@
   "version": "0.0.0",
   "main": "./src/index.ts",
   "exports": {
-    "./*": "./src/*",
+    "./pages/setup/_getServerSideProps": "./src/pages/setup/_getServerSideProps.tsx",
+    "./*": "./src/*.ts",
     ".": "./src/index.ts"
   },
   "typesVersions": {
