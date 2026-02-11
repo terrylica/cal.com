@@ -3,20 +3,16 @@
  * Provides utilities for converting between API format and UI format
  */
 
-import { getAppIconUrl } from "./getAppIconUrl";
-import {
-  defaultLocations,
-  getDefaultLocationIconUrl,
-  DefaultLocationType,
-} from "./defaultLocations";
-import { formatAppIdToDisplayName } from "./formatters";
-import {
-  LocationItem,
+import type {
   ApiLocation,
   ApiLocationInput,
+  LocationItem,
   LocationOption,
   LocationOptionGroup,
-} from "../types/locations";
+} from "@/types/locations";
+import { DefaultLocationType, defaultLocations } from "./defaultLocations";
+import { formatAppIdToDisplayName } from "./formatters";
+import { getAppIconUrl } from "./getAppIconUrl";
 
 // Re-export formatAppIdToDisplayName for backward compatibility
 export { formatAppIdToDisplayName } from "./formatters";
@@ -87,7 +83,7 @@ export function mapApiLocationToItem(apiLocation: ApiLocation): LocationItem {
       id,
       type: "phone",
       phone: apiLocation.phone || "",
-      displayName: "Organizer Phone Number",
+      displayName: "Phone Call",
       iconUrl: "https://app.cal.com/phone.svg",
       public: apiLocation.public,
     };
@@ -202,7 +198,7 @@ export function getLocationDisplayName(locationType: string, integration?: strin
     address: "In Person (Organizer Address)",
     attendeeAddress: "In Person (Attendee Address)",
     link: "Link Meeting",
-    phone: "Organizer Phone Number",
+    phone: "Phone Call",
     attendeePhone: "Attendee Phone Number",
     attendeeDefined: "Custom Attendee Location",
   };
