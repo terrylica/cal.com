@@ -72,8 +72,7 @@ export class OrganizationsConferencingController {
   @PlatformPlan("ESSENTIALS")
   @ApiParam({
     name: "app",
-    description: "Conferencing application type",
-    enum: [ZOOM, OFFICE_365_VIDEO],
+    description: "Conferencing application type. Currently no apps are supported via this non-OAuth endpoint.",
     required: true,
   })
   @UseGuards(ApiAuthGuard, IsOrgGuard, RolesGuard, IsTeamInOrg, PlatformPlanGuard, IsAdminAPIEnabledGuard)
@@ -82,8 +81,9 @@ export class OrganizationsConferencingController {
   @ApiOperation({
     summary: "Connect your conferencing application to a team",
     description:
-      "Google Meet is not supported for team-level connections because it requires a Google Calendar " +
-      "to be connected to the team first, which is not yet available.",
+      "This endpoint is for non-OAuth conferencing apps. Currently no apps are supported: " +
+      "Google Meet requires a Google Calendar to be connected to the team first, which is not yet available. " +
+      "For OAuth-based apps (Zoom, Office365 Video), use the OAuth auth-url endpoint instead.",
   })
   async connectTeamApp(
     @GetUser() user: UserWithProfile,
