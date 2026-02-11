@@ -50,7 +50,7 @@ export async function getUserFromSession<TContext extends { req?: { url?: string
   const orgMetadata = teamMetadataSchema.parse(user.profile?.organization?.metadata || {});
   // This helps to prevent reaching the 4MB payload limit by avoiding base64 and instead passing the avatar url
 
-  const locale = user?.locale ?? ctx.locale;
+  const locale = user?.locale ?? ctx.locale ?? "en";
   const { members = [], ..._organization } = user.profile?.organization || {};
   const isOrgAdmin = members.some((member: { role: string }) => ["OWNER", "ADMIN"].includes(member.role));
 
@@ -88,7 +88,8 @@ export type SessionUser = Awaited<ReturnType<typeof getUserFromSession>>;
 export const getSession = async <TContext extends { req?: unknown }>(ctx: TContext) => {
   const { req } = ctx;
   const { getServerSession } = await import("@calcom/features/auth/lib/getServerSession");
-  return req ? await getServerSession({ req }) : null;
+  // Type assertion is safe here because getServerSession enforces the correct type at runtime
+  return req ? await getServerSession({ req: req as any }) : null;
 };
 
 export const getUserSession = async <
