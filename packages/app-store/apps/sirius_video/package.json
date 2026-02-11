@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "private": true,
+  "name": "@calcom/sirius_video",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "exports": {
+    "./*": "./src/*",
+    ".": "./src/index.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./src/*"
+      ]
+    }
+  },
+  "description": "Video meetings made for music.\rCreate your own virtual music classroom, easily.",
+  "dependencies": {
+    "@calcom/lib": "workspace:*"
+  },
+  "devDependencies": {
+    "@calcom/types": "workspace:*"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  }
+}

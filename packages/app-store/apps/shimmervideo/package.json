@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "private": true,
+  "name": "@calcom/shimmer-video",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "exports": {
+    "./*": "./src/*",
+    ".": "./src/index.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./src/*"
+      ]
+    }
+  },
+  "dependencies": {
+    "@calcom/lib": "workspace:*"
+  },
+  "devDependencies": {
+    "@calcom/types": "workspace:*"
+  },
+  "description": "The #1 Expert ADHD Coach. Weekly calls and in-app support so that you can reach your full potential",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  }
+}

@@ -1,9 +1,10 @@
 "use client";
 
-import AccountDialog from "@calcom/app-store/office365video/components/AccountDialog";
+import AccountDialog from "@calcom/office365video/components/AccountDialog";
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { GOOGLE_MEET, OFFICE_365_VIDEO, ZOOM } from "@calcom/platform-constants";
+// biome-ignore lint/style/noRestrictedImports: QueryCell is needed from trpc - pre-existing usage
 import { QueryCell } from "@calcom/trpc/components/QueryCell";
 import type { App } from "@calcom/types/App";
 import { Button } from "@calcom/ui/components/button";

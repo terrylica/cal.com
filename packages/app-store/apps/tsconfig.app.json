@@ -1,0 +1,13 @@
+{
+  "extends": "@calcom/tsconfig/react-library.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@prisma/client/*": ["@calcom/prisma/client/*"]
+    },
+    "resolveJsonModule": true,
+    "experimentalDecorators": true
+  },
+  "exclude": ["**/node_modules/**"]
+}

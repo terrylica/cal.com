@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "private": true,
+  "name": "@calcom/zapier",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "exports": {
+    "./*": "./src/*",
+    ".": "./src/index.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./src/*"
+      ]
+    }
+  },
+  "description": "Workflow automation for everyone. Use the Cal.com Zapier app to trigger your workflows when a booking is created, rescheduled, or cancelled, or after a meeting ends.",
+  "dependencies": {
+    "@calcom/lib": "workspace:*",
+    "node-schedule": "2.1.0"
+  },
+  "devDependencies": {
+    "@calcom/types": "workspace:*",
+    "@types/node-schedule": "2.1.0"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  }
+}
