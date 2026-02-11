@@ -82,7 +82,7 @@ export type CancelBookingInput = {
   userUuid?: string;
   bookingData: z.infer<typeof bookingCancelInput>;
   actionSource?: ActionSource;
-  impersonatedByUserUuid?: string | null;
+  impersonatedByUserUuid: string | null;
 } & PlatformParams;
 
 type Dependencies = {
@@ -733,6 +733,7 @@ export class BookingCancelService implements IBookingCancelService {
     const cancelBookingInput: CancelBookingInput = {
       bookingData: input.bookingData,
       ...(input.bookingMeta || {}),
+      impersonatedByUserUuid: input.bookingMeta?.impersonatedByUserUuid ?? null,
     };
 
     return handler(cancelBookingInput, this.deps);

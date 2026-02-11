@@ -36,33 +36,33 @@ export const bookingsRouter = router({
       ctx,
       input,
       source: "WEBAPP",
-      impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid,
+      impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid ?? null,
     });
   }),
 
-  editLocation: bookingsProcedure.input(ZEditLocationInputSchema).mutation(async ({ input, ctx }) => {
+  editLocation:bookingsProcedure.input(ZEditLocationInputSchema).mutation(async ({ input, ctx }) => {
     const { editLocationHandler } = await import("./editLocation.handler");
 
     return editLocationHandler({
       ctx,
       input,
       actionSource: "WEBAPP",
-      impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid,
+      impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid ?? null,
     });
   }),
 
-  addGuests: authedProcedure.input(ZAddGuestsInputSchema).mutation(async ({ input, ctx }) => {
+  addGuests:authedProcedure.input(ZAddGuestsInputSchema).mutation(async ({ input, ctx }) => {
     const { addGuestsHandler } = await import("./addGuests.handler");
 
     return addGuestsHandler({
       ctx,
       input,
       actionSource: "WEBAPP",
-      impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid,
+      impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid ?? null,
     });
   }),
 
-  confirm: authedProcedure.input(ZConfirmInputSchema).mutation(async ({ input, ctx }) => {
+  confirm:authedProcedure.input(ZConfirmInputSchema).mutation(async ({ input, ctx }) => {
     const { confirmHandler } = await import("./confirm.handler");
 
     return confirmHandler({
@@ -71,7 +71,7 @@ export const bookingsRouter = router({
         ...input,
         actor: makeUserActor(ctx.user.uuid),
         actionSource: "WEBAPP",
-        impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid,
+        impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid ?? null,
       }
     });
   }),

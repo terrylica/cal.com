@@ -15,7 +15,7 @@ type NoShowOptions = {
 
 export const markNoShow = async ({ ctx, input }: NoShowOptions) => {
   const { bookingUid, attendees, noShowHost } = input;
-  const impersonatedByUserUuid = ctx.session.user?.impersonatedBy?.uuid;
+  const impersonatedByUserUuid = ctx.session.user?.impersonatedBy?.uuid ?? null;
 
   return handleMarkAttendeesAndHostNoShow({
     bookingUid,

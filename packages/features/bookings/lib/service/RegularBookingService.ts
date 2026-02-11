@@ -1809,6 +1809,7 @@ async function handler(
         organizationId: eventOrganizationId,
         actionSource,
         traceContext,
+        impersonatedByUserUuid: impersonatedByUserUuid ?? null,
         deps,
       },
       deps.featuresRepository
@@ -2495,11 +2496,11 @@ async function handler(
     isRecurringBooking: !!input.bookingData.allRecurringDates,
     attendeeSeatId: evt.attendeeSeatId ?? null,
     tracingLogger,
-    impersonatedByUserUuid,
+    impersonatedByUserUuid: impersonatedByUserUuid ?? null,
     isBookingAuditEnabled,
   });
 
-  const webhookLocation = metadata?.videoCallUrl || evt.location;
+  const webhookLocation= metadata?.videoCallUrl || evt.location;
 
   const webhookData: EventPayloadType = {
     ...evt,
@@ -2956,7 +2957,7 @@ export class RegularBookingService implements IBookingService {
     isRecurringBooking: boolean;
     tracingLogger: ReturnType<typeof distributedTracing.getTracingLogger>;
     attendeeSeatId: string | null;
-    impersonatedByUserUuid?: string | null;
+    impersonatedByUserUuid: string | null;
     isBookingAuditEnabled: boolean;
   }) {
     try {

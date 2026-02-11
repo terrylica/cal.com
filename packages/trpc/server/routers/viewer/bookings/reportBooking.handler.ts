@@ -90,6 +90,7 @@ export const reportBookingHandler = async ({ ctx, input }: ReportBookingOptions)
           ...(seatReferenceUid ? { seatReferenceUid } : {}),
         },
         userId: user.id,
+        impersonatedByUserUuid: null,
       });
       didCancel = true;
     } catch (error) {

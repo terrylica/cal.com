@@ -36,7 +36,7 @@ type EditLocationOptions = {
   } & BookingsProcedureContext;
   input: TEditLocationInputSchema;
   actionSource: ValidActionSource;
-  impersonatedByUserUuid?: string | null;
+  impersonatedByUserUuid: string | null;
 };
 
 type UserMetadata = z.infer<typeof userMetadata>;

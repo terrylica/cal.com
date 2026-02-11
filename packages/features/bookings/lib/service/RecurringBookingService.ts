@@ -182,7 +182,7 @@ export class RecurringBookingService implements IBookingService {
     actorUserUuid: string | null;
     rescheduledBy: string | null;
     creationSource: CreationSource | undefined;
-    impersonatedByUserUuid?: string | null;
+    impersonatedByUserUuid: string | null;
   }) {
     try {
       type ValidBooking = BookingResponse & {

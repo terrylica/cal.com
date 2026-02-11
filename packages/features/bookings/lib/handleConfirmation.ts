@@ -57,7 +57,7 @@ async function fireBookingAcceptedEvent({
   }[];
   isBookingAuditEnabled: boolean;
   tracingLogger: ISimpleLogger;
-  impersonatedByUserUuid?: string | null;
+  impersonatedByUserUuid: string | null;
 }) {
   try {
     const bookingEventHandlerService = getBookingEventHandlerService();
@@ -141,7 +141,7 @@ export async function handleConfirmation(args: {
   traceContext: TraceContext;
   actionSource: ActionSource;
   actor: Actor;
-  impersonatedByUserUuid?: string | null;
+  impersonatedByUserUuid: string | null;
 }) {
   const {
     user,
