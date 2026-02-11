@@ -6,7 +6,7 @@ import { expect, it, describe, vi, beforeAll } from "vitest";
 
 import dayjs from "@calcom/dayjs";
 import { getLuckyUserService } from "@calcom/features/di/containers/LuckyUser";
-import { buildUser, buildBooking } from "@calcom/testing/builders/builder";
+import { buildUser, buildBooking } from "@calcom/testing/lib/builders/builder";
 import { AttributeType, RRResetInterval, RRTimestampBasis } from "@calcom/prisma/enums";
 
 import { getIntervalStartDate, getIntervalEndDate } from "./getLuckyUser";

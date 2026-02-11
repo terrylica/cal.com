@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createMocks } from "node-mocks-http";
 import { describe, expect, test, vi, afterEach, beforeEach } from "vitest";
 
-import { buildBooking, buildEventType } from "@calcom/testing/builders/builder";
+import { buildBooking, buildEventType } from "@calcom/testing/lib/builders/builder";
 
 import handler from "../../../../pages/api/bookings/[id]/_patch";
 

@@ -9,7 +9,7 @@ import {
   getTranscriptsAccessLinkFromRecordingId,
   checkIfRoomNameMatchesInRecording,
 } from "@calcom/features/conferencing/lib/videoClient";
-import { buildBooking } from "@calcom/testing/builders/builder";
+import { buildBooking } from "@calcom/testing/lib/builders/builder";
 
 import { getAccessibleUsers } from "~/lib/utils/retrieveScopedAccessibleUsers";
 

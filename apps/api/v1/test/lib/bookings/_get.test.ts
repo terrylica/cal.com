@@ -6,7 +6,7 @@ import { createMocks } from "node-mocks-http";
 import { describe, expect, test, vi, afterEach, beforeEach } from "vitest";
 import { ZodError } from "zod";
 
-import { buildBooking } from "@calcom/testing/builders/builder";
+import { buildBooking } from "@calcom/testing/lib/builders/builder";
 
 import {
   getAccessibleUsers,

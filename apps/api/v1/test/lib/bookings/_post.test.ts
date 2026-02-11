@@ -10,7 +10,7 @@ import dayjs from "@calcom/dayjs";
 import { getEventTypesFromDB } from "@calcom/features/bookings/lib/handleNewBooking/getEventTypesFromDB";
 import sendPayload from "@calcom/features/webhooks/lib/sendOrSchedulePayload";
 import { ErrorCode } from "@calcom/lib/errorCodes";
-import { buildBooking, buildEventType, buildWebhook, buildUser } from "@calcom/testing/builders/builder";
+import { buildBooking, buildEventType, buildWebhook, buildUser } from "@calcom/testing/lib/builders/builder";
 import { prisma } from "@calcom/prisma";
 import type { Booking } from "@calcom/prisma/client";
 import { CreationSource, BookingStatus } from "@calcom/prisma/enums";

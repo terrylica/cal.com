@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createMocks } from "node-mocks-http";
 import { describe, expect, test, beforeEach, vi } from "vitest";
 
-import { buildEventType } from "@calcom/testing/builders/builder";
+import { buildEventType } from "@calcom/testing/lib/builders/builder";
 import { MembershipRole } from "@calcom/prisma/enums";
 
 import handler from "../../../../pages/api/event-types/[id]/_delete";

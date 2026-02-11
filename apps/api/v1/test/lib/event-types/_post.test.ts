@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { createMocks } from "node-mocks-http";
 import { describe, expect, test, vi, afterEach } from "vitest";
 
-import { buildEventType } from "@calcom/testing/builders/builder";
+import { buildEventType } from "@calcom/testing/lib/builders/builder";
 
 import handler from "../../../pages/api/event-types/_post";
 import checkParentEventOwnership from "../../../pages/api/event-types/_utils/checkParentEventOwnership";
