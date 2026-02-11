@@ -13,7 +13,7 @@ import { updateProfilePhotoGoogle } from "@calcom/app-store/_utils/oauth/updateP
 import {
   createGoogleCalendarServiceWithGoogleType,
   type GoogleCalendar,
-} from "@calcom/app-store/googlecalendar/lib/CalendarService";
+} from "@calcom/googlecalendar/lib/CalendarService";
 import { LicenseKeySingleton } from "@calcom/ee/common/server/LicenseKeyService";
 import { getBillingProviderService } from "@calcom/features/ee/billing/di/containers/Billing";
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";

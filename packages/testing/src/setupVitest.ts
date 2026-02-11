@@ -144,27 +144,27 @@ function createMockPaymentService(_credentials?: unknown) {
   };
 }
 
-vi.mock("@calcom/app-store/stripepayment/index", () => ({
+vi.mock("@calcom/stripepayment/index", () => ({
   BuildPaymentService: createMockPaymentService,
 }));
 
-vi.mock("@calcom/app-store/paypal/index", () => ({
+vi.mock("@calcom/paypal/index", () => ({
   BuildPaymentService: createMockPaymentService,
 }));
 
-vi.mock("@calcom/app-store/alby/index", () => ({
+vi.mock("@calcom/alby/index", () => ({
   BuildPaymentService: createMockPaymentService,
 }));
 
-vi.mock("@calcom/app-store/hitpay/index", () => ({
+vi.mock("@calcom/hitpay/index", () => ({
   BuildPaymentService: createMockPaymentService,
 }));
 
-vi.mock("@calcom/app-store/btcpayserver/index", () => ({
+vi.mock("@calcom/btcpayserver/index", () => ({
   BuildPaymentService: createMockPaymentService,
 }));
 
-vi.mock("@calcom/app-store/mock-payment-app/index", () => ({
+vi.mock("@calcom/mock-payment-app/index", () => ({
   BuildPaymentService: createMockPaymentService,
 }));
 
@@ -207,7 +207,7 @@ vi.mock("@calcom/app-store/crm.apps.generated", () => ({
 }));
 
 if (!process.env.INTEGRATION_TESTS) {
-  vi.mock("@calcom/app-store/salesforce/lib/graphql/documents/queries", () => ({
+  vi.mock("@calcom/salesforce/lib/graphql/documents/queries", () => ({
     GetAccountRecordsForRRSkip: {},
   }));
 }

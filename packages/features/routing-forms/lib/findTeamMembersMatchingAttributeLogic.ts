@@ -1,5 +1,5 @@
 import { acrossQueryValueCompatiblity, raqbQueryValueUtils } from "@calcom/app-store/_utils/raqb/raqbUtils";
-import type { Attribute } from "@calcom/app-store/routing-forms/types/types";
+import type { Attribute } from "@calcom/routing-forms/types/types";
 import {
   extractAttributeIdsFromQueryValue,
   getAttributesAssignmentData,

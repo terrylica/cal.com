@@ -12,6 +12,6 @@ export const CalendarAuth = vi.fn().mockImplementation(() => ({
   }),
 }));
 
-vi.doMock("@calcom/app-store/googlecalendar/lib/CalendarAuth", () => ({
+vi.doMock("@calcom/googlecalendar/lib/CalendarAuth", () => ({
   CalendarAuth,
 }));

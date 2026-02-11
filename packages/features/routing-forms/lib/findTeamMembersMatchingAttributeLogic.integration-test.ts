@@ -1,4 +1,4 @@
-import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
+import { RouteActionType } from "@calcom/routing-forms/zod";
 import { RaqbLogicResult } from "@calcom/lib/raqb/evaluateRaqbLogic";
 import prisma from "@calcom/prisma";
 import type { Team } from "@calcom/prisma/client";

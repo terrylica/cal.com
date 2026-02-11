@@ -5,8 +5,8 @@ import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { isFallbackRoute } from "@calcom/app-store/routing-forms/lib/isFallbackRoute";
-import type { RoutingFormWithResponseCount } from "@calcom/app-store/routing-forms/types/types";
+import { isFallbackRoute } from "@calcom/routing-forms/lib/isFallbackRoute";
+import type { RoutingFormWithResponseCount } from "@calcom/routing-forms/types/types";
 import LicenseRequired from "~/ee/common/components/LicenseRequired";
 import { FilterResults } from "~/filters/components/FilterResults";
 import { TeamsFilter } from "~/filters/components/TeamsFilter";

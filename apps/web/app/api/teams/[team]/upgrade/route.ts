@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { z } from "zod";
 
-import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-billing";
+import { getRequestedSlugError } from "@calcom/stripepayment/lib/team-billing";
 import { getBillingProviderService } from "@calcom/ee/billing/di/containers/Billing";
 import { getTeamBillingServiceFactory } from "@calcom/ee/billing/di/containers/Billing";
 import { extractBillingDataFromStripeSubscription } from "@calcom/features/ee/billing/lib/stripe-subscription-utils";

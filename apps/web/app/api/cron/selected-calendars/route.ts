@@ -10,7 +10,7 @@ import { findUniqueDelegationCalendarCredential } from "@calcom/app-store/delega
 import {
   createGoogleCalendarServiceWithGoogleType,
   type GoogleCalendar,
-} from "@calcom/app-store/googlecalendar/lib/CalendarService";
+} from "@calcom/googlecalendar/lib/CalendarService";
 import { CredentialRepository } from "@calcom/features/credentials/repositories/CredentialRepository";
 import { CalendarAppDelegationCredentialInvalidGrantError } from "@calcom/lib/CalendarAppError";
 import { HttpError } from "@calcom/lib/http-error";

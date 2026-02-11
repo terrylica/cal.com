@@ -4,16 +4,16 @@ import { v4 } from "uuid";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { getCRMContactOwnerForRRLeadSkip } from "@calcom/app-store/_utils/CRMRoundRobinSkip";
-import bookingFormHandlers from "@calcom/app-store/routing-forms/appBookingFormHandler";
+import bookingFormHandlers from "@calcom/routing-forms/appBookingFormHandler";
 import {
   ROUTING_FORM_RESPONSE_ID_QUERY_STRING,
   ROUTING_FORM_QUEUED_RESPONSE_ID_QUERY_STRING,
-} from "@calcom/app-store/routing-forms/lib/constants";
-import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
+} from "@calcom/routing-forms/lib/constants";
+import { RouteActionType } from "@calcom/routing-forms/zod";
 import { getTeamMemberEmailForResponseOrContactUsingUrlQuery } from "@calcom/features/ee/teams/lib/getTeamMemberEmailFromCrm";
 import { SchedulingType } from "@calcom/prisma/enums";
 
-vi.mock("@calcom/app-store/routing-forms/appBookingFormHandler", () => ({
+vi.mock("@calcom/routing-forms/appBookingFormHandler", () => ({
   default: {
     salesforce: vi.fn(),
   },

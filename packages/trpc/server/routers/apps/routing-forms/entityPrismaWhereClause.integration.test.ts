@@ -13,11 +13,11 @@ vi.mock("./permissions", () => ({
   checkPermissionOnExistingRoutingForm: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock("@calcom/app-store/routing-forms/lib/getSerializableForm", () => ({
+vi.mock("@calcom/routing-forms/lib/getSerializableForm", () => ({
   getSerializableForm: vi.fn().mockImplementation(({ form }) => Promise.resolve(form)),
 }));
 
-vi.mock("@calcom/app-store/routing-forms/lib/getConnectedForms", () => ({
+vi.mock("@calcom/routing-forms/lib/getConnectedForms", () => ({
   default: vi.fn().mockResolvedValue([]),
 }));
 

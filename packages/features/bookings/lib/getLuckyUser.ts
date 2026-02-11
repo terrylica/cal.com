@@ -1,6 +1,6 @@
 import { acrossQueryValueCompatiblity } from "@calcom/app-store/_utils/raqb/raqbUtils.server";
-import type { FormResponse, Fields } from "@calcom/app-store/routing-forms/types/types";
-import { zodRoutes } from "@calcom/app-store/routing-forms/zod";
+import type { FormResponse, Fields } from "@calcom/routing-forms/types/types";
+import { zodRoutes } from "@calcom/routing-forms/zod";
 import dayjs from "@calcom/dayjs";
 import type { PrismaAttributeRepository } from "@calcom/features/attributes/repositories/PrismaAttributeRepository";
 import type { BookingRepository } from "@calcom/features/bookings/repositories/BookingRepository";

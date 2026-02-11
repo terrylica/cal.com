@@ -42,6 +42,7 @@ const getAppId = (app: { name: string }) => (app.name === "stripepayment" ? "str
 type App = Partial<AppMeta> & {
   name: string;
   path: string;
+  rootPath: string;
 };
 function generateFiles() {
   const browserOutput = [`import dynamic from "next/dynamic"`];
@@ -51,36 +52,45 @@ function generateFiles() {
   const appKeysSchemasOutput = [];
   const serverOutput = [];
   const crmOutput = [];
-  const appDirs: { name: string; path: string }[] = [];
+  const appDirs: { name: string; path: string; rootPath: string }[] = [];
 
-  fs.readdirSync(`${APP_STORE_PATH}`).forEach((dir) => {
-    if (dir === "ee" || dir === "templates") {
-      fs.readdirSync(path.join(APP_STORE_PATH, dir)).forEach((subDir) => {
-        if (fs.statSync(path.join(APP_STORE_PATH, dir, subDir)).isDirectory()) {
-          if (getAppName(subDir)) {
-            appDirs.push({
-              name: subDir,
-              path: path.join(dir, subDir),
-            });
-          }
-        }
-      });
-    } else {
-      if (fs.statSync(path.join(APP_STORE_PATH, dir)).isDirectory()) {
+  const appsDir = path.join(APP_STORE_PATH, "apps");
+  if (fs.existsSync(appsDir)) {
+    fs.readdirSync(appsDir).forEach((dir) => {
+      if (fs.statSync(path.join(appsDir, dir)).isDirectory()) {
         if (!getAppName(dir)) {
           return;
         }
+        const rootPath = `apps/${dir}`;
+        const hasSrc = fs.existsSync(path.join(appsDir, dir, "src", "index.ts"));
         appDirs.push({
           name: dir,
-          path: dir,
+          path: hasSrc ? `apps/${dir}/src` : rootPath,
+          rootPath,
         });
       }
-    }
-  });
+    });
+  }
+
+  const templatesDir = path.join(APP_STORE_PATH, "templates");
+  if (fs.existsSync(templatesDir)) {
+    fs.readdirSync(templatesDir).forEach((subDir) => {
+      if (fs.statSync(path.join(templatesDir, subDir)).isDirectory()) {
+        if (getAppName(subDir)) {
+          const templateRootPath = path.join("templates", subDir);
+          appDirs.push({
+            name: subDir,
+            path: templateRootPath,
+            rootPath: templateRootPath,
+          });
+        }
+      }
+    });
+  }
 
   function forEachAppDir(callback: (arg: App) => void, filter: (arg: App) => boolean = () => true) {
     for (let i = 0; i < appDirs.length; i++) {
-      const configPath = path.join(APP_STORE_PATH, appDirs[i].path, "config.json");
+      const configPath = path.join(APP_STORE_PATH, appDirs[i].rootPath, "config.json");
       const metadataPath = path.join(APP_STORE_PATH, appDirs[i].path, "_metadata.ts");
       let app: AppMetaSchema;
 
@@ -104,6 +114,7 @@ function generateFiles() {
         ...app,
         name: appDirs[i].name,
         path: appDirs[i].path,
+        rootPath: appDirs[i].rootPath,
       };
 
       if (filter(finalApp)) {
@@ -118,7 +129,7 @@ function generateFiles() {
    * If a file has index.ts or index.tsx, it can be imported after removing the index.ts* part
    */
   function getModulePath(path: string, moduleName: string) {
-    return `./${path.replace(/\\/g, "/")}/${moduleName
+    return `../${path.replace(/\\/g, "/")}/${moduleName
       .replace(/\/index\.ts|\/index\.tsx/, "")
       .replace(/\.tsx$|\.ts$/, "")}`;
   }
@@ -162,10 +173,22 @@ function generateFiles() {
       chosenConfig: ReturnType<typeof getChosenImportConfig>
     ) => `${getVariableName(app.name)}_${getVariableName(chosenConfig.fileToBeImported)}`;
 
-    const fileToBeImportedExists = (
-      app: { path: string },
+    /**
+     * Finds the file in app.path first, then falls back to app.rootPath.
+     * Returns the resolved path or null if the file doesn't exist in either location.
+     */
+    const findFileImportPath = (
+      app: { path: string; rootPath: string },
       chosenConfig: ReturnType<typeof getChosenImportConfig>
-    ) => fs.existsSync(path.join(APP_STORE_PATH, app.path, chosenConfig.fileToBeImported));
+    ): string | null => {
+      if (fs.existsSync(path.join(APP_STORE_PATH, app.path, chosenConfig.fileToBeImported))) {
+        return app.path;
+      }
+      if (app.rootPath !== app.path && fs.existsSync(path.join(APP_STORE_PATH, app.rootPath, chosenConfig.fileToBeImported))) {
+        return app.rootPath;
+      }
+      return null;
+    };
 
     addImportStatements();
     createExportObject();
@@ -175,14 +198,15 @@ function generateFiles() {
     function addImportStatements() {
       forEachAppDir((app) => {
         const chosenConfig = getChosenImportConfig(importConfig, app);
-        if (fileToBeImportedExists(app, chosenConfig) && chosenConfig.importName) {
+        const resolvedPath = findFileImportPath(app, chosenConfig);
+        if (resolvedPath && chosenConfig.importName) {
           const importName = chosenConfig.importName;
           if (!lazyImport) {
             if (importName !== "default") {
               // Import with local alias that will be used by createExportObject
               output.push(
                 `import { ${importName} as ${getLocalImportName(app, chosenConfig)} } from "${getModulePath(
-                  app.path,
+                  resolvedPath,
                   chosenConfig.fileToBeImported
                 )}"`
               );
@@ -190,7 +214,7 @@ function generateFiles() {
               // Default Import
               output.push(
                 `import ${getLocalImportName(app, chosenConfig)} from "${getModulePath(
-                  app.path,
+                  resolvedPath,
                   chosenConfig.fileToBeImported
                 )}"`
               );
@@ -205,8 +229,9 @@ function generateFiles() {
 
       forEachAppDir((app) => {
         const chosenConfig = getChosenImportConfig(importConfig, app);
+        const resolvedPath = findFileImportPath(app, chosenConfig);
 
-        if (fileToBeImportedExists(app, chosenConfig)) {
+        if (resolvedPath) {
           if (!lazyImport) {
             const key = entryObjectKeyGetter(app);
             output.push(`"${key}": ${getLocalImportName(app, chosenConfig)},`);
@@ -215,12 +240,12 @@ function generateFiles() {
             if (chosenConfig.fileToBeImported.endsWith(".tsx")) {
               output.push(
                 `"${key}": dynamic(() => import("${getModulePath(
-                  app.path,
+                  resolvedPath,
                   chosenConfig.fileToBeImported
                 )}")),`
               );
             } else {
-              output.push(`"${key}": import("${getModulePath(app.path, chosenConfig.fileToBeImported)}"),`);
+              output.push(`"${key}": import("${getModulePath(resolvedPath, chosenConfig.fileToBeImported)}"),`);
             }
           }
         }
@@ -229,13 +254,16 @@ function generateFiles() {
       output.push(`};`);
     }
 
-    function getChosenImportConfig(importConfig: ImportConfig, app: { path: string }) {
+    function getChosenImportConfig(importConfig: ImportConfig, app: { path: string; rootPath: string }) {
       let chosenConfig: ImportConfig;
 
       if (!Array.isArray(importConfig)) {
         chosenConfig = importConfig;
       } else {
-        if (fs.existsSync(path.join(APP_STORE_PATH, app.path, importConfig[0].fileToBeImported))) {
+        if (
+          fs.existsSync(path.join(APP_STORE_PATH, app.path, importConfig[0].fileToBeImported)) ||
+          fs.existsSync(path.join(APP_STORE_PATH, app.rootPath, importConfig[0].fileToBeImported))
+        ) {
           chosenConfig = importConfig[0];
         } else {
           chosenConfig = importConfig[1];
@@ -519,7 +547,7 @@ function generateFiles() {
     ["redirect-apps.generated.ts", redirectAppsOutput],
   ];
   filesToGenerate.forEach(([fileName, output]) => {
-    const filePath = path.join(APP_STORE_PATH, fileName);
+    const filePath = path.join(APP_STORE_PATH, "src", fileName);
     fs.writeFileSync(filePath, formatOutput(`${banner}${output.join("\n")}`));
     formatFileWithBiome(filePath);
   });

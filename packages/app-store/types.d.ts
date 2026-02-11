@@ -1,4 +1,4 @@
-import type { ConnectedApps } from "_utils/getConnectedApps";
+import type { ConnectedApps } from "src/_utils/getConnectedApps";
 import type React from "react";
 import type { z } from "zod";
 

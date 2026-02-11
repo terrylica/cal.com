@@ -26,11 +26,11 @@ vi.mock("@calcom/features/ee/payments/server/stripe", () => ({
   },
 }));
 
-vi.mock("@calcom/app-store/stripepayment/lib/customer", () => ({
+vi.mock("@calcom/stripepayment/lib/customer", () => ({
   getStripeCustomerIdFromUserId: vi.fn().mockResolvedValue("cus_123"),
 }));
 
-vi.mock("@calcom/app-store/stripepayment/lib/utils", () => ({
+vi.mock("@calcom/stripepayment/lib/utils", () => ({
   getPhoneNumberMonthlyPriceId: vi.fn().mockReturnValue("price_123"),
 }));
 
@@ -118,7 +118,7 @@ describe("BillingService", () => {
     });
 
     it("should throw error if price ID not configured", async () => {
-      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/app-store/stripepayment/lib/utils");
+      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/stripepayment/lib/utils");
       vi.mocked(getPhoneNumberMonthlyPriceId).mockReturnValue(null);
 
       await expect(service.generatePhoneNumberCheckoutSession(validCheckoutData)).rejects.toThrow(
@@ -127,10 +127,10 @@ describe("BillingService", () => {
     });
 
     it("should throw error if customer creation fails", async () => {
-      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/app-store/stripepayment/lib/utils");
+      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/stripepayment/lib/utils");
       vi.mocked(getPhoneNumberMonthlyPriceId).mockReturnValue("price_123");
 
-      const { getStripeCustomerIdFromUserId } = await import("@calcom/app-store/stripepayment/lib/customer");
+      const { getStripeCustomerIdFromUserId } = await import("@calcom/stripepayment/lib/customer");
       vi.mocked(getStripeCustomerIdFromUserId).mockResolvedValue(null);
 
       await expect(service.generatePhoneNumberCheckoutSession(validCheckoutData)).rejects.toThrow(

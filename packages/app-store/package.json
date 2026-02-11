@@ -3,12 +3,22 @@
   "private": true,
   "sideEffects": false,
   "version": "0.0.0",
-  "main": "./index.ts",
+  "main": "./src/index.ts",
+  "exports": {
+    "./apps/*": "./apps/*",
+    "./templates/*": "./templates/*",
+    "./types": "./types.d.ts",
+    "./*": "./src/*",
+    ".": "./src/index.ts"
+  },
   "typesVersions": {
     "*": {
+      "apps/*": ["./apps/*"],
+      "templates/*": ["./templates/*"],
+      "types": ["./types.d.ts"],
       "*": [
-        "./types/*",
-        "./*"
+        "./src/types/*",
+        "./src/*"
       ]
     }
   },

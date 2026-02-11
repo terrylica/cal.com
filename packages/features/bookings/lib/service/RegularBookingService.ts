@@ -12,7 +12,7 @@ import {
   enrichHostsWithDelegationCredentials,
   getFirstDelegationConferencingCredentialAppLocation,
 } from "@calcom/app-store/delegationCredential";
-import { metadata as GoogleMeetMetadata } from "@calcom/app-store/googlevideo/_metadata";
+import { metadata as GoogleMeetMetadata } from "@calcom/googlevideo/_metadata";
 import {
   getLocationValueForDB,
   MeetLocationType,

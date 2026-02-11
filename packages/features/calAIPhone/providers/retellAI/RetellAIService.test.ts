@@ -11,11 +11,11 @@ import { RetellAIError } from "./errors";
 import { createMockDatabaseAgent } from "./services/__tests__/test-utils";
 import type { RetellAIRepository } from "./types";
 
-vi.mock("@calcom/app-store/stripepayment/lib/customer", () => ({
+vi.mock("@calcom/stripepayment/lib/customer", () => ({
   getStripeCustomerIdFromUserId: vi.fn(),
 }));
 
-vi.mock("@calcom/app-store/stripepayment/lib/utils", () => ({
+vi.mock("@calcom/stripepayment/lib/utils", () => ({
   getPhoneNumberMonthlyPriceId: vi.fn(),
 }));
 
@@ -643,8 +643,8 @@ describe("RetellAIService", () => {
 
   describe("generatePhoneNumberCheckoutSession", () => {
     it("should generate checkout session successfully", async () => {
-      const { getStripeCustomerIdFromUserId } = await import("@calcom/app-store/stripepayment/lib/customer");
-      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/app-store/stripepayment/lib/utils");
+      const { getStripeCustomerIdFromUserId } = await import("@calcom/stripepayment/lib/customer");
+      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/stripepayment/lib/utils");
       const stripe = (await import("@calcom/features/ee/payments/server/stripe")).default;
 
       (getPhoneNumberMonthlyPriceId as any).mockReturnValue("price_123");
@@ -666,7 +666,7 @@ describe("RetellAIService", () => {
     });
 
     it("should throw error if price ID not configured", async () => {
-      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/app-store/stripepayment/lib/utils");
+      const { getPhoneNumberMonthlyPriceId } = await import("@calcom/stripepayment/lib/utils");
       (getPhoneNumberMonthlyPriceId as any).mockReturnValue(null);
 
       await expect(

@@ -11,26 +11,26 @@ import { Toaster } from "sonner";
 
 import { buildEmptyQueryValue } from "@calcom/app-store/_utils/raqb/raqbUtils.client";
 import { raqbQueryValueUtils } from "@calcom/app-store/_utils/raqb/raqbUtils.server";
-import { routingFormAppComponents } from "@calcom/app-store/routing-forms/appComponents";
-import DynamicAppComponent from "@calcom/app-store/routing-forms/components/DynamicAppComponent";
-import { EmptyState } from "@calcom/app-store/routing-forms/components/_components/EmptyState";
-import { RoutingSkeleton } from "@calcom/app-store/routing-forms/components/_components/RoutingSkeleton";
+import { routingFormAppComponents } from "@calcom/routing-forms/appComponents";
+import DynamicAppComponent from "@calcom/routing-forms/components/DynamicAppComponent";
+import { EmptyState } from "@calcom/routing-forms/components/_components/EmptyState";
+import { RoutingSkeleton } from "@calcom/routing-forms/components/_components/RoutingSkeleton";
 import {
   withRaqbSettingsAndWidgets,
   ConfigFor,
-} from "@calcom/app-store/routing-forms/components/react-awesome-query-builder/config/uiConfig";
-import { RoutingPages } from "@calcom/app-store/routing-forms/lib/RoutingPages";
-import { createFallbackRoute } from "@calcom/app-store/routing-forms/lib/createFallbackRoute";
-import getEventTypeAppMetadata from "@calcom/app-store/routing-forms/lib/getEventTypeAppMetadata";
+} from "@calcom/routing-forms/components/react-awesome-query-builder/config/uiConfig";
+import { RoutingPages } from "@calcom/routing-forms/lib/RoutingPages";
+import { createFallbackRoute } from "@calcom/routing-forms/lib/createFallbackRoute";
+import getEventTypeAppMetadata from "@calcom/routing-forms/lib/getEventTypeAppMetadata";
 import {
   getQueryBuilderConfigForFormFields,
   getQueryBuilderConfigForAttributes,
   type FormFieldsQueryBuilderConfigWithRaqbFields,
   type AttributesQueryBuilderConfigWithRaqbFields,
   isDynamicOperandField,
-} from "@calcom/app-store/routing-forms/lib/getQueryBuilderConfig";
-import isRouter from "@calcom/app-store/routing-forms/lib/isRouter";
-import type { RoutingFormWithResponseCount } from "@calcom/app-store/routing-forms/types/types";
+} from "@calcom/routing-forms/lib/getQueryBuilderConfig";
+import isRouter from "@calcom/routing-forms/lib/isRouter";
+import type { RoutingFormWithResponseCount } from "@calcom/routing-forms/types/types";
 import type {
   GlobalRoute,
   LocalRoute,
@@ -38,8 +38,8 @@ import type {
   Attribute,
   EditFormRoute,
   AttributeRoutingConfig,
-} from "@calcom/app-store/routing-forms/types/types";
-import { RouteActionType } from "@calcom/app-store/routing-forms/zod";
+} from "@calcom/routing-forms/types/types";
+import { RouteActionType } from "@calcom/routing-forms/zod";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import type { EventTypesByViewer } from "@calcom/features/eventtypes/lib/getEventTypesByViewer";
 import { areTheySiblingEntities } from "@calcom/lib/entityPermissionUtils.shared";

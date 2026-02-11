@@ -1,4 +1,4 @@
-import { getRequestedSlugError } from "@calcom/app-store/stripepayment/lib/team-billing";
+import { getRequestedSlugError } from "@calcom/stripepayment/lib/team-billing";
 import { purchaseTeamOrOrgSubscription } from "@calcom/features/ee/teams/lib/payments";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getMetadataHelpers } from "@calcom/lib/getMetadataHelpers";

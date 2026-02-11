@@ -9,7 +9,7 @@ import { handleCreateSelectedCalendars, isSameEmail } from "../route";
 
 // Mock GoogleCalendarService factory function
 const getPrimaryCalendarMock = vi.fn();
-vi.mock("@calcom/app-store/googlecalendar/lib/CalendarService", () => {
+vi.mock("@calcom/googlecalendar/lib/CalendarService", () => {
   return {
     __esModule: true,
     createGoogleCalendarServiceWithGoogleType: vi.fn().mockImplementation(function() { return {

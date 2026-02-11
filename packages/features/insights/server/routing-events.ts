@@ -4,8 +4,8 @@ import startCase from "lodash/startCase";
 import {
   RoutingFormFieldType,
   isValidRoutingFormFieldType,
-} from "@calcom/app-store/routing-forms/lib/FieldTypes";
-import { zodFields as routingFormFieldsSchema } from "@calcom/app-store/routing-forms/zod";
+} from "@calcom/routing-forms/lib/FieldTypes";
+import { zodFields as routingFormFieldsSchema } from "@calcom/routing-forms/zod";
 import dayjs from "@calcom/dayjs";
 import type { InsightsRoutingBaseService } from "@calcom/features/insights/services/InsightsRoutingBaseService";
 import { WEBAPP_URL } from "@calcom/lib/constants";

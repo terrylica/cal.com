@@ -93,7 +93,7 @@ vi.mock("@calcom/features/bookings/lib/client/decoyBookingStore", () => ({
   storeDecoyBooking: vi.fn(),
 }));
 
-vi.mock("@calcom/app-store/stripepayment/lib/client", () => ({
+vi.mock("@calcom/stripepayment/lib/client", () => ({
   createPaymentLink: vi.fn(),
 }));
 

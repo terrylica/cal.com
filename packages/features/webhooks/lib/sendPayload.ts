@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { compile } from "handlebars";
 
-import type { TGetTranscriptAccessLink } from "@calcom/app-store/dailyvideo/zod";
+import type { TGetTranscriptAccessLink } from "@calcom/dailyvideo/zod";
 import { getHumanReadableLocationValue } from "@calcom/app-store/locations";
 import type { WebhookSubscriber, PaymentData } from "@calcom/features/webhooks/lib/dto/types";
 import { DelegationCredentialErrorPayloadType } from "@calcom/features/webhooks/lib/dto/types";

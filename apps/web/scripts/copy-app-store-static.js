@@ -5,7 +5,7 @@ const crypto = require("node:crypto");
 
 const copyAppStoreStatic = () => {
   // Get all static files from app-store packages
-  const staticFiles = glob.sync("../../packages/app-store/**/static/**/*", { nodir: true });
+  const staticFiles = glob.sync("../../packages/app-store/{apps,templates}/**/static/**/*", { nodir: true });
 
   // Object to store icon SVG hashes
   const SVG_HASHES = {};
@@ -17,7 +17,10 @@ const copyAppStoreStatic = () => {
     const appNameMatch = normalizedFile.match(/app-store\/(.*?)\/static/);
     if (!appNameMatch) return;
 
-    const appDirName = appNameMatch[1];
+    let appDirName = appNameMatch[1];
+    if (appDirName.startsWith("apps/")) {
+      appDirName = appDirName.substring(5);
+    }
     const fileName = path.basename(file);
     // Create destination directory if it doesn't exist
     const destDir = path.join(process.cwd(), "public", "app-store", appDirName);

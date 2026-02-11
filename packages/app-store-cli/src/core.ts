@@ -19,7 +19,7 @@ export function getSlugFromAppName(appName: string): string {
 
 export function getAppDirPath(slug: string, isTemplate: boolean) {
   if (!isTemplate) {
-    return path.join(APP_STORE_PATH, `${slug}`);
+    return path.join(APP_STORE_PATH, "apps", `${slug}`);
   }
   return path.join(TEMPLATES_PATH, `${slug}`);
 }

@@ -1,14 +1,14 @@
 // !IMPORTANT! changes to this file requires publishing new version of platform libraries in order for the changes to be applied to APIV2
 import { createHash } from "node:crypto";
 import { stringify } from "node:querystring";
-import { enrichFormWithMigrationData } from "@calcom/app-store/routing-forms/enrichFormWithMigrationData";
-import { getAbsoluteEventTypeRedirectUrlWithEmbedSupport } from "@calcom/app-store/routing-forms/getEventTypeRedirectUrl";
-import { getResponseToStore } from "@calcom/app-store/routing-forms/lib/getResponseToStore";
-import { getSerializableForm } from "@calcom/app-store/routing-forms/lib/getSerializableForm";
-import { getServerTimingHeader } from "@calcom/app-store/routing-forms/lib/getServerTimingHeader";
-import { findMatchingRoute } from "@calcom/app-store/routing-forms/lib/processRoute";
-import { substituteVariables } from "@calcom/app-store/routing-forms/lib/substituteVariables";
-import type { FormResponse } from "@calcom/app-store/routing-forms/types/types";
+import { enrichFormWithMigrationData } from "@calcom/routing-forms/enrichFormWithMigrationData";
+import { getAbsoluteEventTypeRedirectUrlWithEmbedSupport } from "@calcom/routing-forms/getEventTypeRedirectUrl";
+import { getResponseToStore } from "@calcom/routing-forms/lib/getResponseToStore";
+import { getSerializableForm } from "@calcom/routing-forms/lib/getSerializableForm";
+import { getServerTimingHeader } from "@calcom/routing-forms/lib/getServerTimingHeader";
+import { findMatchingRoute } from "@calcom/routing-forms/lib/processRoute";
+import { substituteVariables } from "@calcom/routing-forms/lib/substituteVariables";
+import type { FormResponse } from "@calcom/routing-forms/types/types";
 import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { isAuthorizedToViewFormOnOrgDomain } from "@calcom/features/routing-forms/lib/isAuthorizedToViewForm";
 import { PrismaRoutingFormRepository } from "@calcom/features/routing-forms/repositories/PrismaRoutingFormRepository";

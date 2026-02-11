@@ -4,8 +4,8 @@ import { buildStateFromQueryValue } from "@calcom/app-store/_utils/raqb/raqbUtil
 import {
   ConfigFor,
   withRaqbSettingsAndWidgets,
-} from "@calcom/app-store/routing-forms/components/react-awesome-query-builder/config/uiConfig";
-import { getQueryBuilderConfigForAttributes } from "@calcom/app-store/routing-forms/lib/getQueryBuilderConfig";
+} from "@calcom/routing-forms/components/react-awesome-query-builder/config/uiConfig";
+import { getQueryBuilderConfigForAttributes } from "@calcom/routing-forms/lib/getQueryBuilderConfig";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { isEqual } from "@calcom/lib/isEqual";
 import type { AttributesQueryValue } from "@calcom/lib/raqb/types";

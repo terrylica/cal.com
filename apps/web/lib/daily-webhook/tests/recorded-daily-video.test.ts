@@ -14,7 +14,7 @@ import { createMocks } from "node-mocks-http";
 import { describe, afterEach, test, vi, beforeEach, beforeAll, expect } from "vitest";
 
 import { appStoreMetadata } from "@calcom/app-store/apps.metadata.generated";
-import { getRoomNameFromRecordingId, getBatchProcessorJobAccessLink } from "@calcom/app-store/dailyvideo/lib";
+import { getRoomNameFromRecordingId, getBatchProcessorJobAccessLink } from "@calcom/dailyvideo/lib";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import prisma from "@calcom/prisma";
 import { WebhookTriggerEvents } from "@calcom/prisma/enums";
@@ -63,7 +63,7 @@ beforeAll(() => {
   vi.stubEnv("SENDGRID_EMAIL", "FAKE_SENDGRID_EMAIL");
 });
 
-vi.mock("@calcom/app-store/dailyvideo/lib", () => {
+vi.mock("@calcom/dailyvideo/lib", () => {
   return {
     getRoomNameFromRecordingId: vi.fn(),
     getBatchProcessorJobAccessLink: vi.fn(),

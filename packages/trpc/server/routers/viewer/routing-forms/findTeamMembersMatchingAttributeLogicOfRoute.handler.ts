@@ -7,7 +7,7 @@ import type { ServerResponse } from "node:http";
 import type { NextApiResponse } from "next";
 
 import { enrichHostsWithDelegationCredentials } from "@calcom/app-store/delegationCredential";
-import { enrichFormWithMigrationData } from "@calcom/app-store/routing-forms/enrichFormWithMigrationData";
+import { enrichFormWithMigrationData } from "@calcom/routing-forms/enrichFormWithMigrationData";
 import { getLuckyUserService } from "@calcom/features/di/containers/LuckyUser";
 import { EventTypeRepository } from "@calcom/features/eventtypes/repositories/eventTypeRepository";
 import { entityPrismaWhereClause } from "@calcom/features/pbac/lib/entityPermissionUtils.server";

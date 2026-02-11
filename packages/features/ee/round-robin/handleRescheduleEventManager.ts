@@ -1,4 +1,4 @@
-import { metadata as GoogleMeetMetadata } from "@calcom/app-store/googlevideo/_metadata";
+import { metadata as GoogleMeetMetadata } from "@calcom/googlevideo/_metadata";
 import { MeetLocationType } from "@calcom/app-store/locations";
 import getICalUID from "@calcom/emails/lib/getICalUID";
 import { BookingReferenceRepository } from "@calcom/features/bookingReference/repositories/BookingReferenceRepository";

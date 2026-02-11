@@ -1,9 +1,9 @@
-import routerGetCrmContactOwnerEmail from "@calcom/app-store/routing-forms/lib/crmRouting/routerGetCrmContactOwnerEmail";
+import routerGetCrmContactOwnerEmail from "@calcom/routing-forms/lib/crmRouting/routerGetCrmContactOwnerEmail";
 import {
   onSubmissionOfFormResponse,
   type TargetRoutingFormForResponse,
-} from "@calcom/app-store/routing-forms/lib/formSubmissionUtils";
-import isRouter from "@calcom/app-store/routing-forms/lib/isRouter";
+} from "@calcom/routing-forms/lib/formSubmissionUtils";
+import isRouter from "@calcom/routing-forms/lib/isRouter";
 import type { RoutingFormTraceService } from "@calcom/features/routing-trace/domains/RoutingFormTraceService";
 import type { RoutingTraceService } from "@calcom/features/routing-trace/services/RoutingTraceService";
 import { emailSchema } from "@calcom/lib/emailSchema";

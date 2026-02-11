@@ -2,7 +2,7 @@ import short from "short-uuid";
 import { v5 as uuidv5 } from "uuid";
 
 import { DailyLocationType } from "@calcom/app-store/constants";
-import { getDailyAppKeys } from "@calcom/app-store/dailyvideo/lib/getDailyAppKeys";
+import { getDailyAppKeys } from "@calcom/dailyvideo/lib/getDailyAppKeys";
 import { getVideoAdapters } from "@calcom/app-store/getVideoAdapters";
 import { sendBrokenIntegrationEmail } from "@calcom/emails/integration-email-service";
 import { getUid } from "@calcom/lib/CalEventParser";

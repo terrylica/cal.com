@@ -8,9 +8,9 @@ import { Toaster } from "sonner";
 import { z } from "zod";
 
 import AppNotInstalledMessage from "@calcom/app-store/_components/AppNotInstalledMessage";
-import KeyField from "@calcom/app-store/hitpay/components/KeyInput";
-import { hitpayCredentialKeysSchema } from "@calcom/app-store/hitpay/lib/hitpayCredentialKeysSchema";
-import type { IHitPaySetupProps } from "@calcom/app-store/hitpay/pages/setup/_getServerSideProps";
+import KeyField from "@calcom/hitpay/components/KeyInput";
+import { hitpayCredentialKeysSchema } from "@calcom/hitpay/lib/hitpayCredentialKeysSchema";
+import type { IHitPaySetupProps } from "@calcom/hitpay/pages/setup/_getServerSideProps";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";

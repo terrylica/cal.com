@@ -28,7 +28,7 @@ afterEach(async () => {
   await prismock.reset();
 });
 
-vi.mock("@calcom/app-store/stripepayment/lib/customer", () => {
+vi.mock("@calcom/stripepayment/lib/customer", () => {
   return {
     getStripeCustomerIdFromUserId: function () {
       return "CUSTOMER_ID";

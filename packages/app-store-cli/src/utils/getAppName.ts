@@ -6,6 +6,7 @@ export function getAppName(candidatePath) {
     if (
       !candidatePath.startsWith("_") &&
       candidatePath !== "ee" &&
+      candidatePath !== "apps" &&
       !candidatePath.includes("/") &&
       !candidatePath.includes("\\")
     ) {
@@ -13,10 +14,15 @@ export function getAppName(candidatePath) {
     }
   }
   if (isValidAppName(candidatePath)) {
-    // Already a dirname of an app
     return candidatePath;
   }
-  // Get dirname of app from full path
   const dirName = path.relative(APP_STORE_PATH, candidatePath);
-  return isValidAppName(dirName) ? dirName : null;
+  if (isValidAppName(dirName)) return dirName;
+  // Handle apps/ subdirectory paths from chokidar watch mode
+  const appsPrefix = `apps${path.sep}`;
+  if (dirName.startsWith(appsPrefix) || dirName.startsWith("apps/")) {
+    const appName = dirName.replace(/^apps[/\\]/, "");
+    return isValidAppName(appName) ? appName : null;
+  }
+  return null;
 }

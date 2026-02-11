@@ -3,10 +3,10 @@ import { mockCrmApp } from "@calcom/testing/lib/bookingScenario/bookingScenario"
 import type { TFunction } from "i18next";
 import { describe, expect, test, vi, afterEach } from "vitest";
 
-vi.mock("@calcom/app-store/salesforce/lib/graphql/SalesforceGraphQLClient", () => ({
+vi.mock("@calcom/salesforce/lib/graphql/SalesforceGraphQLClient", () => ({
   SalesforceGraphQLClient: vi.fn(),
 }));
-vi.mock("@calcom/app-store/salesforce/lib/CrmService", () => ({
+vi.mock("@calcom/salesforce/lib/CrmService", () => ({
   default: vi.fn(),
 }));
 vi.mock("@urql/core", () => ({

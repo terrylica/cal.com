@@ -1,7 +1,7 @@
 import process from "node:process";
-import dailyMeta from "@calcom/app-store/dailyvideo/_metadata";
-import googleMeetMeta from "@calcom/app-store/googlevideo/_metadata";
-import zoomMeta from "@calcom/app-store/zoomvideo/_metadata";
+import dailyMeta from "@calcom/app-store/apps/dailyvideo/_metadata";
+import googleMeetMeta from "@calcom/app-store/apps/googlevideo/_metadata";
+import zoomMeta from "@calcom/app-store/apps/zoomvideo/_metadata";
 import dayjs from "@calcom/dayjs";
 import { hashAPIKey } from "@calcom/ee/api-keys/lib/apiKeys";
 import { getOrgFullOrigin } from "@calcom/ee/organizations/lib/orgDomains";

@@ -4,8 +4,8 @@
     "composite": true,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "declarationDir": "types",
-    "rootDir": ".",
+    "declarationDir": "../types",
+    "rootDir": "src",
     "baseUrl": ".",
     "paths": {
       "@components/*": ["../../apps/web/components/*"],
@@ -20,8 +20,8 @@
     "@calcom/types",
     "../types/*.d.ts",
     "../types/next-auth.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "dist",

@@ -313,7 +313,7 @@
   ],
   "tasks": {
     "@calcom/web#copy-app-store-static": {
-      "inputs": ["../../packages/app-store/**/static/**/*"],
+      "inputs": ["../../packages/app-store/apps/**/static/**/*", "../../packages/app-store/templates/**/static/**/*"],
       "outputLogs": "new-only",
       "outputs": ["public/app-store/**"]
     },
@@ -569,12 +569,13 @@
     },
     "@calcom/app-store-cli#build": {
       "inputs": [
-        "../../packages/app-store/**/package.json",
-        "../../packages/app-store/**/config.json",
-        "../../packages/app-store/**/api/**",
-        "../../packages/app-store/**/components/**",
-        "../../packages/app-store/**/lib/**",
-        "../../packages/app-store/**/pages/**",
+        "../../packages/app-store/apps/**/package.json",
+        "../../packages/app-store/apps/**/config.json",
+        "../../packages/app-store/apps/**/api/**",
+        "../../packages/app-store/apps/**/components/**",
+        "../../packages/app-store/apps/**/lib/**",
+        "../../packages/app-store/apps/**/pages/**",
+        "../../packages/app-store/templates/**/config.json",
         "../../packages/app-store-cli/src/**"
       ],
       "outputs": [

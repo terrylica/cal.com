@@ -1,5 +1,5 @@
 import prismock from "@calcom/testing/lib/__mocks__/prisma";
-import type { Attribute } from "@calcom/app-store/routing-forms/types/types";
+import type { Attribute } from "@calcom/routing-forms/types/types";
 import type { AttributeOption } from "@calcom/prisma/client";
 import { AttributeType, MembershipRole } from "@calcom/prisma/enums";
 import { beforeEach, describe, expect, it } from "vitest";

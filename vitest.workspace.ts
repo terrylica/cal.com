@@ -138,9 +138,9 @@ const workspaces = packagedEmbedTestsOnly
           {
             test: {
               name: "@calcom/closecom",
-              include: ["packages/app-store/closecom/**/*.{test,spec}.{ts,js}"],
+              include: ["packages/app-store/apps/closecom/src/**/*.{test,spec}.{ts,js}"],
               environment: "jsdom",
-              setupFiles: ["packages/app-store/closecom/test/globals.ts"],
+              setupFiles: ["packages/app-store/apps/closecom/src/test/globals.ts"],
               pool,
             },
           },
@@ -148,8 +148,8 @@ const workspaces = packagedEmbedTestsOnly
             test: {
               globals: true,
               name: "@calcom/app-store-core",
-              include: ["packages/app-store/*.{test,spec}.[jt]s?(x)"],
-              exclude: ["packages/app-store/delegationCredential.test.ts"],
+              include: ["packages/app-store/src/*.{test,spec}.[jt]s?(x)"],
+              exclude: ["packages/app-store/src/delegationCredential.test.ts"],
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,
@@ -159,7 +159,7 @@ const workspaces = packagedEmbedTestsOnly
             test: {
               globals: true,
               name: "@calcom/app-store-delegation-credential",
-              include: ["packages/app-store/delegationCredential.test.ts"],
+              include: ["packages/app-store/src/delegationCredential.test.ts"],
               environment: "node",
               setupFiles: ["packages/testing/src/setupVitest.ts"],
               pool,
@@ -169,7 +169,7 @@ const workspaces = packagedEmbedTestsOnly
             test: {
               globals: true,
               name: "@calcom/routing-forms",
-              include: ["packages/app-store/routing-forms/**/*.test.tsx"],
+              include: ["packages/app-store/apps/routing-forms/src/**/*.test.tsx"],
               environment: "jsdom",
               setupFiles: ["packages/ui/components/test-setup.tsx"],
               pool,

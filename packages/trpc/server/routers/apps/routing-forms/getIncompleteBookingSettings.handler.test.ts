@@ -7,7 +7,7 @@ vi.mock("@calcom/prisma", () => ({
   prisma,
 }));
 
-vi.mock("@calcom/app-store/routing-forms/lib/enabledIncompleteBookingApps", () => ({
+vi.mock("@calcom/routing-forms/lib/enabledIncompleteBookingApps", () => ({
   enabledIncompleteBookingApps: ["salesforce"],
 }));
 

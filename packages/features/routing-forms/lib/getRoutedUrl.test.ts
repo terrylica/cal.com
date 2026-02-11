@@ -1,11 +1,11 @@
 import "@calcom/lib/__mocks__/logger";
 
 import { createHash } from "node:crypto";
-import { getAbsoluteEventTypeRedirectUrlWithEmbedSupport } from "@calcom/app-store/routing-forms/getEventTypeRedirectUrl";
-import { getResponseToStore } from "@calcom/app-store/routing-forms/lib/getResponseToStore";
-import { getSerializableForm } from "@calcom/app-store/routing-forms/lib/getSerializableForm";
-import { findMatchingRoute } from "@calcom/app-store/routing-forms/lib/processRoute";
-import { substituteVariables } from "@calcom/app-store/routing-forms/lib/substituteVariables";
+import { getAbsoluteEventTypeRedirectUrlWithEmbedSupport } from "@calcom/routing-forms/getEventTypeRedirectUrl";
+import { getResponseToStore } from "@calcom/routing-forms/lib/getResponseToStore";
+import { getSerializableForm } from "@calcom/routing-forms/lib/getSerializableForm";
+import { findMatchingRoute } from "@calcom/routing-forms/lib/processRoute";
+import { substituteVariables } from "@calcom/routing-forms/lib/substituteVariables";
 import { orgDomainConfig } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { isAuthorizedToViewFormOnOrgDomain } from "@calcom/features/routing-forms/lib/isAuthorizedToViewForm";
 import { PrismaRoutingFormRepository } from "@calcom/features/routing-forms/repositories/PrismaRoutingFormRepository";
@@ -34,12 +34,12 @@ vi.mock("@calcom/features/users/repositories/UserRepository", () => {
 });
 vi.mock("@calcom/features/ee/organizations/lib/orgDomains");
 vi.mock("@calcom/features/routing-forms/lib/isAuthorizedToViewForm");
-vi.mock("@calcom/app-store/routing-forms/lib/getSerializableForm");
-vi.mock("@calcom/app-store/routing-forms/lib/getResponseToStore");
-vi.mock("@calcom/app-store/routing-forms/lib/processRoute");
-vi.mock("@calcom/app-store/routing-forms/lib/substituteVariables");
-vi.mock("@calcom/app-store/routing-forms/getEventTypeRedirectUrl");
-vi.mock("@calcom/app-store/routing-forms/enrichFormWithMigrationData", () => ({
+vi.mock("@calcom/routing-forms/lib/getSerializableForm");
+vi.mock("@calcom/routing-forms/lib/getResponseToStore");
+vi.mock("@calcom/routing-forms/lib/processRoute");
+vi.mock("@calcom/routing-forms/lib/substituteVariables");
+vi.mock("@calcom/routing-forms/getEventTypeRedirectUrl");
+vi.mock("@calcom/routing-forms/enrichFormWithMigrationData", () => ({
   enrichFormWithMigrationData: vi.fn((form) => form),
 }));
 vi.mock("@calcom/lib/sentryWrapper", () => ({
