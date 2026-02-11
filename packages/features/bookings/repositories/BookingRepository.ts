@@ -1,10 +1,4 @@
 import { withReporting } from "@calcom/lib/sentryWrapper";
-import type {
-  BookingUpdateData,
-  BookingWhereInput,
-  BookingWhereUniqueInput,
-  IBookingRepository,
-} from "@calcom/lib/server/repository/dto/IBookingRepository";
 import type { PrismaClient } from "@calcom/prisma";
 import type { Booking, Prisma } from "@calcom/prisma/client";
 import { BookingStatus, RRTimestampBasis } from "@calcom/prisma/enums";
