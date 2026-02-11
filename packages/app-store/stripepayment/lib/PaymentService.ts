@@ -296,6 +296,7 @@ class StripePaymentService implements IAbstractPaymentService {
         },
         data: {
           success: true,
+          fee: applicationFeeAmount || 0,
           data: {
             ...paymentObject,
             paymentIntent,
