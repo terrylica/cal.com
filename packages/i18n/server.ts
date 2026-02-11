@@ -1,12 +1,10 @@
 import { createInstance } from "i18next";
-import logger from "../logger";
 
-const { i18n } = require("@calcom/config/i18n/next-i18next.config");
-const log = logger.getSubLogger({ prefix: ["[i18n]"] });
+const { i18n } = require("@calcom/i18n/next-i18next.config");
 
 // Import only English translations directly to avoid HTTP requests
 // Other languages will be loaded dynamically to minimize bundle size
-const englishTranslations: Record<string, string> = require("@calcom/config/i18n/locales/en/common.json");
+const englishTranslations: Record<string, string> = require("@calcom/i18n/locales/en/common.json");
 
 const translationCache = new Map<string, Record<string, string>>();
 const i18nInstanceCache = new Map<string, any>();
@@ -45,18 +43,13 @@ export async function loadTranslations(_locale: string, _ns: string) {
     return englishTranslations;
   }
 
-  try {
-    // Load directly from source using package alias for file system access
-    const { default: localeTranslations } = await import(`@calcom/config/i18n/locales/${locale}/${ns}.json`);
+  // Load directly from source using package alias for file system access
+  // Locale is already validated against i18n.locales, so this import should always succeed
+  const { default: localeTranslations } = await import(`@calcom/i18n/locales/${locale}/${ns}.json`);
 
-    const mergedTranslations = mergeWithEnglishFallback(localeTranslations);
-    translationCache.set(cacheKey, mergedTranslations);
-    return mergedTranslations;
-  } catch (importErr) {
-    log.error(`Failed to load translations for locale ${locale}:`, importErr);
-    log.info(`Falling back to English for locale: ${locale}`);
-    return englishTranslations;
-  }
+  const mergedTranslations = mergeWithEnglishFallback(localeTranslations);
+  translationCache.set(cacheKey, mergedTranslations);
+  return mergedTranslations;
 }
 
 /**

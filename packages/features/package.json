@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@calcom/atoms": "workspace:*",
+    "@calcom/config": "workspace:*",
     "@calcom/dayjs": "workspace:*",
     "@calcom/lib": "workspace:*",
     "@calcom/trpc": "workspace:*",
