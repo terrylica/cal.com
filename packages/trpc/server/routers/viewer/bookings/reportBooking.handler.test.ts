@@ -75,6 +75,7 @@ describe("reportBookingHandler", () => {
             bookingUid: "test-booking-uid",
             reason: BookingReportReason.SPAM,
           },
+          impersonatedByUserUuid: null,
         })
       ).rejects.toThrow(TRPCError);
 
@@ -85,6 +86,7 @@ describe("reportBookingHandler", () => {
             bookingUid: "test-booking-uid",
             reason: BookingReportReason.SPAM,
           },
+          impersonatedByUserUuid: null,
         })
       ).rejects.toMatchObject({
         code: "FORBIDDEN",
@@ -103,6 +105,7 @@ describe("reportBookingHandler", () => {
             bookingUid: "test-booking-uid",
             reason: BookingReportReason.SPAM,
           },
+          impersonatedByUserUuid: null,
         })
       ).rejects.toMatchObject({
         code: "NOT_FOUND",
@@ -126,6 +129,7 @@ describe("reportBookingHandler", () => {
             bookingUid: "test-booking-uid",
             reason: BookingReportReason.SPAM,
           },
+          impersonatedByUserUuid: null,
         })
       ).rejects.toMatchObject({
         code: "BAD_REQUEST",
@@ -155,6 +159,7 @@ describe("reportBookingHandler", () => {
           reason: BookingReportReason.SPAM,
           description: "This is spam",
         },
+        impersonatedByUserUuid: null,
       });
 
       expect(result.success).toBe(true);
@@ -184,6 +189,7 @@ describe("reportBookingHandler", () => {
           bookingUid: "test-booking-uid",
           reason: BookingReportReason.DONT_KNOW_PERSON,
         },
+        impersonatedByUserUuid: null,
       });
 
       expect(result.message).toBe("Booking reported successfully");
@@ -220,6 +226,7 @@ describe("reportBookingHandler", () => {
           reason: BookingReportReason.SPAM,
           description: "Spam booking",
         },
+        impersonatedByUserUuid: null,
       });
 
       expect(result.message).toBe("Booking reported and cancelled successfully");
@@ -247,6 +254,7 @@ describe("reportBookingHandler", () => {
           bookingUid: "test-booking-uid",
           reason: BookingReportReason.SPAM,
         },
+        impersonatedByUserUuid: null,
       });
 
       expect(handleCancelBooking).not.toHaveBeenCalled();
@@ -267,6 +275,7 @@ describe("reportBookingHandler", () => {
           bookingUid: "test-booking-uid",
           reason: BookingReportReason.SPAM,
         },
+        impersonatedByUserUuid: null,
       });
 
       expect(result.success).toBe(true);
@@ -299,6 +308,7 @@ describe("reportBookingHandler", () => {
           bookingUid: "test-booking-uid",
           reason: BookingReportReason.SPAM,
         },
+        impersonatedByUserUuid: null,
       });
 
       expect(handleCancelBooking).toHaveBeenCalledWith({
@@ -333,6 +343,7 @@ describe("reportBookingHandler", () => {
           bookingUid: "test-booking-uid",
           reason: BookingReportReason.SPAM,
         },
+        impersonatedByUserUuid: null,
       });
 
       expect(handleCancelBooking).toHaveBeenCalledWith({

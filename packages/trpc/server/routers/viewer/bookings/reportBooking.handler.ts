@@ -16,11 +16,12 @@ type ReportBookingOptions = {
     user: NonNullable<TrpcSessionUser>;
   };
   input: TReportBookingInputSchema;
+  impersonatedByUserUuid: string | null;
 };
 
 const log = logger.getSubLogger({ prefix: ["reportBookingHandler"] });
 
-export const reportBookingHandler = async ({ ctx, input }: ReportBookingOptions) => {
+export const reportBookingHandler = async ({ ctx, input, impersonatedByUserUuid }: ReportBookingOptions) => {
   const { user } = ctx;
   const { bookingUid, reason, description } = input;
 
@@ -90,7 +91,7 @@ export const reportBookingHandler = async ({ ctx, input }: ReportBookingOptions)
           ...(seatReferenceUid ? { seatReferenceUid } : {}),
         },
         userId: user.id,
-        impersonatedByUserUuid: null,
+        impersonatedByUserUuid,
       });
       didCancel = true;
     } catch (error) {

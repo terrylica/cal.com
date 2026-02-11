@@ -122,6 +122,7 @@ export const bookingsRouter = router({
     return reportBookingHandler({
       ctx,
       input,
+      impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid ?? null,
     });
   }),
   reportWrongAssignment: authedProcedure
