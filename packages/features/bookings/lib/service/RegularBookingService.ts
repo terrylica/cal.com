@@ -1813,7 +1813,6 @@ async function handler(
       },
       deps.featuresRepository
     );
-      impersonatedByUserUuid,
 
     if (newBooking) {
       const bookingResponse = {
