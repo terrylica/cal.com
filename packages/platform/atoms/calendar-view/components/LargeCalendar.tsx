@@ -4,7 +4,7 @@ import dayjs from "@calcom/dayjs";
 import { useBookerStoreContext } from "@calcom/features/bookings/Booker/BookerStoreProvider";
 import { useBookerTime } from "@calcom/features/bookings/Booker/hooks/useBookerTime";
 import type { BookerEvent } from "@calcom/features/bookings/types";
-import { Calendar } from "@calcom/web/modules/calendars/weeklyview/components/Calendar";
+import { Calendar } from "@calcom/features/calendars/weeklyview/components/Calendar";
 import type { CalendarAvailableTimeslots } from "@calcom/features/calendars/weeklyview/types/state";
 import { localStorage } from "@calcom/lib/webstorage";
 import type { BookingStatus } from "@calcom/prisma/enums";

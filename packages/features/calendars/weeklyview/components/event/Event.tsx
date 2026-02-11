@@ -1,11 +1,9 @@
-import { cva } from "class-variance-authority";
-
 import dayjs from "@calcom/dayjs";
+import type { CalendarEvent } from "@calcom/features/calendars/weeklyview/types/events";
 import type { BookingStatus } from "@calcom/prisma/enums";
 import classNames from "@calcom/ui/classNames";
 import { Tooltip } from "@calcom/ui/components/tooltip";
-
-import type { CalendarEvent } from "@calcom/features/calendars/weeklyview/types/events";
+import { cva } from "class-variance-authority";
 
 type EventProps = {
   event: CalendarEvent;

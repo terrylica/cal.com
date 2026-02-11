@@ -5,7 +5,7 @@ import { useSchedule } from "~/schedules/hooks/useSchedule";
 import { useTroubleshooterStore } from "@calcom/features/troubleshooter/store";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
-import { Calendar } from "@calcom/web/modules/calendars/weeklyview/components/Calendar";
+import { Calendar } from "@calcom/features/calendars/weeklyview/components/Calendar";
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 

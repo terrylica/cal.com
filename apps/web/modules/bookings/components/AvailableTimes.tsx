@@ -8,7 +8,7 @@ import { useIsPlatform } from "@calcom/atoms/hooks/useIsPlatform";
 import dayjs from "@calcom/dayjs";
 import type { IOutOfOfficeData } from "@calcom/features/availability/lib/getUserAvailability";
 import { useBookerStoreContext } from "@calcom/features/bookings/Booker/BookerStoreProvider";
-import { OutOfOfficeInSlots } from "./OutOfOfficeInSlots";
+import { OutOfOfficeInSlots } from "@calcom/features/bookings/components/OutOfOfficeInSlots";
 import type { IUseBookingLoadingStates } from "../hooks/useBookings";
 import type { BookerEvent } from "@calcom/features/bookings/types";
 import type { Slot } from "~/schedules/lib/types";
