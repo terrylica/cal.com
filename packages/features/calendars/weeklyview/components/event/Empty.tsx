@@ -1,15 +1,18 @@
-import type { ReactNode } from "react";
-import { useMemo } from "react";
-import { shallow } from "zustand/shallow";
-
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
 import { useTimePreferences } from "@calcom/features/bookings/lib";
+import { DefaultOutOfOfficeSlot } from "@calcom/features/calendars/weeklyview/components/DefaultOutOfOfficeSlot";
 import { useCalendarStore } from "@calcom/features/calendars/weeklyview/state/store";
-import type { CalendarAvailableTimeslots, OutOfOfficeRenderProps } from "@calcom/features/calendars/weeklyview/types/state";
+import type {
+  CalendarAvailableTimeslots,
+  OutOfOfficeRenderProps,
+} from "@calcom/features/calendars/weeklyview/types/state";
 import type { GridCellToDateProps } from "@calcom/features/calendars/weeklyview/utils";
 import { gridCellToDateTime } from "@calcom/features/calendars/weeklyview/utils";
 import classNames from "@calcom/ui/classNames";
+import type { ReactNode } from "react";
+import { useMemo } from "react";
+import { shallow } from "zustand/shallow";
 
 type EmptyCellProps = GridCellToDateProps & {
   isDisabled?: boolean;
@@ -39,7 +42,13 @@ type AvailableCellProps = {
   renderOutOfOffice?: (props: OutOfOfficeRenderProps) => ReactNode;
 };
 
-export function AvailableCellsForDay({ timezone, availableSlots, day, startHour, renderOutOfOffice }: AvailableCellProps) {
+export function AvailableCellsForDay({
+  timezone,
+  availableSlots,
+  day,
+  startHour,
+  renderOutOfOffice,
+}: AvailableCellProps) {
   const date = dayjs(day);
   const dateFormatted = date.format("YYYY-MM-DD");
   const slotsForToday = availableSlots && availableSlots[dateFormatted];
@@ -96,14 +105,15 @@ export function AvailableCellsForDay({ timezone, availableSlots, day, startHour,
 
   if (slots === null) return null;
 
-  if (slots.startEndTimeDuration && renderOutOfOffice) {
+  if (slots.startEndTimeDuration) {
     const { firstSlot, startEndTimeDuration } = slots;
+    const renderOOO = renderOutOfOffice ?? ((p: OutOfOfficeRenderProps) => <DefaultOutOfOfficeSlot {...p} />);
     return (
       <CustomCell
         timeSlot={dayjs(firstSlot?.start).tz(slots.timezone)}
         topOffsetMinutes={slots.slots[0]?.topOffsetMinutes}
         startEndTimeDuration={startEndTimeDuration}>
-        {renderOutOfOffice({
+        {renderOOO({
           fromUser: firstSlot?.fromUser,
           toUser: firstSlot?.toUser,
           reason: firstSlot?.reason,
