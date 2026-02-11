@@ -1,6 +1,6 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { CTA_CONTAINER_CLASS_NAME } from "@calcom/features/data-table/lib/utils";
-import { PrismaOrgMembershipRepository } from "@calcom/features/membership/repositories/PrismaOrgMembershipRepository";
+import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
 import { FullscreenUpgradeBannerForInsightsPage } from "@calcom/web/modules/billing/upgrade-banners/FullscreenUpgradeBannerForInsightsPage";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { getTranslate } from "app/_utils";
@@ -12,11 +12,11 @@ export default async function InsightsLayout({ children }: { children: React.Rea
   const t = await getTranslate();
   const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
   const userId = session?.user?.id;
-  const hasOrgMembership = userId
-    ? await PrismaOrgMembershipRepository.hasAnyAcceptedMembershipByUserId({ userId })
+  const hasMembership = userId
+    ? await MembershipRepository.hasAnyAcceptedMembershipByUserId({ userId })
     : false;
 
-  if (!hasOrgMembership) {
+  if (!hasMembership) {
     return (
       <Shell withoutMain={true}>
         <ShellMainAppDir>
