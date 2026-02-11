@@ -193,7 +193,6 @@ export default function WebhookListItem(props: {
                       <Switch
                         checked={active}
                         data-testid="webhook-switch"
-                        disabled={!props.permissions.canEditWebhook}
                         onCheckedChange={(checked, eventDetails) => {
                           if (toggleWebhook.isPending) {
                             eventDetails.cancel();
@@ -257,7 +256,6 @@ export default function WebhookListItem(props: {
               {canEditorDelete ? (
                 <MenuCheckboxItem
                   checked={active}
-                  disabled={toggleWebhook.isPending}
                   onCheckedChange={(checked, eventDetails) => {
                     if (toggleWebhook.isPending) {
                       eventDetails.cancel();
