@@ -33,16 +33,6 @@ vi.mock("@calcom/features/bookings/di/BookingEventHandlerService.container", () 
   }),
 }));
 
-const { mockOnNoShowUpdated } = vi.hoisted(() => ({
-  mockOnNoShowUpdated: vi.fn(),
-}));
-
-vi.mock("@calcom/features/bookings/di/BookingEventHandlerService.container", () => ({
-  getBookingEventHandlerService: vi.fn().mockReturnValue({
-    onNoShowUpdated: mockOnNoShowUpdated,
-  }),
-}));
-
 vi.mock("@calcom/features/di/containers/FeaturesRepository", () => ({
   getFeaturesRepository: vi.fn().mockReturnValue({
     checkIfTeamHasFeature: vi.fn().mockResolvedValue(false),
@@ -55,30 +45,6 @@ const EMPTY_MEETING_SESSIONS = {
   total_count: 0,
   data: [],
 };
-
-type ExpectNoShowAuditParams = {
-  bookingUid: string;
-  source: string;
-  actor: {
-    identifiedBy: string;
-    id: string;
-  };
-  organizationId: number | null;
-  auditData: {
-    attendeesNoShow: Array<{
-      attendeeEmail: string;
-      noShow: {
-        new: boolean;
-        old: boolean | null;
-      };
-    }>;
-  };
-};
-
-function expectNoShowAuditToBeDone(expected: ExpectNoShowAuditParams): void {
-  expect(mockOnNoShowUpdated).toHaveBeenCalledTimes(1);
-  expect(mockOnNoShowUpdated).toHaveBeenCalledWith(expected);
-}
 
 type ExpectNoShowAuditParams = {
   bookingUid: string;
