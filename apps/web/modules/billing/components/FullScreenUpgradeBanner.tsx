@@ -190,7 +190,7 @@ export function FullScreenUpgradeBanner({
                 title={title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                className="h-full w-full rounded-lg"
+                className="h-full w-full rounded-lg border border-muted"
               />
             </div>
             <DialogFooter>
