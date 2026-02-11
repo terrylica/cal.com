@@ -171,6 +171,7 @@ const handleSetupSuccess = async (
       traceContext: updatedTraceContext,
       actionSource: "WEBHOOK",
       actor,
+      impersonatedByUserUuid: null,
     });
   } else if (areEmailsEnabled) {
     await sendOrganizerRequestEmail({ ...evt }, eventType.metadata);

@@ -230,6 +230,7 @@ describe("reportBookingHandler", () => {
           skipCancellationReasonValidation: true,
         },
         userId: mockUser.id,
+        impersonatedByUserUuid: null,
       });
     });
 
@@ -305,6 +306,7 @@ describe("reportBookingHandler", () => {
           cancelSubsequentBookings: true,
         }),
         userId: mockUser.id,
+        impersonatedByUserUuid: null,
       });
     });
 
@@ -338,6 +340,7 @@ describe("reportBookingHandler", () => {
           seatReferenceUid: "seat-123",
         }),
         userId: mockUser.id,
+        impersonatedByUserUuid: null,
       });
     });
   });

@@ -1042,6 +1042,7 @@ export class BookingsService_2024_08_13 {
       platformClientParams,
       actor: makeUserActor(userUuid),
       actionSource: "API_V2",
+      impersonatedByUserUuid: null,
     });
 
     const booking = await this.bookingsRepository.getByUidWithAttendeesAndUserAndEvent(bookingUid);
