@@ -12,7 +12,6 @@ import { Button } from "@coss/ui/components/button";
 import {
   Menu,
   MenuCheckboxItem,
-  MenuGroup,
   MenuItem,
   MenuPopup,
   MenuSeparator,
