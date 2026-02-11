@@ -1,6 +1,6 @@
 import { prisma } from "@calcom/prisma";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { UserFromSession } from "@calcom/features/auth/lib/sessionUser";
+import type { UserFromSession } from "@calcom/features/auth/lib/userFromSessionUtils";
 import { OrganizationPermissionService } from "./OrganizationPermissionService";
 
 vi.mock("@calcom/prisma", () => ({

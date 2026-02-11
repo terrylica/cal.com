@@ -1,4 +1,4 @@
-import { getUserSession } from "@calcom/features/auth/lib/sessionUser";
+import { getUserSession } from "@calcom/features/auth/lib/userFromSessionUtils";
 import logger from "@calcom/lib/logger";
 import { setUser as SentrySetUser } from "@sentry/nextjs";
 import { TRPCError } from "@trpc/server";

@@ -1,4 +1,4 @@
-import { getSession } from "@calcom/features/auth/lib/sessionUser";
+import { getSession } from "@calcom/features/auth/lib/userFromSessionUtils";
 import publicProcedure from "../../../procedures/publicProcedure";
 import { ZEventInputSchema } from "../event.schema";
 
