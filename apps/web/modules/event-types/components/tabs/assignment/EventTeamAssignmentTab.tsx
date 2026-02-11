@@ -194,7 +194,7 @@ const FixedHosts = ({
   isSearchingAssigned?: boolean;
 }) => {
   const { t } = useLocale();
-  const { setHosts } = useHosts();
+  const { clearAllHosts: clearAllHostsDelta } = useHosts();
 
   const hasActiveFixedHosts =
     isRoundRobinEvent &&
@@ -212,14 +212,16 @@ const FixedHosts = ({
   const handleFixedHostsToggle = useCallback(
     (checked: boolean) => {
       if (!checked) {
+        // Use clearAllHosts so the backend removes fixed hosts from ALL pages,
+        // not just the currently loaded ones
         const rrHosts = value
           .filter((host) => !host.isFixed)
           .sort((a, b) => (b.priority ?? 2) - (a.priority ?? 2));
-        setHosts(serverHosts, rrHosts);
+        clearAllHostsDelta(rrHosts);
       }
       setIsDisabled(checked);
     },
-    [value, setHosts, serverHosts]
+    [value, clearAllHostsDelta]
   );
 
   return (
@@ -746,10 +748,13 @@ const ChildrenEventTypes = ({
   );
 
   // Convert search members to dropdown options, excluding already-assigned children
-  const assignedOwnerIds = useMemo(
-    () => new Set(paginatedChildren.map((c) => c.owner.id)),
-    [paginatedChildren]
-  );
+  const assignedOwnerIds = useMemo(() => {
+    const ids = new Set(paginatedChildren.map((c) => c.owner.id));
+    for (const child of pendingChanges.childrenToAdd) {
+      ids.add(child.owner.id);
+    }
+    return ids;
+  }, [paginatedChildren, pendingChanges.childrenToAdd]);
 
   const childrenOptions = useMemo(
     (): ChildrenEventType[] =>

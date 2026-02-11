@@ -122,7 +122,7 @@ function MatchingTeamMembers({
     )
     : false;
 
-  const { data, isPending, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isPending, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage, isError } =
     trpc.viewer.attributes.findTeamMembersMatchingAttributeLogic.useInfiniteQuery(
       {
         teamId,
@@ -152,6 +152,16 @@ function MatchingTeamMembers({
       <div className="border-subtle bg-cal-muted mt-4 stack-y-3 rounded-md border p-4">
         <div className="text-subtle flex items-center text-sm font-medium">
           <span>{t("no_filter_set")}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="border-subtle bg-cal-muted mt-4 stack-y-3 rounded-md border p-4">
+        <div className="text-error flex items-center text-sm font-medium">
+          <span>{t("something_went_wrong")}</span>
         </div>
       </div>
     );

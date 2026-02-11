@@ -489,10 +489,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
 
       // When clearAllHosts is true, compute delta: keep hosts in hostsToAdd, remove all others
       if (clearAllHosts) {
-        const existingHostUserIds = await ctx.prisma.host.findMany({
-          where: { eventTypeId: id },
-          select: { userId: true },
-        });
+        const existingHostUserIds = eventType.hosts.map((h) => ({ userId: h.userId }));
         const existingUserIdSet = new Set(existingHostUserIds.map((h) => h.userId));
         const newUserIdSet = new Set(hostsToAdd.map((h) => h.userId));
 

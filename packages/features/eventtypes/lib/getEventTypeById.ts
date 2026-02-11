@@ -251,15 +251,14 @@ export const getEventTypeByIdWithTeamMembers = async (props: getEventTypeByIdPro
     ? await membershipRepo.findMembershipsWithUserByTeamId({ teamId: result.team.id })
     : [];
 
-  const enrichedMembers = [];
-  for (const membership of memberships) {
-    enrichedMembers.push({
+  const enrichedMembers = await Promise.all(
+    memberships.map(async (membership) => ({
       ...membership,
       user: await userRepo.enrichUserWithItsProfile({
         user: membership.user,
       }),
-    });
-  }
+    }))
+  );
 
   const teamMembers = enrichedMembers
     .filter((member) => member.accepted || isOrgEventType)

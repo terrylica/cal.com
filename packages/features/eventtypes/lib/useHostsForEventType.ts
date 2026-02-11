@@ -79,7 +79,11 @@ export function useHostsForEventType() {
         return;
       }
 
-      // Otherwise add to hostsToAdd
+      // Guard against duplicate adds (e.g. double-click, re-render)
+      if (current.hostsToAdd.some((h) => h.userId === host.userId)) {
+        return;
+      }
+
       setPendingChanges(
         {
           ...current,
@@ -192,53 +196,50 @@ export function useHostsForEventType() {
   // Compares newHosts against serverHosts (from paginated query) instead of initialHosts
   const setHosts = useCallback(
     (serverHosts: Host[], newHosts: Host[]) => {
-      const serverUserIds = new Set(serverHosts.map((h) => h.userId));
+      const serverHostMap = new Map(serverHosts.map((h) => [h.userId, h]));
       const newUserIds = new Set(newHosts.map((h) => h.userId));
 
       // Hosts to remove: in server but not in new
       const hostsToRemove = serverHosts.filter((h) => !newUserIds.has(h.userId)).map((h) => h.userId);
 
       // Hosts to add: in new but not in server
-      const hostsToAdd = newHosts.filter((h) => !serverUserIds.has(h.userId));
+      const hostsToAdd = newHosts.filter((h) => !serverHostMap.has(h.userId));
 
       // Hosts to update: in both, check for changes
       const hostsToUpdate: HostUpdate[] = [];
       for (const newHost of newHosts) {
-        if (serverUserIds.has(newHost.userId)) {
-          const serverHost = serverHosts.find((h) => h.userId === newHost.userId);
-          if (serverHost) {
-            // Check if anything changed
-            const changes: HostUpdate = { userId: newHost.userId };
-            let hasChanges = false;
+        const serverHost = serverHostMap.get(newHost.userId);
+        if (serverHost) {
+          const changes: HostUpdate = { userId: newHost.userId };
+          let hasChanges = false;
 
-            if (newHost.isFixed !== serverHost.isFixed) {
-              changes.isFixed = newHost.isFixed;
-              hasChanges = true;
-            }
-            if (newHost.priority !== serverHost.priority) {
-              changes.priority = newHost.priority;
-              hasChanges = true;
-            }
-            if (newHost.weight !== serverHost.weight) {
-              changes.weight = newHost.weight;
-              hasChanges = true;
-            }
-            if (newHost.scheduleId !== serverHost.scheduleId) {
-              changes.scheduleId = newHost.scheduleId;
-              hasChanges = true;
-            }
-            if (newHost.groupId !== serverHost.groupId) {
-              changes.groupId = newHost.groupId;
-              hasChanges = true;
-            }
-            if (!areLocationsEqual(newHost.location, serverHost.location)) {
-              changes.location = newHost.location;
-              hasChanges = true;
-            }
+          if (newHost.isFixed !== serverHost.isFixed) {
+            changes.isFixed = newHost.isFixed;
+            hasChanges = true;
+          }
+          if (newHost.priority !== serverHost.priority) {
+            changes.priority = newHost.priority;
+            hasChanges = true;
+          }
+          if (newHost.weight !== serverHost.weight) {
+            changes.weight = newHost.weight;
+            hasChanges = true;
+          }
+          if (newHost.scheduleId !== serverHost.scheduleId) {
+            changes.scheduleId = newHost.scheduleId;
+            hasChanges = true;
+          }
+          if (newHost.groupId !== serverHost.groupId) {
+            changes.groupId = newHost.groupId;
+            hasChanges = true;
+          }
+          if (!areLocationsEqual(newHost.location, serverHost.location)) {
+            changes.location = newHost.location;
+            hasChanges = true;
+          }
 
-            if (hasChanges) {
-              hostsToUpdate.push(changes);
-            }
+          if (hasChanges) {
+            hostsToUpdate.push(changes);
           }
         }
       }

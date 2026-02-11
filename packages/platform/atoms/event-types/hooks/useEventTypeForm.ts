@@ -386,7 +386,8 @@ export const useEventTypeForm = ({
       pendingHostChanges &&
       (pendingHostChanges.hostsToAdd.length > 0 ||
         pendingHostChanges.hostsToUpdate.length > 0 ||
-        pendingHostChanges.hostsToRemove.length > 0);
+        pendingHostChanges.hostsToRemove.length > 0 ||
+        pendingHostChanges.clearAllHosts);
 
     // Send delta directly to backend for children changes
     const pendingChildrenChanges = values.pendingChildrenChanges;

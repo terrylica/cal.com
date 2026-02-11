@@ -86,6 +86,7 @@ const CheckedHostField = ({
   isFetchingNextPageSelected?: boolean;
   fetchNextPageSelected?: () => void;
 } & Omit<Partial<ComponentProps<typeof CheckedTeamSelect>>, "onChange" | "value">) => {
+  const { t } = useLocale();
   return (
     <div className="flex flex-col rounded-md">
       <div>
@@ -123,7 +124,7 @@ const CheckedHostField = ({
                   }
                 : {
                     value: host.userId.toString(),
-                    label: hostAny.name || hostAny.email || `User ${host.userId}`,
+                    label: hostAny.name || hostAny.email || t("team_member"),
                     avatar: hostAny.avatarUrl || "",
                     priority: host.priority ?? 2,
                     isFixed,
