@@ -1327,13 +1327,13 @@ async function handler(
     const metadataParseResult = userMetadataSchema.safeParse(organizerUser.metadata);
     const organizerMetadata = metadataParseResult.success ? metadataParseResult.data : undefined;
     const defaultApp = organizerMetadata?.defaultConferencingApp;
-  
+
     if (defaultApp?.appSlug) {
       const app = getAppFromSlug(defaultApp.appSlug);
       locationBodyString = app?.appData?.location?.type || locationBodyString;
-  
+
       const mainHostCalendar = eventType.destinationCalendar || organizerUser.destinationCalendar;
-  
+
       if (locationBodyString === MeetLocationType && mainHostCalendar?.integration !== "google_calendar") {
         locationBodyString = "integrations:daily";
         organizerOrFirstDynamicGroupMemberDefaultLocationUrl = undefined;
@@ -1344,7 +1344,6 @@ async function handler(
       locationBodyString = organizationDefaultLocation || "integrations:daily";
     }
   }
-  
 
   const invitee: Invitee = [
     {
@@ -1482,11 +1481,11 @@ async function handler(
       optionValue: "",
     };
 
-  // Compute recurringEvent with adjusted count if needed
+  // Only attach recurring config when this booking belongs to a recurring series.
   const computedRecurringEvent =
     reqBody.recurringEventId && eventType.recurringEvent
       ? { ...eventType.recurringEvent, count: recurringCount ?? eventType.recurringEvent.count }
-      : eventType.recurringEvent;
+      : undefined;
 
   const { teamMembers, teamDestinationCalendars } = await computeTeamData({
     isTeamEventType,
