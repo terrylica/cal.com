@@ -37,7 +37,7 @@ export type TUpdateInputSchema = z.infer<typeof ZUpdateInputSchema>;
 
 interface IUpdateScheduleOptions {
   input: TUpdateInputSchema;
-  user: Pick<NonNullable<SessionUser>, "id" | "defaultScheduleId" | "timeZone">;
+  user: Pick<NonNullable<UserFromSession>, "id" | "defaultScheduleId" | "timeZone">;
 }
 
 export type UpdateScheduleResponse = Awaited<ReturnType<ScheduleService["update"]>>;
