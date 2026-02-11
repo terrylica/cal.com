@@ -48,7 +48,7 @@ vi.mock(
 );
 
 vi.mock(
-  "@calcom/trpc/server/routers/viewer/teams/inviteMember/inviteMember.handler",
+  "@calcom/features/ee/teams/lib/inviteMembers",
   () => ({
     inviteMembersWithNoInviterPermissionCheck: vi.fn().mockResolvedValue({}),
   })

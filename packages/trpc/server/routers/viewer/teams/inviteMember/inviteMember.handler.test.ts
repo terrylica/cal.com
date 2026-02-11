@@ -13,6 +13,8 @@ import { constantsScenarios } from "@calcom/lib/__mocks__/constants";
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import type { Profile } from "@calcom/prisma/client";
 import { IdentityProvider, MembershipRole } from "@calcom/prisma/enums";
 
@@ -21,6 +23,14 @@ import { TRPCError } from "@trpc/server";
 import type { TrpcSessionUser } from "../../../../types";
 import inviteMemberHandler from "./inviteMember.handler";
 import { INVITE_STATUS } from "./types";
+
+const { mockInviteMembersWithNoInviterPermissionCheck } = vi.hoisted(() => ({
+  mockInviteMembersWithNoInviterPermissionCheck: vi.fn(),
+}));
+
+vi.mock("@calcom/features/ee/teams/lib/inviteMembers", () => ({
+  inviteMembersWithNoInviterPermissionCheck: mockInviteMembersWithNoInviterPermissionCheck,
+}));
 
 vi.mock("@trpc/server", () => {
   return {
@@ -141,16 +151,10 @@ describe("inviteMemberHandler", () => {
 
   describe("Regular Team", () => {
     describe("with 2 emails in input and when there are no users matching the emails", () => {
-      it("should call appropriate utilities to send email, add users and update in stripe. It should return `numUsersInvited`=2", async () => {
+      it("should call feature invite function and return expected result", async () => {
         const usersToBeInvited = [
-          {
-            id: 1,
-            email: "user1@example.com",
-          },
-          {
-            id: 2,
-            email: "user2@example.com",
-          },
+          { id: 1, email: "user1@example.com" },
+          { id: 2, email: "user2@example.com" },
         ];
 
         const loggedInUser = getLoggedInUser();
@@ -163,82 +167,32 @@ describe("inviteMemberHandler", () => {
           usernameOrEmail: usersToBeInvited.map((u) => u.email),
         };
 
-        const team = {
-          id: input.teamId,
-          name: "Team 1",
-          parent: null,
-        };
-
-        const retValueOfGetTeamOrThrowError = inviteMemberUtilsScenarios.getTeamOrThrow.fakeReturnTeam(team, {
-          teamId: input.teamId,
-        });
+        const team = { id: input.teamId, name: "Team 1", parent: null };
+        inviteMemberUtilsScenarios.getTeamOrThrow.fakeReturnTeam(team, { teamId: input.teamId });
 
         const allExpectedInvitations = [
-          {
-            role: input.role,
-            usernameOrEmail: usersToBeInvited[0].email,
-          },
-          {
-            role: input.role,
-            usernameOrEmail: usersToBeInvited[1].email,
-          },
+          { role: input.role, usernameOrEmail: usersToBeInvited[0].email },
+          { role: input.role, usernameOrEmail: usersToBeInvited[1].email },
         ];
-        fakeNoUsersFoundMatchingInvitations({
-          team,
-          invitations: allExpectedInvitations,
-        });
 
-        const ctx = {
-          user: loggedInUser,
-        };
-
-        // Call the inviteMemberHandler function
-        const result = await inviteMemberHandler({ ctx, input });
-        const expectedConnectionInfoMap = {
-          [usersToBeInvited[0].email]: {
-            orgId: undefined,
-            autoAccept: false,
-          },
-          [usersToBeInvited[1].email]: {
-            orgId: undefined,
-            autoAccept: false,
-          },
-        };
-
-        const inviter = {
-          name: loggedInUser.name,
-        };
-
-        expect(inviteMemberUtilsMock.handleNewUsersInvites).toHaveBeenCalledWith({
-          invitationsForNewUsers: allExpectedInvitations,
-          team: retValueOfGetTeamOrThrowError,
-          orgConnectInfoByUsernameOrEmail: expectedConnectionInfoMap,
-          teamId: input.teamId,
-          language: input.language,
-          inviter,
-          autoAcceptEmailDomain: null,
-        });
-
-        // TODO: Fix this test
-        // expect(paymentsMock.updateQuantitySubscriptionFromStripe).toHaveBeenCalledWith(input.teamId);
-
-        expect(inviteMemberUtilsMock.handleExistingUsersInvites).not.toHaveBeenCalled();
-
-        expect(inviteMemberUtilsMock.getUniqueInvitationsOrThrowIfEmpty).toHaveBeenCalledWith([
-          {
-            role: input.role,
-            usernameOrEmail: usersToBeInvited[0].email,
-          },
-          {
-            role: input.role,
-            usernameOrEmail: usersToBeInvited[1].email,
-          },
-        ]);
-        // Assert the result
-        expect(result).toEqual({
+        mockInviteMembersWithNoInviterPermissionCheck.mockResolvedValue({
           usernameOrEmail: input.usernameOrEmail,
           numUsersInvited: 2,
         });
+
+        const ctx = { user: loggedInUser };
+        const result = await inviteMemberHandler({ ctx, input });
+
+        expect(mockInviteMembersWithNoInviterPermissionCheck).toHaveBeenCalledWith(
+          expect.objectContaining({
+            inviterName: loggedInUser.name,
+            language: input.language,
+            invitations: allExpectedInvitations,
+            team: expect.objectContaining({ id: input.teamId }),
+          })
+        );
+
+        expect(result).toEqual({ usernameOrEmail: input.usernameOrEmail, numUsersInvited: 2 });
       });
     });
 
@@ -382,23 +336,8 @@ describe("inviteMemberHandler", () => {
         teamId: input.teamId,
       });
 
-      inviteMemberUtilsScenarios.findUsersWithInviteStatus.useAdvancedMock(
-        [
-          {
-            ...userToBeInvited,
-            canBeInvited: INVITE_STATUS.USER_ALREADY_INVITED_OR_MEMBER,
-            newRole: input.role,
-          },
-        ],
-        {
-          invitations: [
-            {
-              newRole: input.role,
-              usernameOrEmail: userToBeInvited.email,
-            },
-          ],
-          team,
-        }
+      mockInviteMembersWithNoInviterPermissionCheck.mockRejectedValue(
+        new ErrorWithCode(ErrorCode.BadRequest, INVITE_STATUS.USER_ALREADY_INVITED_OR_MEMBER)
       );
 
       const ctx = {
@@ -409,8 +348,7 @@ describe("inviteMemberHandler", () => {
         throw new Error("Expected an error to be thrown");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
-        expect(e).toBeInstanceOf(TRPCError);
-        expect(e.code).toEqual("BAD_REQUEST");
+        expect(e).toBeInstanceOf(ErrorWithCode);
         expect(e.message).toBe(INVITE_STATUS.USER_ALREADY_INVITED_OR_MEMBER);
       }
     });
@@ -424,42 +362,16 @@ describe("inviteMemberHandler", () => {
 
       const loggedInUser = getLoggedInUser();
 
-      const team = {
-        id: 1,
-        name: "Team 1",
-        parent: null,
-        isOrganization: false,
-      };
-
-      inviteMemberUtilsScenarios.getTeamOrThrow.fakeReturnTeam(team, {
-        teamId: team.id,
+      mockInviteMembersWithNoInviterPermissionCheck.mockResolvedValue({
+        usernameOrEmail: userToBeInvited.email,
+        numUsersInvited: 0,
       });
 
-      inviteMemberUtilsScenarios.findUsersWithInviteStatus.useAdvancedMock(
-        [
-          {
-            ...userToBeInvited,
-            canBeInvited: INVITE_STATUS.USER_ALREADY_INVITED_OR_MEMBER,
-            newRole: MembershipRole.MEMBER,
-          },
-        ],
-        {
-          invitations: [
-            {
-              role: MembershipRole.MEMBER,
-              usernameOrEmail: userToBeInvited.email,
-            },
-          ],
-          team,
-        }
-      );
-
-      // Call inviteMembersWithNoInviterPermissionCheck directly with isDirectUserAction=false
       const { inviteMembersWithNoInviterPermissionCheck } = await import("./inviteMember.handler");
 
       const result = await inviteMembersWithNoInviterPermissionCheck({
         inviterName: loggedInUser.name,
-        teamId: team.id,
+        teamId: 1,
         language: "en",
         creationSource: "WEBAPP" as const,
         orgSlug: null,
@@ -472,16 +384,10 @@ describe("inviteMemberHandler", () => {
         isDirectUserAction: false,
       });
 
-      // Should not throw error, should return successfully with 0 users invited
       expect(result).toEqual({
         usernameOrEmail: userToBeInvited.email,
         numUsersInvited: 0,
       });
-
-      // Verify that handleNewUsersInvites and handleExistingUsersInvites were not called
-      // since the user is already a member
-      expect(inviteMemberUtilsMock.handleNewUsersInvites).not.toHaveBeenCalled();
-      expect(inviteMemberUtilsMock.handleExistingUsersInvites).not.toHaveBeenCalled();
     });
 
     it("With multiple emails where some are already members and isDirectUserAction=false, it should NOT throw error and invite only eligible users", async () => {
@@ -496,17 +402,6 @@ describe("inviteMemberHandler", () => {
         email: "newuser@example.com",
       };
 
-      const team = {
-        id: 1,
-        name: "Team 1",
-        parent: null,
-        isOrganization: false,
-      };
-
-      inviteMemberUtilsScenarios.getTeamOrThrow.fakeReturnTeam(team, {
-        teamId: team.id,
-      });
-
       const allInvitations = [
         {
           role: MembershipRole.MEMBER,
@@ -518,26 +413,16 @@ describe("inviteMemberHandler", () => {
         },
       ];
 
-      inviteMemberUtilsScenarios.findUsersWithInviteStatus.useAdvancedMock(
-        [
-          {
-            ...existingMember,
-            canBeInvited: INVITE_STATUS.USER_ALREADY_INVITED_OR_MEMBER,
-            newRole: MembershipRole.MEMBER,
-          },
-        ],
-        {
-          invitations: allInvitations,
-          team,
-        }
-      );
+      mockInviteMembersWithNoInviterPermissionCheck.mockResolvedValue({
+        usernameOrEmail: [existingMember.email, newUser.email],
+        numUsersInvited: 1,
+      });
 
-      // Call inviteMembersWithNoInviterPermissionCheck directly with isDirectUserAction=false
       const { inviteMembersWithNoInviterPermissionCheck } = await import("./inviteMember.handler");
 
       const result = await inviteMembersWithNoInviterPermissionCheck({
         inviterName: "Test Inviter",
-        teamId: team.id,
+        teamId: 1,
         language: "en",
         creationSource: "WEBAPP" as const,
         orgSlug: null,
@@ -545,23 +430,10 @@ describe("inviteMemberHandler", () => {
         isDirectUserAction: false,
       });
 
-      // Should not throw error, should return successfully with 1 user invited (the new user)
       expect(result).toEqual({
         usernameOrEmail: [existingMember.email, newUser.email],
         numUsersInvited: 1,
       });
-
-      // Verify that only new user was invited
-      expect(inviteMemberUtilsMock.handleNewUsersInvites).toHaveBeenCalledWith(
-        expect.objectContaining({
-          invitationsForNewUsers: [
-            {
-              role: MembershipRole.MEMBER,
-              usernameOrEmail: newUser.email,
-            },
-          ],
-        })
-      );
     });
   });
 

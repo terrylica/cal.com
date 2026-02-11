@@ -1,4 +1,5 @@
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
+import { ErrorWithCode } from "@calcom/lib/errors";
 import { CreationSource, MembershipRole } from "@calcom/prisma/enums";
 import { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -212,7 +213,7 @@ describe("Invite Member Utils", () => {
 
   describe("getUniqueInvitationsOrThrowIfEmpty", () => {
     it("should throw a TRPCError with code BAD_REQUEST if no emails are provided", async () => {
-      await expect(getUniqueInvitationsOrThrowIfEmpty([])).rejects.toThrow(TRPCError);
+      await expect(getUniqueInvitationsOrThrowIfEmpty([])).rejects.toThrow(ErrorWithCode);
     });
 
     it("should return an array with multiple emails if an array is provided", async () => {
@@ -229,7 +230,7 @@ describe("Invite Member Utils", () => {
   describe("checkInputEmailIsValid", () => {
     it("should throw a TRPCError with code BAD_REQUEST if the email is invalid", () => {
       const invalidEmail = "invalid-email";
-      expect(() => checkInputEmailIsValid(invalidEmail)).toThrow(TRPCError);
+      expect(() => checkInputEmailIsValid(invalidEmail)).toThrow(ErrorWithCode);
       expect(() => checkInputEmailIsValid(invalidEmail)).toThrowError(
         "Invite failed because invalid-email is not a valid email address"
       );
