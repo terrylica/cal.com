@@ -2,7 +2,7 @@ import { canAccessOrganization } from "@calcom/features/ee/sso/lib/saml";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
 import prisma from "@calcom/prisma";
-import type { UserFromSession } from "../../../../auth/lib/userFromSessionUtils";
+import type { UserFromSession } from "@calcom/features/auth/lib/userFromSessionUtils";
 
 const userCanCreateTeamGroupMapping = async (
   user: NonNullable<UserFromSession>,
