@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const i18nJson = require("../../../i18n.json");
+const i18nJson = require("../../i18n.json");
 const config = require("./next-i18next.config");
 
 describe("@calcom/i18n/next-i18next.config", () => {
