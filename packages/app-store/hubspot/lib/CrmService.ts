@@ -20,7 +20,7 @@ import type {
   SimplePublicObjectInput,
 } from "@hubspot/api-client/lib/codegen/crm/objects/meetings";
 import type { z } from "zod";
-import { CrmFieldType, DateFieldType } from "../../_lib/crm-enums";
+import { CrmFieldType, DateFieldType, WhenToWrite } from "../../_lib/crm-enums";
 import getAppKeysFromSlug from "../../_utils/getAppKeysFromSlug";
 import refreshOAuthTokens from "../../_utils/oauth/refreshOAuthTokens";
 import type { HubspotToken } from "../api/callback";
@@ -302,10 +302,34 @@ class HubspotCalendarService implements CRM {
 
     if (customFieldInputs.length === 0) return;
 
+    const hasFieldEmptyFields = customFieldInputs.some(
+      (field) =>
+        appOptions.onBookingWriteToContactRecordFields![field.name]?.whenToWrite === WhenToWrite.FIELD_EMPTY
+    );
+
+    let currentContactProperties: Record<string, string> = {};
+    if (hasFieldEmptyFields) {
+      try {
+        const fieldNames = customFieldInputs.map((f) => f.name);
+        const contact = await this.hubspotClient.crm.contacts.basicApi.getById(contactId, fieldNames);
+        currentContactProperties = contact.properties ?? {};
+      } catch (error) {
+        this.log.error(`Error fetching current contact properties for ${contactId}:`, error);
+        return;
+      }
+    }
+
     const confirmedCustomFieldInputs: Record<string, string | boolean> = {};
 
     for (const field of customFieldInputs) {
       const fieldConfig = appOptions.onBookingWriteToContactRecordFields[field.name];
+
+      if (fieldConfig.whenToWrite === WhenToWrite.FIELD_EMPTY && currentContactProperties[field.name]) {
+        this.log.info(
+          `Field ${field.name} on contact ${contactId} already has value, skipping (whenToWrite=FIELD_EMPTY)`
+        );
+        continue;
+      }
 
       const fieldValue = await this.getFieldValue({
         fieldValue: fieldConfig.value,

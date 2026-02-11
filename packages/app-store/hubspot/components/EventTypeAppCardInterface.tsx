@@ -153,7 +153,7 @@ const EventTypeAppCard: EventTypeAppCardComponent = function EventTypeAppCard({
               CrmFieldType.CHECKBOX,
               CrmFieldType.CUSTOM,
             ]}
-            supportedWriteTriggers={[WhenToWrite.EVERY_BOOKING]}
+            supportedWriteTriggers={[WhenToWrite.EVERY_BOOKING, WhenToWrite.FIELD_EMPTY]}
           />
         </Section.SubSection>
 

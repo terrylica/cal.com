@@ -1211,6 +1211,121 @@ describe("HubspotCalendarService", () => {
       expect(mockHubspotClient.crm.contacts.basicApi.update).not.toHaveBeenCalled();
     });
 
+    it("should skip field when whenToWrite is FIELD_EMPTY and contact already has a value", async () => {
+      mockAppOptions({
+        onBookingWriteToContactRecord: true,
+        onBookingWriteToContactRecordFields: {
+          custom_source: {
+            fieldType: CrmFieldType.TEXT,
+            value: "Cal.com Booking",
+            whenToWrite: WhenToWrite.FIELD_EMPTY,
+          },
+        },
+      });
+      setupCreateEventMocks();
+
+      mockHubspotClient.crm.properties.coreApi.getAll.mockResolvedValueOnce({
+        results: [{ name: "custom_source", type: "string" }],
+      });
+
+      mockHubspotClient.crm.contacts.basicApi.getById.mockResolvedValueOnce({
+        id: "contact-1",
+        properties: { custom_source: "Existing Value" },
+      });
+
+      const event = createMockEvent();
+      const contacts = [{ id: "contact-1", email: "attendee@example.com" }];
+
+      await service.createEvent(event, contacts);
+
+      expect(mockHubspotClient.crm.contacts.basicApi.getById).toHaveBeenCalledWith("contact-1", [
+        "custom_source",
+      ]);
+      expect(mockHubspotClient.crm.contacts.basicApi.update).not.toHaveBeenCalled();
+    });
+
+    it("should write field when whenToWrite is FIELD_EMPTY and contact field is empty", async () => {
+      mockAppOptions({
+        onBookingWriteToContactRecord: true,
+        onBookingWriteToContactRecordFields: {
+          custom_source: {
+            fieldType: CrmFieldType.TEXT,
+            value: "Cal.com Booking",
+            whenToWrite: WhenToWrite.FIELD_EMPTY,
+          },
+        },
+      });
+      setupCreateEventMocks();
+
+      mockHubspotClient.crm.properties.coreApi.getAll.mockResolvedValueOnce({
+        results: [{ name: "custom_source", type: "string" }],
+      });
+
+      mockHubspotClient.crm.contacts.basicApi.getById.mockResolvedValueOnce({
+        id: "contact-1",
+        properties: { custom_source: "" },
+      });
+
+      mockHubspotClient.crm.contacts.basicApi.update.mockResolvedValueOnce({
+        id: "contact-1",
+        properties: {},
+      });
+
+      const event = createMockEvent();
+      const contacts = [{ id: "contact-1", email: "attendee@example.com" }];
+
+      await service.createEvent(event, contacts);
+
+      expect(mockHubspotClient.crm.contacts.basicApi.update).toHaveBeenCalledWith("contact-1", {
+        properties: { custom_source: "Cal.com Booking" },
+      });
+    });
+
+    it("should handle mix of EVERY_BOOKING and FIELD_EMPTY fields", async () => {
+      mockAppOptions({
+        onBookingWriteToContactRecord: true,
+        onBookingWriteToContactRecordFields: {
+          always_write: {
+            fieldType: CrmFieldType.TEXT,
+            value: "Always",
+            whenToWrite: WhenToWrite.EVERY_BOOKING,
+          },
+          write_if_empty: {
+            fieldType: CrmFieldType.TEXT,
+            value: "Only If Empty",
+            whenToWrite: WhenToWrite.FIELD_EMPTY,
+          },
+        },
+      });
+      setupCreateEventMocks();
+
+      mockHubspotClient.crm.properties.coreApi.getAll.mockResolvedValueOnce({
+        results: [
+          { name: "always_write", type: "string" },
+          { name: "write_if_empty", type: "string" },
+        ],
+      });
+
+      mockHubspotClient.crm.contacts.basicApi.getById.mockResolvedValueOnce({
+        id: "contact-1",
+        properties: { always_write: "Old Value", write_if_empty: "Existing Value" },
+      });
+
+      mockHubspotClient.crm.contacts.basicApi.update.mockResolvedValueOnce({
+        id: "contact-1",
+        properties: {},
+      });
+
+      const event = createMockEvent();
+      const contacts = [{ id: "contact-1", email: "attendee@example.com" }];
+
+      await service.createEvent(event, contacts);
+
+      expect(mockHubspotClient.crm.contacts.basicApi.update).toHaveBeenCalledWith("contact-1", {
+        properties: { always_write: "Always" },
+      });
+    });
+
     it("should skip fields that do not exist on HubSpot contact object", async () => {
       mockAppOptions({
         onBookingWriteToContactRecord: true,
