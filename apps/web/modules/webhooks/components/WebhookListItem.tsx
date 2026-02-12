@@ -198,6 +198,7 @@ export default function WebhookListItem(props: {
                       <Button
                         aria-label={t("delete")}
                         data-testid="delete-webhook"
+                        disabled={!props.permissions.canDeleteWebhook}
                         size="icon"
                         variant="destructive-outline"
                         onClick={() => setDeleteDialogOpen(true)}
