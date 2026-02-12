@@ -4,8 +4,8 @@ import { ColumnFilterType, DataTableProvider, type SystemFilterSegment } from "@
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import classNames from "@calcom/ui/classNames";
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
 import { useSegments } from "~/data-table/hooks/useSegments";
 import FeatureOptInBannerWrapper from "~/feature-opt-in/components/FeatureOptInBannerWrapper";
 import { useFeatureOptInBanner } from "../../feature-opt-in/hooks/useFeatureOptInBanner";
@@ -85,7 +85,11 @@ function BookingsContent({
   initialBookingUid,
 }: BookingsProps) {
   const [view] = useBookingsView({ bookingsV3Enabled });
-  const optInBanner = useFeatureOptInBanner("bookings-v3");
+  const router = useRouter();
+  const handleOptInSuccess = useCallback(() => {
+    router.refresh();
+  }, [router]);
+  const optInBanner = useFeatureOptInBanner("bookings-v3", { onOptInSuccess: handleOptInSuccess });
 
   return (
     <div className={classNames(view === "calendar" && "-mb-8")}>
