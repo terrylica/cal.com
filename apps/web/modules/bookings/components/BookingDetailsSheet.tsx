@@ -225,10 +225,10 @@ function BookingDetailsSheetInner({
           }
           break;
         case "Enter": {
-          // Find the anchor element inside the join button wrapper
           const joinLink = joinButtonWrapperRef.current?.querySelector("a");
           if (joinLink) {
             e.preventDefault();
+            e.stopPropagation();
             joinLink.click();
           }
           break;
@@ -236,8 +236,8 @@ function BookingDetailsSheetInner({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => document.removeEventListener("keydown", handleKeyDown, true);
   }, [
     navigation.canGoPrev,
     navigation.canGoNext,
