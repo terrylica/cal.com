@@ -304,16 +304,10 @@ function BookingDetailsSheetInner({
         className="overflow-y-auto pb-0 sm:pb-0"
         hideOverlay
         onInteractOutside={(e) => {
-          // Check if the click is on a booking list item
           const target = e.target as HTMLElement;
-          const isBookingListItem = target.closest("[data-booking-list-item]");
-
-          if (isBookingListItem) {
-            // Prevent closing when clicking a booking list item
-            // The item's onClick will handle opening the sheet with the new booking
+          if (target.closest("[data-booking-uid]")) {
             e.preventDefault();
           }
-          // If clicking elsewhere, allow the default behavior (close the sheet)
         }}
       >
         <SheetHeader showCloseButton={false} className="mt-0 w-full">
