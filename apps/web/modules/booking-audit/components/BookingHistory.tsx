@@ -10,7 +10,7 @@ import { Button } from "@calcom/ui/components/button";
 import { FilterSearchField, Select } from "@calcom/ui/components/form";
 import { Icon, type IconName } from "@calcom/ui/components/icon";
 import { SkeletonText } from "@calcom/ui/components/skeleton";
-import Link from "next/link";
+
 import { useState } from "react";
 
 interface BookingHistoryProps {
@@ -124,6 +124,14 @@ function BookingLogsFilters({
   );
 }
 
+function AuditDeepLink({ href, children }: { href: string; children?: React.ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-emphasis underline hover:no-underline">
+      {children}
+    </a>
+  );
+}
+
 /**
  * Renders the action display title with support for Trans component interpolation
  * Handles translations with embedded components (e.g., links) for proper i18n support
@@ -139,7 +147,7 @@ function ActionTitle({ actionDisplayTitle }: { actionDisplayTitle: TranslationWi
         values={actionDisplayTitle.params}
         components={actionDisplayTitle.components.map((comp) =>
           comp.type === "link" ? (
-            <Link key={comp.href} href={comp.href} target="_blank" rel="noopener noreferrer" className="text-emphasis underline hover:no-underline" />
+            <AuditDeepLink key={comp.href} href={comp.href} />
           ) : (
             <span key={comp.href} />
           )
