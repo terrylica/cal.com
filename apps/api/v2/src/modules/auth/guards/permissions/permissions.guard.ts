@@ -1,6 +1,4 @@
 import { X_CAL_CLIENT_ID } from "@calcom/platform-constants";
-import type { NewAccessScope } from "@calcom/platform-libraries";
-import { PERMISSION_TO_SCOPE, SCOPE_TO_PERMISSION } from "@calcom/platform-libraries";
 import { hasPermissions } from "@calcom/platform-utils";
 import type { PlatformOAuthClient } from "@calcom/prisma/client";
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
@@ -40,12 +38,8 @@ export class PermissionsGuard implements CanActivate {
     const apiKey = bearerToken && isApiKey(bearerToken, this.config.get("api.apiKeyPrefix") ?? "cal_");
     const decodedThirdPartyToken = bearerToken ? this.getDecodedThirdPartyAccessToken(bearerToken) : null;
 
-    if (nextAuthToken || apiKey) {
+    if (nextAuthToken || apiKey || decodedThirdPartyToken) {
       return true;
-    }
-
-    if (decodedThirdPartyToken) {
-      return this.checkThirdPartyTokenPermissions(decodedThirdPartyToken, requiredPermissions);
     }
 
     if (!bearerToken && !oAuthClientId) {
@@ -93,45 +87,6 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException(`PermissionsGuard - no oAuth client found for client id=${id}`);
     }
     return oAuthClient;
-  }
-
-  checkThirdPartyTokenPermissions(
-    decodedToken: { scope?: string[] },
-    requiredPermissions: number[]
-  ): boolean {
-    const tokenScopes: string[] = decodedToken.scope ?? [];
-
-    if (tokenScopes.length === 0) {
-      return true;
-    }
-
-    const tokenPermissions = this.resolveTokenPermissions(tokenScopes);
-
-    // note(Lauris): legacy access tokens either did not have scopes defined or had legacy scopes defined,
-    // if so give full access just like we have been doing up until now.
-    if (tokenPermissions.size === 0) {
-      return true;
-    }
-
-    const missingPermissions = requiredPermissions.filter((permission) => !tokenPermissions.has(permission));
-    if (missingPermissions.length > 0) {
-      const missingScopeNames = missingPermissions.map((permission) => PERMISSION_TO_SCOPE[permission]).filter(Boolean);
-      throw new ForbiddenException(
-        `insufficient_scope: token does not have the required scopes. Required: ${missingScopeNames.join(", ")}. Token has: ${tokenScopes.join(", ")}`
-      );
-    }
-
-    return true;
-  }
-
-  private resolveTokenPermissions(scopes: string[]): Set<number> {
-    const permissions = new Set<number>();
-    for (const scope of scopes) {
-      if (scope in SCOPE_TO_PERMISSION) {
-        permissions.add(SCOPE_TO_PERMISSION[scope as NewAccessScope]);
-      }
-    }
-    return permissions;
   }
 
   getDecodedThirdPartyAccessToken(bearerToken: string) {

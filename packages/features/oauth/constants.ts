@@ -19,7 +19,8 @@ export const OAUTH_SCOPES: AccessScope[] = [
   "PROFILE_READ",
 ];
 
-export const SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR = "Requested scope exceeds the client's registered scopes";
+export const SCOPE_EXCEEDS_CLIENT_REGISTRATION_ERROR =
+  "Requested scope exceeds the client's registered scopes";
 
 export function parseScopeParam(scopeParam: string | null | undefined): string[] {
   if (!scopeParam) {
