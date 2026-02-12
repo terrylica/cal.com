@@ -2,8 +2,8 @@
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Icon } from "@calcom/ui/components/icon";
-import { WideUpgradeBanner } from "@calcom/web/modules/billing/components/WideUpgradeBanner";
 import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
+import { WideUpgradeBanner } from "@calcom/web/modules/billing/components/WideUpgradeBanner";
 import { Button } from "@coss/ui/components/button";
 
 export function WideUpgradeBannerForMembers() {

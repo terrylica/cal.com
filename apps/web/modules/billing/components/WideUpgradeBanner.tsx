@@ -43,7 +43,7 @@ export type WideUpgradeBannerProps = {
   title: string;
   subtitle: string;
   target: UpgradeTarget;
-  showBadge?: boolean;
+  size?: "md" | "sm";
   image: {
     src: string;
     width: number;
@@ -62,7 +62,7 @@ export function WideUpgradeBanner({
   title,
   subtitle,
   target,
-  showBadge,
+  size = "md",
   image,
   learnMoreButton,
   children,
@@ -73,11 +73,11 @@ export function WideUpgradeBanner({
   if (!visible) return null;
 
   return (
-    <div className="relative flex w-full overflow-hidden rounded-xl bg-muted border-muted border">
+    <div className="group relative flex w-full overflow-hidden rounded-xl bg-muted border-muted border">
       <Button
         variant="ghost"
         color="minimal"
-        className="absolute right-2 top-2"
+        className="absolute right-2 top-2 opacity-25 transition-opacity group-hover:opacity-100"
         onClick={() => {
           dismiss(tracking);
           setVisible(false);
@@ -87,14 +87,23 @@ export function WideUpgradeBanner({
       </Button>
       {/* Left Content */}
       <div className="flex flex-1 flex-col p-6">
-        <div className="flex items-center gap-2">
-          <h2 className="font-cal text-lg font-semibold leading-none text-default">{title}</h2>
-          {showBadge && <Badge variant="info">{target === "team" ? t("teams") : t("orgs")}</Badge>}
-        </div>
-        <p className="mt-2 text-sm text-subtle">{subtitle}</p>
+        {size === "sm" ? (
+          <div className="flex items-start gap-1.5">
+            <h2 className="font-cal text-base font-semibold leading-none text-default">{title}</h2>
+            <Badge variant="warning" className="relative -top-1">
+              {target === "team" ? t("teams") : t("orgs")}
+            </Badge>
+          </div>
+        ) : (
+          <div>
+            <Badge variant="warning">{target === "team" ? t("teams") : t("orgs")}</Badge>
+            <h2 className="mt-1 font-cal text-lg font-semibold leading-none text-default">{title}</h2>
+          </div>
+        )}
+        <p className="mt-2 text-sm font-normal text-subtle">{subtitle}</p>
 
         {/* Buttons */}
-        <div className="mt-6 flex items-center gap-2">
+        <div className={`${size === "sm" ? "mt-4" : "mt-9"} flex items-center gap-2`}>
           {children}
           {learnMoreButton &&
             (learnMoreButton.href ? (
@@ -122,7 +131,7 @@ export function WideUpgradeBanner({
       </div>
 
       {/* Right Content - Image */}
-      <div className="hidden flex-1 items-end justify-center md:flex">
+      <div className={`hidden flex-1 items-end justify-center md:flex${size === "sm" ? " max-w-64" : ""}`}>
         <Image
           src={image.src}
           alt={title}
