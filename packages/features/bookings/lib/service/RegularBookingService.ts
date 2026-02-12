@@ -5,7 +5,7 @@ import {
   buildBookingCreatedAuditData,
   buildBookingRescheduledAuditData,
 } from "../handleNewBooking/buildBookingEventAuditData";
-import type { ValidActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
+import type { ActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
 import processExternalId from "@calcom/app-store/_utils/calendars/processExternalId";
 import { getPaymentAppData } from "@calcom/app-store/_utils/payments/getPaymentAppData";
 import {
@@ -2949,7 +2949,7 @@ export class RegularBookingService implements IBookingService {
     rescheduledBy: string | null;
     actorUserUuid: string | null;
     originalRescheduledBooking: BookingType | null;
-    actionSource: ValidActionSource;
+    actionSource: ActionSource;
     isRecurringBooking: boolean;
     tracingLogger: ReturnType<typeof distributedTracing.getTracingLogger>;
     attendeeSeatId: string | null;

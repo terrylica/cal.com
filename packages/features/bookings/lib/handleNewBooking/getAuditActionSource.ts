@@ -1,8 +1,8 @@
 import { CreationSource } from "@calcom/prisma/enums";
-import type { ValidActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
+import type { ActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
 import { criticalLogger } from "@calcom/lib/logger.server";
 
-export const getAuditActionSource = ({ creationSource, eventTypeId, rescheduleUid }: { creationSource: CreationSource | null | undefined, eventTypeId: number, rescheduleUid: string | null }): ValidActionSource => {
+export const getAuditActionSource = ({ creationSource, eventTypeId, rescheduleUid }: { creationSource: CreationSource | null | undefined, eventTypeId: number, rescheduleUid: string | null }): ActionSource => {
     if (creationSource === CreationSource.API_V1 || creationSource === CreationSource.API_V2 || creationSource === CreationSource.WEBAPP) {
         return creationSource;
     }
@@ -10,5 +10,5 @@ export const getAuditActionSource = ({ creationSource, eventTypeId, rescheduleUi
         eventTypeId,
         rescheduleUid,
     });
-    return "SYSTEM";
+    return "UNKNOWN";
 };

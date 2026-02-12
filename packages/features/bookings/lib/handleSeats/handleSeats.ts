@@ -15,7 +15,7 @@ import rescheduleSeatedBooking from "./reschedule/rescheduleSeatedBooking";
 import type { NewSeatedBookingObject, SeatedBooking, HandleSeatsResultBooking } from "./types";
 import { getBookingAuditActorForNewBooking } from "../handleNewBooking/getBookingAuditActorForNewBooking";
 import type { BookingEventHandlerService } from "../onBookingEvents/BookingEventHandlerService";
-import type { ValidActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
+import type { ActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
 import type { ISimpleLogger } from "@calcom/features/di/shared/services/logger.service";
 
 const fireBookingEvents = async ({
@@ -40,7 +40,7 @@ const fireBookingEvents = async ({
   bookerEmail: string;
   bookerName: string;
   rescheduledBy: string | undefined;
-  actionSource: ValidActionSource;
+  actionSource: ActionSource;
   actorUserUuid: string | null;
   isBookingAuditEnabled: boolean;
   deps: {

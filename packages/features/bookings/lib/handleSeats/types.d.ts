@@ -6,7 +6,7 @@ import type { Prisma } from "@calcom/prisma/client";
 import type { AppsStatus, CalendarEvent } from "@calcom/types/Calendar";
 
 import type { BookingEventHandlerService } from "../../onBookingEvents/BookingEventHandlerService";
-import type { ValidActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
+import type { ActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
 import type { Booking } from "../handleNewBooking/createBooking";
 import type { NewBookingEventType } from "../handleNewBooking/getEventTypesFromDB";
 import type { OriginalRescheduledBooking } from "../handleNewBooking/originalRescheduledBookingUtils";
@@ -63,7 +63,7 @@ export type NewSeatedBookingObject = {
   workflows: Workflow[];
   isDryRun?: boolean;
   organizationId?: number | null;
-  actionSource: ValidActionSource;
+  actionSource: ActionSource;
   traceContext: TraceContext;
   deps: {
     bookingEventHandler: BookingEventHandlerService;
