@@ -1,6 +1,7 @@
-import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { useMemo } from "react";
+
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 
 export function useBookingStatusTab() {
   const { t } = useLocale();
@@ -8,10 +9,7 @@ export function useBookingStatusTab() {
   const pathname = usePathname();
 
   const tabOptions = useMemo(() => {
-    // Exclude uid parameter when building tab hrefs - uid is only for deep linking, not tab switching
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    params.delete("uid");
-    const queryString = params.toString();
+    const queryString = searchParams?.toString() || "";
 
     const baseTabConfigs = [
       {

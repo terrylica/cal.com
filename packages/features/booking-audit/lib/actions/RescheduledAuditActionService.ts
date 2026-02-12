@@ -1,14 +1,13 @@
 import { z } from "zod";
-
 import { NumberChangeSchema, StringChangeSchema } from "../common/changeSchemas";
 import type { DataRequirements } from "../service/EnrichmentDataStore";
 import { AuditActionServiceHelper } from "./AuditActionServiceHelper";
 import type {
+  BaseStoredAuditData,
+  GetDisplayJsonParams,
+  GetDisplayTitleParams,
   IAuditActionService,
   TranslationWithParams,
-  GetDisplayTitleParams,
-  GetDisplayJsonParams,
-  BaseStoredAuditData,
 } from "./IAuditActionService";
 
 /**
@@ -147,6 +146,13 @@ export class RescheduledAuditActionService implements IAuditActionService {
     };
   }
 
+  /**
+   * Finds the rescheduled log that created a specific booking
+   * by matching the rescheduledToUid field with the target booking UID
+   * @param rescheduledLogs - Array of rescheduled audit logs to search through
+   * @param rescheduledToBookingUid - The UID of the booking that was created from the reschedule
+   * @returns The matching log or null if not found
+   */
   getMatchingLog<T extends { data: unknown }>({
     rescheduledLogs,
     rescheduledToBookingUid,
