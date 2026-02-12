@@ -283,7 +283,10 @@ export function BookingListContainer(props: BookingListContainerProps) {
     const queryBookings = query.data?.bookings ?? [];
     if (!preSelectedBooking) return queryBookings;
     if (queryBookings.some((b) => b.uid === preSelectedBooking.uid)) return queryBookings;
-    return [preSelectedBooking, ...queryBookings];
+    // It ensures that the drawer opens for a booking that isn't even in the bookings list
+    // Note that, bookings list doesn't use this so, it won't be visible in the list view but drawer will open for it
+    // We don't want to show this booking in the list view, as it might not match the filters/pagination applied
+    return [...queryBookings, preSelectedBooking];
   }, [query.data?.bookings, preSelectedBooking]);
 
   // Always call the hook and provide navigation capabilities
