@@ -415,11 +415,16 @@ export function intersect(ranges: DateRange[][]): DateRange[] {
   return commonAvailability.map(({ start, end }) => ({ start, end }));
 }
 
-export function subtract<TSource extends DateRange, TExcluded extends DateRange>(
-  sourceRanges: TSource[],
-  excludedRanges: TExcluded[]
-) {
-  const result: TSource[] = [];
+type SubtractedRange<TSourceRange extends DateRange> = Omit<TSourceRange, "start" | "end"> & {
+  start: TSourceRange["start"];
+  end: TSourceRange["end"];
+};
+
+export function subtract<TSourceRange extends DateRange, TExcludedRange extends DateRange>(
+  sourceRanges: TSourceRange[],
+  excludedRanges: TExcludedRange[]
+): SubtractedRange<TSourceRange>[] {
+  const result: SubtractedRange<TSourceRange>[] = [];
   const sortedExcludedRanges = [...excludedRanges].sort((a, b) => a.start.valueOf() - b.start.valueOf());
 
   for (const { start: sourceStart, end: sourceEnd, ...passThrough } of sourceRanges) {
@@ -430,7 +435,7 @@ export function subtract<TSource extends DateRange, TExcluded extends DateRange>
       if (excludedRange.end.valueOf() <= currentStart.valueOf()) continue;
 
       if (excludedRange.start.valueOf() > currentStart.valueOf()) {
-        result.push({ start: currentStart, end: excludedRange.start, ...passThrough } as TSource);
+        result.push({ start: currentStart, end: excludedRange.start, ...passThrough });
       }
 
       if (excludedRange.end.valueOf() > currentStart.valueOf()) {
@@ -439,7 +444,7 @@ export function subtract<TSource extends DateRange, TExcluded extends DateRange>
     }
 
     if (sourceEnd.valueOf() > currentStart.valueOf()) {
-      result.push({ start: currentStart, end: sourceEnd, ...passThrough } as TSource);
+      result.push({ start: currentStart, end: sourceEnd, ...passThrough });
     }
   }
 
