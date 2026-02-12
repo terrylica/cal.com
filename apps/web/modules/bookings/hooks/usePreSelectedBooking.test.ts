@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 
+import type { BookingOutput } from "../types";
 import { getTabForBooking } from "./usePreSelectedBooking";
 
 function makeBooking(overrides: {
-  status: string;
+  status: BookingOutput["status"];
   endTime: Date;
   recurringEventId?: string | null;
 }) {
