@@ -9,6 +9,7 @@ import type {
 import { getUTCOffsetByTimezone } from "@calcom/lib/dayjs";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
 import { compile } from "handlebars";
+import { z } from "zod";
 
 // Minimal webhook shape for sending payloads (subset of WebhookSubscriber)
 type WebhookForPayload = Pick<WebhookSubscriber, "subscriberUrl" | "appId" | "payloadTemplate" | "version">;
@@ -220,12 +221,17 @@ export function isEventPayload(data: WebhookPayloadType): data is EventPayloadTy
   return !isNoShowPayload(data) && !isOOOEntryPayload(data) && !isDelegationCredentialErrorPayload(data);
 }
 
+const webhookAssignmentReasonSchema = z.union([
+  z.string(),
+  z.array(z.object({ reasonEnum: z.string(), reasonString: z.string() })),
+  z.null(),
+  z.undefined(),
+]);
+
 export function sanitizeAssignmentReasonForWebhook(data: EventPayloadType): EventPayloadType {
-  const { assignmentReason } = data;
-  if (assignmentReason === undefined || assignmentReason === null) return data;
-  if (typeof assignmentReason === "string" || Array.isArray(assignmentReason)) return data;
-  const { assignmentReason: _stripped, ...rest } = data;
-  return rest as EventPayloadType;
+  const result = webhookAssignmentReasonSchema.safeParse(data.assignmentReason);
+  if (result.success) return data;
+  return { ...data, assignmentReason: undefined };
 }
 
 const sendPayload = async (
