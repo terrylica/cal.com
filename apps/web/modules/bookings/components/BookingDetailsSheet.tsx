@@ -20,7 +20,6 @@ import classNames from "@calcom/ui/classNames";
 import { Avatar } from "@calcom/ui/components/avatar";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
-import { Icon } from "@calcom/ui/components/icon";
 import { SegmentedControl } from "@calcom/ui/components/segmented-control";
 import {
   Sheet,
@@ -31,6 +30,7 @@ import {
   SheetTitle,
 } from "@calcom/ui/components/sheet";
 import { Tooltip } from "@calcom/ui/components/tooltip";
+import { ExternalLinkIcon, RepeatIcon } from "@coss/ui/icons";
 import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
 import Link from "next/link";
@@ -278,29 +278,26 @@ function BookingDetailsSheetInner({
   const recurringInfo =
     booking.recurringEventId && booking.eventType?.recurringEvent
       ? {
-          count: booking.eventType.recurringEvent.count,
-          recurringEvent: booking.eventType.recurringEvent,
-        }
+        count: booking.eventType.recurringEvent.count,
+        recurringEvent: booking.eventType.recurringEvent,
+      }
       : null;
 
   const customResponses = booking.responses
     ? Object.entries(booking.responses as Record<string, unknown>)
-        .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
-        .map(([question, answer]) => [question, answer] as [string, unknown])
+      .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
+      .map(([question, answer]) => [question, answer] as [string, unknown])
     : [];
 
   const reason =
-    booking.assignmentReasonSortedByCreatedAt?.[
-      booking.assignmentReasonSortedByCreatedAt.length - 1
-    ];
-  const reasonTitle =
-    reason && assignmentReasonBadgeTitleMap(reason.reasonEnum);
+    booking.assignmentReasonSortedByCreatedAt?.[booking.assignmentReasonSortedByCreatedAt.length - 1];
+  const reasonTitle = reason && assignmentReasonBadgeTitleMap(reason.reasonEnum);
 
   return (
     <Sheet open={true} onOpenChange={handleClose} modal={false}>
       <SheetContent
         ref={sheetContentRef}
-        className="overflow-y-auto"
+        className="overflow-y-auto pb-0 sm:pb-0"
         hideOverlay
         onInteractOutside={(e) => {
           // Check if the click is on a booking list item
@@ -462,8 +459,8 @@ function BookingDetailsSheetInner({
           </div>
         </SheetBody>
 
-        <SheetFooter className="-mx-4 -mb-4 border-subtle border-t bg-muted pt-0 sm:-mx-6 sm:-my-6">
-          <div className="flex w-full min-w-0 flex-row flex-wrap items-center justify-end gap-2 px-4 pt-4 pb-4">
+        <SheetFooter className="bg-muted border-subtle -mx-4 border-t pt-0 sm:-mx-6">
+          <div className="flex w-full min-w-0 flex-row flex-wrap items-center justify-end gap-2 px-4 pb-4 pt-4">
             {isPending ? (
               <>
                 <RejectBookingButton
@@ -928,7 +925,7 @@ function OldRescheduledBookingInfo({
           <Link href={`/booking/${rescheduledToBooking.uid}`}>
             <div className="flex items-center gap-1 text-default text-sm underline">
               {t("view_booking")}
-              <Icon name="external-link" className="h-4 w-4" />
+              <ExternalLinkIcon className="h-4 w-4" />
             </div>
           </Link>
         </Section>
@@ -976,7 +973,7 @@ function NewRescheduledBookingInfo({ booking }: { booking: BookingOutput }) {
         <Link href={`/booking/${booking.fromReschedule}`}>
           <div className="flex items-center gap-1 text-default text-sm underline">
             {t("original_booking")}
-            <Icon name="external-link" className="h-4 w-4" />
+            <ExternalLinkIcon className="h-4 w-4" />
           </div>
         </Link>
       </Section>
@@ -1083,7 +1080,7 @@ function BookingHeaderBadges({
       ) : null}
       {recurringInfo && (
         <Badge variant="gray">
-          <Icon name="repeat" className="mr-1 h-3 w-3" />
+          <RepeatIcon className="mr-1 h-3 w-3" />
           {recurringInfo.count}
         </Badge>
       )}
