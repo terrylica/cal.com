@@ -6,7 +6,7 @@ import { trpc } from "@calcom/trpc/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@coss/ui/components/avatar";
 import { Button } from "@coss/ui/components/button";
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuTrigger } from "@coss/ui/components/menu";
-import { PlusIcon } from "lucide-react";
+import { ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 function getInitials(name: string): string {
@@ -55,7 +55,7 @@ export const CreateNewWebhookButton = ({ isEmptyState }: { isEmptyState?: boolea
         data-testid="new_webhook"
         onClick={() => handleSelect(options[0] || {})}
         variant={isEmptyState ? "default" : "outline"}>
-        <PlusIcon />
+        <PlusIcon aria-hidden="true" />
         {t("new")}
       </Button>
     );
@@ -65,8 +65,8 @@ export const CreateNewWebhookButton = ({ isEmptyState }: { isEmptyState?: boolea
     <Menu>
       <MenuTrigger
         render={<Button data-testid="new_webhook" variant={isEmptyState ? "default" : "outline"} />}>
-        <PlusIcon />
         {t("new")}
+        <ChevronDownIcon aria-hidden="true" />
       </MenuTrigger>
       <MenuPopup align={isEmptyState ? undefined : "end"}>
         <MenuGroup>

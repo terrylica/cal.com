@@ -11,7 +11,7 @@ function ListItem({ children, className }: ListItemProps) {
   return (
     <div
       className={cn(
-        "not-last:border-b bg-clip-padding transition-[background-color] first:rounded-t-[calc(var(--radius-xl)-1px)] last:rounded-b-[calc(var(--radius-xl)-1px)] has-[[data-slot=list-item-title]_a:hover]:z-1 has-[[data-slot=list-item-title]_a:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-black)_2%)] dark:has-[[data-slot=list-item-title]_a:hover]:bg-[color-mix(in_srgb,var(--color-card),var(--color-white)_2%)]",
+        "not-last:border-b bg-clip-padding transition-[background-color] first:rounded-t-[calc(var(--radius-xl)-1px)] last:rounded-b-[calc(var(--radius-xl)-1px)] has-[[data-slot=list-item-title]_a:hover]:z-1 has-[[data-slot=list-item-title]_a:hover]:bg-[color-mix(in_srgb,var(--card),var(--color-black)_2%)] dark:has-[[data-slot=list-item-title]_a:hover]:bg-[color-mix(in_srgb,var(--card),var(--color-white)_2%)]",
         className
       )}
       data-slot="list-item">

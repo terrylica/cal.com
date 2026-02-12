@@ -6,7 +6,6 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { revalidateEventTypeEditPage } from "@calcom/web/app/(use-page-wrapper)/event-types/[type]/actions";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
-import { Avatar, AvatarFallback, AvatarImage } from "@coss/ui/components/avatar";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import {
@@ -103,13 +102,50 @@ export default function WebhookListItem(props: {
     <ListItem data-testid="webhook-list-item">
       <ListItemContent>
         <ListItemHeader>
-          {canEditorDelete && props.editHref ? (
-            <ListItemTitle data-testid="webhook-url">
-              <ListItemTitleLink href={props.editHref}>{webhook.subscriberUrl}</ListItemTitleLink>
-            </ListItemTitle>
-          ) : (
-            <ListItemTitle data-testid="webhook-url">{webhook.subscriberUrl}</ListItemTitle>
-          )}
+          <div className="flex items-center gap-2">
+            {canEditorDelete && props.editHref ? (
+              <ListItemTitle data-testid="webhook-url" className="font-medium truncate">
+                <ListItemTitleLink href={props.editHref}>{webhook.subscriberUrl}</ListItemTitleLink>
+              </ListItemTitle>
+            ) : (
+              <ListItemTitle data-testid="webhook-url">{webhook.subscriberUrl}</ListItemTitle>
+            )}
+            <div className="flex items-center gap-2">
+              {!canEditorDelete && <Badge variant="warning">{t("readonly")}</Badge>}
+              <div className="flex items-center">
+                <TooltipProvider delay={0}>
+                  <TooltipTrigger
+                    className="after:absolute after:left-full after:h-full after:w-1"
+                    handle={versionTooltipHandle}
+                    payload={() => <>{t("webhook_version")}</>}
+                    render={<Badge variant="info" />}>
+                    {getWebhookVersionLabel(webhook.version)}
+                  </TooltipTrigger>
+                  <TooltipTrigger
+                    handle={versionTooltipHandle}
+                    payload={() => (
+                      <>{t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}</>
+                    )}
+                    render={
+                      <a
+                        className="relative flex h-5 items-center justify-center px-2 sm:h-4.5"
+                        href={`https://cal.com/docs/developing/guides/automation/webhooks#${webhook.version}`}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      />
+                    }>
+                    <span className="sr-only">{t("webhook_version_docs")}</span>
+                    <ExternalLinkIcon aria-hidden="true" className="size-3.5 shrink-0 sm:size-3" />
+                  </TooltipTrigger>
+                  <Tooltip handle={versionTooltipHandle}>
+                    {({ payload: Payload }) => (
+                      <TooltipPopup>{Payload !== undefined && <Payload />}</TooltipPopup>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          </div>
         </ListItemHeader>
         <ListItemBadges>
           {webhook.eventTriggers.slice(0, badgesExpanded ? undefined : MAX_BADGES_TWO_ROWS).map((trigger) => (
@@ -127,58 +163,6 @@ export default function WebhookListItem(props: {
             </Badge>
           )}
         </ListItemBadges>
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-2">
-            {props.profile && (
-              <div className="flex items-center gap-1.5 min-w-0">
-                <Avatar className="size-4 shrink-0">
-                  <AvatarImage src={props.profile.image} alt={props.profile.name ?? ""} />
-                  <AvatarFallback className="text-[0.625rem]">
-                    {(props.profile.name || props.profile.slug || "?").trim().slice(0, 1).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span
-                  className="text-muted-foreground font-medium text-xs truncate"
-                  title={props.profile.name || ""}>
-                  {props.profile.name || ""}
-                </span>
-              </div>
-            )}
-            {!canEditorDelete && <Badge variant="warning">{t("readonly")}</Badge>}
-            <div className="flex items-center">
-              <TooltipProvider delay={0}>
-                <TooltipTrigger
-                  className="after:absolute after:left-full after:h-full after:w-1"
-                  handle={versionTooltipHandle}
-                  payload={() => <>{t("webhook_version")}</>}
-                  render={<Badge variant="info" />}>
-                  {getWebhookVersionLabel(webhook.version)}
-                </TooltipTrigger>
-                <TooltipTrigger
-                  handle={versionTooltipHandle}
-                  payload={() => (
-                    <>{t("webhook_version_docs", { version: getWebhookVersionLabel(webhook.version) })}</>
-                  )}
-                  render={
-                    <a
-                      className="relative flex h-5 items-center justify-center px-2 sm:h-4.5"
-                      href={`https://cal.com/docs/developing/guides/automation/webhooks#${webhook.version}`}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    />
-                  }>
-                  <span className="sr-only">{t("webhook_version_docs")}</span>
-                  <ExternalLinkIcon aria-hidden="true" className="size-3.5 shrink-0 sm:size-3" />
-                </TooltipTrigger>
-                <Tooltip handle={versionTooltipHandle}>
-                  {({ payload: Payload }) => (
-                    <TooltipPopup>{Payload !== undefined && <Payload />}</TooltipPopup>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-        </div>
       </ListItemContent>
       <ListItemActions>
         {!isMobile && (

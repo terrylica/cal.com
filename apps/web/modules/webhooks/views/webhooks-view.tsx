@@ -1,23 +1,16 @@
 "use client";
 
+import { useBookerUrl } from "@calcom/features/bookings/hooks/useBookerUrl";
 import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { RouterOutputs } from "@calcom/trpc/react";
-import { Card, CardFrame, CardPanel } from "@coss/ui/components/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@coss/ui/components/empty";
-import { WebhookIcon } from "lucide-react";
+import { Avatar, AvatarImage } from "@coss/ui/components/avatar";
+import { Card, CardPanel, CardFrame, CardFrameHeader, CardFrameTitle, CardFrameDescription } from "@coss/ui/components/card";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@coss/ui/components/empty";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import React from "react";
 import { CreateNewWebhookButton, WebhookListItem } from "../components";
-import { WebhooksFilter } from "../components/WebhooksFilter";
-import { WebhooksHeader } from "./webhooks-header";
+import { WebhookIcon } from "lucide-react";
 
 type WebhooksByViewer = RouterOutputs["viewer"]["webhook"]["getByViewer"];
 
@@ -36,77 +29,89 @@ const WebhooksView = ({ data }: Props) => {
 const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer }) => {
   const { t } = useLocale();
   const router = useRouter();
-  const { webhookGroups } = webhooksByViewer;
-  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
+  const { profiles, webhookGroups } = webhooksByViewer;
+  const bookerUrl = useBookerUrl();
 
-  const flat = webhookGroups
-    .flatMap((group) => group.webhooks.map((webhook) => ({ webhook, group })))
-    .sort((a, b) => a.webhook.id.localeCompare(b.webhook.id));
-  const filtered =
-    selectedProfileIds.length > 0
-      ? flat.filter(({ group }) => selectedProfileIds.includes(group.profile.slug ?? ""))
-      : flat;
-  const hasWebhooks = flat.length > 0;
-  const hasMultipleProfiles =
-    new Set(webhookGroups.map((g) => g.profile.slug ?? "")).size > 1;
+  const hasTeams = profiles && profiles.length > 1;
 
   return (
     <CardFrame>
-      <WebhooksHeader
-        actions={
-          hasWebhooks ? (
-            <div className="flex items-center gap-2">
-              {hasMultipleProfiles && (
-                <WebhooksFilter
-                  groups={webhookGroups}
-                  selectedProfileIds={selectedProfileIds}
-                  onSelectionChange={setSelectedProfileIds}
-                />
-              )}
-              <CreateNewWebhookButton />
-            </div>
-          ) : undefined
-        }
-      />
-      {hasWebhooks ? (
-        <Card>
-          <CardPanel className="p-0">
-            {filtered.map(({ webhook, group }) => (
-              <WebhookListItem
-                key={webhook.id}
-                webhook={webhook}
-                profile={group.profile}
-                editHref={`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`}
-                lastItem={true}
-                permissions={{
-                  canEditWebhook: group?.metadata?.canModify ?? false,
-                  canDeleteWebhook: group?.metadata?.canDelete ?? false,
-                }}
-                onEditWebhookAction={() => router.push(`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`)}
-              />
-            ))}
-          </CardPanel>
-        </Card>
-      ) : (
-        <Card>
-          <CardPanel>
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <WebhookIcon />
-                </EmptyMedia>
-                <EmptyTitle>{t("create_your_first_webhook")}</EmptyTitle>
-                <EmptyDescription>
-                  {t("create_your_first_webhook_description", { appName: APP_NAME })}
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <CreateNewWebhookButton isEmptyState />
-              </EmptyContent>
-            </Empty>
-          </CardPanel>
-        </Card>
-      )}
+      <CardFrameHeader>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <CardFrameTitle>{t("webhooks")}</CardFrameTitle>
+            <CardFrameDescription>{t("add_webhook_description", { appName: APP_NAME })}</CardFrameDescription>
+          </div>
+          <CreateNewWebhookButton />
+        </div>
+      </CardFrameHeader>
+
+      <Card>
+        <CardPanel>
+          <div className="flex flex-col gap-6">
+            {webhookGroups.length ? (
+              webhookGroups.map((group) => {
+                const userName = group.profile.name ?? group.profile.slug ?? "";
+                const userAvatar =
+                  group.profile.image ??
+                  (group.profile.slug
+                    ? `${bookerUrl}/${group.profile.slug}/avatar.png`
+                    : undefined);
+                return (
+                  <section key={group.teamId ?? group.profile.slug ?? ""}>
+                    {hasTeams && (
+                      <div className="mb-3 flex items-center gap-2">
+                        <Avatar className="size-5">
+                          {userAvatar ? (
+                            <AvatarImage alt={userName} src={userAvatar} />
+                          ) : null}
+                        </Avatar>
+                        <span className="font-medium text-sm">{userName}</span>
+                      </div>
+                    )}
+                    <CardFrame>
+                      <Card className="[--card:var(--popover)]">
+                        <CardPanel className="p-0">
+                          {group.webhooks.map((webhook) => (
+                            <WebhookListItem
+                              key={webhook.id}
+                              webhook={webhook}
+                              editHref={`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`}
+                              lastItem={true}
+                              permissions={{
+                                canEditWebhook: group?.metadata?.canModify ?? false,
+                                canDeleteWebhook: group?.metadata?.canDelete ?? false,
+                              }}
+                              onEditWebhookAction={() =>
+                                router.push(`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`)
+                              }
+                            />
+                          ))}
+                        </CardPanel>
+                      </Card>
+                    </CardFrame>
+                  </section>
+                );
+              })
+            ) : (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <WebhookIcon />
+                  </EmptyMedia>
+                  <EmptyTitle>{t("create_your_first_webhook")}</EmptyTitle>
+                  <EmptyDescription>
+                    {t("create_your_first_webhook_description", { appName: APP_NAME })}
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <CreateNewWebhookButton isEmptyState />
+                </EmptyContent>
+              </Empty>
+            )}
+          </div>
+        </CardPanel>
+      </Card>
     </CardFrame>
   );
 };
