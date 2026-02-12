@@ -66,10 +66,8 @@ test.describe("OAuth authorize - client approval status", () => {
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&state=1234`
     );
 
-    // Should NOT redirect, should show error on page
     await expect(page).not.toHaveURL(/^https:\/\/example\.com/);
 
-    // Check error message is displayed
     await expect(page.getByText(OAUTH_ERROR_REASONS["client_not_approved"])).toBeVisible();
   });
 
@@ -92,11 +90,9 @@ test.describe("OAuth authorize - client approval status", () => {
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&state=1234`
     );
 
-    // Should NOT redirect, should show error on page
     await expect(page).not.toHaveURL(/^https:\/\/example\.com/);
 
-    // Check error message is displayed
-    await expect(page.getByText(OAUTH_ERROR_REASONS["client_not_approved"])).toBeVisible();
+    await expect(page.getByText(OAUTH_ERROR_REASONS["client_rejected"])).toBeVisible();
   });
 
   test("APPROVED client redirects to redirectUri with code", async ({ page, users, prisma }, testInfo) => {
@@ -208,7 +204,7 @@ test.describe("OAuth authorize - client approval status", () => {
     expect(url.searchParams.get("error")).toBeNull();
   });
 
-  test("REJECTED client owned by logged-in user allows authorization", async ({
+  test("REJECTED client owned by logged-in user blocks authorization", async ({
     page,
     users,
     prisma,
@@ -228,18 +224,8 @@ test.describe("OAuth authorize - client approval status", () => {
       `auth/oauth2/authorize?client_id=${client.clientId}&redirect_uri=${client.redirectUri}&state=1234`
     );
 
-    await page.waitForSelector('[data-testid="allow-button"]');
-    await page.getByTestId("allow-button").click();
+    await expect(page).not.toHaveURL(/^https:\/\/example\.com/);
 
-    await page.waitForFunction(() => {
-      return window.location.href.startsWith("https://example.com");
-    });
-
-    await expect(page).toHaveURL(/^https:\/\/example\.com/);
-
-    const url = new URL(page.url());
-    expect(url.searchParams.get("code")).toBeTruthy();
-    expect(url.searchParams.get("state")).toBe("1234");
-    expect(url.searchParams.get("error")).toBeNull();
+    await expect(page.getByText(OAUTH_ERROR_REASONS["client_rejected"])).toBeVisible();
   });
 });

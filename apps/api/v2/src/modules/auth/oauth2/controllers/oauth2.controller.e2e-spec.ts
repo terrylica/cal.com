@@ -712,34 +712,41 @@ describe("OAuth2 Controller Endpoints", () => {
       expect(response.body.token_type).toBe("bearer");
     });
 
-    it("should exchange authorization code for tokens with REJECTED client owned by user", async () => {
-      const code = await generateAuthCodeForClient(rejectedClientId);
+    it("should reject authorization code generation for REJECTED client even as owner", async () => {
+      await expect(generateAuthCodeForClient(rejectedClientId)).rejects.toThrow();
+    });
+
+    it("should reject token exchange when client becomes rejected", async () => {
+      const code = await generateAuthCodeForClient(pendingClientId);
+
+      await oAuthClientFixture.updateStatus(pendingClientId, OAuthClientStatus.REJECTED);
 
       const response = await request(app.getHttpServer())
         .post("/api/v2/auth/oauth2/token")
         .type("form")
         .send({
-          client_id: rejectedClientId,
+          client_id: pendingClientId,
           grant_type: "authorization_code",
           code,
           client_secret: testClientSecret,
           redirect_uri: testRedirectUri,
         })
-        .expect(200);
+        .expect(401);
 
-      expect(response.body.access_token).toBeDefined();
-      expect(response.body.refresh_token).toBeDefined();
-      expect(response.body.token_type).toBe("bearer");
+      expect(response.body.error).toBe("unauthorized_client");
+      expect(response.body.error_description).toBe("client_rejected");
+
+      await oAuthClientFixture.updateStatus(pendingClientId, OAuthClientStatus.PENDING);
     });
 
-    it("should refresh tokens with REJECTED client owned by user", async () => {
-      const code = await generateAuthCodeForClient(rejectedClientId);
+    it("should reject token refresh when client becomes rejected", async () => {
+      const code = await generateAuthCodeForClient(pendingClientId);
 
       const tokenResponse = await request(app.getHttpServer())
         .post("/api/v2/auth/oauth2/token")
         .type("form")
         .send({
-          client_id: rejectedClientId,
+          client_id: pendingClientId,
           grant_type: "authorization_code",
           code,
           client_secret: testClientSecret,
@@ -747,20 +754,23 @@ describe("OAuth2 Controller Endpoints", () => {
         })
         .expect(200);
 
+      await oAuthClientFixture.updateStatus(pendingClientId, OAuthClientStatus.REJECTED);
+
       const response = await request(app.getHttpServer())
         .post("/api/v2/auth/oauth2/token")
         .type("form")
         .send({
-          client_id: rejectedClientId,
+          client_id: pendingClientId,
           grant_type: "refresh_token",
           refresh_token: tokenResponse.body.refresh_token,
           client_secret: testClientSecret,
         })
-        .expect(200);
+        .expect(401);
 
-      expect(response.body.access_token).toBeDefined();
-      expect(response.body.refresh_token).toBeDefined();
-      expect(response.body.token_type).toBe("bearer");
+      expect(response.body.error).toBe("unauthorized_client");
+      expect(response.body.error_description).toBe("client_rejected");
+
+      await oAuthClientFixture.updateStatus(pendingClientId, OAuthClientStatus.PENDING);
     });
 
     afterAll(async () => {
