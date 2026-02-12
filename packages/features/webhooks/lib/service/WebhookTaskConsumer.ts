@@ -38,7 +38,6 @@ export class WebhookTaskConsumer {
     });
 
     try {
-      // Step 1: Get the appropriate data fetcher for this trigger event
       const fetcher = this.getDataFetcher(payload.triggerEvent);
 
       if (!fetcher) {
@@ -49,7 +48,6 @@ export class WebhookTaskConsumer {
         throw new Error(`No data fetcher registered for trigger event: ${payload.triggerEvent}`);
       }
 
-      // Step 2: Fetch webhook subscribers
       const subscriberContext = fetcher.getSubscriberContext(payload);
       const subscribers = await this.webhookRepository.getSubscribers(subscriberContext);
 
@@ -62,7 +60,6 @@ export class WebhookTaskConsumer {
         operationId: payload.operationId,
       });
 
-      // Step 3: Fetch event-specific data via data fetcher
       const eventData = await fetcher.fetchEventData(payload);
 
       if (!eventData) {
@@ -73,7 +70,6 @@ export class WebhookTaskConsumer {
         return;
       }
 
-      // Step 4: Build and send webhooks to each subscriber
       await this.sendWebhooksToSubscribers(subscribers, eventData, payload);
 
       this.log.debug("Webhook delivery task completed", {
@@ -101,7 +97,7 @@ export class WebhookTaskConsumer {
 
   /**
    * Build webhook payloads and send to each subscriber via WebhookService.
-   * Uses proper DI flow: WebhookService.processWebhooks() for HTTP delivery.
+   * Uses WebhookService.processWebhooks() for HTTP delivery.
    */
   private async sendWebhooksToSubscribers(
     subscribers: WebhookSubscriber[],
@@ -114,7 +110,6 @@ export class WebhookTaskConsumer {
     }
 
     try {
-      // Build DTO from fetched data
       const dto = this.buildDTO(eventData, payload);
 
       if (!dto) {
@@ -125,11 +120,9 @@ export class WebhookTaskConsumer {
         return;
       }
 
-      // Build versioned payload using PayloadBuilderFactory
       const builder = this.payloadBuilderFactory.getBuilder(DEFAULT_WEBHOOK_VERSION, dto.triggerEvent);
       const webhookPayload = builder.build(dto);
 
-      // Send via WebhookService (proper DI, no legacy sendPayload)
       await this.webhookService.processWebhooks(dto.triggerEvent, webhookPayload, subscribers);
 
       this.log.debug("Webhook sending completed", {
@@ -154,7 +147,6 @@ export class WebhookTaskConsumer {
   private buildDTO(eventData: Record<string, unknown>, payload: WebhookTaskPayload): WebhookEventDTO | null {
     const { triggerEvent, timestamp } = payload;
 
-    // Extract common fields from event data
     const calendarEvent = eventData.calendarEvent as CalendarEvent | undefined;
     const booking = eventData.booking as BookingForCalEventBuilder | undefined;
     const eventType = booking?.eventType;
@@ -168,9 +160,6 @@ export class WebhookTaskConsumer {
       return null;
     }
 
-    // Transform DB eventType shape to EventTypeInfo shape expected by PayloadBuilder
-    // DB has: title, description, price, currency, length, requiresConfirmation
-    // PayloadBuilder expects: eventTitle, eventDescription, price, currency, length, requiresConfirmation
     const eventTypeInfo = {
       id: eventType.id,
       eventTitle: eventType.title,
@@ -181,7 +170,6 @@ export class WebhookTaskConsumer {
       length: eventType.length,
     };
 
-    // Build DTO based on trigger event type
     const bookingPayload = payload as BookingWebhookTaskPayload;
     const baseDTO = {
       createdAt: timestamp,
