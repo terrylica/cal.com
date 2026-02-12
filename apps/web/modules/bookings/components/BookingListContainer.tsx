@@ -1,4 +1,5 @@
 "use client";
+
 import dayjs from "@calcom/dayjs";
 import { useDataTable, useDisplayedFilterCount } from "@calcom/features/data-table";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -10,12 +11,13 @@ import { Button } from "@calcom/ui/components/button";
 import { ToggleGroup } from "@calcom/ui/components/form";
 import { WipeMyCalActionButton } from "@calcom/web/components/apps/wipemycalother/wipeMyCalActionButton";
 import { getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBookingFilters } from "~/bookings/hooks/useBookingFilters";
 import { useBookingListColumns } from "~/bookings/hooks/useBookingListColumns";
 import { useBookingListData } from "~/bookings/hooks/useBookingListData";
 import { useBookingStatusTab } from "~/bookings/hooks/useBookingStatusTab";
+import { usePreSelectedBooking } from "~/bookings/hooks/usePreSelectedBooking";
 import { useFacetedUniqueValues } from "~/bookings/hooks/useFacetedUniqueValues";
 import { useListAutoSelector } from "~/bookings/hooks/useListAutoSelector";
 import { DataTableFilters, DataTableSegment } from "~/data-table/components";
@@ -23,7 +25,7 @@ import {
   BookingDetailsSheetStoreProvider,
   useBookingDetailsSheetStore,
 } from "../store/bookingDetailsSheetStore";
-import type { BookingListingStatus, BookingOutput, BookingsGetOutput, RowData } from "../types";
+import type { BookingListingStatus, BookingsGetOutput, RowData } from "../types";
 import { BookingDetailsSheet } from "./BookingDetailsSheet";
 import { BookingList } from "./BookingList";
 import { ViewToggleButton } from "./ViewToggleButton";
@@ -74,25 +76,6 @@ interface BookingListInnerProps extends BookingListContainerProps {
   totalRowCount?: number;
   bookings: BookingsGetOutput["bookings"];
   initialBookingUid?: string;
-}
-
-function getTabForBooking(booking: BookingOutput): "upcoming" | "recurring" | "past" | "cancelled" | "unconfirmed" {
-  const now = new Date();
-  const isPast = new Date(booking.endTime) <= now;
-
-  if (booking.status === "CANCELLED" || booking.status === "REJECTED") {
-    return "cancelled";
-  }
-  if (booking.status === "PENDING" && !isPast) {
-    return "unconfirmed";
-  }
-  if (isPast) {
-    return "past";
-  }
-  if (booking.recurringEventId) {
-    return "recurring";
-  }
-  return "upcoming";
 }
 
 function BookingListInner({
@@ -254,52 +237,18 @@ export function BookingListContainer(props: BookingListContainerProps) {
   const { eventTypeIds, teamIds, userIds, dateRange, attendeeName, attendeeEmail, bookingUid } =
     useBookingFilters();
 
-  const preSelectedBookingUid = props.initialBookingUid;
-  const needsConfirmationOnSelectedBookingStatus = !!preSelectedBookingUid;
-  const { data: fetchedBookingsData, isPending: isFetchingPreSelectedBookingData } =
-    trpc.viewer.bookings.get.useQuery(
-      {
-        limit: 1,
-        offset: 0,
-        filters: {
-          bookingUid: preSelectedBookingUid ?? undefined,
-          statuses: ["upcoming", "recurring", "past", "cancelled", "unconfirmed"],
-        },
-      },
-      {
-        enabled: !!preSelectedBookingUid,
-        staleTime: 5 * 60 * 1000,
-      }
-    );
+  const { resolvedStatus, isResolvingStatus } = usePreSelectedBooking({
+    initialBookingUid: props.initialBookingUid,
+    defaultStatus: props.status,
+  });
 
-  const preSelectedBooking = fetchedBookingsData?.bookings?.[0] ?? null;
-  const pathname = usePathname();
-  const router = useRouter();
-  const [correctStatus, setCorrectStatus] = useState(props.status);
-  const [isNavigatingToCorrectTab, startTransitionToCorrectTab] = useTransition();
-  useEffect(() => {
-    if (!preSelectedBooking) return;
-    const correctTab = getTabForBooking(preSelectedBooking);
-    const currentTab = pathname?.match(/\/bookings\/(\w+)/)?.[1];
-    if (correctTab && currentTab && correctTab !== currentTab) {
-      startTransitionToCorrectTab(() => {
-        const newPath = pathname.replace(`/bookings/${currentTab}`, `/bookings/${correctTab}`);
-        router.replace(`${newPath}${window.location.search}`);
-      });
-    }
-    setCorrectStatus(correctTab);
-  }, [preSelectedBooking, pathname, router]);
-
-  const waitForConfirmationOnSelectedBookingStatus = needsConfirmationOnSelectedBookingStatus
-    ? isFetchingPreSelectedBookingData
-    : false;
   // Build query input once - shared between query and prefetching
   const queryInput = useMemo(
     () => ({
       limit,
       offset,
       filters: {
-        statuses: [correctStatus],
+        statuses: [resolvedStatus],
         eventTypeIds,
         teamIds,
         userIds,
@@ -315,7 +264,7 @@ export function BookingListContainer(props: BookingListContainerProps) {
     [
       limit,
       offset,
-      correctStatus,
+      resolvedStatus,
       eventTypeIds,
       teamIds,
       userIds,
@@ -326,11 +275,9 @@ export function BookingListContainer(props: BookingListContainerProps) {
     ]
   );
   const query = trpc.viewer.bookings.get.useQuery(queryInput, {
-    staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
-    gcTime: 30 * 60 * 1000, // 30 minutes - cache retention time
-    // We need to wait for navigation to complete too otherwise we endup showing the bookings matching different status under different tab
-    // This becomes necessary because switching tab runs RSC code which takes time and navigation doesn't complete without that
-    enabled: !isValidatorPending && !waitForConfirmationOnSelectedBookingStatus && !isNavigatingToCorrectTab, // Wait for validator to be ready before fetching
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !isValidatorPending && !isResolvingStatus,
   });
 
   const bookings = useMemo(() => query.data?.bookings ?? [], [query.data?.bookings]);
@@ -349,7 +296,7 @@ export function BookingListContainer(props: BookingListContainerProps) {
     <BookingDetailsSheetStoreProvider bookings={bookings}>
       <BookingListInner
         {...props}
-        status={correctStatus}
+        status={resolvedStatus}
         data={query.data}
         isPending={query.isPending}
         hasError={!!query.error}
