@@ -12,6 +12,8 @@ import type { OrganizationOnboarding } from "@calcom/prisma/client";
 import { UserPermissionRole, type BillingPeriod } from "@calcom/prisma/enums";
 import { userMetadata } from "@calcom/prisma/zod-utils";
 
+import { getOrgPriceId } from "@calcom/features/ee/teams/lib/payments";
+
 import { OrganizationPermissionService } from "./OrganizationPermissionService";
 import type { OnboardingUser } from "./service/onboarding/types";
 
@@ -223,16 +225,7 @@ export class OrganizationPaymentService {
       throw new Error("STRIPE_ORG_PRODUCT_ID is not set");
     }
 
-    const fixedPriceId =
-      config.billingPeriod === "ANNUALLY"
-        ? process.env.STRIPE_ORG_ANNUAL_PRICE_ID
-        : process.env.STRIPE_ORG_MONTHLY_PRICE_ID;
-
-    if (!fixedPriceId) {
-      const envVar =
-        config.billingPeriod === "ANNUALLY" ? "STRIPE_ORG_ANNUAL_PRICE_ID" : "STRIPE_ORG_MONTHLY_PRICE_ID";
-      throw new Error(`${envVar} is not set`);
-    }
+    const fixedPriceId = getOrgPriceId(config.billingPeriod);
 
     if (!shouldCreateCustomPrice) {
       return {

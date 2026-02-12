@@ -3,12 +3,8 @@
 import { BILLING_PLANS, BILLING_PRICING } from "@calcom/features/ee/billing/constants";
 import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@coss/ui/components/alert";
 import { Icon } from "@calcom/ui/components/icon";
+import { Alert, AlertDescription, AlertTitle } from "@coss/ui/components/alert";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import { Card, CardHeader, CardPanel } from "@coss/ui/components/card";
@@ -97,7 +93,7 @@ export type UpgradePlanDialogProps = {
   info?: {
     title: string;
     description: string;
-  }
+  };
   children: React.ReactNode;
 };
 
@@ -109,10 +105,10 @@ export function UpgradePlanDialog({ tracking, target, info, children }: UpgradeP
   const teamPrice = `$${BILLING_PRICING[BILLING_PLANS.TEAMS][billingPeriod]}`;
   const orgPrice = `$${BILLING_PRICING[BILLING_PLANS.ORGANIZATIONS][billingPeriod]}`;
 
-  const teamHref = "/settings/teams/new";
-
+  const bpParam = billingPeriod === "annual" ? "a" : "m";
+  const teamHref = `/settings/teams/new?bp=${bpParam}`;
   const organizationHref = flags["onboarding-v3"]
-    ? "/onboarding/organization/details?migrate=true"
+    ? `/onboarding/organization/details?migrate=true&bp=${bpParam}`
     : "/settings/organizations/new";
 
   const teamFeatures: PlanFeature[] = [
@@ -200,7 +196,12 @@ export function UpgradePlanDialog({ tracking, target, info, children }: UpgradeP
                 buttonHref={teamHref}
                 primaryButton={target === "team"}
                 onCtaClick={() =>
-                  posthog.capture("upgrade_plan_dialog_cta_clicked", { source: tracking, plan: "team", target, billingPeriod })
+                  posthog.capture("upgrade_plan_dialog_cta_clicked", {
+                    source: tracking,
+                    plan: "team",
+                    target,
+                    billingPeriod,
+                  })
                 }
               />
             )}
@@ -255,7 +256,9 @@ export function UpgradePlanDialog({ tracking, target, info, children }: UpgradeP
                 <p className="font-semibold text-black text-2xl">{t("team")}</p>
               </div>
             )}
-            <Badge variant="outline" size="lg" className="opacity-50">{t("upgrade_badge_current_plan")}</Badge>
+            <Badge variant="outline" size="lg" className="opacity-50">
+              {t("upgrade_badge_current_plan")}
+            </Badge>
           </Card>
         </DialogPanel>
       </DialogPopup>
