@@ -1,10 +1,8 @@
 /**
  * @deprecated use smtp with tasker instead
  */
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
 
+import process from "node:process";
 import dayjs from "@calcom/dayjs";
 import generateIcsString from "@calcom/emails/lib/generateIcsString";
 import { getCalEventResponses } from "@calcom/features/bookings/lib/getCalEventResponses";
@@ -17,7 +15,9 @@ import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
 import { SchedulingType, WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
-
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 import {
   getAllRemindersToCancel,
   getAllRemindersToDelete,
@@ -33,11 +33,10 @@ import {
 } from "../lib/reminders/providers/sendgridProvider";
 import type { VariablesType } from "../lib/reminders/templates/customTemplate";
 import customTemplate from "../lib/reminders/templates/customTemplate";
-import { replaceCloakedLinksInHtml } from "../lib/reminders/utils";
 import emailRatingTemplate from "../lib/reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "../lib/reminders/templates/emailReminderTemplate";
 
-export async function handler(req: NextRequest) {
+async function handler(req: NextRequest) {
   const apiKey = req.headers.get("authorization") || req.nextUrl.searchParams.get("apiKey");
 
   if (process.env.CRON_API_KEY !== apiKey) {
@@ -126,7 +125,7 @@ export async function handler(req: NextRequest) {
     // For seated events, get the correct attendee based on seatReferenceId
     let targetAttendee = reminder.booking?.attendees[0];
     if (reminder.seatReferenceId) {
-          const bookingSeatRepository = new BookingSeatRepository(prisma);
+      const bookingSeatRepository = new BookingSeatRepository(prisma);
       const seatAttendeeData = await bookingSeatRepository.getByReferenceUidWithAttendeeDetails(
         reminder.seatReferenceId
       );
@@ -244,9 +243,7 @@ export async function handler(req: NextRequest) {
             eventEndTimeInAttendeeTimezone: dayjs(reminder.booking?.endTime).tz(targetAttendee?.timeZone),
           };
           const emailLocale = locale || "en";
-          const brandingDisabled = reminder.booking.eventType?.team
-            ? !!reminder.booking.eventType?.team?.hideBranding
-            : !!reminder.booking.user?.hideBranding;
+          const brandingDisabled = shouldHideBranding(reminder.booking);
 
           const emailSubject = customTemplate(
             reminder.workflowStep.emailSubject || "",
@@ -272,9 +269,7 @@ export async function handler(req: NextRequest) {
               getTimeFormatStringFromUserTimeFormat(reminder.booking.user?.timeFormat)
             ).text.length === 0;
         } else if (reminder.workflowStep.template === WorkflowTemplates.REMINDER) {
-          const brandingDisabled = reminder.booking.eventType?.team
-            ? !!reminder.booking.eventType?.team?.hideBranding
-            : !!reminder.booking.user?.hideBranding;
+          const brandingDisabled = shouldHideBranding(reminder.booking);
           emailContent = emailReminderTemplate({
             isEditingMode: false,
             locale: reminder.booking.user?.locale || "en",
@@ -302,6 +297,7 @@ export async function handler(req: NextRequest) {
           const bookerUrl = await getBookerBaseUrl(
             reminder.booking.eventType?.team?.parentId ?? organizerOrganizationId ?? null
           );
+          const brandingDisabled = shouldHideBranding(reminder.booking);
           emailContent = emailRatingTemplate({
             isEditingMode: true,
             locale: reminder.booking.user?.locale || "en",
@@ -314,6 +310,7 @@ export async function handler(req: NextRequest) {
             timeZone: timeZone || "",
             organizer: reminder.booking.user?.name || "",
             name: name || "",
+            isBrandingDisabled: brandingDisabled,
             ratingUrl: `${bookerUrl}/booking/${reminder.booking.uid}?rating`,
             noShowUrl: `${bookerUrl}/booking/${reminder.booking.uid}?noShow=true`,
           });
@@ -358,7 +355,7 @@ export async function handler(req: NextRequest) {
           const mailData = {
             subject: emailContent.emailSubject,
             to: Array.isArray(sendTo) ? sendTo : [sendTo],
-            html: replaceCloakedLinksInHtml(emailContent.emailBody),
+            html: emailContent.emailBody,
             attachments: reminder.workflowStep.includeCalendarEvent
               ? [
                   {
@@ -431,9 +428,7 @@ export async function handler(req: NextRequest) {
 
         const emailBodyEmpty = false;
 
-        const brandingDisabled = reminder.booking.eventType?.team
-          ? !!reminder.booking.eventType?.team?.hideBranding
-          : !!reminder.booking.user?.hideBranding;
+        const brandingDisabled = shouldHideBranding(reminder.booking);
 
         emailContent = emailReminderTemplate({
           isEditingMode: false,
@@ -457,7 +452,7 @@ export async function handler(req: NextRequest) {
           const mailData = {
             subject: emailContent.emailSubject,
             to: [sendTo],
-            html: replaceCloakedLinksInHtml(emailContent.emailBody),
+            html: emailContent.emailBody,
             sender: reminder.workflowStep?.sender,
             ...(!reminder.booking?.eventType?.hideOrganizerEmail && {
               replyTo:
@@ -517,3 +512,23 @@ export async function handler(req: NextRequest) {
 
   return NextResponse.json({ message: `${unscheduledReminders.length} Emails to schedule` }, { status: 200 });
 }
+
+function shouldHideBranding(booking: {
+  metadata: unknown;
+  eventType?: { team?: { hideBranding?: boolean } | null } | null;
+  user?: { hideBranding?: boolean } | null;
+}): boolean {
+  const bookingMetadata = bookingMetadataSchema.parse(booking.metadata || {});
+
+  if (bookingMetadata?.platformClientId) {
+    return true;
+  }
+
+  if (booking.eventType?.team) {
+    return !!booking.eventType.team.hideBranding;
+  }
+
+  return !!booking.user?.hideBranding;
+}
+
+export { handler };

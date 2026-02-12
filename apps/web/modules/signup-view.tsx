@@ -16,7 +16,11 @@ import { z } from "zod";
 
 import getStripe from "@calcom/app-store/stripepayment/lib/client";
 import { getPremiumPlanPriceValue } from "@calcom/app-store/stripepayment/lib/utils";
-import { fetchSignup, isUserAlreadyExistsError, hasCheckoutSession } from "@calcom/features/auth/signup/lib/fetchSignup";
+import {
+  fetchSignup,
+  isUserAlreadyExistsError,
+  hasCheckoutSession,
+} from "@calcom/features/auth/signup/lib/fetchSignup";
 import { getOrgUsernameFromEmail } from "@calcom/features/auth/signup/utils/getOrgUsernameFromEmail";
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import ServerTrans from "@calcom/lib/components/ServerTrans";
@@ -54,7 +58,9 @@ const signupSchema = apiSignupSchema.extend({
   cfToken: z.string().optional(),
 });
 
-const TurnstileCaptcha = dynamic(() => import("@calcom/features/auth/Turnstile"), { ssr: false });
+const TurnstileCaptcha = dynamic(() => import("@calcom/web/modules/auth/components/Turnstile"), {
+  ssr: false,
+});
 
 type FormValues = z.infer<typeof signupSchema>;
 
@@ -200,7 +206,7 @@ export default function Signup({
   const formMethods = useForm<FormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: prepopulateFormValues satisfies FormValues,
-    mode: "onChange",
+    mode: "onTouched",
   });
   const {
     register,
@@ -328,6 +334,7 @@ export default function Signup({
         <>
           {process.env.NEXT_PUBLIC_GTM_ID && (
             <>
+              {/* biome-ignore lint/security/noDangerouslySetInnerHtml: GTM script injection */}
               <Script
                 id="gtm-init-script"
                 // It is strictly not necessary to disable, but in a future update of react/no-danger this will error.
@@ -341,6 +348,7 @@ export default function Signup({
                     })(window, document, 'script', 'dataLayer', '${process.env.NEXT_PUBLIC_GTM_ID}');`,
                 }}
               />
+              {/* biome-ignore lint/security/noDangerouslySetInnerHtml: GTM noscript fallback */}
               <noscript
                 dangerouslySetInnerHTML={{
                   __html: `<iframe src="https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
@@ -385,7 +393,7 @@ export default function Signup({
               </div>
             )}
             <div className="flex flex-col gap-2">
-              <h1 className="font-heading text-[28px] leading-none ">
+              <h1 className="font-cal text-[28px] leading-none ">
                 {IS_CALCOM ? t("create_your_calcom_account") : t("create_your_account")}
               </h1>
               {IS_CALCOM ? (
@@ -398,7 +406,7 @@ export default function Signup({
                 </p>
               )}
               {IS_CALCOM && (
-                <div className="mt-4">
+                <div className="mt-12">
                   <SelectField
                     label={t("data_region")}
                     value={{
@@ -451,13 +459,13 @@ export default function Signup({
 
             {/* Form Container */}
             {displayEmailForm && (
-              <div className="mt-12">
+              <div className="mt-6">
                 <Form
                   className="flex flex-col gap-4"
                   form={formMethods}
                   handleSubmit={async (values) => {
                     let updatedValues = values;
-                    if (!formMethods.getValues().username && isOrgInviteByLink && orgAutoAcceptEmail) {
+                    if (!formMethods.getValues().username && isOrgInviteByLink) {
                       updatedValues = {
                         ...values,
                         username: getOrgUsernameFromEmail(values.email, orgAutoAcceptEmail),
@@ -612,10 +620,10 @@ export default function Signup({
               </div>
             )}
             {!displayEmailForm && (
-              <div className="mt-12">
+              <div className="mt-8 flex flex-col gap-6">
                 {/* Upper Row */}
-                <div className="mt-6 flex flex-col gap-2 md:flex-row">
-                  {isGoogleLoginEnabled ? (
+                {isGoogleLoginEnabled && (
+                  <div className="flex flex-col gap-2 md:flex-row">
                     <Button
                       color="primary"
                       loading={isGoogleLoading}
@@ -662,11 +670,11 @@ export default function Signup({
                       }}>
                       {t("continue_with_google")}
                     </Button>
-                  ) : null}
-                </div>
+                  </div>
+                )}
 
                 {isGoogleLoginEnabled && (
-                  <div className="mt-6">
+                  <div>
                     <div className="relative flex items-center">
                       <div className="border-subtle grow border-t" />
                       <span className="text-subtle mx-2 shrink text-sm font-normal leading-none">
@@ -678,7 +686,7 @@ export default function Signup({
                 )}
 
                 {/* Lower Row */}
-                <div className="mt-6 flex flex-col gap-2">
+                <div className="flex flex-col gap-2">
                   <Button
                     color="secondary"
                     disabled={isGoogleLoading}
@@ -730,6 +738,7 @@ export default function Signup({
                   <ServerTrans
                     t={t}
                     i18nKey="signing_up_terms"
+                    values={{ appName: APP_NAME }}
                     components={[
                       <Link
                         className="text-emphasis hover:underline"

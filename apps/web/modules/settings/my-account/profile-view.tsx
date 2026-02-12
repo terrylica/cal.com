@@ -528,7 +528,9 @@ const ProfileForm = ({
       .trim()
       .min(1, t("you_need_to_add_a_name"))
       .max(FULL_NAME_LENGTH_MAX_LIMIT, {
-        message: t("max_limit_allowed_hint", { limit: FULL_NAME_LENGTH_MAX_LIMIT }),
+        message: t("max_limit_allowed_hint", {
+          limit: FULL_NAME_LENGTH_MAX_LIMIT,
+        }),
       }),
     email: emailSchema.toLowerCase(),
     bio: z.string(),
@@ -642,7 +644,7 @@ const ProfileForm = ({
 
                       {showRemoveAvatarButton && (
                         <Button
-                          color="destructive"
+                          color="minimal"
                           onClick={() => {
                             onChange(null);
                           }}>
@@ -707,7 +709,9 @@ const ProfileForm = ({
           <Editor
             getText={() => md.render(formMethods.getValues("bio") || "")}
             setText={(value: string) => {
-              formMethods.setValue("bio", turndown(value), { shouldDirty: true });
+              formMethods.setValue("bio", turndown(value), {
+                shouldDirty: true,
+              });
             }}
             excludedToolbarItems={["blockType"]}
             disableLists

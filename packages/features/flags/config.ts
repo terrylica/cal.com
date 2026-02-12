@@ -34,6 +34,8 @@ export type AppFlags = {
   "booking-email-sms-tasker": boolean;
   "bookings-v3": boolean;
   "booking-audit": boolean;
+  "monthly-proration": boolean;
+  "hwm-seating": boolean;
   "sidebar-tips": boolean;
 };
 

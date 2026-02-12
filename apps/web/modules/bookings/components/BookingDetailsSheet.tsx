@@ -45,7 +45,7 @@ import { usePaymentStatus } from "../hooks/usePaymentStatus";
 import { useBookingDetailsSheetStore } from "../store/bookingDetailsSheetStore";
 import type { BookingOutput } from "../types";
 import { JoinMeetingButton } from "./JoinMeetingButton";
-import { BookingHistory } from "@calcom/features/booking-audit/client/components/BookingHistory";
+import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
 import { SegmentedControl } from "@calcom/ui/components/segmented-control";
 type BookingMetaData = z.infer<typeof bookingMetadataSchema>;
 
@@ -93,14 +93,23 @@ interface BookingDetailsSheetInnerProps {
 }
 
 function useActiveSegment(bookingAuditEnabled: boolean) {
-  const [activeSegment, setActiveSegmentInStore] = useBookingDetailsSheetStore((state) => [state.activeSegment, state.setActiveSegment]);
+  const [activeSegment, setActiveSegmentInStore] = useBookingDetailsSheetStore((state) => [
+    state.activeSegment,
+    state.setActiveSegment,
+  ]);
 
-  const getDerivedActiveSegment = ({ activeSegment, bookingAuditEnabled }: { activeSegment: "info" | "history" | null, bookingAuditEnabled: boolean }) => {
+  const getDerivedActiveSegment = ({
+    activeSegment,
+    bookingAuditEnabled,
+  }: {
+    activeSegment: "info" | "history" | null;
+    bookingAuditEnabled: boolean;
+  }) => {
     if (!bookingAuditEnabled && activeSegment === "history") {
       return "info";
     }
     return activeSegment ?? "info";
-  }
+  };
 
   const derivedActiveSegment = getDerivedActiveSegment({ activeSegment, bookingAuditEnabled });
 
@@ -195,18 +204,18 @@ function BookingDetailsSheetInner({
   const recurringInfo =
     booking.recurringEventId && booking.eventType?.recurringEvent
       ? {
-        count: booking.eventType.recurringEvent.count,
-        recurringEvent: booking.eventType.recurringEvent,
-      }
+          count: booking.eventType.recurringEvent.count,
+          recurringEvent: booking.eventType.recurringEvent,
+        }
       : null;
 
   const customResponses = booking.responses
     ? Object.entries(booking.responses as Record<string, unknown>)
-      .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
-      .map(([question, answer]) => [question, answer] as [string, unknown])
+        .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
+        .map(([question, answer]) => [question, answer] as [string, unknown])
     : [];
 
-  const reason = booking.assignmentReason?.[0];
+  const reason = booking.assignmentReasonSortedByCreatedAt?.[booking.assignmentReasonSortedByCreatedAt.length - 1];
   const reasonTitle = reason && assignmentReasonBadgeTitleMap(reason.reasonEnum);
 
   return (
@@ -284,7 +293,10 @@ function BookingDetailsSheetInner({
 
             {bookingAuditEnabled && (
               <SegmentedControl
-                data={[{ value: "info", label: t("info") }, { value: "history", label: t("history") }]}
+                data={[
+                  { value: "info", label: t("info") },
+                  { value: "history", label: t("history") },
+                ]}
                 value={activeSegment}
                 onChange={(value) => setActiveSegment(value)}
               />
@@ -466,13 +478,17 @@ function WhoSection({ booking }: { booking: BookingOutput }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-emphasis truncate text-sm leading-[1.2]">
-                  {booking.user.name || booking.user.email}
+                  {booking.eventType?.hideOrganizerEmail
+                    ? booking.user.name || t("organizer")
+                    : booking.user.name || booking.user.email}
                 </p>
                 <Badge variant="purple" size="sm" className="capitalize">
                   {t("host")}
                 </Badge>
               </div>
-              <p className="text-default truncate text-sm leading-[1.2]">{booking.user.email}</p>
+              {!booking.eventType?.hideOrganizerEmail && (
+                <p className="text-default truncate text-sm leading-[1.2]">{booking.user.email}</p>
+              )}
             </div>
           </div>
         )}
@@ -581,12 +597,12 @@ function RecurringInfoSection({
 function AssignmentReasonSection({ booking }: { booking: BookingOutput }) {
   const { t } = useLocale();
 
-  if (!booking.assignmentReason || booking.assignmentReason.length === 0) {
+  if (!booking.assignmentReasonSortedByCreatedAt || booking.assignmentReasonSortedByCreatedAt.length === 0) {
     return null;
   }
 
-  // we fetch only one assignment reason.
-  const reason = booking.assignmentReason[0];
+  const reason =
+    booking.assignmentReasonSortedByCreatedAt[booking.assignmentReasonSortedByCreatedAt.length - 1];
   if (!reason.reasonString) {
     return null;
   }

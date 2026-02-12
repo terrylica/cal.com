@@ -9,7 +9,7 @@ import {
   useColumnFilters,
   useDataTable,
 } from "@calcom/features/data-table";
-import { useSegments } from "@calcom/features/data-table/hooks/useSegments";
+import { useSegments } from "~/data-table/hooks/useSegments";
 import { useOrgBranding } from "@calcom/features/ee/organizations/context/provider";
 import type { MemberPermissions } from "@calcom/features/pbac/lib/team-member-permissions";
 import { WEBAPP_URL } from "@calcom/lib/constants";
@@ -196,6 +196,7 @@ function UserListTableContent({
       canRemove: permissions?.canRemove ?? adminOrOwner,
       canResendInvitation: permissions?.canInvite ?? adminOrOwner,
       canImpersonate: permissions?.canImpersonate ?? adminOrOwner,
+      canResetPassword: permissions?.canResetPassword ?? adminOrOwner,
     };
     const generateAttributeColumns = (): ColumnDef<UserTableUser>[] => {
       if (!attributes?.length) {
@@ -305,12 +306,13 @@ function UserListTableContent({
         size: 200,
         header: t("members"),
         cell: ({ row }: CellContext<UserTableUser, unknown>) => {
-          const { username, email, avatarUrl } = row.original;
+          const { username, name, email, avatarUrl } = row.original;
+          const displayName = name || username || "No username";
           return (
             <div className="flex items-center gap-2">
               <Avatar
                 size="sm"
-                alt={username || email}
+                alt={displayName}
                 imageSrc={getUserAvatarUrl({
                   avatarUrl,
                 })}
@@ -319,7 +321,7 @@ function UserListTableContent({
                 <div
                   data-testid={`member-${username}-username`}
                   className="text-emphasis text-sm font-medium leading-none">
-                  {username || "No username"}
+                  {displayName}
                 </div>
                 <div
                   data-testid={`member-${username}-email`}
@@ -502,6 +504,7 @@ function UserListTableContent({
               (permissionsRaw.canImpersonate ?? false),
             canLeave: user.accepted && isSelf,
             canResendInvitation: (permissionsRaw.canResendInvitation ?? false) && !user.accepted,
+            canResetPassword: (permissionsRaw.canResetPassword ?? false) && user.accepted && !isSelf,
           };
 
           return (
