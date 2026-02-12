@@ -182,10 +182,11 @@ function BookingDetailsSheetInner({
     navigation.navigatePrevious();
   };
 
-  const joinButtonRef = useRef<HTMLAnchorElement>(null);
+  const joinButtonWrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input field
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
@@ -207,12 +208,15 @@ function BookingDetailsSheetInner({
             handleNext();
           }
           break;
-        case "Enter":
-          if (joinButtonRef.current) {
+        case "Enter": {
+          // Find the anchor element inside the join button wrapper
+          const joinLink = joinButtonWrapperRef.current?.querySelector("a");
+          if (joinLink) {
             e.preventDefault();
-            joinButtonRef.current.click();
+            joinLink.click();
           }
           break;
+        }
       }
     };
 
@@ -463,13 +467,21 @@ function BookingDetailsSheetInner({
               </>
             ) : (
               !booking.rescheduled && (
-                <JoinMeetingButton
-                  ref={joinButtonRef}
-                  location={booking.location}
-                  metadata={booking.metadata}
-                  bookingStatus={booking.status}
-                  showTooltip
-                />
+                <Tooltip
+                  content={
+                    <div className="flex items-center gap-1.5">
+                      <span>{t("join_shortcut")}</span>
+                    </div>
+                  }
+                >
+                  <div ref={joinButtonWrapperRef}>
+                    <JoinMeetingButton
+                      location={booking.location}
+                      metadata={booking.metadata}
+                      bookingStatus={booking.status}
+                    />
+                  </div>
+                </Tooltip>
               )
             )}
 
