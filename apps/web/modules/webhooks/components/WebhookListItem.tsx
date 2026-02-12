@@ -95,7 +95,6 @@ export default function WebhookListItem(props: {
       await utils.viewer.eventTypes.get.invalidate();
     },
     onError() {
-      setActive(webhook.active);
       toastManager.add({ title: t("something_went_wrong"), type: "error" });
     },
   });
@@ -192,24 +191,15 @@ export default function WebhookListItem(props: {
                       <Switch
                         checked={active}
                         data-testid="webhook-switch"
-                        onCheckedChange={(checked, eventDetails) => {
-                          if (toggleWebhook.isPending) {
-                            eventDetails.cancel();
-                            return;
-                          }
-                          const previous = active;
+                        disabled={toggleWebhook.isPending}
+                        onCheckedChange={(checked) => {
                           setActive(checked);
-                          toggleWebhook.mutate(
-                            {
-                              id: webhook.id,
-                              active: checked,
-                              payloadTemplate: webhook.payloadTemplate,
-                              eventTypeId: webhook.eventTypeId || undefined,
-                            },
-                            {
-                              onError: () => setActive(previous),
-                            }
-                          );
+                          toggleWebhook.mutate({
+                            id: webhook.id,
+                            active: checked,
+                            payloadTemplate: webhook.payloadTemplate,
+                            eventTypeId: webhook.eventTypeId || undefined,
+                          });
                         }}
                       />
                     }
@@ -255,24 +245,15 @@ export default function WebhookListItem(props: {
               {canEditorDelete ? (
                 <MenuCheckboxItem
                   checked={active}
-                  onCheckedChange={(checked, eventDetails) => {
-                    if (toggleWebhook.isPending) {
-                      eventDetails.cancel();
-                      return;
-                    }
-                    const previous = active;
+                  disabled={toggleWebhook.isPending}
+                  onCheckedChange={(checked) => {
                     setActive(checked);
-                    toggleWebhook.mutate(
-                      {
-                        id: webhook.id,
-                        active: checked,
-                        payloadTemplate: webhook.payloadTemplate,
-                        eventTypeId: webhook.eventTypeId || undefined,
-                      },
-                      {
-                        onError: () => setActive(previous),
-                      }
-                    );
+                    toggleWebhook.mutate({
+                      id: webhook.id,
+                      active: checked,
+                      payloadTemplate: webhook.payloadTemplate,
+                      eventTypeId: webhook.eventTypeId || undefined,
+                    });
                   }}
                   variant="switch"
                 >
