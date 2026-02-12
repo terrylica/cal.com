@@ -99,7 +99,7 @@ export default function WebhookListItem(props: {
   });
 
   return (
-    <ListItem data-testid="webhook-list-item">
+    <ListItem data-testid="webhook-list-item" className="*:px-4">
       <ListItemContent>
         <ListItemHeader>
           <div className="flex items-center gap-2">
