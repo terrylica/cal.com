@@ -1,6 +1,8 @@
+import { makeUserActor } from "@calcom/features/booking-audit/lib/makeActor";
 import type { ActionSource } from "@calcom/features/booking-audit/lib/types/actionSource";
-
+import { MembershipRole } from "@calcom/prisma/enums";
 import authedProcedure from "../../../procedures/authedProcedure";
+import { createTeamPbacProcedure } from "../../../procedures/pbacProcedures";
 import publicProcedure from "../../../procedures/publicProcedure";
 import { router } from "../../../trpc";
 import { ZAddGuestsInputSchema } from "./addGuests.schema";
@@ -13,12 +15,13 @@ import { ZGetBookingDetailsInputSchema } from "./getBookingDetails.schema";
 import { ZGetBookingHistoryInputSchema } from "./getBookingHistory.schema";
 import { ZInstantBookingInputSchema } from "./getInstantBookingLocation.schema";
 import { ZGetRoutingTraceInputSchema } from "./getRoutingTrace.schema";
+import { ZGetWrongAssignmentReportsInputSchema } from "./getWrongAssignmentReports.schema";
+import { ZHasWrongAssignmentReportInputSchema } from "./hasWrongAssignmentReport.schema";
 import { ZReportBookingInputSchema } from "./reportBooking.schema";
 import { ZReportWrongAssignmentInputSchema } from "./reportWrongAssignment.schema";
 import { ZRequestRescheduleInputSchema } from "./requestReschedule.schema";
-import { ZHasWrongAssignmentReportInputSchema } from "./hasWrongAssignmentReport.schema";
+import { ZUpdateWrongAssignmentReportStatusInputSchema } from "./updateWrongAssignmentReportStatus.schema";
 import { bookingsProcedure } from "./util";
-import { makeUserActor } from "@calcom/features/booking-audit/lib/makeActor";
 export const bookingsRouter = router({
   get: authedProcedure.input(ZGetInputSchema).query(async ({ input, ctx }) => {
     const { getHandler } = await import("./get.handler");
@@ -72,7 +75,7 @@ export const bookingsRouter = router({
         actor: makeUserActor(ctx.user.uuid),
         actionSource: "WEBAPP",
         impersonatedByUserUuid: ctx.session?.user?.impersonatedBy?.uuid ?? null,
-      }
+      },
     });
   }),
 
@@ -161,4 +164,29 @@ export const bookingsRouter = router({
       input,
     });
   }),
+  getWrongAssignmentReports: createTeamPbacProcedure("booking.readTeamBookings", [
+    MembershipRole.ADMIN,
+    MembershipRole.OWNER,
+    MembershipRole.MEMBER,
+  ])
+    .input(ZGetWrongAssignmentReportsInputSchema)
+    .query(async ({ input }) => {
+      const { getWrongAssignmentReportsHandler } = await import("./getWrongAssignmentReports.handler");
+
+      return getWrongAssignmentReportsHandler({
+        input,
+      });
+    }),
+  updateWrongAssignmentReportStatus: authedProcedure
+    .input(ZUpdateWrongAssignmentReportStatusInputSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { updateWrongAssignmentReportStatusHandler } = await import(
+        "./updateWrongAssignmentReportStatus.handler"
+      );
+
+      return updateWrongAssignmentReportStatusHandler({
+        ctx,
+        input,
+      });
+    }),
 });
