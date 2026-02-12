@@ -19,19 +19,8 @@ import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@coss/ui/comp
 import { ChevronDownIcon, HashIcon, MailIcon, ServerIcon, ShieldCheckIcon, UserIcon } from "lucide-react";
 import { useState } from "react";
 import LicenseRequired from "~/ee/common/components/LicenseRequired";
+import type { SmtpConfiguration } from "./SmtpConfigurationDialog";
 import SmtpConfigurationDialog from "./SmtpConfigurationDialog";
-
-interface SmtpConfiguration {
-  id: number;
-  teamId: number;
-  fromEmail: string;
-  fromName: string;
-  smtpHost: string;
-  smtpPort: number;
-  smtpSecure: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 const SkeletonLoader = () => {
   return (
@@ -219,7 +208,7 @@ const SmtpConfigurationsView = ({ permissions }: { permissions: { canRead: boole
       <div className="space-y-6">
         {config ? (
           <SmtpConfigurationItem
-            config={config as SmtpConfiguration}
+            config={config}
             canEdit={permissions.canEdit}
             onDelete={handleDelete}
             onEdit={handleEdit}

@@ -24,11 +24,6 @@ export default class BaseEmail {
 
   private canUseCustomSmtp(): boolean {
     const className = this.constructor.name;
-    console.log("canUseCustomSmtp", {
-      className,
-      organizationId: this.organizationId,
-      inAllowedList: (CUSTOM_SMTP_ALLOWED_EMAILS as readonly string[]).includes(className),
-    });
     return (CUSTOM_SMTP_ALLOWED_EMAILS as readonly string[]).includes(className) && !!this.organizationId;
   }
 

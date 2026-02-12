@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import type { RouterOutputs } from "@calcom/trpc/react";
 import { trpc } from "@calcom/trpc/react";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
@@ -13,17 +14,11 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const createFormSchema = z.object({
-  fromEmail: z.string().email(),
-  fromName: z.string().min(1),
-  smtpHost: z.string().min(1),
-  smtpPort: z.coerce.number().int().min(1).max(65535),
-  smtpUser: z.string().min(1),
-  smtpPassword: z.string().min(1),
-  smtpSecure: z.boolean(),
-});
+export type SmtpConfiguration = NonNullable<
+  RouterOutputs["viewer"]["organizations"]["listSmtpConfigurations"]
+>;
 
-const editFormSchema = z.object({
+const formSchema = z.object({
   fromEmail: z.string().email(),
   fromName: z.string().min(1),
   smtpHost: z.string().min(1),
@@ -33,20 +28,7 @@ const editFormSchema = z.object({
   smtpSecure: z.boolean(),
 });
 
-type CreateFormValues = z.infer<typeof createFormSchema>;
-type EditFormValues = z.infer<typeof editFormSchema>;
-
-interface SmtpConfiguration {
-  id: number;
-  teamId: number;
-  fromEmail: string;
-  fromName: string;
-  smtpHost: string;
-  smtpPort: number;
-  smtpSecure: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+type FormValues = z.infer<typeof formSchema>;
 
 interface SmtpConfigurationDialogProps {
   open: boolean;
@@ -66,27 +48,19 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
     error?: string;
   } | null>(null);
 
-  const form = useForm<CreateFormValues | EditFormValues>({
-    resolver: zodResolver(isEditing ? editFormSchema : createFormSchema),
-    defaultValues: isEditing
-      ? {
-        fromEmail: config.fromEmail,
-        fromName: config.fromName,
-        smtpHost: config.smtpHost,
-        smtpPort: config.smtpPort,
-        smtpUser: "",
-        smtpPassword: "",
-        smtpSecure: config.smtpSecure,
-      }
-      : {
-        fromEmail: "",
-        fromName: "",
-        smtpHost: "",
-        smtpPort: 465,
-        smtpUser: "",
-        smtpPassword: "",
-        smtpSecure: true,
-      },
+  const getDefaultValues = (cfg?: SmtpConfiguration): FormValues => ({
+    fromEmail: cfg?.fromEmail ?? "",
+    fromName: cfg?.fromName ?? "",
+    smtpHost: cfg?.smtpHost ?? "",
+    smtpPort: cfg?.smtpPort ?? 465,
+    smtpUser: "",
+    smtpPassword: "",
+    smtpSecure: cfg?.smtpSecure ?? true,
+  });
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: getDefaultValues(config),
   });
 
   const smtpHost = form.watch("smtpHost");
@@ -94,26 +68,16 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
   const smtpUser = form.watch("smtpUser");
   const smtpPassword = form.watch("smtpPassword");
 
-  const connectionFieldsChanged = isEditing && config
-    ? smtpHost !== config.smtpHost ||
-    smtpPort !== config.smtpPort ||
-    !!smtpUser ||
-    !!smtpPassword
-    : false;
+  const connectionFieldsChanged =
+    isEditing && config
+      ? smtpHost !== config.smtpHost || smtpPort !== config.smtpPort || !!smtpUser || !!smtpPassword
+      : false;
 
   const requiresTest = isEditing ? connectionFieldsChanged : true;
 
   useEffect(() => {
     if (config) {
-      form.reset({
-        fromEmail: config.fromEmail,
-        fromName: config.fromName,
-        smtpHost: config.smtpHost,
-        smtpPort: config.smtpPort,
-        smtpUser: "",
-        smtpPassword: "",
-        smtpSecure: config.smtpSecure,
-      });
+      form.reset(getDefaultValues(config));
     }
   }, [config, form]);
 
@@ -122,18 +86,22 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [smtpHost, smtpPort, smtpUser, smtpPassword]);
 
+  const mutationCallbacks = {
+    onError: (error: { message: string }) => {
+      showToast(error.message, "error");
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    },
+  };
+
   const testConnectionMutation = trpc.viewer.organizations.testSmtpConnection.useMutation({
     onSuccess: (result) => {
-      setConnectionStatus({
-        tested: true,
-        success: result.success,
-        error: result.error,
-      });
-      if (result.success) {
-        showToast(t("smtp_connection_success"), "success");
-      } else {
-        showToast(result.error || t("smtp_connection_failed"), "error");
-      }
+      setConnectionStatus({ tested: true, success: result.success, error: result.error });
+      showToast(
+        result.success ? t("smtp_connection_success") : result.error || t("smtp_connection_failed"),
+        result.success ? "success" : "error"
+      );
     },
     onError: (error) => {
       showToast(error.message, "error");
@@ -143,35 +111,24 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
     },
   });
 
-  const createMutation = trpc.viewer.organizations.createSmtpConfiguration.useMutation({
+  const onMutationSuccess = (toastKey: string) => ({
     onSuccess: () => {
-      showToast(t("smtp_configuration_created"), "success");
+      showToast(t(toastKey), "success");
       utils.viewer.organizations.listSmtpConfigurations.invalidate();
       onOpenChange(false);
       form.reset();
       setConnectionStatus(null);
     },
-    onError: (error) => {
-      showToast(error.message, "error");
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    },
+    ...mutationCallbacks,
   });
 
-  const updateMutation = trpc.viewer.organizations.updateSmtpConfiguration.useMutation({
-    onSuccess: () => {
-      showToast(t("smtp_configuration_updated"), "success");
-      utils.viewer.organizations.listSmtpConfigurations.invalidate();
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      showToast(error.message, "error");
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    },
-  });
+  const createMutation = trpc.viewer.organizations.createSmtpConfiguration.useMutation(
+    onMutationSuccess("smtp_configuration_created")
+  );
+
+  const updateMutation = trpc.viewer.organizations.updateSmtpConfiguration.useMutation(
+    onMutationSuccess("smtp_configuration_updated")
+  );
 
   const handleTestConnection = () => {
     const values = form.getValues();
@@ -195,43 +152,26 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
     });
   };
 
-  const onSubmit = (values: CreateFormValues | EditFormValues) => {
+  const onSubmit = (values: FormValues) => {
     setIsSubmitting(true);
 
     if (isEditing && config) {
-      const editValues = values as EditFormValues;
-      const updateData: {
-        id: number;
-        fromEmail?: string;
-        fromName?: string;
-        smtpHost?: string;
-        smtpPort?: number;
-        smtpUser?: string;
-        smtpPassword?: string;
-        smtpSecure?: boolean;
-      } = {
+      updateMutation.mutate({
         id: config.id,
-      };
-
-      if (editValues.fromEmail !== config.fromEmail) updateData.fromEmail = editValues.fromEmail;
-      if (editValues.fromName !== config.fromName) updateData.fromName = editValues.fromName;
-      if (editValues.smtpHost !== config.smtpHost) updateData.smtpHost = editValues.smtpHost;
-      if (editValues.smtpPort !== config.smtpPort) updateData.smtpPort = editValues.smtpPort;
-      if (editValues.smtpUser) updateData.smtpUser = editValues.smtpUser;
-      if (editValues.smtpPassword) updateData.smtpPassword = editValues.smtpPassword;
-      if (editValues.smtpSecure !== config.smtpSecure) updateData.smtpSecure = editValues.smtpSecure;
-
-      updateMutation.mutate(updateData);
+        fromEmail: values.fromEmail !== config.fromEmail ? values.fromEmail : undefined,
+        fromName: values.fromName !== config.fromName ? values.fromName : undefined,
+        smtpHost: values.smtpHost !== config.smtpHost ? values.smtpHost : undefined,
+        smtpPort: values.smtpPort !== config.smtpPort ? values.smtpPort : undefined,
+        smtpUser: values.smtpUser || undefined,
+        smtpPassword: values.smtpPassword || undefined,
+        smtpSecure: values.smtpSecure !== config.smtpSecure ? values.smtpSecure : undefined,
+      });
     } else {
-      const createValues = values as CreateFormValues;
       createMutation.mutate({
-        fromEmail: createValues.fromEmail,
-        fromName: createValues.fromName,
-        smtpHost: createValues.smtpHost,
-        smtpPort: createValues.smtpPort,
-        smtpUser: createValues.smtpUser,
-        smtpPassword: createValues.smtpPassword,
-        smtpSecure: createValues.smtpSecure,
+        ...values,
+        smtpUser: values.smtpUser || "",
+        smtpPassword: values.smtpPassword || "",
+        smtpSecure: values.smtpSecure,
       });
     }
   };
@@ -340,7 +280,10 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
 
           <div className="flex items-center justify-end gap-2 bg-muted px-4 py-3">
             <DialogClose />
-            <Button type="submit" loading={isSubmitting} disabled={requiresTest && !connectionStatus?.success}>
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              disabled={requiresTest && !connectionStatus?.success}>
               {isEditing ? t("save") : t("create")}
             </Button>
           </div>
