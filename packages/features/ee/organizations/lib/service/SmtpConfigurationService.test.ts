@@ -1,7 +1,6 @@
-import { encryptSecret } from "@calcom/lib/crypto/keyring";
 import { ErrorCode } from "@calcom/lib/errorCodes";
 import { ErrorWithCode } from "@calcom/lib/errors";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   SmtpConfigurationRepository,
   SmtpConfigurationWithCredentials,
@@ -9,23 +8,37 @@ import type {
 import { SmtpConfigurationService } from "./SmtpConfigurationService";
 import type { SmtpService } from "./SmtpService";
 
+vi.mock("@calcom/lib/crypto/keyring", () => ({
+  encryptSecret: vi.fn(({ plaintext }: { plaintext: string }) => ({
+    v: 1,
+    alg: "AES-256-GCM",
+    ring: "SMTP",
+    kid: "test",
+    nonce: "mock-nonce",
+    ct: Buffer.from(plaintext).toString("base64"),
+    tag: "mock-tag",
+  })),
+  decryptSecret: vi.fn(({ envelope }: { envelope: { ct: string } }) =>
+    Buffer.from(envelope.ct, "base64").toString("utf8")
+  ),
+}));
+
 const TEAM_ID = 1;
 const CONFIG_ID = 10;
 
-function encryptTestCredentials(
-  user: string,
-  password: string,
-  teamId: number
-): { user: string; password: string } {
-  const aad = { teamId };
-  return {
-    user: JSON.stringify(encryptSecret({ ring: "SMTP", plaintext: user, aad })),
-    password: JSON.stringify(encryptSecret({ ring: "SMTP", plaintext: password, aad })),
-  };
+function makeFakeEncrypted(plaintext: string): string {
+  return JSON.stringify({
+    v: 1,
+    alg: "AES-256-GCM",
+    ring: "SMTP",
+    kid: "test",
+    nonce: "mock-nonce",
+    ct: Buffer.from(plaintext).toString("base64"),
+    tag: "mock-tag",
+  });
 }
 
 function makeConfig(overrides?: Partial<SmtpConfigurationWithCredentials>): SmtpConfigurationWithCredentials {
-  const encrypted = encryptTestCredentials("testuser", "testpass", TEAM_ID);
   return {
     id: CONFIG_ID,
     teamId: TEAM_ID,
@@ -33,8 +46,8 @@ function makeConfig(overrides?: Partial<SmtpConfigurationWithCredentials>): Smtp
     fromName: "Org",
     smtpHost: "smtp.org.com",
     smtpPort: 465,
-    smtpUser: encrypted.user,
-    smtpPassword: encrypted.password,
+    smtpUser: makeFakeEncrypted("testuser"),
+    smtpPassword: makeFakeEncrypted("testpass"),
     smtpSecure: true,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -73,6 +86,10 @@ function createService(
 }
 
 describe("SmtpConfigurationService", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("create", () => {
     it("should encrypt credentials and create config", async () => {
       const mockRepo = createMockRepository();
