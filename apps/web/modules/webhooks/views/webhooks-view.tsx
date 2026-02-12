@@ -72,7 +72,9 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
                     <CardFrame>
                       <Card className="[--card:var(--popover)]">
                         <CardPanel className="p-0">
-                          {group.webhooks.map((webhook) => (
+                          {[...group.webhooks]
+                            .sort((a, b) => a.id.localeCompare(b.id))
+                            .map((webhook) => (
                             <WebhookListItem
                               key={webhook.id}
                               webhook={webhook}
