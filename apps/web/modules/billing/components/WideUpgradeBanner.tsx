@@ -3,7 +3,7 @@
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
 import { Icon } from "@calcom/ui/components/icon";
-import { Badge } from "@coss/ui/components/badge";
+import { OrgBadge, TeamBadge } from "@calcom/web/modules/billing/components/PlanBadge";
 import { Button } from "@coss/ui/components/button";
 import Image from "next/image";
 import Link from "next/link";
@@ -90,13 +90,13 @@ export function WideUpgradeBanner({
         {size === "sm" ? (
           <div className="flex items-start gap-1.5">
             <h2 className="font-cal text-base font-semibold leading-none text-default">{title}</h2>
-            <Badge variant="warning" className="relative -top-1">
-              {target === "team" ? t("teams") : t("orgs")}
-            </Badge>
+            <div className="relative -top-1">
+              {target === "team" ? <TeamBadge /> : <OrgBadge />}
+            </div>
           </div>
         ) : (
           <div>
-            <Badge variant="warning">{target === "team" ? t("teams") : t("orgs")}</Badge>
+            {target === "team" ? <TeamBadge /> : <OrgBadge />}
             <h2 className="mt-1 font-cal text-lg font-semibold leading-none text-default">{title}</h2>
           </div>
         )}

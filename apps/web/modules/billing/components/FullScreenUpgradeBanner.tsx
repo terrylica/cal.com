@@ -5,6 +5,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useMediaQuery from "@calcom/lib/hooks/useMediaQuery";
 import { Icon } from "@calcom/ui/components/icon";
 import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
+import { OrgBadge, TeamBadge } from "@calcom/web/modules/billing/components/PlanBadge";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
 import {
@@ -120,12 +121,8 @@ export function FullScreenUpgradeBanner({
           <div>
             <div className="flex items-center gap-2">
               <p className="text-sm font-medium text-subtle">{t("available_on")}</p>
-              {target === "team" && <Badge variant="warning">{t("teams")}</Badge>}
-              {(target === "team" || target === "organization") && (
-                <Badge variant="warning" className="bg-purple-200 text-purple-700">
-                  {t("orgs")}
-                </Badge>
-              )}
+              {target === "team" && <TeamBadge />}
+              {(target === "team" || target === "organization") && <OrgBadge />}
             </div>
             <div className="mt-4 h-px w-full border border-t-subtle border-dashed" />
             {/* Buttons */}
