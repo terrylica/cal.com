@@ -6,7 +6,7 @@ import type { BookingListingStatus } from "../types";
 
 interface BookingForTabResolution {
   status: string;
-  endTime: Date;
+  endTime: Date | string;
   recurringEventId: string | null;
 }
 
