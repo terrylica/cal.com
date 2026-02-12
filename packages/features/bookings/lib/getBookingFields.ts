@@ -1,19 +1,19 @@
-import type { z } from "zod";
-
+import process from "node:process";
 import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import { fieldsThatSupportLabelAsSafeHtml } from "@calcom/features/form-builder/fieldsThatSupportLabelAsSafeHtml";
 import { getFieldIdentifier } from "@calcom/features/form-builder/utils/getFieldIdentifier";
-import { SMS_REMINDER_NUMBER_FIELD, CAL_AI_AGENT_PHONE_NUMBER_FIELD } from "@calcom/lib/bookings/SystemField";
+import { CAL_AI_AGENT_PHONE_NUMBER_FIELD, SMS_REMINDER_NUMBER_FIELD } from "@calcom/lib/bookings/SystemField";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import slugify from "@calcom/lib/slugify";
-import type { EventTypeCustomInput, EventType } from "@calcom/prisma/client";
+import type { EventType, EventTypeCustomInput } from "@calcom/prisma/client";
 import { EventTypeCustomInputType } from "@calcom/prisma/enums";
 import {
   BookingFieldTypeEnum,
   customInputSchema,
-  eventTypeBookingFields,
   EventTypeMetaDataSchema,
+  eventTypeBookingFields,
 } from "@calcom/prisma/zod-utils";
+import type { z } from "zod";
 
 export type Fields = z.infer<typeof eventTypeBookingFields>;
 
@@ -40,14 +40,16 @@ export const getSmsReminderNumberField = () =>
 
 export const getSmsReminderNumberSource = ({
   workflowId,
+  workflowName,
   isSmsReminderNumberRequired,
 }: {
   workflowId: Workflow["id"];
+  workflowName?: string;
   isSmsReminderNumberRequired: boolean;
 }) => ({
   id: `${workflowId}`,
   type: "workflow",
-  label: "Workflow",
+  label: workflowName || "SMS Workflow",
   fieldRequired: isSmsReminderNumberRequired,
   editUrl: `/workflows/${workflowId}`,
 });
@@ -63,14 +65,16 @@ export const getAIAgentCallPhoneNumberField = () =>
 
 export const getAIAgentCallPhoneNumberSource = ({
   workflowId,
+  workflowName,
   isAIAgentCallPhoneNumberRequired,
 }: {
   workflowId: Workflow["id"];
+  workflowName?: string;
   isAIAgentCallPhoneNumberRequired: boolean;
 }) => ({
   id: `${workflowId}`,
   type: "workflow",
-  label: "Workflow",
+  label: workflowName || "Cal.ai Workflow",
   fieldRequired: isAIAgentCallPhoneNumberRequired,
   editUrl: `/workflows/${workflowId}`,
 });
@@ -151,6 +155,7 @@ export const ensureBookingInputsHaveSystemFields = ({
         smsNumberSources.push(
           getSmsReminderNumberSource({
             workflowId,
+            workflowName: workflow.workflow.name,
             isSmsReminderNumberRequired: !!step.numberRequired,
           })
         );

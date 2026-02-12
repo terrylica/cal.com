@@ -16,24 +16,21 @@ import { addPermissionsToWorkflow } from "@calcom/features/workflows/repositorie
 import { IS_SELF_HOSTED, SCANNING_WORKFLOW_STEPS } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import logger from "@calcom/lib/logger";
-import { prisma, type PrismaClient } from "@calcom/prisma";
-import { WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
-import { PhoneNumberSubscriptionStatus } from "@calcom/prisma/enums";
+import { type PrismaClient, prisma } from "@calcom/prisma";
+import { PhoneNumberSubscriptionStatus, WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
-
 import { TRPCError } from "@trpc/server";
-
 import hasActiveTeamPlanHandler from "../teams/hasActiveTeamPlan.handler";
 import type { TUpdateInputSchema } from "./update.schema";
 import {
-  getSender,
-  upsertSmsReminderFieldForEventTypes,
-  isAuthorizedToAddActiveOnIds,
-  removeSmsReminderFieldForEventTypes,
-  isStepEdited,
   getEmailTemplateText,
-  upsertAIAgentCallPhoneNumberFieldForEventTypes,
+  getSender,
+  isAuthorizedToAddActiveOnIds,
+  isStepEdited,
   removeAIAgentCallPhoneNumberFieldForEventTypes,
+  removeSmsReminderFieldForEventTypes,
+  upsertAIAgentCallPhoneNumberFieldForEventTypes,
+  upsertSmsReminderFieldForEventTypes,
 } from "./util";
 
 type UpdateOptions = {
@@ -159,9 +156,9 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       userWorkflow.teamId
     );
 
-    activeOnWithChildren = activeOnEventTypes
-      .map((eventType) => [eventType.id].concat(eventType.children.map((child) => child.id)))
-      .flat();
+    activeOnWithChildren = activeOnEventTypes.flatMap((eventType) =>
+      [eventType.id].concat(eventType.children.map((child) => child.id))
+    );
 
     let oldActiveOnEventTypes: { id: number; children: { id: number }[] }[];
     if (userWorkflow.isActiveOnAll) {
@@ -618,6 +615,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       await upsertSmsReminderFieldForEventTypes({
         activeOn: activeOnWithChildren,
         workflowId: id,
+        workflowName: name,
         isSmsReminderNumberRequired: steps.some(
           (s) =>
             (s.action === WorkflowActions.SMS_ATTENDEE || s.action === WorkflowActions.WHATSAPP_ATTENDEE) &&
@@ -649,6 +647,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     await upsertAIAgentCallPhoneNumberFieldForEventTypes({
       activeOn: activeOnWithChildren,
       workflowId: id,
+      workflowName: name,
       isAIAgentCallPhoneNumberRequired: steps.some((s) => s.action === WorkflowActions.CAL_AI_PHONE_CALL),
       isOrg,
     });

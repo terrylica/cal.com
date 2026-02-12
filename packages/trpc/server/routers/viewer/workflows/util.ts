@@ -1,24 +1,21 @@
-import type { z } from "zod";
-
 import { isSMSOrWhatsappAction } from "@calcom/ee/workflows/lib/actionHelperFunctions";
 import emailRatingTemplate from "@calcom/ee/workflows/lib/reminders/templates/emailRatingTemplate";
 import emailReminderTemplate from "@calcom/ee/workflows/lib/reminders/templates/emailReminderTemplate";
 import {
-  getSmsReminderNumberField,
-  getSmsReminderNumberSource,
   getAIAgentCallPhoneNumberField,
   getAIAgentCallPhoneNumberSource,
+  getSmsReminderNumberField,
+  getSmsReminderNumberSource,
 } from "@calcom/features/bookings/lib/getBookingFields";
 import { removeBookingField, upsertBookingField } from "@calcom/features/eventtypes/lib/bookingFieldsManager";
-import { SMS_REMINDER_NUMBER_FIELD, CAL_AI_AGENT_PHONE_NUMBER_FIELD } from "@calcom/lib/bookings/SystemField";
+import { CAL_AI_AGENT_PHONE_NUMBER_FIELD, SMS_REMINDER_NUMBER_FIELD } from "@calcom/lib/bookings/SystemField";
 import { SENDER_ID, SENDER_NAME } from "@calcom/lib/constants";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
 import type { WorkflowStep } from "@calcom/prisma/client";
-import { WorkflowTemplates } from "@calcom/prisma/enums";
-import { WorkflowActions } from "@calcom/prisma/enums";
-
+import { type WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
+import type { z } from "zod";
 import type { ZWorkflows } from "./getAllActiveWorkflows.schema";
 
 export function getSender(
@@ -30,11 +27,13 @@ export function getSender(
 export async function upsertSmsReminderFieldForEventTypes({
   activeOn,
   workflowId,
+  workflowName,
   isSmsReminderNumberRequired,
   isOrg,
 }: {
   activeOn: number[];
   workflowId: number;
+  workflowName?: string;
   isSmsReminderNumberRequired: boolean;
   isOrg: boolean;
 }) {
@@ -49,6 +48,7 @@ export async function upsertSmsReminderFieldForEventTypes({
       getSmsReminderNumberField(),
       getSmsReminderNumberSource({
         workflowId,
+        workflowName,
         isSmsReminderNumberRequired,
       }),
       eventTypeId
@@ -102,11 +102,13 @@ export async function removeSmsReminderFieldForEventType({
 export async function upsertAIAgentCallPhoneNumberFieldForEventTypes({
   activeOn,
   workflowId,
+  workflowName,
   isAIAgentCallPhoneNumberRequired,
   isOrg,
 }: {
   activeOn: number[];
   workflowId: number;
+  workflowName?: string;
   isAIAgentCallPhoneNumberRequired?: boolean;
   isOrg: boolean;
 }) {
@@ -121,6 +123,7 @@ export async function upsertAIAgentCallPhoneNumberFieldForEventTypes({
       getAIAgentCallPhoneNumberField(),
       getAIAgentCallPhoneNumberSource({
         workflowId,
+        workflowName,
         isAIAgentCallPhoneNumberRequired: isAIAgentCallPhoneNumberRequired ?? false,
       }),
       eventTypeId

@@ -25,7 +25,7 @@ const _getBookingData = async <T extends z.ZodType>({
   const parsedBody = await schema.parseAsync(reqBody);
   const parsedBodyWithEnd = (body: TgetBookingDataSchema): body is ReqBodyWithEnd => {
     // Use the event length to auto-set the event end time.
-    if (!Object.prototype.hasOwnProperty.call(body, "end")) {
+    if (!Object.hasOwn(body, "end")) {
       body.end = dayjs.utc(body.start).add(eventType.length, "minutes").format();
     }
     return true;
@@ -76,14 +76,21 @@ const _getBookingData = async <T extends z.ZodType>({
     }
   }
 
+  // Propagate phone value across system phone fields.
+  // When phone fields are consolidated in the UI, only one field gets filled by the booker.
+  // This ensures the phone value is available for all features (SMS reminders, AI calls, etc.)
+  const phoneValue =
+    responses.attendeePhoneNumber || responses.smsReminderNumber || responses.aiAgentCallPhoneNumber;
+
   return {
     ...parsedBody,
     name: responses.name,
     email: responses.email,
-    attendeePhoneNumber: responses.attendeePhoneNumber,
+    attendeePhoneNumber: phoneValue || responses.attendeePhoneNumber,
     guests: responses.guests ? responses.guests : [],
     location: locationValue,
-    smsReminderNumber: responses.smsReminderNumber,
+    // Use propagated phone value for smsReminderNumber to ensure workflows receive it
+    smsReminderNumber: phoneValue || responses.smsReminderNumber,
     notes: responses.notes || "",
     calEventUserFieldsResponses,
     rescheduleReason: responses.rescheduleReason,
