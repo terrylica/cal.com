@@ -6,7 +6,7 @@ import type { RouterOutputs } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui/components/button";
 import { EmptyScreen } from "@calcom/ui/components/empty-screen";
 import { Label } from "@calcom/ui/components/form";
-import { Icon } from "@calcom/ui/components/icon";
+import { InfoIcon } from "@coss/ui/icons";
 import { showToast } from "@calcom/ui/components/toast";
 import { useHasTeamPlan } from "@calcom/web/modules/billing/hooks/useHasPaidPlan";
 import { FullscreenUpgradeBannerForTeamsPage } from "@calcom/web/modules/billing/upgrade-banners/FullscreenUpgradeBannerForTeamsPage";
@@ -103,7 +103,7 @@ export function TeamsListing({
       {/* Only show tip when not showing the upgrade banner */}
       {teams.length > 0 && (
         <p className="mt-4 mb-8 flex w-full items-center gap-1 text-sm text-subtle md:justify-center md:text-center">
-          <Icon className="hidden sm:block" name="info" /> {t("tip_username_plus")}
+          <InfoIcon className="hidden sm:block" /> {t("tip_username_plus")}
         </p>
       )}
     </>
