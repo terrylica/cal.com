@@ -2,11 +2,15 @@ import { trpc } from "@calcom/trpc/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-import type { BookingListingStatus, BookingOutput } from "../types";
+import type { BookingListingStatus } from "../types";
 
-export function getTabForBooking(
-  booking: Pick<BookingOutput, "status" | "endTime" | "recurringEventId">
-): BookingListingStatus {
+interface BookingForTabResolution {
+  status: string;
+  endTime: Date;
+  recurringEventId: string | null;
+}
+
+export function getTabForBooking(booking: BookingForTabResolution): BookingListingStatus {
   const isPast = new Date(booking.endTime) <= new Date();
 
   if (booking.status === "CANCELLED" || booking.status === "REJECTED") {
