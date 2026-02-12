@@ -185,25 +185,12 @@ function BookingDetailsSheetInner({
   const joinButtonWrapperRef = useRef<HTMLDivElement>(null);
   const sheetContentRef = useRef<HTMLDivElement>(null);
 
-  const hasOpenOverlay = useCallback((): boolean => {
-    const overlaySelectors = [
-      '[role="dialog"]',
-      '[role="alertdialog"]',
-      '[role="menu"]',
-      '[role="listbox"]',
-      "[data-radix-popper-content-wrapper]",
-    ];
-
-    for (const selector of overlaySelectors) {
-      const elements = document.querySelectorAll(selector);
-      for (const el of elements) {
-        if (sheetContentRef.current && el === sheetContentRef.current.closest('[role="dialog"]')) {
-          continue;
-        }
-        return true;
-      }
+  const isSheetActive = useCallback((): boolean => {
+    const activeElement = document.activeElement;
+    if (!activeElement || activeElement === document.body) {
+      return true;
     }
-    return false;
+    return sheetContentRef.current?.contains(activeElement) ?? false;
   }, []);
 
   useEffect(() => {
@@ -216,7 +203,7 @@ function BookingDetailsSheetInner({
         return;
       }
 
-      if (hasOpenOverlay()) {
+      if (!isSheetActive()) {
         return;
       }
 
@@ -253,7 +240,7 @@ function BookingDetailsSheetInner({
     navigation.isTransitioning,
     handleNext,
     handlePrevious,
-    hasOpenOverlay,
+    isSheetActive,
   ]);
 
   const startTime = dayjs(booking.startTime).tz(userTimeZone);
