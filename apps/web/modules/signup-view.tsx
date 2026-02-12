@@ -16,7 +16,11 @@ import { z } from "zod";
 
 import getStripe from "@calcom/app-store/stripepayment/lib/client";
 import { getPremiumPlanPriceValue } from "@calcom/app-store/stripepayment/lib/utils";
-import { fetchSignup, isUserAlreadyExistsError, hasCheckoutSession } from "@calcom/features/auth/signup/lib/fetchSignup";
+import {
+  fetchSignup,
+  isUserAlreadyExistsError,
+  hasCheckoutSession,
+} from "@calcom/features/auth/signup/lib/fetchSignup";
 import { getOrgUsernameFromEmail } from "@calcom/features/auth/signup/utils/getOrgUsernameFromEmail";
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import ServerTrans from "@calcom/lib/components/ServerTrans";
@@ -45,6 +49,7 @@ import { Alert } from "@calcom/ui/components/alert";
 import { Button } from "@calcom/ui/components/button";
 import { PasswordField, CheckboxField, TextField, Form, SelectField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
+import { InfoIcon, ShieldCheckIcon, StarIcon } from "@coss/ui/icons";
 import { showToast } from "@calcom/ui/components/toast";
 
 import type { getServerSideProps } from "@lib/signup/getServerSideProps";
@@ -54,7 +59,9 @@ const signupSchema = apiSignupSchema.extend({
   cfToken: z.string().optional(),
 });
 
-const TurnstileCaptcha = dynamic(() => import("@calcom/features/auth/Turnstile"), { ssr: false });
+const TurnstileCaptcha = dynamic(() => import("@calcom/web/modules/auth/components/Turnstile"), {
+  ssr: false,
+});
 
 type FormValues = z.infer<typeof signupSchema>;
 
@@ -149,12 +156,12 @@ function UsernameField({
           <div className="text-sm ">
             {usernameTaken ? (
               <div className="text-error flex items-center">
-                <Icon name="info" className="mr-1 inline-block h-4 w-4" />
+                <InfoIcon className="mr-1 inline-block h-4 w-4" />
                 <p>{t("already_in_use_error")}</p>
               </div>
             ) : premium ? (
               <div data-testid="premium-username-warning" className="flex items-center">
-                <Icon name="star" className="mr-1 inline-block h-4 w-4" />
+                <StarIcon className="mr-1 inline-block h-4 w-4" />
                 <p>
                   {t("premium_username", {
                     price: getPremiumPlanPriceValue(),
@@ -200,7 +207,7 @@ export default function Signup({
   const formMethods = useForm<FormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: prepopulateFormValues satisfies FormValues,
-    mode: "onChange",
+    mode: "onTouched",
   });
   const {
     register,
@@ -400,7 +407,7 @@ export default function Signup({
                 </p>
               )}
               {IS_CALCOM && (
-                <div className="mt-4">
+                <div className="mt-12">
                   <SelectField
                     label={t("data_region")}
                     value={{
@@ -453,13 +460,13 @@ export default function Signup({
 
             {/* Form Container */}
             {displayEmailForm && (
-              <div className="mt-12">
+              <div className="mt-6">
                 <Form
                   className="flex flex-col gap-4"
                   form={formMethods}
                   handleSubmit={async (values) => {
                     let updatedValues = values;
-                    if (!formMethods.getValues().username && isOrgInviteByLink && orgAutoAcceptEmail) {
+                    if (!formMethods.getValues().username && isOrgInviteByLink) {
                       updatedValues = {
                         ...values,
                         username: getOrgUsernameFromEmail(values.email, orgAutoAcceptEmail),
@@ -587,7 +594,7 @@ export default function Signup({
                           ? "opacity-50"
                           : ""
                       )}>
-                      <Icon name="shield-check" className="mr-2 h-5 w-5" />
+                      <ShieldCheckIcon className="mr-2 h-5 w-5" />
                       {t("create_account_with_saml")}
                     </Button>
                   ) : (
@@ -614,10 +621,10 @@ export default function Signup({
               </div>
             )}
             {!displayEmailForm && (
-              <div className="mt-12">
+              <div className="mt-8 flex flex-col gap-6">
                 {/* Upper Row */}
-                <div className="mt-6 flex flex-col gap-2 md:flex-row">
-                  {isGoogleLoginEnabled ? (
+                {isGoogleLoginEnabled && (
+                  <div className="flex flex-col gap-2 md:flex-row">
                     <Button
                       color="primary"
                       loading={isGoogleLoading}
@@ -664,11 +671,11 @@ export default function Signup({
                       }}>
                       {t("continue_with_google")}
                     </Button>
-                  ) : null}
-                </div>
+                  </div>
+                )}
 
                 {isGoogleLoginEnabled && (
-                  <div className="mt-6">
+                  <div>
                     <div className="relative flex items-center">
                       <div className="border-subtle grow border-t" />
                       <span className="text-subtle mx-2 shrink text-sm font-normal leading-none">
@@ -680,7 +687,7 @@ export default function Signup({
                 )}
 
                 {/* Lower Row */}
-                <div className="mt-6 flex flex-col gap-2">
+                <div className="flex flex-col gap-2">
                   <Button
                     color="secondary"
                     disabled={isGoogleLoading}
@@ -732,6 +739,7 @@ export default function Signup({
                   <ServerTrans
                     t={t}
                     i18nKey="signing_up_terms"
+                    values={{ appName: APP_NAME }}
                     components={[
                       <Link
                         className="text-emphasis hover:underline"

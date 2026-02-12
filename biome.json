@@ -65,7 +65,8 @@
       "!!packages/lib/raqb/resolveQueryValue.test.ts",
       "!!packages/ui/components/editor/plugins/ToolbarPlugin.tsx",
       "!!packages/embeds/embed-core/src/lib/domUtils.ts"
-    ]
+    ],
+    "maxSize": 2097152
   },
   "javascript": {
     "parser": {
@@ -93,11 +94,6 @@
     }
   },
   "overrides": [
-    {
-      "includes": ["docs/api-reference/v2/openapi.json"],
-      "linter": { "enabled": false },
-      "formatter": { "enabled": false }
-    },
     {
       "includes": ["**/*.tsx"],
       "javascript": {
@@ -212,7 +208,7 @@
       }
     },
     {
-      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.e2e-spec.ts", "**/*.integration-test.ts"],
+      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.e2e-spec.ts", "**/*.integration-test.ts"],
       "linter": {
         "rules": {
           "complexity": {
@@ -248,6 +244,27 @@
                     "message": "lib package should not import from @trpc/server to avoid circular dependencies."
                   }
                 ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/lib/**/*repository*.{ts,tsx,js,jsx}",
+        "packages/lib/**/*Repository*.{ts,tsx,js,jsx}",
+        "packages/lib/**/repository/**/*.{ts,tsx,js,jsx}",
+        "packages/lib/**/repositories/**/*.{ts,tsx,js,jsx}"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": {
+                "match": "REPOSITORY-FILES-NOT-ALLOWED-IN-PACKAGES-LIB[.](.+)",
+                "filenameCases": ["camelCase"]
               }
             }
           }
@@ -362,6 +379,9 @@
       "includes": ["packages/platform/atoms/**/*.{ts,tsx,js,jsx,mts,mjs,cjs,cts}"],
       "linter": {
         "rules": {
+          "correctness": {
+            "noProcessGlobal": "off"
+          },
           "style": {
             "noRestrictedImports": {
               "level": "error",

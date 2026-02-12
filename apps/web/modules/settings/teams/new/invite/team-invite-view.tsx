@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import React, { useEffect } from "react";
 
-import { useFlags } from "@calcom/features/flags/hooks";
+import { useFlags } from "@calcom/web/modules/feature-flags/hooks/useFlags";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 
@@ -29,7 +29,10 @@ export const TeamInviteView = ({ userEmail }: TeamInviteViewProps) => {
 
   const store = useOnboardingStore();
   const { setTeamInvites, teamDetails, setTeamId, teamId, resetOnboardingPreservingPlan } = store;
-  const { isSubmitting } = useCreateTeam({ redirectBasePath: "/settings/teams/new" });
+  const { isSubmitting } = useCreateTeam({
+    redirectBasePath: "/settings/teams/new",
+    isOnboarding: false,
+  });
   const [isCSVModalOpen, setIsCSVModalOpen] = React.useState(false);
 
   // Read teamId from query params and store it (from payment callback)
