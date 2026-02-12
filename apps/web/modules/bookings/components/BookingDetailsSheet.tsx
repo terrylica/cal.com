@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { z } from "zod";
 
@@ -86,6 +86,7 @@ export function BookingDetailsSheet({
   const fetchedBooking = fetchedBookingData?.bookings?.[0] ?? null;
   const booking = storeBooking ?? fetchedBooking;
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     if (!fetchedBooking || storeBooking) return;
@@ -93,9 +94,9 @@ export function BookingDetailsSheet({
     const currentTab = pathname?.match(/\/bookings\/(\w+)/)?.[1];
     if (correctTab && currentTab && correctTab !== currentTab) {
       const newPath = pathname.replace(`/bookings/${currentTab}`, `/bookings/${correctTab}`);
-      window.history.replaceState(window.history.state, "", `${newPath}${window.location.search}`);
+      router.replace(`${newPath}${window.location.search}`);
     }
-  }, [fetchedBooking, storeBooking, pathname]);
+  }, [fetchedBooking, storeBooking, pathname, router]);
 
   if (!booking) return null;
 
