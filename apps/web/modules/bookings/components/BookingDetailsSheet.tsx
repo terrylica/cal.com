@@ -190,7 +190,11 @@ function BookingDetailsSheetInner({
     if (!activeElement || activeElement === document.body) {
       return true;
     }
-    return sheetContentRef.current?.contains(activeElement) ?? false;
+    if (!sheetContentRef.current) return false;
+    return (
+      sheetContentRef.current.contains(activeElement) ||
+      activeElement.contains(sheetContentRef.current)
+    );
   }, []);
 
   useEffect(() => {
