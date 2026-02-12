@@ -76,6 +76,7 @@ const WebhooksList = ({ webhooksByViewer }: { webhooksByViewer: WebhooksByViewer
                 key={webhook.id}
                 webhook={webhook}
                 profile={group.profile}
+                editHref={`${WEBAPP_URL}/settings/developer/webhooks/${webhook.id}`}
                 lastItem={true}
                 permissions={{
                   canEditWebhook: group?.metadata?.canModify ?? false,

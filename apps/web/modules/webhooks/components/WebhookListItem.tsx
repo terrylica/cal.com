@@ -103,7 +103,7 @@ export default function WebhookListItem(props: {
     <ListItem data-testid="webhook-list-item">
       <ListItemContent>
         <ListItemHeader>
-          {props.permissions.canEditWebhook && props.editHref ? (
+          {canEditorDelete && props.editHref ? (
             <ListItemTitle data-testid="webhook-url">
               <ListItemTitleLink href={props.editHref}>{webhook.subscriberUrl}</ListItemTitleLink>
             </ListItemTitle>
