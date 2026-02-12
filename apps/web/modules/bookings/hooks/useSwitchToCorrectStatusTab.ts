@@ -2,7 +2,7 @@ import { trpc } from "@calcom/trpc/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { validStatuses } from "../lib/validStatuses";
-import type { BookingListingStatus } from "../types";
+import type { BookingListingStatus, BookingOutput } from "../types";
 
 interface BookingForTabResolution {
   status: string;
@@ -13,6 +13,7 @@ interface BookingForTabResolution {
 interface UseSwitchToCorrectTabResult {
   resolvedTabStatus: BookingListingStatus;
   isResolvingTabStatus: boolean;
+  preSelectedBooking: BookingOutput | null;
 }
 
 export function getTabForBooking(booking: BookingForTabResolution): BookingListingStatus {
@@ -44,6 +45,7 @@ export function useSwitchToCorrectStatusTab({
   const {
     preSelectedBookingUid,
     preSelectedBooking,
+    preSelectedBookingFull,
     isPending: isFetchingPreSelectedBooking,
   } = usePreSelectedBooking();
   const pathname = usePathname();
@@ -68,14 +70,15 @@ export function useSwitchToCorrectStatusTab({
     ? isFetchingPreSelectedBooking || isNavigatingToCorrectTab
     : false;
 
-  return { resolvedTabStatus, isResolvingTabStatus };
+  return { resolvedTabStatus, isResolvingTabStatus, preSelectedBooking: preSelectedBookingFull };
 }
 
 export function usePreSelectedBooking(): {
   preSelectedBookingUid: string | undefined;
   preSelectedBooking: BookingForTabResolution | null;
+  preSelectedBookingFull: BookingOutput | null;
   isPending: boolean;
-} {
+}{
   const searchParams = useSearchParams();
   const preSelectedBookingUid = searchParams?.get("uid") ?? undefined;
 
@@ -94,6 +97,7 @@ export function usePreSelectedBooking(): {
     }
   );
 
-  const preSelectedBooking = preSelectedBookingData?.bookings?.[0] ?? null;
-  return { preSelectedBookingUid, preSelectedBooking, isPending };
+  const preSelectedBookingFull = preSelectedBookingData?.bookings?.[0] ?? null;
+  const preSelectedBooking: BookingForTabResolution | null = preSelectedBookingFull;
+  return { preSelectedBookingUid, preSelectedBooking, preSelectedBookingFull, isPending };
 }

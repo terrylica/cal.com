@@ -235,7 +235,7 @@ export function BookingListContainer(props: BookingListContainerProps) {
   const { eventTypeIds, teamIds, userIds, dateRange, attendeeName, attendeeEmail, bookingUid } =
     useBookingFilters();
 
-  const { resolvedTabStatus, isResolvingTabStatus } = useSwitchToCorrectStatusTab({
+  const { resolvedTabStatus, isResolvingTabStatus, preSelectedBooking } = useSwitchToCorrectStatusTab({
     defaultStatus: props.status,
   });
 
@@ -279,7 +279,12 @@ export function BookingListContainer(props: BookingListContainerProps) {
     enabled: !isValidatorPending && !isResolvingTabStatus, // Wait for validator to be ready before fetching
   });
 
-  const bookings = useMemo(() => query.data?.bookings ?? [], [query.data?.bookings]);
+  const bookings = useMemo(() => {
+    const queryBookings = query.data?.bookings ?? [];
+    if (!preSelectedBooking) return queryBookings;
+    if (queryBookings.some((b) => b.uid === preSelectedBooking.uid)) return queryBookings;
+    return [preSelectedBooking, ...queryBookings];
+  }, [query.data?.bookings, preSelectedBooking]);
 
   // Always call the hook and provide navigation capabilities
   // The BookingDetailsSheet is only rendered when bookingsV3Enabled is true (see line 212)
