@@ -1,6 +1,11 @@
 "use client";
 
-import { WEBHOOK_TRIGGER_EVENTS } from "@calcom/features/webhooks/lib/constants";
+import {
+  getWebhookVersionDocsUrl,
+  getWebhookVersionLabel,
+  WEBHOOK_TRIGGER_EVENTS,
+  WEBHOOK_VERSION_OPTIONS,
+} from "@calcom/features/webhooks/lib/constants";
 import type { WebhookVersion } from "@calcom/features/webhooks/lib/interface/IWebhookRepository";
 import { subscriberUrlReserved } from "@calcom/features/webhooks/lib/subscriberUrlReserved";
 import { APP_NAME } from "@calcom/lib/constants";
@@ -12,6 +17,9 @@ import { toastManager } from "@coss/ui/components/toast";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
 import { Button } from "@coss/ui/components/button";
 import { CardFrame, CardFrameDescription, CardFrameHeader, CardFrameTitle } from "@coss/ui/components/card";
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@coss/ui/components/select";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@coss/ui/components/tooltip";
+import { ExternalLinkIcon } from "lucide-react";
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -59,32 +67,94 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
 
   if (isPending || !webhook) return <SkeletonContainer />;
 
+  const webhookVersionItems = WEBHOOK_VERSION_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
+
   return (
     <WebhookForm
       noRoutingFormTriggers={false}
       webhook={webhook}
-      headerWrapper={(_formMethods, children) => (
-        <CardFrame>
-          <CardFrameHeader>
-            <div className="flex min-w-0 items-start gap-3">
-              <Button
-                aria-label={t("go_back")}
-                render={<Link href="/settings/developer/webhooks" />}
-                size="icon-sm"
-                variant="ghost">
-                <ArrowLeftIcon />
-              </Button>
-              <div>
-                <CardFrameTitle>{t("edit_webhook")}</CardFrameTitle>
-                <CardFrameDescription>
-                  {t("add_webhook_description", { appName: APP_NAME })}
-                </CardFrameDescription>
+      headerWrapper={(formMethods, children) => {
+        const version = formMethods.watch("version");
+        const selectedVersionItem =
+          webhookVersionItems.find((item) => item.value === version) ?? webhookVersionItems[0];
+
+        return (
+          <CardFrame>
+            <CardFrameHeader>
+              <div className="flex min-w-0 flex-col gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <Button
+                    aria-label={t("go_back")}
+                    render={<Link href="/settings/developer/webhooks" />}
+                    size="icon-sm"
+                    variant="ghost">
+                    <ArrowLeftIcon />
+                  </Button>
+                  <div>
+                    <CardFrameTitle>{t("edit_webhook")}</CardFrameTitle>
+                    <CardFrameDescription>
+                      {t("add_webhook_description", { appName: APP_NAME })}
+                    </CardFrameDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <div className="inline-flex">
+                          <Select
+                            aria-label={t("webhook_version")}
+                            value={selectedVersionItem}
+                            onValueChange={(newValue) => {
+                              if (newValue) {
+                                formMethods.setValue("version", newValue.value, { shouldDirty: true });
+                              }
+                            }}
+                            items={webhookVersionItems}>
+                            <SelectTrigger className="min-w-36 w-fit">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectPopup>
+                              {webhookVersionItems.map((item) => (
+                                <SelectItem key={item.value} value={item}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectPopup>
+                          </Select>
+                        </div>
+                      }>
+                    </TooltipTrigger>
+                    <TooltipPopup>{t("webhook_version")}</TooltipPopup>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Link
+                          href={getWebhookVersionDocsUrl(version)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground flex">
+                          <ExternalLinkIcon className="size-4" />
+                        </Link>
+                      }>
+                    </TooltipTrigger>
+                    <TooltipPopup>
+                      {t("webhook_version_docs", {
+                        version: getWebhookVersionLabel(version),
+                      })}
+                    </TooltipPopup>
+                  </Tooltip>
+                </div>
               </div>
-            </div>
-          </CardFrameHeader>
-          {children}
-        </CardFrame>
-      )}
+            </CardFrameHeader>
+            {children}
+          </CardFrame>
+        );
+      }}
       onSubmit={(values: WebhookFormSubmitData) => {
         if (
           subscriberUrlReserved({

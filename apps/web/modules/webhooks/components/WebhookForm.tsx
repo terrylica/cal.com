@@ -1,7 +1,6 @@
 "use client";
 
 import SectionBottomActions from "@calcom/features/settings/SectionBottomActions";
-import { getWebhookVersionDocsUrl, WEBHOOK_VERSION_OPTIONS } from "@calcom/features/webhooks/lib/constants";
 import customTemplate, { hasTemplateIntegration } from "@calcom/features/webhooks/lib/integrationTemplate";
 import { WebhookVersion } from "@calcom/features/webhooks/lib/interface/IWebhookRepository";
 
@@ -35,7 +34,7 @@ import { Switch } from "@coss/ui/components/switch";
 import { Textarea } from "@coss/ui/components/textarea";
 import { ExternalLinkIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import WebhookTestDisclosure from "./WebhookTestDisclosure";
 
@@ -280,15 +279,6 @@ const WebhookForm = (props: {
   const { t } = useLocale();
   const webhookVariables = getWebhookVariables(t);
 
-  const webhookVersionItems = useMemo(
-    () =>
-      WEBHOOK_VERSION_OPTIONS.map((option) => ({
-        value: option.value,
-        label: option.label,
-      })),
-    []
-  );
-
   const triggerOptions = overrideTriggerOptions
     ? [...overrideTriggerOptions]
     : [...WEBHOOK_TRIGGER_EVENTS_GROUPED_BY_APP_V2["core"]];
@@ -324,8 +314,6 @@ const WebhookForm = (props: {
       version: props?.webhook?.version || WebhookVersion.V_2021_10_20,
     },
   });
-
-  formMethods.register("version");
 
   const triggers = formMethods.watch("eventTriggers") || [];
   const subscriberUrl = formMethods.watch("subscriberUrl");
@@ -516,7 +504,7 @@ const WebhookForm = (props: {
                 </ComboboxPopup>
                 <ComboboxClear render={<Button size="xs" variant="outline" />}>
                   <TrashIcon />
-                  Clear all triggers
+                  {t("clear_all_triggers", "Clear all triggers")}
                 </ComboboxClear>
               </Combobox>
             </Field>
@@ -605,9 +593,9 @@ const WebhookForm = (props: {
                     onValueChange={
                       changeSecret
                         ? (v) => {
-                            setNewSecret(v);
-                            onChange(v);
-                          }
+                          setNewSecret(v);
+                          onChange(v);
+                        }
                         : undefined
                     }
                     placeholder={changeSecret ? t("leave_blank_to_remove_secret") : undefined}
@@ -642,51 +630,6 @@ const WebhookForm = (props: {
             )}
           </Field>
         )}
-      />
-
-      <Controller
-        name="version"
-        control={formMethods.control}
-        render={({
-          field: { name, value, onChange },
-          fieldState: { invalid, isTouched, isDirty },
-        }) => {
-          const selectedVersionItem =
-            webhookVersionItems.find((item) => item.value === value) ?? webhookVersionItems[0];
-
-          return (
-            <Field name={name} invalid={invalid} touched={isTouched} dirty={isDirty}>
-              <FieldLabel>{t("webhook_version")}</FieldLabel>
-              <div className="flex items-center gap-2">
-                <Select
-                  aria-label={t("webhook_version")}
-                  value={selectedVersionItem}
-                  onValueChange={(newValue) => {
-                    if (!newValue) return;
-                    onChange(newValue.value);
-                  }}
-                  items={webhookVersionItems}>
-                  <SelectTrigger className="w-fit min-w-none">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectPopup>
-                    {webhookVersionItems.map((item) => (
-                      <SelectItem key={item.value} value={item}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectPopup>
-                </Select>
-              </div>
-              <FieldDescription className="flex items-center gap-1">
-                <Link href={getWebhookVersionDocsUrl(value)} target="_blank" rel="noopener noreferrer">
-                  {t("view_payload_docs_for_this_version", "View payload docs for this version")}
-                </Link>
-                <ExternalLinkIcon aria-hidden="true" className="size-3" />
-              </FieldDescription>
-            </Field>
-          );
-        }}
       />
 
       <Controller
