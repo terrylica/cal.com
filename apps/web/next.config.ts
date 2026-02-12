@@ -1,4 +1,3 @@
-import process from "node:process";
 import { withBotId } from "botid/next/config";
 import { config as dotenvConfig } from "dotenv";
 import type { NextConfig } from "next";
@@ -564,6 +563,11 @@ const nextConfig = (phase: string): NextConfig => {
           source: "/settings/security",
           destination: "/settings/security/password",
           permanent: false,
+        },
+        {
+          source: "/bookings",
+          destination: "/bookings/upcoming",
+          permanent: true,
         },
         {
           source: "/call/:path*",

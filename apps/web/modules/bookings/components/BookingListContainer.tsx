@@ -65,7 +65,6 @@ interface BookingListContainerProps {
   };
   bookingsV3Enabled: boolean;
   bookingAuditEnabled: boolean;
-  initialBookingUid?: string;
 }
 
 interface BookingListInnerProps extends BookingListContainerProps {
@@ -75,7 +74,6 @@ interface BookingListInnerProps extends BookingListContainerProps {
   errorMessage?: string;
   totalRowCount?: number;
   bookings: BookingsGetOutput["bookings"];
-  initialBookingUid?: string;
 }
 
 function BookingListInner({
@@ -238,7 +236,6 @@ export function BookingListContainer(props: BookingListContainerProps) {
     useBookingFilters();
 
   const { resolvedStatus, isResolvingStatus } = usePreSelectedBooking({
-    initialBookingUid: props.initialBookingUid,
     defaultStatus: props.status,
   });
 
@@ -274,10 +271,11 @@ export function BookingListContainer(props: BookingListContainerProps) {
       dateRange,
     ]
   );
+
   const query = trpc.viewer.bookings.get.useQuery(queryInput, {
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    enabled: !isValidatorPending && !isResolvingStatus,
+    staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
+    gcTime: 30 * 60 * 1000, // 30 minutes - cache retention time
+    enabled: !isValidatorPending && !isResolvingStatus, // Wait for validator to be ready before fetching
   });
 
   const bookings = useMemo(() => query.data?.bookings ?? [], [query.data?.bookings]);

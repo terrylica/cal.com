@@ -26,7 +26,7 @@ export const generateMetadata = async ({ params }: { params: Promise<{ status: s
     `/bookings/${(await params).status}`
   );
 
-const Page = async ({ params, searchParams }: PageProps) => {
+const Page = async ({ params }: PageProps) => {
   const parsed = querySchema.safeParse(await params);
   if (!parsed.success) {
     redirect("/bookings/upcoming");
@@ -39,10 +39,6 @@ const Page = async ({ params, searchParams }: PageProps) => {
   }
 
   const userId = session.user.id;
-
-  const awaitedSearchParams = await searchParams;
-  const uid = awaitedSearchParams?.uid as string | undefined;
-
   const permissionService = new PermissionCheckService();
   const userFeatureRepository = getUserFeatureRepository();
 
@@ -73,9 +69,9 @@ const Page = async ({ params, searchParams }: PageProps) => {
     <ShellMainAppDir
       {...(!bookingsV3Enabled
         ? {
-          heading: t("bookings"),
-          subtitle: t("bookings_description"),
-        }
+            heading: t("bookings"),
+            subtitle: t("bookings_description"),
+          }
         : {})}>
       <BookingsList
         status={parsed.data.status}
@@ -83,7 +79,6 @@ const Page = async ({ params, searchParams }: PageProps) => {
         permissions={{ canReadOthersBookings }}
         bookingsV3Enabled={bookingsV3Enabled}
         bookingAuditEnabled={bookingAuditEnabled}
-        initialBookingUid={uid}
       />
     </ShellMainAppDir>
   );

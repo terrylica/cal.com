@@ -1,5 +1,5 @@
 import { trpc } from "@calcom/trpc/react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import type { BookingListingStatus } from "../types";
@@ -29,7 +29,6 @@ export function getTabForBooking(booking: BookingForTabResolution): BookingListi
 }
 
 interface UsePreSelectedBookingOptions {
-  initialBookingUid: string | undefined;
   defaultStatus: BookingListingStatus;
 }
 
@@ -39,20 +38,22 @@ interface UsePreSelectedBookingResult {
 }
 
 export function usePreSelectedBooking({
-  initialBookingUid,
   defaultStatus,
 }: UsePreSelectedBookingOptions): UsePreSelectedBookingResult {
+  const searchParams = useSearchParams();
+  const bookingUid = searchParams?.get("uid") ?? undefined;
+
   const { data: fetchedData, isPending: isFetching } = trpc.viewer.bookings.get.useQuery(
     {
       limit: 1,
       offset: 0,
       filters: {
-        bookingUid: initialBookingUid ?? undefined,
+        bookingUid,
         statuses: ["upcoming", "recurring", "past", "cancelled", "unconfirmed"],
       },
     },
     {
-      enabled: !!initialBookingUid,
+      enabled: !!bookingUid,
       staleTime: 5 * 60 * 1000,
     }
   );
@@ -76,7 +77,7 @@ export function usePreSelectedBooking({
     setResolvedStatus(correctTab);
   }, [fetchedBooking, pathname, router]);
 
-  const isResolvingStatus = initialBookingUid ? isFetching || isNavigating : false;
+  const isResolvingStatus = bookingUid ? isFetching || isNavigating : false;
 
   return { resolvedStatus, isResolvingStatus };
 }
