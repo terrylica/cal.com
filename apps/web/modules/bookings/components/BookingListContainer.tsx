@@ -17,9 +17,9 @@ import { useBookingFilters } from "~/bookings/hooks/useBookingFilters";
 import { useBookingListColumns } from "~/bookings/hooks/useBookingListColumns";
 import { useBookingListData } from "~/bookings/hooks/useBookingListData";
 import { useBookingStatusTab } from "~/bookings/hooks/useBookingStatusTab";
-import { usePreSelectedBooking } from "~/bookings/hooks/usePreSelectedBooking";
 import { useFacetedUniqueValues } from "~/bookings/hooks/useFacetedUniqueValues";
 import { useListAutoSelector } from "~/bookings/hooks/useListAutoSelector";
+import { useSwitchToCorrectStatusTab } from "~/bookings/hooks/usePreSelectedBooking";
 import { DataTableFilters, DataTableSegment } from "~/data-table/components";
 import {
   BookingDetailsSheetStoreProvider,
@@ -231,11 +231,11 @@ function BookingListInner({
 }
 
 export function BookingListContainer(props: BookingListContainerProps) {
-  const { limit, offset, setPageIndex, isValidatorPending } = useDataTable();
+  const { limit, offset, isValidatorPending } = useDataTable();
   const { eventTypeIds, teamIds, userIds, dateRange, attendeeName, attendeeEmail, bookingUid } =
     useBookingFilters();
 
-  const { resolvedStatus, isResolvingStatus } = usePreSelectedBooking({
+  const { resolvedTabStatus, isResolvingTabStatus } = useSwitchToCorrectStatusTab({
     defaultStatus: props.status,
   });
 
@@ -245,7 +245,7 @@ export function BookingListContainer(props: BookingListContainerProps) {
       limit,
       offset,
       filters: {
-        statuses: [resolvedStatus],
+        statuses: [resolvedTabStatus],
         eventTypeIds,
         teamIds,
         userIds,
@@ -261,7 +261,7 @@ export function BookingListContainer(props: BookingListContainerProps) {
     [
       limit,
       offset,
-      resolvedStatus,
+      resolvedTabStatus,
       eventTypeIds,
       teamIds,
       userIds,
@@ -275,7 +275,8 @@ export function BookingListContainer(props: BookingListContainerProps) {
   const query = trpc.viewer.bookings.get.useQuery(queryInput, {
     staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
     gcTime: 30 * 60 * 1000, // 30 minutes - cache retention time
-    enabled: !isValidatorPending && !isResolvingStatus, // Wait for validator to be ready before fetching
+    // We wait for tab status to be resolved before fetching, so that we can fetch the correct bookings as per resolved tab status
+    enabled: !isValidatorPending && !isResolvingTabStatus, // Wait for validator to be ready before fetching
   });
 
   const bookings = useMemo(() => query.data?.bookings ?? [], [query.data?.bookings]);
@@ -294,7 +295,7 @@ export function BookingListContainer(props: BookingListContainerProps) {
     <BookingDetailsSheetStoreProvider bookings={bookings}>
       <BookingListInner
         {...props}
-        status={resolvedStatus}
+        status={resolvedTabStatus}
         data={query.data}
         isPending={query.isPending}
         hasError={!!query.error}
