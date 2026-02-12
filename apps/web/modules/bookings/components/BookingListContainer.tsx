@@ -19,7 +19,7 @@ import { useBookingListData } from "~/bookings/hooks/useBookingListData";
 import { useBookingStatusTab } from "~/bookings/hooks/useBookingStatusTab";
 import { useFacetedUniqueValues } from "~/bookings/hooks/useFacetedUniqueValues";
 import { useListAutoSelector } from "~/bookings/hooks/useListAutoSelector";
-import { useSwitchToCorrectStatusTab } from "~/bookings/hooks/usePreSelectedBooking";
+import { useSwitchToCorrectStatusTab } from "~/bookings/hooks/useSwitchToCorrectStatusTab";
 import { DataTableFilters, DataTableSegment } from "~/data-table/components";
 import {
   BookingDetailsSheetStoreProvider,

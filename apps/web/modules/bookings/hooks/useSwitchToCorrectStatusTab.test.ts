@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { getTabForBooking } from "./usePreSelectedBooking";
+import { getTabForBooking } from "./useSwitchToCorrectStatusTab";
 
 function makeBooking(overrides: {
   status: string;
