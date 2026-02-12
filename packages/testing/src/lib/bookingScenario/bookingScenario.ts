@@ -1149,7 +1149,7 @@ export interface SmtpConfigurationTestData {
 }
 
 export async function createSmtpConfiguration(data: SmtpConfigurationTestData) {
-  const aad = { organizationId: data.organizationId };
+  const aad = { teamId: data.organizationId };
   const smtpUser = data.smtpUser ?? "testuser";
   const smtpPassword = data.smtpPassword ?? "testpassword";
 
