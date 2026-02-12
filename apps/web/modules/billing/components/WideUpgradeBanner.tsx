@@ -38,7 +38,7 @@ function dismiss(tracking: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(dismissed));
 }
 
-export type LargeUpgradeBannerProps = {
+export type WideUpgradeBannerProps = {
   tracking: string;
   title: string;
   subtitle: string;
@@ -57,7 +57,7 @@ export type LargeUpgradeBannerProps = {
   children: React.ReactNode;
 };
 
-export function LargeUpgradeBanner({
+export function WideUpgradeBanner({
   tracking,
   title,
   subtitle,
@@ -66,7 +66,7 @@ export function LargeUpgradeBanner({
   image,
   learnMoreButton,
   children,
-}: LargeUpgradeBannerProps) {
+}: WideUpgradeBannerProps) {
   const { t } = useLocale();
   const [visible, setVisible] = useState(() => !isDismissed(tracking));
 

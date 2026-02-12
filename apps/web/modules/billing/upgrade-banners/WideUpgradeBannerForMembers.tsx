@@ -2,15 +2,15 @@
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Icon } from "@calcom/ui/components/icon";
-import { LargeUpgradeBanner } from "@calcom/web/modules/billing/components/LargeUpgradeBanner";
+import { WideUpgradeBanner } from "@calcom/web/modules/billing/components/WideUpgradeBanner";
 import { UpgradePlanDialog } from "@calcom/web/modules/billing/components/UpgradePlanDialog";
 import { Button } from "@coss/ui/components/button";
 
-export function LargeUpgradeBannerForMembers() {
+export function WideUpgradeBannerForMembers() {
   const { t } = useLocale();
 
   return (
-    <LargeUpgradeBanner
+    <WideUpgradeBanner
       tracking="large-upgrade-banner-for-members"
       title={t("upgrade_banner_team_attributes_title")}
       subtitle={t("upgrade_banner_team_attributes_subtitle")}
@@ -30,6 +30,6 @@ export function LargeUpgradeBannerForMembers() {
           <Icon name="arrow-right" />
         </Button>
       </UpgradePlanDialog>
-    </LargeUpgradeBanner>
+    </WideUpgradeBanner>
   );
 }

@@ -5,7 +5,7 @@ import { RoleManagementFactory } from "@calcom/features/pbac/services/role-manag
 import SettingsHeader from "@calcom/features/settings/appDir/SettingsHeader";
 import { prisma } from "@calcom/prisma";
 import { viewerTeamsRouter } from "@calcom/trpc/server/routers/viewer/teams/_router";
-import { LargeUpgradeBannerForMembers } from "@calcom/web/modules/billing/upgrade-banners/LargeUpgradeBannerForMembers";
+import { WideUpgradeBannerForMembers } from "@calcom/web/modules/billing/upgrade-banners/WideUpgradeBannerForMembers";
 import { TeamMembersView } from "@calcom/web/modules/ee/teams/views/team-members-view";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
 import { createRouterCaller } from "app/_trpc/context";
@@ -100,7 +100,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
     <SettingsHeader title={t("team_members")} description={t("members_team_description")}>
       {!team.parentId && (
         <div className="mb-4">
-          <LargeUpgradeBannerForMembers />
+          <WideUpgradeBannerForMembers />
         </div>
       )}
       <TeamMembersView
