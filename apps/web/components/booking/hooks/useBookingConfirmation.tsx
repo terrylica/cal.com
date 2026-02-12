@@ -44,18 +44,24 @@ export function useBookingConfirmation(options: UseBookingConfirmationOptions = 
   });
 
   const bookingConfirm = ({ bookingId, confirmed, recurringEventId, reason, seatReferenceUid }: BookingConfirmParams) => {
-    let body: Record<string, unknown> = {
+    const body: {
+      bookingId: number;
+      confirmed: boolean;
+      reason: string;
+      recurringEventId?: string;
+      seatReferenceUid?: string;
+    } = {
       bookingId,
       confirmed,
       reason: reason || "",
     };
 
     if ((isTabRecurring || isTabUnconfirmed) && isRecurring && recurringEventId) {
-      body = Object.assign({}, body, { recurringEventId });
+      body.recurringEventId = recurringEventId;
     }
 
     if (seatReferenceUid) {
-      body = Object.assign({}, body, { seatReferenceUid });
+      body.seatReferenceUid = seatReferenceUid;
     }
 
     mutation.mutate(body);

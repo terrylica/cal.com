@@ -186,7 +186,7 @@ function BookingListItem(booking: BookingItemProps) {
   const isAttendee = !!userSeat;
 
   const pendingSeats = booking.seatsReferences.filter(
-    (seat) => seat.status === BookingStatus.PENDING
+    (seat) => seat.status?.toLowerCase() === "pending"
   );
 
   const paymentAppData = getPaymentAppData(booking.eventType);
