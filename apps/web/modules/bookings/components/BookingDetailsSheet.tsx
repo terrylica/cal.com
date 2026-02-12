@@ -191,10 +191,10 @@ function BookingDetailsSheetInner({
       return true;
     }
     if (!sheetContentRef.current) return false;
-    return (
-      sheetContentRef.current.contains(activeElement) ||
-      activeElement.contains(sheetContentRef.current)
-    );
+    if (sheetContentRef.current.contains(activeElement)) {
+      return true;
+    }
+    return !activeElement.closest("[data-radix-portal]");
   }, []);
 
   useEffect(() => {
