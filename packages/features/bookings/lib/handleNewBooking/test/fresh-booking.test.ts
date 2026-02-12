@@ -8,67 +8,62 @@
  * They don't intend to test what the apps logic should do, but rather test if the apps are called with the correct data. For testing that, once should write tests within each app.
  */
 import prismaMock from "@calcom/testing/lib/__mocks__/prisma";
-
 import {
+  BookingLocations,
   createBookingScenario,
+  getAppleCalendarCredential,
+  getBooker,
   getDate,
   getGoogleCalendarCredential,
   getGoogleMeetCredential,
-  getAppleCalendarCredential,
-  TestData,
   getOrganizer,
-  getBooker,
   getScenarioData,
-  getZoomAppCredential,
-  mockErrorOnVideoMeetingCreation,
-  mockSuccessfulVideoMeetingCreation,
-  mockCalendarToHaveNoBusySlots,
   getStripeAppCredential,
+  getZoomAppCredential,
   MockError,
-  mockPaymentApp,
   mockCalendar,
   mockCalendarToCrashOnCreateEvent,
+  mockCalendarToHaveNoBusySlots,
+  mockErrorOnVideoMeetingCreation,
+  mockPaymentApp,
+  mockSuccessfulVideoMeetingCreation,
   mockVideoAppToCrashOnCreateMeeting,
-  BookingLocations,
+  TestData,
 } from "@calcom/testing/lib/bookingScenario/bookingScenario";
+import process from "node:process";
+import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
+import { handleStripePaymentSuccess } from "@calcom/features/ee/payments/api/webhook";
+import { createWatchlistEntry } from "@calcom/features/watchlist/lib/testUtils";
+import { WEBAPP_URL, WEBSITE_URL } from "@calcom/lib/constants";
+import { ErrorCode } from "@calcom/lib/errorCodes";
+import type { HttpError } from "@calcom/lib/http-error";
+import logger from "@calcom/lib/logger";
+import { resetTestEmails } from "@calcom/lib/testEmails";
+import { distributedTracing } from "@calcom/lib/tracing/factory";
+import { BookingStatus, CreationSource, SchedulingType, WatchlistType } from "@calcom/prisma/enums";
 import {
-  expectWorkflowToBeTriggered,
-  expectWorkflowToBeNotTriggered,
-  expectSuccessfulBookingCreationEmails,
-  expectBookingToBeInDatabase,
   expectAwaitingPaymentEmails,
-  expectBookingRequestedEmails,
-  expectBookingRequestedWebhookToHaveBeenFired,
   expectBookingCreatedWebhookToHaveBeenFired,
   expectBookingPaymentIntiatedWebhookToHaveBeenFired,
-  expectBrokenIntegrationEmails,
-  expectSuccessfulCalendarEventCreationInCalendar,
-  expectICalUIDAsString,
+  expectBookingRequestedEmails,
+  expectBookingRequestedWebhookToHaveBeenFired,
+  expectBookingToBeInDatabase,
   expectBookingTrackingToBeInDatabase,
+  expectBrokenIntegrationEmails,
+  expectICalUIDAsString,
+  expectSuccessfulBookingCreationEmails,
+  expectSuccessfulCalendarEventCreationInCalendar,
+  expectWorkflowToBeNotTriggered,
+  expectWorkflowToBeTriggered,
 } from "@calcom/testing/lib/bookingScenario/expects";
 import { getMockRequestDataForBooking } from "@calcom/testing/lib/bookingScenario/getMockRequestDataForBooking";
 import { setupAndTeardown } from "@calcom/testing/lib/bookingScenario/setupAndTeardown";
 import { testWithAndWithoutOrg } from "@calcom/testing/lib/bookingScenario/test";
-
+import { test } from "@calcom/testing/lib/fixtures/fixtures";
 import type { Request, Response } from "express";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { describe, expect } from "vitest";
-
 import type Stripe from "stripe";
-
-import { appStoreMetadata } from "@calcom/app-store/appStoreMetaData";
-import { handleStripePaymentSuccess } from "@calcom/features/ee/payments/api/webhook";
-import { createWatchlistEntry } from "@calcom/features/watchlist/lib/testUtils";
-import { WEBSITE_URL, WEBAPP_URL } from "@calcom/lib/constants";
-import type { HttpError } from "@calcom/lib/http-error";
-import logger from "@calcom/lib/logger";
-import { distributedTracing } from "@calcom/lib/tracing/factory";
-import { ErrorCode } from "@calcom/lib/errorCodes";
-import { resetTestEmails } from "@calcom/lib/testEmails";
-import { CreationSource, WatchlistType } from "@calcom/prisma/enums";
-import { BookingStatus, SchedulingType } from "@calcom/prisma/enums";
-import { test } from "@calcom/testing/lib/fixtures/fixtures";
-
+import { describe, expect } from "vitest";
 import { getNewBookingHandler } from "./getNewBookingHandler";
 
 const log = logger.getSubLogger({ prefix: ["[fresh-booking.test]"] });
@@ -2364,9 +2359,6 @@ describe("handleNewBooking", () => {
     );
 
     describe("Event Type that requires confirmation", () => {
-      // NOTE: Tests for BOOKING_REQUESTED webhook have been moved to the new webhook architecture test suite
-      // See packages/features/webhooks/lib/__tests__/ for tests using the producer/consumer pattern
-
       test(
         `should create a booking for event that requires confirmation based on a booking notice duration threshold, if threshold is not met
             1. Should create a booking in the database with status ACCEPTED
@@ -2874,10 +2866,6 @@ describe("handleNewBooking", () => {
         },
         timeout
       );
-      // NOTE: Test for "Event Type that requires confirmation" with BOOKING_REQUESTED webhook
-      // has been moved to packages/features/webhooks/lib/__tests__/consumer/triggers/booking-requested.test.ts
-      // as part of the webhook architecture migration. The BOOKING_REQUESTED webhook now goes through
-      // the producer/consumer pattern instead of direct fetch calls.
       test(
         `cannot book same slot multiple times `,
 
