@@ -6,7 +6,9 @@ import handler from "./_invoice.payment_failed";
 
 const onPaymentFailed = vi.fn().mockResolvedValue({ handled: true });
 const createBySubscriptionId = vi.fn().mockResolvedValue({ onPaymentFailed });
-const getPaymentIntentFailureReason = vi.fn().mockResolvedValue("card_declined");
+const getPaymentIntentFailureReason = vi
+  .fn()
+  .mockResolvedValue("card_declined");
 
 vi.mock("@calcom/ee/billing/di/containers/Billing", () => ({
   getBillingProviderService: () => ({
@@ -29,7 +31,9 @@ describe("invoice.payment_failed webhook", () => {
         lines: {
           data: [
             {
-              metadata: buildMonthlyProrationMetadata({ prorationId: "pr_123" }),
+              metadata: buildMonthlyProrationMetadata({
+                prorationId: "pr_123",
+              }),
             },
           ],
         },
@@ -60,7 +64,10 @@ describe("invoice.payment_failed webhook", () => {
     const result = await handler(data);
 
     expect(createBySubscriptionId).not.toHaveBeenCalled();
-    expect(result).toEqual({ success: true, message: "not a subscription invoice" });
+    expect(result).toEqual({
+      success: true,
+      message: "not a subscription invoice",
+    });
   });
 
   it("uses invoice status as fallback when no payment intent", async () => {
@@ -72,7 +79,9 @@ describe("invoice.payment_failed webhook", () => {
         lines: {
           data: [
             {
-              metadata: buildMonthlyProrationMetadata({ prorationId: "pr_456" }),
+              metadata: buildMonthlyProrationMetadata({
+                prorationId: "pr_456",
+              }),
             },
           ],
         },

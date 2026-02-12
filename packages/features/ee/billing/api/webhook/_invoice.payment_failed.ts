@@ -1,4 +1,7 @@
-import { getBillingProviderService, getSeatBillingStrategyFactory } from "@calcom/ee/billing/di/containers/Billing";
+import {
+  getBillingProviderService,
+  getSeatBillingStrategyFactory,
+} from "@calcom/ee/billing/di/containers/Billing";
 import logger from "@calcom/lib/logger";
 
 import type { SWHMap } from "./__handler";
@@ -11,7 +14,9 @@ const handler = async (data: Data) => {
   const invoice = data.object;
 
   const subscriptionId =
-    typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+    typeof invoice.subscription === "string"
+      ? invoice.subscription
+      : invoice.subscription?.id;
 
   if (!subscriptionId) {
     log.debug("Not a subscription invoice, skipping");
@@ -20,20 +25,31 @@ const handler = async (data: Data) => {
 
   let failureReason = invoice.status ?? "payment_failed";
   const paymentIntentId =
-    typeof invoice.payment_intent === "string" ? invoice.payment_intent : invoice.payment_intent?.id;
+    typeof invoice.payment_intent === "string"
+      ? invoice.payment_intent
+      : invoice.payment_intent?.id;
 
   if (paymentIntentId) {
     const billingProviderService = getBillingProviderService();
-    const paymentFailureReason = await billingProviderService.getPaymentIntentFailureReason(paymentIntentId);
+    const paymentFailureReason =
+      await billingProviderService.getPaymentIntentFailureReason(
+        paymentIntentId
+      );
     failureReason = paymentFailureReason ?? failureReason;
   }
 
   const factory = getSeatBillingStrategyFactory();
   const strategy = await factory.createBySubscriptionId(subscriptionId);
-  const { handled } = await strategy.onPaymentFailed({ lines: invoice.lines }, failureReason);
+  const { handled } = await strategy.onPaymentFailed(
+    { lines: invoice.lines },
+    failureReason
+  );
 
   if (handled) {
-    log.info("Strategy handled payment failure", { subscriptionId, failureReason });
+    log.info("Strategy handled payment failure", {
+      subscriptionId,
+      failureReason,
+    });
   }
 
   return { success: true, handled };
