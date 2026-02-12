@@ -10,7 +10,7 @@ import { Button } from "@calcom/ui/components/button";
 import { FilterSearchField, Select } from "@calcom/ui/components/form";
 import { Icon, type IconName } from "@calcom/ui/components/icon";
 import { SkeletonText } from "@calcom/ui/components/skeleton";
-
+import Link from "next/link";
 import { useState } from "react";
 
 interface BookingHistoryProps {
@@ -124,14 +124,6 @@ function BookingLogsFilters({
   );
 }
 
-function AuditDeepLink({ href, children }: { href: string; children?: React.ReactNode }) {
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-emphasis underline hover:no-underline">
-      {children}
-    </a>
-  );
-}
-
 /**
  * Renders the action display title with support for Trans component interpolation
  * Handles translations with embedded components (e.g., links) for proper i18n support
@@ -147,7 +139,12 @@ function ActionTitle({ actionDisplayTitle }: { actionDisplayTitle: TranslationWi
         values={actionDisplayTitle.params}
         components={actionDisplayTitle.components.map((comp) =>
           comp.type === "link" ? (
-            <AuditDeepLink key={comp.href} href={comp.href} />
+            <Link
+              href={comp.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emphasis underline hover:no-underline"
+            />
           ) : (
             <span key={comp.href} />
           )
@@ -312,15 +309,15 @@ function BookingLogsTimeline({ logs }: BookingLogsTimelineProps) {
                       {/* Render displayFields if available, otherwise show type */}
                       {log.displayFields && log.displayFields.length > 0
                         ? log.displayFields.map((field, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-start gap-2 py-2 border-b px-3 border-subtle">
-                              <span className="font-medium text-emphasis w-[140px]">{t(field.labelKey)}</span>
-                              <span className="font-medium">
-                                <DisplayFieldValue field={field} />
-                              </span>
-                            </div>
-                          ))
+                          <div
+                            key={idx}
+                            className="flex items-start gap-2 py-2 border-b px-3 border-subtle">
+                            <span className="font-medium text-emphasis w-[140px]">{t(field.labelKey)}</span>
+                            <span className="font-medium">
+                              <DisplayFieldValue field={field} />
+                            </span>
+                          </div>
+                        ))
                         : null}
                       <div className="flex items-start gap-2 py-2 border-b px-3 border-subtle">
                         <span className="font-medium text-emphasis w-[140px]">{t("actor")}</span>
