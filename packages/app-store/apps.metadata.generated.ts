@@ -12,6 +12,7 @@ import basecamp3_config_json from "./basecamp3/config.json";
 import bolna_config_json from "./bolna/config.json";
 import btcpayserver_config_json from "./btcpayserver/config.json";
 import { metadata as caldavcalendar__metadata_ts } from "./caldavcalendar/_metadata";
+import { metadata as calstudio__metadata_ts } from "./calstudio/_metadata";
 import campfire_config_json from "./campfire/config.json";
 import caretta_config_json from "./caretta/config.json";
 import chatbase_config_json from "./chatbase/config.json";
@@ -123,6 +124,7 @@ export const appStoreMetadata = {
   bolna: bolna_config_json,
   btcpayserver: btcpayserver_config_json,
   caldavcalendar: caldavcalendar__metadata_ts,
+  calstudio: calstudio__metadata_ts,
   campfire: campfire_config_json,
   caretta: caretta_config_json,
   chatbase: chatbase_config_json,

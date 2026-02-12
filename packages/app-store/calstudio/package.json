@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "@calcom/calstudio",
+  "version": "0.0.0",
+  "main": "./index.ts",
+  "description": "Cal Studio is a conferencing app by Cal.com that provides high-quality video meetings for your scheduled events.",
+  "dependencies": {
+    "@calcom/lib": "workspace:*"
+  },
+  "devDependencies": {
+    "@calcom/types": "workspace:*"
+  }
+}
