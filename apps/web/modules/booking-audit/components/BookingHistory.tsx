@@ -140,6 +140,7 @@ function ActionTitle({ actionDisplayTitle }: { actionDisplayTitle: TranslationWi
         components={actionDisplayTitle.components.map((comp) =>
           comp.type === "link" ? (
             <Link
+              key={comp.href}
               href={comp.href}
               target="_blank"
               rel="noopener noreferrer"
