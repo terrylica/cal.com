@@ -2767,12 +2767,7 @@ async function handler(
   }
 
   // Queue BOOKING_REQUESTED webhook after booking update so consumer fetches booking with location, metadata, references
-  if (
-    eventTrigger !== WebhookTriggerEvents.BOOKING_CREATED &&
-    eventTrigger !== WebhookTriggerEvents.BOOKING_RESCHEDULED &&
-    !isDryRun &&
-    booking
-  ) {
+  if (booking && booking.status === BookingStatus.PENDING && !isDryRun) {
     try {
       await deps.webhookProducer.queueBookingRequestedWebhook({
         bookingUid: booking.uid,
