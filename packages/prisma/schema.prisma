@@ -2627,8 +2627,10 @@ model OrganizationOnboarding {
   organization   Team? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   billingPeriod BillingPeriod
+  billingMode   BillingMode   @default(SEATS)
   pricePerSeat  Float
   seats         Int
+  minSeats      Int?
 
   isPlatform Boolean @default(false)
 
@@ -3047,6 +3049,7 @@ model TeamBilling {
   billingMode       BillingMode    @default(SEATS)
   pricePerSeat      Int?
   paidSeats         Int?
+  minSeats          Int?
   monthlyProrations MonthlyProration[]
   seatChangeLogs    SeatChangeLog[]
 
@@ -3076,6 +3079,7 @@ model OrganizationBilling {
   billingMode       BillingMode    @default(SEATS)
   pricePerSeat      Int?
   paidSeats         Int?
+  minSeats          Int?
   monthlyProrations MonthlyProration[]
   seatChangeLogs    SeatChangeLog[]
 

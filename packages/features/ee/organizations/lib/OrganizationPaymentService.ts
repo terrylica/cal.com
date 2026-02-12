@@ -9,7 +9,7 @@ import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
 import { prisma } from "@calcom/prisma";
 import type { OrganizationOnboarding } from "@calcom/prisma/client";
-import { UserPermissionRole, type BillingPeriod } from "@calcom/prisma/enums";
+import { UserPermissionRole, type BillingMode, type BillingPeriod } from "@calcom/prisma/enums";
 import { userMetadata } from "@calcom/prisma/zod-utils";
 
 import { OrganizationPermissionService } from "./OrganizationPermissionService";
@@ -31,8 +31,10 @@ type CreateOnboardingInput = {
   slug: string;
   orgOwnerEmail: string;
   billingPeriod?: BillingPeriod;
+  billingMode?: BillingMode;
   seats?: number | null;
   pricePerSeat?: number | null;
+  minSeats?: number | null;
   createdByUserId: number;
   logo?: string | null;
   bio?: string | null;
@@ -193,8 +195,10 @@ export class OrganizationPaymentService {
       slug: input.slug,
       orgOwnerEmail: input.orgOwnerEmail,
       billingPeriod: config.billingPeriod,
+      billingMode: input.billingMode,
       seats: config.seats,
       pricePerSeat: config.pricePerSeat,
+      minSeats: input.minSeats ?? null,
       createdById: input.createdByUserId,
       logo: input.logo ?? null,
       bio: input.bio ?? null,

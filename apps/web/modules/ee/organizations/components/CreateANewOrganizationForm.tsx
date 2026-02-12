@@ -5,7 +5,7 @@ import { isCompanyEmail } from "@calcom/features/ee/organizations/lib/utils";
 import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import slugify from "@calcom/lib/slugify";
-import { BillingPeriod, CreationSource, UserPermissionRole } from "@calcom/prisma/enums";
+import { BillingMode, BillingPeriod, CreationSource, UserPermissionRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
 import type { Ensure } from "@calcom/types/utils";
 import classNames from "@calcom/ui/classNames";
@@ -45,7 +45,7 @@ const CreateANewOrganizationFormChild = ({ session }: { session: Ensure<SessionC
   // Let self-hosters create an organization with their own email. Hosted's Admin already has an organization for their email
   const defaultOrgOwnerEmail = (!isAdmin || IS_SELF_HOSTED ? session.data.user.email : null) ?? "";
   const { useOnboardingStore, isBillingEnabled } = useOnboarding();
-  const { slug, name, orgOwnerEmail, billingPeriod, pricePerSeat, seats, onboardingId, reset } =
+  const { slug, name, orgOwnerEmail, billingPeriod, billingMode, pricePerSeat, seats, minSeats, onboardingId, reset } =
     useOnboardingStore();
 
   // For non-admin users, always use the current session email to prevent stale cached email issues.
@@ -57,17 +57,21 @@ const CreateANewOrganizationFormChild = ({ session }: { session: Ensure<SessionC
     name: string;
     seats: number | null;
     billingPeriod: BillingPeriod;
+    billingMode: BillingMode;
     pricePerSeat: number | null;
+    minSeats: number | null;
     slug: string;
     orgOwnerEmail: string;
   }>({
     defaultValues: {
       billingPeriod: billingPeriod ?? BillingPeriod.MONTHLY,
+      billingMode: billingMode ?? BillingMode.SEATS,
       slug: slug ?? (!isAdmin ? deriveSlugFromEmail(effectiveOrgOwnerEmail) : undefined),
       orgOwnerEmail: effectiveOrgOwnerEmail,
       name: name ?? (!isAdmin ? deriveOrgNameFromEmail(effectiveOrgOwnerEmail) : undefined),
       seats: seats ?? null,
       pricePerSeat: pricePerSeat ?? null,
+      minSeats: minSeats ?? null,
     },
   });
 
@@ -154,8 +158,10 @@ const CreateANewOrganizationFormChild = ({ session }: { session: Ensure<SessionC
               // Regular user or admin creating for self - store locally and continue
               reset({
                 billingPeriod: v.billingPeriod,
+                billingMode: v.billingMode,
                 pricePerSeat: v.pricePerSeat,
                 seats: v.seats,
+                minSeats: v.minSeats,
                 orgOwnerEmail: v.orgOwnerEmail,
                 name: v.name,
                 slug: v.slug,
@@ -171,7 +177,36 @@ const CreateANewOrganizationFormChild = ({ session }: { session: Ensure<SessionC
             </div>
           )}
           {isBillingEnabled && isAdmin && (
-            <div className="mb-5">
+            <div className="mb-5 space-y-5">
+              <Controller
+                name="billingMode"
+                control={newOrganizationFormMethods.control}
+                render={({ field: { value, onChange } }) => (
+                  <>
+                    <Label htmlFor="billingMode">Billing Mode</Label>
+                    <ToggleGroup
+                      isFullWidth
+                      id="billingMode"
+                      value={value}
+                      onValueChange={(e: BillingMode) => {
+                        if ([BillingMode.SEATS, BillingMode.ACTIVE_USERS].includes(e)) {
+                          onChange(e);
+                        }
+                      }}
+                      options={[
+                        {
+                          value: "SEATS",
+                          label: "Seats",
+                        },
+                        {
+                          value: "ACTIVE_USERS",
+                          label: "Active Users",
+                        },
+                      ]}
+                    />
+                  </>
+                )}
+              />
               <Controller
                 name="billingPeriod"
                 control={newOrganizationFormMethods.control}
@@ -201,6 +236,27 @@ const CreateANewOrganizationFormChild = ({ session }: { session: Ensure<SessionC
                   </>
                 )}
               />
+              {newOrganizationFormMethods.watch("billingMode") === BillingMode.ACTIVE_USERS && (
+                <Controller
+                  name="minSeats"
+                  control={newOrganizationFormMethods.control}
+                  render={({ field: { value, onChange } }) => (
+                    <TextField
+                      placeholder="10"
+                      name="minSeats"
+                      type="number"
+                      label="Minimum seats (optional)"
+                      min={1}
+                      defaultValue={value ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value ? +e.target.value : null;
+                        onChange(val);
+                      }}
+                      autoComplete="off"
+                    />
+                  )}
+                />
+              )}
             </div>
           )}
           <Controller
