@@ -76,9 +76,6 @@ const _getBookingData = async <T extends z.ZodType>({
     }
   }
 
-  // Propagate phone value across system phone fields.
-  // When phone fields are consolidated in the UI, only one field gets filled by the booker.
-  // This ensures the phone value is available for all features (SMS reminders, AI calls, etc.)
   const phoneValue =
     responses.attendeePhoneNumber || responses.smsReminderNumber || responses.aiAgentCallPhoneNumber;
 
