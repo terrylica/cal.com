@@ -2741,27 +2741,6 @@ async function handler(
       isDryRun,
       traceContext,
     });
-  } else {
-    // if eventType requires confirmation we trigger the BOOKING_REQUESTED webhook via producer (Trigger.dev or sync)
-    if (!isDryRun && booking) {
-      try {
-        await deps.webhookProducer.queueBookingRequestedWebhook({
-          bookingUid: booking.uid,
-          userId: subscriberOptions.userId ?? undefined,
-          eventTypeId: subscriberOptions.eventTypeId ?? undefined,
-          teamId: Array.isArray(subscriberOptions.teamId)
-            ? subscriberOptions.teamId[0]
-            : (subscriberOptions.teamId ?? undefined),
-          orgId: subscriberOptions.orgId ?? undefined,
-          oAuthClientId: platformClientId ?? undefined,
-        });
-      } catch (webhookError) {
-        tracingLogger.error(
-          `Error queueing BOOKING_REQUESTED webhook: bookingId: ${booking.id}, bookingUid: ${booking.uid}`,
-          safeStringify(webhookError)
-        );
-      }
-    }
   }
 
   if (!booking) throw new HttpError({ statusCode: 400, message: "Booking failed" });
@@ -2785,6 +2764,32 @@ async function handler(
     }
   } catch (error) {
     tracingLogger.error("Error while creating booking references", JSON.stringify({ error }));
+  }
+
+  // Queue BOOKING_REQUESTED webhook after booking update so consumer fetches booking with location, metadata, references
+  if (
+    eventTrigger !== WebhookTriggerEvents.BOOKING_CREATED &&
+    eventTrigger !== WebhookTriggerEvents.BOOKING_RESCHEDULED &&
+    !isDryRun &&
+    booking
+  ) {
+    try {
+      await deps.webhookProducer.queueBookingRequestedWebhook({
+        bookingUid: booking.uid,
+        userId: subscriberOptions.userId ?? undefined,
+        eventTypeId: subscriberOptions.eventTypeId ?? undefined,
+        teamId: Array.isArray(subscriberOptions.teamId)
+          ? subscriberOptions.teamId[0]
+          : (subscriberOptions.teamId ?? undefined),
+        orgId: subscriberOptions.orgId ?? undefined,
+        oAuthClientId: platformClientId ?? undefined,
+      });
+    } catch (webhookError) {
+      tracingLogger.error(
+        `Error queueing BOOKING_REQUESTED webhook: bookingId: ${booking.id}, bookingUid: ${booking.uid}`,
+        safeStringify(webhookError)
+      );
+    }
   }
 
   const evtWithMetadata = {
