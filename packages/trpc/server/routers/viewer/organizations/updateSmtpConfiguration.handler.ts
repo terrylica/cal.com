@@ -30,6 +30,8 @@ export const updateSmtpConfigurationHandler = async ({ ctx, input }: UpdateSmtpC
     fromName: input.fromName,
     smtpHost: input.smtpHost,
     smtpPort: input.smtpPort,
+    smtpUser: input.smtpUser,
+    smtpPassword: input.smtpPassword,
     smtpSecure: input.smtpSecure,
   });
 };

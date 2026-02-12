@@ -2976,6 +2976,7 @@
   "edit_smtp_configuration": "Edit SMTP Configuration",
   "edit_smtp_configuration_description": "Update your SMTP server configuration",
   "smtp_password_placeholder": "Leave blank to keep existing password",
+  "smtp_username_placeholder": "Leave blank to keep existing username",
   "delete_smtp_configuration": "Delete SMTP Configuration",
   "delete_smtp_configuration_description": "Are you sure you want to delete the SMTP configuration for {{email}}? This action cannot be undone.",
   "confirm_delete_smtp_configuration": "Delete",

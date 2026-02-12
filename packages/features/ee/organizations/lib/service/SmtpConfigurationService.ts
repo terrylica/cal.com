@@ -130,11 +130,7 @@ export class SmtpConfigurationService {
       return null;
     }
 
-    const { user, password } = this.decryptCredentials(
-      config.smtpUser,
-      config.smtpPassword,
-      config.teamId
-    );
+    const { user, password } = this.decryptCredentials(config.smtpUser, config.smtpPassword, config.teamId);
 
     return {
       fromEmail: config.fromEmail,
@@ -155,6 +151,8 @@ export class SmtpConfigurationService {
       fromName?: string;
       smtpHost?: string;
       smtpPort?: number;
+      smtpUser?: string;
+      smtpPassword?: string;
       smtpSecure?: boolean;
     }
   ): Promise<SmtpConfigurationPublic> {
@@ -171,6 +169,8 @@ export class SmtpConfigurationService {
       fromName?: string;
       smtpHost?: string;
       smtpPort?: number;
+      smtpUser?: string;
+      smtpPassword?: string;
       smtpSecure?: boolean;
     } = {};
 
@@ -178,6 +178,16 @@ export class SmtpConfigurationService {
     if (params.fromName) updateData.fromName = params.fromName;
     if (params.smtpHost) updateData.smtpHost = params.smtpHost;
     if (params.smtpPort) updateData.smtpPort = params.smtpPort;
+    if (params.smtpUser) {
+      updateData.smtpUser = JSON.stringify(
+        encryptSecret({ ring: SMTP_KEYRING, plaintext: params.smtpUser, aad: { teamId } })
+      );
+    }
+    if (params.smtpPassword) {
+      updateData.smtpPassword = JSON.stringify(
+        encryptSecret({ ring: SMTP_KEYRING, plaintext: params.smtpPassword, aad: { teamId } })
+      );
+    }
     if (params.smtpSecure !== undefined) updateData.smtpSecure = params.smtpSecure;
 
     const updated = await this.repository.update(id, teamId, updateData);
@@ -198,11 +208,7 @@ export class SmtpConfigurationService {
       throw new ErrorWithCode(ErrorCode.Forbidden, "Not authorized to test this SMTP configuration");
     }
 
-    const { user, password } = this.decryptCredentials(
-      config.smtpUser,
-      config.smtpPassword,
-      config.teamId
-    );
+    const { user, password } = this.decryptCredentials(config.smtpUser, config.smtpPassword, config.teamId);
 
     return this.smtpService.sendTestEmail({
       config: {

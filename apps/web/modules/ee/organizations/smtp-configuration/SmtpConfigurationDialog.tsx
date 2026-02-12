@@ -28,6 +28,8 @@ const editFormSchema = z.object({
   fromName: z.string().min(1),
   smtpHost: z.string().min(1),
   smtpPort: z.coerce.number().int().min(1).max(65535),
+  smtpUser: z.string().optional(),
+  smtpPassword: z.string().optional(),
   smtpSecure: z.boolean(),
 });
 
@@ -68,29 +70,39 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
     resolver: zodResolver(isEditing ? editFormSchema : createFormSchema),
     defaultValues: isEditing
       ? {
-          fromEmail: config.fromEmail,
-          fromName: config.fromName,
-          smtpHost: config.smtpHost,
-          smtpPort: config.smtpPort,
-          smtpSecure: config.smtpSecure,
-        }
+        fromEmail: config.fromEmail,
+        fromName: config.fromName,
+        smtpHost: config.smtpHost,
+        smtpPort: config.smtpPort,
+        smtpUser: "",
+        smtpPassword: "",
+        smtpSecure: config.smtpSecure,
+      }
       : {
-          fromEmail: "",
-          fromName: "",
-          smtpHost: "",
-          smtpPort: 465,
-          smtpUser: "",
-          smtpPassword: "",
-          smtpSecure: true,
-        },
+        fromEmail: "",
+        fromName: "",
+        smtpHost: "",
+        smtpPort: 465,
+        smtpUser: "",
+        smtpPassword: "",
+        smtpSecure: true,
+      },
   });
 
   const smtpHost = form.watch("smtpHost");
   const smtpPort = form.watch("smtpPort");
-  const smtpUser = !isEditing ? form.watch("smtpUser" as keyof CreateFormValues) : null;
-  const smtpPassword = !isEditing ? form.watch("smtpPassword" as keyof CreateFormValues) : null;
+  const smtpUser = form.watch("smtpUser");
+  const smtpPassword = form.watch("smtpPassword");
 
-  // Reset form when config changes (switching between add/edit modes)
+  const connectionFieldsChanged = isEditing && config
+    ? smtpHost !== config.smtpHost ||
+    smtpPort !== config.smtpPort ||
+    !!smtpUser ||
+    !!smtpPassword
+    : false;
+
+  const requiresTest = isEditing ? connectionFieldsChanged : true;
+
   useEffect(() => {
     if (config) {
       form.reset({
@@ -98,16 +110,17 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
         fromName: config.fromName,
         smtpHost: config.smtpHost,
         smtpPort: config.smtpPort,
+        smtpUser: "",
+        smtpPassword: "",
         smtpSecure: config.smtpSecure,
       });
     }
   }, [config, form]);
 
   useEffect(() => {
-    if (connectionStatus && !isEditing) {
-      setConnectionStatus(null);
-    }
-  }, [smtpHost, smtpPort, smtpUser, smtpPassword, isEditing, connectionStatus]);
+    setConnectionStatus(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [smtpHost, smtpPort, smtpUser, smtpPassword]);
 
   const testConnectionMutation = trpc.viewer.organizations.testSmtpConnection.useMutation({
     onSuccess: (result) => {
@@ -162,17 +175,22 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
 
   const handleTestConnection = () => {
     const values = form.getValues();
-    if (!values.smtpHost || !values.smtpPort || !values.smtpUser || !values.smtpPassword) {
+    if (!values.smtpHost || !values.smtpPort) {
+      showToast(t("fill_smtp_fields"), "error");
+      return;
+    }
+    if (!isEditing && (!values.smtpUser || !values.smtpPassword)) {
       showToast(t("fill_smtp_fields"), "error");
       return;
     }
     setIsTesting(true);
     setConnectionStatus(null);
     testConnectionMutation.mutate({
+      ...(isEditing && config ? { configId: config.id } : {}),
       smtpHost: values.smtpHost,
       smtpPort: Number(values.smtpPort),
-      smtpUser: values.smtpUser,
-      smtpPassword: values.smtpPassword,
+      ...(values.smtpUser ? { smtpUser: values.smtpUser } : {}),
+      ...(values.smtpPassword ? { smtpPassword: values.smtpPassword } : {}),
       smtpSecure: values.smtpSecure,
     });
   };
@@ -188,6 +206,8 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
         fromName?: string;
         smtpHost?: string;
         smtpPort?: number;
+        smtpUser?: string;
+        smtpPassword?: string;
         smtpSecure?: boolean;
       } = {
         id: config.id,
@@ -197,6 +217,8 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
       if (editValues.fromName !== config.fromName) updateData.fromName = editValues.fromName;
       if (editValues.smtpHost !== config.smtpHost) updateData.smtpHost = editValues.smtpHost;
       if (editValues.smtpPort !== config.smtpPort) updateData.smtpPort = editValues.smtpPort;
+      if (editValues.smtpUser) updateData.smtpUser = editValues.smtpUser;
+      if (editValues.smtpPassword) updateData.smtpPassword = editValues.smtpPassword;
       if (editValues.smtpSecure !== config.smtpSecure) updateData.smtpSecure = editValues.smtpSecure;
 
       updateMutation.mutate(updateData);
@@ -263,12 +285,19 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
                 />
               </div>
 
-              {!isEditing && (
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <TextField label={t("smtp_username")} {...form.register("smtpUser")} />
-                  <TextField type="password" label={t("smtp_password")} {...form.register("smtpPassword")} />
-                </div>
-              )}
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <TextField
+                  label={t("smtp_username")}
+                  placeholder={isEditing ? t("smtp_username_placeholder") : undefined}
+                  {...form.register("smtpUser")}
+                />
+                <TextField
+                  type="password"
+                  label={t("smtp_password")}
+                  placeholder={isEditing ? t("smtp_password_placeholder") : undefined}
+                  {...form.register("smtpPassword")}
+                />
+              </div>
 
               <div className="mt-4 flex items-center justify-between">
                 <div>
@@ -289,7 +318,7 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
                 />
               </div>
 
-              {!isEditing && (
+              {requiresTest && (
                 <div className="mt-4 flex items-center gap-3">
                   <Button type="button" color="secondary" onClick={handleTestConnection} loading={isTesting}>
                     {t("test_connection")}
@@ -311,10 +340,7 @@ const SmtpConfigurationDialog = ({ open, onOpenChange, config }: SmtpConfigurati
 
           <div className="flex items-center justify-end gap-2 bg-muted px-4 py-3">
             <DialogClose />
-            <Button
-              type="submit"
-              loading={isSubmitting}
-              disabled={!isEditing && !connectionStatus?.success}>
+            <Button type="submit" loading={isSubmitting} disabled={requiresTest && !connectionStatus?.success}>
               {isEditing ? t("save") : t("create")}
             </Button>
           </div>

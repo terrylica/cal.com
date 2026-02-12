@@ -85,9 +85,7 @@ export class SmtpConfigurationRepository {
     });
   }
 
-  async findByTeamIdWithCredentials(
-    teamId: number
-  ): Promise<SmtpConfigurationWithCredentials | null> {
+  async findByTeamIdWithCredentials(teamId: number): Promise<SmtpConfigurationWithCredentials | null> {
     return this.prisma.smtpConfiguration.findUnique({
       where: { teamId },
       select: smtpConfigurationSelect,
@@ -115,6 +113,8 @@ export class SmtpConfigurationRepository {
       fromName?: string;
       smtpHost?: string;
       smtpPort?: number;
+      smtpUser?: string;
+      smtpPassword?: string;
       smtpSecure?: boolean;
     }
   ): Promise<SmtpConfigurationWithCredentials> {
@@ -123,6 +123,8 @@ export class SmtpConfigurationRepository {
     if (data.fromName !== undefined) updateData.fromName = data.fromName;
     if (data.smtpHost !== undefined) updateData.smtpHost = data.smtpHost;
     if (data.smtpPort !== undefined) updateData.smtpPort = data.smtpPort;
+    if (data.smtpUser !== undefined) updateData.smtpUser = data.smtpUser;
+    if (data.smtpPassword !== undefined) updateData.smtpPassword = data.smtpPassword;
     if (data.smtpSecure !== undefined) updateData.smtpSecure = data.smtpSecure;
 
     return this.prisma.smtpConfiguration.update({

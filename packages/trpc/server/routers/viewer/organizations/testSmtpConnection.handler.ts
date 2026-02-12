@@ -1,4 +1,7 @@
-import { getSmtpService } from "@calcom/features/di/smtpConfiguration/containers/smtpConfiguration";
+import {
+  getSmtpConfigurationService,
+  getSmtpService,
+} from "@calcom/features/di/smtpConfiguration/containers/smtpConfiguration";
 import logger from "@calcom/lib/logger";
 
 import { TRPCError } from "@trpc/server";
@@ -27,15 +30,38 @@ function getOrganizationId(user: NonNullable<TrpcSessionUser>): number {
 }
 
 export const testSmtpConnectionHandler = async ({ ctx, input }: TestSmtpConnectionOptions) => {
-  getOrganizationId(ctx.user);
+  const organizationId = getOrganizationId(ctx.user);
   const smtpService = getSmtpService();
+
+  let user = input.smtpUser ?? "";
+  let password = input.smtpPassword ?? "";
+
+  if (input.configId && (!user || !password)) {
+    const configService = getSmtpConfigurationService();
+    const storedConfig = await configService.getConfigForOrg(organizationId);
+    if (!storedConfig) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "SMTP configuration not found",
+      });
+    }
+    if (!user) user = storedConfig.smtpUser;
+    if (!password) password = storedConfig.smtpPassword;
+  }
+
+  if (!user || !password) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "SMTP username and password are required",
+    });
+  }
 
   try {
     const result = await smtpService.testConnection({
       host: input.smtpHost,
       port: input.smtpPort,
-      user: input.smtpUser,
-      password: input.smtpPassword,
+      user,
+      password,
       secure: input.smtpSecure,
     });
     return result;
