@@ -14,8 +14,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@calcom/ui/components/dropdown";
-import { Icon } from "@calcom/ui/components/icon";
 import { showToast } from "@calcom/ui/components/toast";
+import { GlobeIcon } from "@coss/ui/icons";
 import Link from "next/link";
 import { Fragment, useState } from "react";
 
@@ -95,7 +95,7 @@ export function ScheduleListItem({
               ))}
             {(schedule.timeZone || displayOptions?.timeZone) && (
               <span className="my-1 flex items-center first-letter:text-xs">
-                <Icon name="globe" className="h-3.5 w-3.5" />
+                <GlobeIcon className="h-3.5 w-3.5" />
                 &nbsp;{schedule.timeZone ?? displayOptions?.timeZone}
               </span>
             )}

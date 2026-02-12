@@ -44,7 +44,7 @@ import {
   Switch,
   TextField,
 } from "@calcom/ui/components/form";
-import { Icon } from "@calcom/ui/components/icon";
+import { InfoIcon, PencilIcon } from "@coss/ui/icons";
 import type { ComponentType, Dispatch, SetStateAction } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -262,7 +262,7 @@ const destinationCalendarComponents = {
                   aria-label="edit custom name"
                   className="hover:stroke-3 hover:text-emphasis py-0! -mr-1.5 min-w-fit px-1.5 hover:bg-transparent"
                   onClick={() => setShowEventNameTip((old) => !old)}>
-                  <Icon name="pencil" className="h-4 w-4" />
+                  <PencilIcon className="h-4 w-4" />
                 </Button>
               }
             />
@@ -276,10 +276,7 @@ const destinationCalendarComponents = {
                 label={
                   <>
                     {t("display_add_to_calendar_organizer")}
-                    <Icon
-                      name="info"
-                      className="text-default hover:text-attention hover:bg-attention ms-1 inline h-4 w-4 rounded-md"
-                    />
+                    <InfoIcon className="text-default hover:text-attention hover:bg-attention ms-1 inline h-4 w-4 rounded-md" />
                   </>
                 }
                 checked={useEventTypeDestinationCalendarEmail}
