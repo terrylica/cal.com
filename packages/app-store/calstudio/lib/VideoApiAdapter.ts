@@ -18,7 +18,7 @@ const CalStudioVideoApiAdapter = (): VideoApiAdapter => {
         type: metadata.type,
         id: meetingID,
         password: "",
-        url: `https://studio.cal.com/video/${meetingID}`,
+        url: `https://studio.cal.com/${meetingID}`,
       });
     },
     deleteMeeting: async (): Promise<void> => {
