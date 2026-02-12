@@ -1,10 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
-import { z } from "zod";
-
 import dayjs from "@calcom/dayjs";
 import { useBookingLocation } from "@calcom/features/bookings/hooks";
 import { shouldShowFieldInCustomResponses } from "@calcom/lib/bookings/SystemField";
@@ -16,8 +11,8 @@ import { getEveryFreqFor } from "@calcom/lib/recurringStrings";
 import { BookingStatus } from "@calcom/prisma/enums";
 import {
   bookingMetadataSchema,
-  eventTypeBookingFields,
   EventTypeMetaDataSchema,
+  eventTypeBookingFields,
 } from "@calcom/prisma/zod-utils";
 import { trpc } from "@calcom/trpc/react";
 import type { RecurringEvent } from "@calcom/types/Calendar";
@@ -26,28 +21,31 @@ import { Avatar } from "@calcom/ui/components/avatar";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
 import { Icon } from "@calcom/ui/components/icon";
+import { SegmentedControl } from "@calcom/ui/components/segmented-control";
 import {
   Sheet,
-  SheetContent,
   SheetBody,
-  SheetHeader,
+  SheetContent,
   SheetFooter,
+  SheetHeader,
   SheetTitle,
 } from "@calcom/ui/components/sheet";
-
+import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
-
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import type { z } from "zod";
 import { AcceptBookingButton } from "../../../components/booking/AcceptBookingButton";
-import { RejectBookingButton } from "../../../components/booking/RejectBookingButton";
 import { BookingActionsDropdown } from "../../../components/booking/actions/BookingActionsDropdown";
 import { BookingActionsStoreProvider } from "../../../components/booking/actions/BookingActionsStoreProvider";
+import { RejectBookingButton } from "../../../components/booking/RejectBookingButton";
 import type { BookingListingStatus } from "../../../components/booking/types";
 import { usePaymentStatus } from "../hooks/usePaymentStatus";
 import { useBookingDetailsSheetStore } from "../store/bookingDetailsSheetStore";
 import type { BookingOutput } from "../types";
 import { JoinMeetingButton } from "./JoinMeetingButton";
-import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
-import { SegmentedControl } from "@calcom/ui/components/segmented-control";
+
 type BookingMetaData = z.infer<typeof bookingMetadataSchema>;
 
 interface BookingDetailsSheetProps {
@@ -66,37 +64,7 @@ export function BookingDetailsSheet({
   bookingAuditEnabled = false,
 }: BookingDetailsSheetProps) {
   const selectedBookingUid = useBookingDetailsSheetStore((state) => state.selectedBookingUid);
-  const storeBooking = useBookingDetailsSheetStore((state) => state.getSelectedBooking());
-
-  const { data: fetchedBookingData } = trpc.viewer.bookings.get.useQuery(
-    {
-      limit: 1,
-      offset: 0,
-      filters: {
-        bookingUid: selectedBookingUid ?? undefined,
-        statuses: ["upcoming", "recurring", "past", "cancelled", "unconfirmed"],
-      },
-    },
-    {
-      enabled: !!selectedBookingUid && !storeBooking,
-      staleTime: 5 * 60 * 1000,
-    }
-  );
-
-  const fetchedBooking = fetchedBookingData?.bookings?.[0] ?? null;
-  const booking = storeBooking ?? fetchedBooking;
-  const pathname = usePathname();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!fetchedBooking || storeBooking) return;
-    const correctTab = getClientBookingTabStatus(fetchedBooking);
-    const currentTab = pathname?.match(/\/bookings\/(\w+)/)?.[1];
-    if (correctTab && currentTab && correctTab !== currentTab) {
-      const newPath = pathname.replace(`/bookings/${currentTab}`, `/bookings/${correctTab}`);
-      router.replace(`${newPath}${window.location.search}`);
-    }
-  }, [fetchedBooking, storeBooking, pathname, router]);
+  const booking = useBookingDetailsSheetStore((state) => state.getSelectedBooking());
 
   if (!booking) return null;
 
@@ -235,18 +203,19 @@ function BookingDetailsSheetInner({
   const recurringInfo =
     booking.recurringEventId && booking.eventType?.recurringEvent
       ? {
-          count: booking.eventType.recurringEvent.count,
-          recurringEvent: booking.eventType.recurringEvent,
-        }
+        count: booking.eventType.recurringEvent.count,
+        recurringEvent: booking.eventType.recurringEvent,
+      }
       : null;
 
   const customResponses = booking.responses
     ? Object.entries(booking.responses as Record<string, unknown>)
-        .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
-        .map(([question, answer]) => [question, answer] as [string, unknown])
+      .filter(([fieldName]) => shouldShowFieldInCustomResponses(fieldName))
+      .map(([question, answer]) => [question, answer] as [string, unknown])
     : [];
 
-  const reason = booking.assignmentReasonSortedByCreatedAt?.[booking.assignmentReasonSortedByCreatedAt.length - 1];
+  const reason =
+    booking.assignmentReasonSortedByCreatedAt?.[booking.assignmentReasonSortedByCreatedAt.length - 1];
   const reasonTitle = reason && assignmentReasonBadgeTitleMap(reason.reasonEnum);
 
   return (
@@ -988,21 +957,4 @@ function Section({
   );
 }
 
-function getClientBookingTabStatus(booking: BookingOutput): string {
-  const now = new Date();
-  const isPast = new Date(booking.endTime) <= now;
 
-  if (booking.status === "CANCELLED" || booking.status === "REJECTED") {
-    return "cancelled";
-  }
-  if (booking.status === "PENDING" && !isPast) {
-    return "unconfirmed";
-  }
-  if (isPast) {
-    return "past";
-  }
-  if (booking.recurringEventId) {
-    return "recurring";
-  }
-  return "upcoming";
-}
