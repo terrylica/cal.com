@@ -43,7 +43,7 @@ export function useBookingConfirmation(options: UseBookingConfirmationOptions = 
     },
   });
 
-  const bookingConfirm = ({ bookingId, confirmed, recurringEventId, reason }: BookingConfirmParams) => {
+  const bookingConfirm = ({ bookingId, confirmed, recurringEventId, reason, seatReferenceUid }: BookingConfirmParams) => {
     let body: Record<string, unknown> = {
       bookingId,
       confirmed,
