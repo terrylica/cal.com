@@ -560,6 +560,12 @@ describe("Webhook Producer – BOOKING_REQUESTED", () => {
           status: BookingStatus.PENDING,
         });
 
+        expectWebhookProducerCalled(mockWebhookProducer, "queueBookingRequestedWebhook", {
+          bookingUid: createdBooking.uid,
+          eventTypeId: 1,
+          userId: organizer.id,
+        });
+
         expectBookingRequestedEmails({ booker, organizer, emails });
       },
       timeout
