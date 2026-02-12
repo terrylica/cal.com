@@ -34,7 +34,7 @@ import { Tooltip } from "@calcom/ui/components/tooltip";
 import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { z } from "zod";
 import { AcceptBookingButton } from "../../../components/booking/AcceptBookingButton";
 import { BookingActionsDropdown } from "../../../components/booking/actions/BookingActionsDropdown";
@@ -183,15 +183,40 @@ function BookingDetailsSheetInner({
   };
 
   const joinButtonWrapperRef = useRef<HTMLDivElement>(null);
+  const sheetContentRef = useRef<HTMLDivElement>(null);
+
+  const hasOpenOverlay = useCallback((): boolean => {
+    const overlaySelectors = [
+      '[role="dialog"]',
+      '[role="alertdialog"]',
+      '[role="menu"]',
+      '[role="listbox"]',
+      "[data-radix-popper-content-wrapper]",
+    ];
+
+    for (const selector of overlaySelectors) {
+      const elements = document.querySelectorAll(selector);
+      for (const el of elements) {
+        if (sheetContentRef.current && el === sheetContentRef.current.closest('[role="dialog"]')) {
+          continue;
+        }
+        return true;
+      }
+    }
+    return false;
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if user is typing in an input field
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         (e.target instanceof HTMLElement && e.target.isContentEditable)
       ) {
+        return;
+      }
+
+      if (hasOpenOverlay()) {
         return;
       }
 
@@ -228,6 +253,7 @@ function BookingDetailsSheetInner({
     navigation.isTransitioning,
     handleNext,
     handlePrevious,
+    hasOpenOverlay,
   ]);
 
   const startTime = dayjs(booking.startTime).tz(userTimeZone);
@@ -286,6 +312,7 @@ function BookingDetailsSheetInner({
   return (
     <Sheet open={true} onOpenChange={handleClose} modal={false}>
       <SheetContent
+        ref={sheetContentRef}
         className="overflow-y-auto"
         hideOverlay
         onInteractOutside={(e) => {
