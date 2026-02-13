@@ -68,17 +68,26 @@ export function BookingDetailsSheet({
   userEmail,
   bookingAuditEnabled = false,
 }: BookingDetailsSheetProps) {
-  const booking = useBookingDetailsSheetStore((state) =>
-    state.getSelectedBooking()
-  );
+  const booking = useBookingDetailsSheetStore((state) => state.getSelectedBooking());
+  const selectedBookingUid = useBookingDetailsSheetStore((state) => state.selectedBookingUid);
+  const lastBookingRef = useRef<BookingOutput | null>(null);
 
-  // Return null if no booking is selected (sheet is closed)
-  if (!booking) return null;
+  if (booking) {
+    lastBookingRef.current = booking;
+  }
+
+  if (!selectedBookingUid) {
+    lastBookingRef.current = null;
+  }
+
+  const displayBooking = booking ?? lastBookingRef.current;
+
+  if (!displayBooking) return null;
 
   return (
     <BookingActionsStoreProvider>
       <BookingDetailsSheetInner
-        booking={booking}
+        booking={displayBooking}
         userTimeZone={userTimeZone}
         userTimeFormat={userTimeFormat}
         userId={userId}
@@ -275,11 +284,13 @@ function BookingDetailsSheetInner({
         hideOverlay
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
-          if (target.closest("[data-booking-uid]")) {
+          const isBookingItem =
+            target.closest("[data-booking-list-item]") || target.closest("[data-booking-calendar-event]");
+
+          if (isBookingItem) {
             e.preventDefault();
           }
-        }}
-      >
+        }}>
         <SheetHeader showCloseButton={false} className="mt-0 w-full">
           <div className="flex items-center justify-between gap-x-4">
             <div className="flex min-w-0 flex-col gap-y-1">
