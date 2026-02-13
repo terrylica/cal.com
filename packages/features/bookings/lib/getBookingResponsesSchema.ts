@@ -123,18 +123,17 @@ async function superRefineField({
   }
 
   if (field.type === "email") {
-    const stringifiedValue = String(value);
-    if (!field.hidden && (isRequired || (stringifiedValue && stringifiedValue.trim() !== ""))) {
+    if (!field.hidden && (isRequired || (value && String(value).trim() !== ""))) {
       // Email RegExp to validate if the input is a valid email
-      if (!emailSchema.safeParse(stringifiedValue).success) {
+      if (!emailSchema.safeParse(value).success) {
         zodCtx.addIssue({
           code: z.ZodIssueCode.custom,
           message: m("email_validation_error"),
         });
       }
 
-      if (stringifiedValue) {
-        const bookerEmail = stringifiedValue;
+      if (value) {
+        const bookerEmail = String(value);
         const excludedEmails = field.excludeEmails?.split(",").map((domain) => domain.trim()) || [];
 
         const match = excludedEmails.find((excludedEntry) => doesEmailMatchEntry(bookerEmail, excludedEntry));
