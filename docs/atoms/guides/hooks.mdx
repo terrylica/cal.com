@@ -1,0 +1,272 @@
+---
+title: Using hooks with atoms
+description: Overview of all custom hooks available in @calcom/atoms for data fetching and mutations.
+---
+
+Atoms come with custom hooks that simplify integration with the Cal.com API. These hooks handle state management, caching, and API calls, allowing you to build custom UIs while leveraging Cal.com's scheduling infrastructure.
+
+<Note>All hooks require the component to be wrapped in a [CalProvider](/atoms/reference/auth/cal-provider) with a valid access token.</Note>
+
+## Bookings hooks
+
+### useBookings
+
+Returns an array of bookings for the authenticated user. Supports filtering by status, event type, attendee email, and more.
+
+```js
+import { useBookings } from "@calcom/atoms";
+
+export default function Bookings() {
+  const { isLoading, data: bookings } = useBookings({
+    take: 50,
+    skip: 0,
+    status: ["upcoming"],
+  });
+
+  return (
+    <>
+      {isLoading && <p>Loading...</p>}
+      {bookings?.map((booking) => (
+        <div key={booking.id}>{booking.title}</div>
+      ))}
+    </>
+  );
+}
+```
+
+### useBooking
+
+Returns detailed information about a single booking by its unique identifier.
+
+```js
+import { useBooking } from "@calcom/atoms";
+
+export default function BookingDetail({ bookingUid }) {
+  const { isLoading, data: booking } = useBooking(bookingUid);
+
+  if (isLoading) return <p>Loading...</p>;
+  if (!booking) return <p>No booking found</p>;
+  
+  return <div>Title: {booking.title}</div>;
+}
+```
+
+### useCancelBooking
+
+Returns a mutation function to cancel a booking. Accepts `uid`, optional `cancellationReason`, and `allRemainingBookings` for recurring events.
+
+```js
+import { useCancelBooking } from "@calcom/atoms";
+
+export default function CancelButton({ bookingUid }) {
+  const { mutate: cancelBooking } = useCancelBooking({
+    onSuccess: () => console.log("Booking canceled"),
+  });
+
+  return (
+    <button onClick={() => cancelBooking({
+      uid: bookingUid,
+      cancellationReason: "User request",
+    })}>
+      Cancel booking
+    </button>
+  );
+}
+```
+
+### useOrganizationUserBookings
+
+Allows organization admins to fetch bookings for any organization member. Requires the access token to belong to a managed user with admin/owner role.
+
+```js
+import { useOrganizationUserBookings } from "@calcom/atoms";
+
+const { data: bookings } = useOrganizationUserBookings(userId, {
+  take: 50,
+  status: ["upcoming"],
+});
+```
+
+### useOrganizationBookings
+
+Allows organization admins to fetch all bookings across the organization. Supports filtering by `userIds`.
+
+```js
+import { useOrganizationBookings } from "@calcom/atoms";
+
+const { data: bookings } = useOrganizationBookings({
+  take: 50,
+  userIds: [10, 11],
+});
+```
+
+## Event types hooks
+
+### useEventTypes
+
+Returns all event types for a given username.
+
+```js
+import { useEventTypes } from "@calcom/atoms";
+
+export default function EventTypes({ username }) {
+  const { isLoading, data: eventTypes } = useEventTypes(username);
+
+  return (
+    <>
+      {eventTypes?.map((event) => (
+        <div key={event.id}>{event.slug}</div>
+      ))}
+    </>
+  );
+}
+```
+
+### useTeamEventTypes
+
+Returns all event types for a team by team ID.
+
+```js
+import { useTeamEventTypes } from "@calcom/atoms";
+
+const { data: teamEventTypes } = useTeamEventTypes(teamId);
+```
+
+### useEventTypeById
+
+Returns data for a specific event type by ID.
+
+```js
+import { useEventTypeById } from "@calcom/atoms";
+
+const { data: eventType } = useEventTypeById(eventTypeId);
+```
+
+### useCreateEventType
+
+Returns a mutation function to create a new event type.
+
+```js
+import { useCreateEventType } from "@calcom/atoms";
+
+const { mutate: createEventType, isPending } = useCreateEventType({
+  onSuccess: () => console.log("Event type created"),
+});
+
+createEventType({
+  lengthInMinutes: 30,
+  title: "Coffee chat",
+  slug: "coffee-chat",
+  description: "Quick chat about coffee",
+});
+```
+
+### useCreateTeamEventType
+
+Returns a mutation function to create a team event type. Requires `teamId`, `schedulingType` (COLLECTIVE, ROUND_ROBIN, or MANAGED), and `hosts`.
+
+```js
+import { useCreateTeamEventType } from "@calcom/atoms";
+
+const { mutate: createTeamEventType } = useCreateTeamEventType({
+  onSuccess: () => console.log("Team event type created"),
+});
+
+createTeamEventType({
+  lengthInMinutes: 30,
+  title: "Daily standup",
+  slug: "daily-standup",
+  schedulingType: "COLLECTIVE",
+  hosts: [{ userId: 1456 }, { userId: 2357 }],
+  teamId: 1234,
+});
+```
+
+## Calendars hooks
+
+### useConnectedCalendars
+
+Returns all connected calendars and the destination calendar for the authenticated user.
+
+```js
+import { useConnectedCalendars } from "@calcom/atoms";
+
+const { data: userCalendars } = useConnectedCalendars({});
+
+// Access connected calendars
+userCalendars?.connectedCalendars?.map((calendar) => (
+  <div key={calendar.credentialId}>{calendar.integration.name}</div>
+));
+```
+
+### useAddSelectedCalendar
+
+Adds a calendar to check for conflicts (prevents double bookings).
+
+```js
+import { useAddSelectedCalendar } from "@calcom/atoms";
+
+const { mutate: addSelectedCalendar } = useAddSelectedCalendar({
+  onSuccess: () => console.log("Calendar added"),
+});
+
+addSelectedCalendar({
+  credentialId: 123,
+  integration: "google_calendar",
+  externalId: "calendar-id@group.calendar.google.com",
+});
+```
+
+### useRemoveSelectedCalendar
+
+Removes a calendar from conflict checking.
+
+```js
+import { useRemoveSelectedCalendar } from "@calcom/atoms";
+
+const { mutate: removeSelectedCalendar } = useRemoveSelectedCalendar({
+  onSuccess: () => console.log("Calendar removed"),
+});
+```
+
+### useDeleteCalendarCredentials
+
+Deletes calendar credentials. Accepts `id` (credential ID) and `calendar` (google, office365, or apple).
+
+```js
+import { useDeleteCalendarCredentials } from "@calcom/atoms";
+
+const { mutate: deleteCalendarCredentials } = useDeleteCalendarCredentials({
+  onSuccess: () => console.log("Credentials deleted"),
+});
+
+deleteCalendarCredentials({ calendar: "google", id: 123 });
+```
+
+## User & team hooks
+
+### useMe
+
+Returns the current managed user's information.
+
+```js
+import { useMe } from "@calcom/atoms";
+
+const { data: userData, isLoading } = useMe();
+
+// userData.username, userData.email, etc.
+```
+
+### useTeams
+
+Returns all teams the authenticated user belongs to.
+
+```js
+import { useTeams } from "@calcom/atoms";
+
+const { data: teams, isLoading } = useTeams();
+
+teams?.map((team) => (
+  <div key={team.id}>{team.name}</div>
+));
+```

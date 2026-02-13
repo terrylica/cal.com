@@ -1,0 +1,65 @@
+---
+title: Introduction
+icon: "atom"
+---
+
+Atoms are customizable React UI components that handle scheduling on behalf of your users. They provide a plug-and-play solution for integrating Cal.com's scheduling functionality into your application.
+
+<CardGroup cols={2}>
+  <Card href="/atoms/quickstart" title="Quickstart" icon="rocket">
+    Get started with OAuth setup and your first atom
+  </Card>
+  <Card href="/atoms/reference/booking/booker" title="Reference" icon="book">
+    Explore all available atoms and their props
+  </Card>
+  <Card href="/api-reference/v2" title="API" icon="code">
+    Use Cal.com's API to manage scheduling resources programmatically
+  </Card>
+  <Card href="/atoms/guides/booking-redirects" title="Guides" icon="compass">
+    Learn how to build specific scheduling flows
+  </Card>
+</CardGroup>
+
+## What are atoms?
+
+Atoms are React components from the `@calcom/atoms` package that handle everything from UI rendering to API calls. Simply import an atom and drop it into your code - it handles the rest.
+
+```jsx
+import { Booker } from "@calcom/atoms";
+
+export default function BookingPage() {
+  return (
+    <Booker
+      eventSlug="30min"
+      username="john"
+      onCreateBookingSuccess={(data) => {
+        console.log("Booking created:", data);
+      }}
+    />
+  );
+}
+```
+
+## Key features
+
+- **Ready-to-use UI** - Pre-built components for booking, availability, calendars, and more
+- **Full customization** - Style with custom classNames and Tailwind CSS
+- **Event callbacks** - React to user actions with callback props
+- **Managed users** - Handle scheduling for your users without them needing Cal.com accounts
+
+## Requirements
+
+- React 18 or above
+- An OAuth client (see [quickstart](/atoms/quickstart))
+
+## Available atoms
+
+| Category | Atoms |
+|:---------|:------|
+| **Booking** | [Booker](/atoms/reference/booking/booker), [Booker Embed](/atoms/reference/booking/booker-embed) |
+| **Calendars** | [Google Calendar Connect](/atoms/reference/calendars/google-calendar-connect), [Outlook Calendar Connect](/atoms/reference/calendars/outlook-calendar-connect), [Apple Calendar Connect](/atoms/reference/calendars/apple-calendar-connect), [Calendar Settings](/atoms/reference/calendars/calendar-settings), [Calendar View](/atoms/reference/calendars/calendar-view) |
+| **Scheduling** | [Availability Settings](/atoms/reference/scheduling/availability-settings), [Create Schedule](/atoms/reference/scheduling/create-schedule), [List Schedules](/atoms/reference/scheduling/list-schedules) |
+| **Auth & Providers** | [Cal Provider](/atoms/reference/auth/cal-provider), [Cal OAuth Provider](/atoms/reference/auth/cal-oauth-provider) |
+| **Event Types** | [Event Type](/atoms/reference/event-types/event-type), [List Event Types](/atoms/reference/event-types/list-event-types) |
+| **Payments** | [Payment Form](/atoms/reference/payments/payment-form), [Stripe Connect](/atoms/reference/payments/stripe-connect) |
+| **Other** | [Conferencing Apps](/atoms/reference/other/conferencing-apps), [Troubleshooter](/atoms/reference/other/troubleshooter) |

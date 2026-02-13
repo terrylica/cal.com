@@ -11,11 +11,143 @@
     {
       "source": "/developing/introduction",
       "destination": "/developing"
+    },
+    {
+      "source": "/platform",
+      "destination": "/atoms"
+    },
+    {
+      "source": "/platform/introduction",
+      "destination": "/atoms/introduction"
+    },
+    {
+      "source": "/platform/quickstart",
+      "destination": "/atoms/quickstart"
+    },
+    {
+      "source": "/platform/faq",
+      "destination": "/atoms/faq"
+    },
+    {
+      "source": "/platform/atoms/:path*",
+      "destination": "/atoms/reference/:path*"
+    },
+    {
+      "source": "/platform/guides/:path*",
+      "destination": "/atoms/guides/:path*"
+    },
+    {
+      "source": "/platform/bookings-hooks",
+      "destination": "/atoms/guides/hooks"
+    },
+    {
+      "source": "/platform/calendars-hooks",
+      "destination": "/atoms/guides/hooks"
+    },
+    {
+      "source": "/platform/event-types-hooks",
+      "destination": "/atoms/guides/hooks"
+    },
+    {
+      "source": "/platform/user-or-team-related-hooks",
+      "destination": "/atoms/guides/hooks"
     }
   ],
   "favicon": "/favicon.png",
   "navigation": {
     "tabs": [
+      {
+        "tab": "Atoms",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "atoms/introduction",
+              "atoms/quickstart",
+              "atoms/faq"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              {
+                "group": "Booking",
+                "icon": "calendar-check",
+                "pages": [
+                  "atoms/reference/booking/booker",
+                  "atoms/reference/booking/booker-embed"
+                ]
+              },
+              {
+                "group": "Calendars",
+                "icon": "calendar",
+                "pages": [
+                  "atoms/reference/calendars/google-calendar-connect",
+                  "atoms/reference/calendars/outlook-calendar-connect",
+                  "atoms/reference/calendars/apple-calendar-connect",
+                  "atoms/reference/calendars/calendar-settings",
+                  "atoms/reference/calendars/calendar-view"
+                ]
+              },
+              {
+                "group": "Scheduling",
+                "icon": "clock",
+                "pages": [
+                  "atoms/reference/scheduling/availability-settings",
+                  "atoms/reference/scheduling/create-schedule",
+                  "atoms/reference/scheduling/list-schedules"
+                ]
+              },
+              {
+                "group": "Auth & Providers",
+                "icon": "key",
+                "pages": [
+                  "atoms/reference/auth/cal-provider",
+                  "atoms/reference/auth/cal-oauth-provider"
+                ]
+              },
+              {
+                "group": "Event Types",
+                "icon": "list",
+                "pages": [
+                  "atoms/reference/event-types/event-type",
+                  "atoms/reference/event-types/list-event-types"
+                ]
+              },
+              {
+                "group": "Payments",
+                "icon": "credit-card",
+                "pages": [
+                  "atoms/reference/payments/payment-form",
+                  "atoms/reference/payments/stripe-connect"
+                ]
+              },
+              {
+                "group": "Other",
+                "icon": "ellipsis",
+                "pages": [
+                  "atoms/reference/other/conferencing-apps",
+                  "atoms/reference/other/troubleshooter"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "atoms/guides/hooks",
+              "atoms/guides/booking-fields",
+              "atoms/guides/booking-redirects",
+              "atoms/guides/custom-booking-flow",
+              "atoms/guides/custom-slot-select-flow",
+              "atoms/guides/replacing-toasts",
+              "atoms/guides/teams-setup",
+              "atoms/guides/managed-orgs",
+              "atoms/guides/global-event-types"
+            ]
+          }
+        ]
+      },
       {
         "tab": "API v2 Reference",
         "openapi": {
