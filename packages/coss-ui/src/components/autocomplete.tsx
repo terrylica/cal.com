@@ -56,7 +56,9 @@ function AutocompleteInput({
             sizeValue === "sm" ? "end-0" : "end-0.5",
           )}
         >
-          <ChevronsUpDownIcon />
+          <AutocompletePrimitive.Icon data-slot="autocomplete-icon">
+            <ChevronsUpDownIcon />
+          </AutocompletePrimitive.Icon>
         </AutocompleteTrigger>
       )}
       {showClear && (
@@ -80,18 +82,21 @@ function AutocompletePopup({
   sideOffset = 4,
   alignOffset,
   align = "start",
+  anchor,
   ...props
 }: AutocompletePrimitive.Popup.Props & {
   align?: AutocompletePrimitive.Positioner.Props["align"];
   sideOffset?: AutocompletePrimitive.Positioner.Props["sideOffset"];
   alignOffset?: AutocompletePrimitive.Positioner.Props["alignOffset"];
   side?: AutocompletePrimitive.Positioner.Props["side"];
+  anchor?: AutocompletePrimitive.Positioner.Props["anchor"];
 }) {
   return (
     <AutocompletePrimitive.Portal>
       <AutocompletePrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
+        anchor={anchor}
         className="z-50 select-none"
         data-slot="autocomplete-positioner"
         side={side}
@@ -277,6 +282,7 @@ function AutocompleteCollection({
 
 function AutocompleteTrigger({
   className,
+  children,
   ...props
 }: AutocompletePrimitive.Trigger.Props) {
   return (
@@ -284,7 +290,9 @@ function AutocompleteTrigger({
       className={className}
       data-slot="autocomplete-trigger"
       {...props}
-    />
+    >
+      {children}
+    </AutocompletePrimitive.Trigger>
   );
 }
 
