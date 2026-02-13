@@ -81,6 +81,7 @@ const teamSelect = {
 
 const userSelect = {
   id: true,
+  uuid: true,
   username: true,
   name: true,
   email: true,
@@ -423,6 +424,24 @@ export class UserRepository {
         },
       },
       select: userSelect,
+    });
+  }
+
+  async findByUuids({ uuids }: { uuids: string[] }) {
+    if (uuids.length === 0) return [];
+    return this.prismaClient.user.findMany({
+      where: {
+        uuid: {
+          in: uuids,
+        },
+      },
+      select: {
+        id: true,
+        uuid: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+      },
     });
   }
 
@@ -1408,6 +1427,13 @@ export class UserRepository {
         selectedCalendars: true,
         destinationCalendar: true,
       },
+    });
+  }
+
+  async lockByEmail({ email }: { email: string }) {
+    await this.prismaClient.user.updateMany({
+      where: { email },
+      data: { locked: true },
     });
   }
 }
