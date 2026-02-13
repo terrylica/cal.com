@@ -18,7 +18,6 @@ import { CardFrame } from "@coss/ui/components/card";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@coss/ui/components/select";
 import {
   Tooltip,
-  TooltipCreateHandle,
   TooltipPopup,
   TooltipProvider,
   TooltipTrigger,
@@ -26,8 +25,6 @@ import {
 import { ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
-import type { ComponentType } from "react";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
 import WebhookForm from "../components/WebhookForm";
 import { WebhookFormHeader } from "./webhook-form-header";
@@ -54,7 +51,6 @@ type WebhookProps = {
 export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
   const { t } = useLocale();
   const router = useRouter();
-  const versionTooltipHandle = useMemo(() => TooltipCreateHandle<ComponentType>(), []);
   const { data: installedApps, isPending } = trpc.viewer.apps.integrations.useQuery(
     { variant: "other", onlyInstalled: true },
     {
@@ -96,59 +92,58 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
               CTA={
                 <div className="flex items-center gap-1 self-center">
                   <TooltipProvider delay={0}>
-                    <TooltipTrigger
-                      handle={versionTooltipHandle}
-                      payload={() => <>{t("webhook_version")}</>}
-                      render={
-                        <div className="inline-flex">
-                          <Select
-                            aria-label={t("webhook_version")}
-                            value={selectedVersionItem}
-                            onValueChange={(newValue) => {
-                              if (newValue) {
-                                formMethods.setValue("version", newValue.value, { shouldDirty: true });
-                              }
-                            }}
-                            items={webhookVersionItems}>
-                            <SelectTrigger size="sm" className="min-w-none">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectPopup>
-                              {webhookVersionItems.map((item) => (
-                                <SelectItem key={item.value} value={item}>
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectPopup>
-                          </Select>
-                        </div>
-                      }
-                    />
-                    <TooltipTrigger
-                      handle={versionTooltipHandle}
-                      payload={() => (
-                        <>{t("webhook_version_docs", { version: getWebhookVersionLabel(version) })}</>
-                      )}
-                      render={
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          render={
-                            <Link
-                              className="text-muted-foreground hover:text-foreground flex"
-                              href={getWebhookVersionDocsUrl(version)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            />
-                          }>
-                          <ExternalLinkIcon />
-                        </Button>
-                      }
-                    />
-                    <Tooltip handle={versionTooltipHandle}>
-                      {({ payload: Payload }) => (
-                        <TooltipPopup>{Payload !== undefined && <Payload />}</TooltipPopup>
-                      )}
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <div className="inline-flex">
+                            <Select
+                              aria-label={t("webhook_version")}
+                              value={selectedVersionItem}
+                              onValueChange={(newValue) => {
+                                if (newValue) {
+                                  formMethods.setValue("version", newValue.value, { shouldDirty: true });
+                                }
+                              }}
+                              items={webhookVersionItems}>
+                              <SelectTrigger size="sm" className="min-w-none">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectPopup>
+                                {webhookVersionItems.map((item) => (
+                                  <SelectItem key={item.value} value={item}>
+                                    {item.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectPopup>
+                            </Select>
+                          </div>
+                        }
+                      />
+                      <TooltipPopup>{t("webhook_version")}</TooltipPopup>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            render={
+                              <Link
+                                className="text-muted-foreground hover:text-foreground flex"
+                                href={getWebhookVersionDocsUrl(version)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              />
+                            }>
+                            <ExternalLinkIcon />
+                          </Button>
+                        }
+                      />
+                      <TooltipPopup>
+                        {t("webhook_version_docs", {
+                          version: getWebhookVersionLabel(version),
+                        })}
+                      </TooltipPopup>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
