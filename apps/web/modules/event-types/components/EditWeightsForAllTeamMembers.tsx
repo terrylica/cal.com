@@ -1,14 +1,15 @@
 "use client";
 
+import { useHosts } from "@calcom/features/eventtypes/lib/HostsContext";
 import type { Host } from "@calcom/features/eventtypes/lib/types";
 import ServerTrans from "@calcom/lib/components/ServerTrans";
 import { downloadAsCsv } from "@calcom/lib/csvUtils";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { AttributesQueryValue } from "@calcom/lib/raqb/types";
+import { trpc } from "@calcom/trpc/react";
 import { Avatar } from "@calcom/ui/components/avatar";
 import { Button, buttonClasses } from "@calcom/ui/components/button";
 import { TextField } from "@calcom/ui/components/form";
-import { ChevronDownIcon, InfoIcon, SearchIcon, UploadIcon } from "@coss/ui/icons";
 import {
   Sheet,
   SheetBody,
@@ -19,7 +20,7 @@ import {
   SheetTitle,
 } from "@calcom/ui/components/sheet";
 import { showToast } from "@calcom/ui/components/toast";
-import { trpc } from "@calcom/trpc/react";
+import { ChevronDownIcon, InfoIcon, SearchIcon, UploadIcon } from "@coss/ui/icons";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -167,16 +168,29 @@ export const EditWeightsForAllTeamMembers = ({
     setLocalWeights((prev) => ({ ...prev, [memberId]: weight }));
   };
 
-  const handleSave = () => {
-    // Build updated hosts from the current value (all hosts), applying local weight changes
-    const updatedValue = value
-      .filter((host) => !host.isFixed)
-      .map((host) => ({
-        ...host,
-        weight: localWeights[String(host.userId)] ?? host.weight ?? 100,
-      }));
+  const { updateHost } = useHosts();
 
-    onChange(updatedValue);
+  const handleSave = () => {
+    const originalWeightMap = new Map<number, number>();
+    for (const host of value) {
+      if (!host.isFixed) {
+        originalWeightMap.set(host.userId, host.weight ?? 100);
+      }
+    }
+    for (const m of allMembers) {
+      if (!originalWeightMap.has(m.userId)) {
+        originalWeightMap.set(m.userId, m.weight ?? 100);
+      }
+    }
+
+    for (const [userIdStr, newWeight] of Object.entries(localWeights)) {
+      const userId = parseInt(userIdStr, 10);
+      const originalWeight = originalWeightMap.get(userId) ?? 100;
+      if (newWeight !== originalWeight) {
+        updateHost(userId, { weight: newWeight });
+      }
+    }
+
     setIsOpen(false);
   };
 
@@ -191,9 +205,7 @@ export const EditWeightsForAllTeamMembers = ({
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      members = members.filter(
-        (m) => m.label.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
-      );
+      members = members.filter((m) => m.label.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
     }
 
     return members;
@@ -225,7 +237,16 @@ export const EditWeightsForAllTeamMembers = ({
     } finally {
       setIsDownloading(false);
     }
-  }, [utils, eventTypeId, teamId, assignAllTeamMembers, assignRRMembersUsingSegment, queryValue, localWeights, hostWeightsMap]);
+  }, [
+    utils,
+    eventTypeId,
+    teamId,
+    assignAllTeamMembers,
+    assignRRMembersUsingSegment,
+    queryValue,
+    localWeights,
+    hostWeightsMap,
+  ]);
 
   const handleUploadCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -330,18 +351,14 @@ export const EditWeightsForAllTeamMembers = ({
                 placeholder={t("search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                addOnLeading={
-                  <SearchIcon className="text-subtle h-4 w-4" />
-                }
+                addOnLeading={<SearchIcon className="text-subtle h-4 w-4" />}
               />
 
               <div className="flex flex-col rounded-md border">
                 {displayMembers.map((member) => (
                   <TeamMemberItem key={member.value} member={member} onWeightChange={handleWeightChange} />
                 ))}
-                {isLoading && (
-                  <div className="text-subtle py-2 text-center text-sm">{t("loading")}</div>
-                )}
+                {isLoading && <div className="text-subtle py-2 text-center text-sm">{t("loading")}</div>}
                 {displayMembers.length === 0 && !isLoading && (
                   <div className="text-subtle py-4 text-center text-sm">{t("no_members_found")}</div>
                 )}
