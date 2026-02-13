@@ -1,7 +1,6 @@
 "use client";
 
 import { BILLING_PLANS, BILLING_PRICING } from "@calcom/features/ee/billing/constants";
-import { useFlagMap } from "@calcom/features/flags/context/provider";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Icon } from "@calcom/ui/components/icon";
 import { Alert, AlertDescription, AlertTitle } from "@coss/ui/components/alert";
@@ -99,7 +98,6 @@ export type UpgradePlanDialogProps = {
 
 export function UpgradePlanDialog({ tracking, target, info, children }: UpgradePlanDialogProps): JSX.Element {
   const { t } = useLocale();
-  const flags = useFlagMap();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("annual");
 
   const teamPrice = `$${BILLING_PRICING[BILLING_PLANS.TEAMS][billingPeriod]}`;
@@ -107,9 +105,7 @@ export function UpgradePlanDialog({ tracking, target, info, children }: UpgradeP
 
   const bpParam = billingPeriod === "annual" ? "a" : "m";
   const teamHref = `/settings/teams/new?bp=${bpParam}`;
-  const organizationHref = flags["onboarding-v3"]
-    ? `/onboarding/organization/details?migrate=true&bp=${bpParam}`
-    : "/settings/organizations/new";
+  const organizationHref = `/onboarding/organization/details?migrate=true&bp=${bpParam}`;
 
   const teamFeatures: PlanFeature[] = [
     { text: t("upgrade_feature_round_robin") },
