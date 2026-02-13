@@ -65,7 +65,7 @@ function preprocessField({
     try {
       parsedValue = JSON.parse(value);
     } catch (e) {
-      log.error(`Failed to parse JSON for field ${field.name}: ${value}`, e);
+      log.error(`Failed to parse JSON for field ${field.name}`, e);
     }
     const optionsInputs = field.optionsInputs;
     const optionInputField = optionsInputs?.[parsedValue.value];
@@ -123,7 +123,7 @@ async function superRefineField({
   }
 
   if (field.type === "email") {
-    if (!field.hidden && (checkOptional || field.required)) {
+    if (!field.hidden && (isRequired || (value && (value as string).trim() !== ""))) {
       // Email RegExp to validate if the input is a valid email
       if (!emailSchema.safeParse(value).success) {
         zodCtx.addIssue({
@@ -132,30 +132,31 @@ async function superRefineField({
         });
       }
 
-      // validate the excluded emails
-      const bookerEmail = String(value);
-      const excludedEmails = field.excludeEmails?.split(",").map((domain) => domain.trim()) || [];
+      if (value) {
+        const bookerEmail = String(value);
+        const excludedEmails = field.excludeEmails?.split(",").map((domain) => domain.trim()) || [];
 
-      const match = excludedEmails.find((excludedEntry) => doesEmailMatchEntry(bookerEmail, excludedEntry));
-      if (match) {
-        zodCtx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: m("exclude_emails_match_found_error_message"),
-        });
-      }
-      const requiredEmails =
-        field.requireEmails
-          ?.split(",")
-          .map((domain) => domain.trim())
-          .filter(Boolean) || [];
-      const requiredEmailsMatch = requiredEmails.find((requiredEntry) =>
-        doesEmailMatchEntry(bookerEmail, requiredEntry)
-      );
-      if (requiredEmails.length > 0 && !requiredEmailsMatch) {
-        zodCtx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: m("require_emails_no_match_found_error_message"),
-        });
+        const match = excludedEmails.find((excludedEntry) => doesEmailMatchEntry(bookerEmail, excludedEntry));
+        if (match) {
+          zodCtx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: m("exclude_emails_match_found_error_message"),
+          });
+        }
+        const requiredEmails =
+          field.requireEmails
+            ?.split(",")
+            .map((domain) => domain.trim())
+            .filter(Boolean) || [];
+        const requiredEmailsMatch = requiredEmails.find((requiredEntry) =>
+          doesEmailMatchEntry(bookerEmail, requiredEntry)
+        );
+        if (requiredEmails.length > 0 && !requiredEmailsMatch) {
+          zodCtx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: m("require_emails_no_match_found_error_message"),
+          });
+        }
       }
     }
     return;
