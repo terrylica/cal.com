@@ -1,12 +1,14 @@
-import type { NextApiRequest } from "next";
+import process from "node:process";
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { getRecurringBookingService } from "@calcom/features/bookings/di/RecurringBookingService.container";
 import type { BookingResponse } from "@calcom/features/bookings/types";
 import { checkRateLimitAndThrowError } from "@calcom/lib/checkRateLimitAndThrowError";
 import getIP from "@calcom/lib/getIP";
-import { piiHasher } from "@calcom/lib/server/PiiHasher";
 import { checkCfTurnstileToken } from "@calcom/lib/server/checkCfTurnstileToken";
 import { defaultResponder } from "@calcom/lib/server/defaultResponder";
+import { piiHasher } from "@calcom/lib/server/PiiHasher";
+import { validateCsrfTokenForPagesRouter } from "@calcom/web/lib/validateCsrfToken";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 // @TODO: Didn't look at the contents of this function in order to not break old booking page.
 
@@ -25,7 +27,9 @@ type RequestMeta = {
   noEmail?: boolean;
 } & PlatformParams;
 
-async function handler(req: NextApiRequest & RequestMeta) {
+async function handler(req: NextApiRequest & RequestMeta, res: NextApiResponse) {
+  validateCsrfTokenForPagesRouter(req, res);
+
   const userIp = getIP(req);
 
   if (process.env.NEXT_PUBLIC_CLOUDFLARE_USE_TURNSTILE_IN_BOOKER === "1") {

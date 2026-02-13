@@ -1,15 +1,18 @@
 import { post } from "@calcom/lib/fetch-wrapper";
+import type { BookingResponse, RecurringBookingCreateBody } from "../types";
+import { fetchCsrfToken } from "./fetchCsrfToken";
 
-import type { RecurringBookingCreateBody, BookingResponse } from "../types";
+type RecurringBookingCreateBodyWithCsrf = RecurringBookingCreateBody & { csrfToken: string };
 
 export const createRecurringBooking = async (data: RecurringBookingCreateBody[]) => {
+  const csrfToken = await fetchCsrfToken();
+  const dataWithCsrf: RecurringBookingCreateBodyWithCsrf[] = data.map((item) => ({ ...item, csrfToken }));
   const response = await post<
-    RecurringBookingCreateBody[],
-    // fetch response can't have a Date type, it must be a string
+    RecurringBookingCreateBodyWithCsrf[],
     (Omit<BookingResponse, "startTime" | "endTime"> & {
       startTime: string;
       endTime: string;
     })[]
-  >("/api/book/recurring-event", data);
+  >("/api/book/recurring-event", dataWithCsrf);
   return response;
 };
