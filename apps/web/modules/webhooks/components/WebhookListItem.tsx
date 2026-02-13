@@ -47,7 +47,7 @@ export default function WebhookListItem(props: {
   profile?: { name: string | null; image?: string; slug?: string | null };
   canEditWebhook?: boolean;
   editHref?: string;
-  onEditWebhookAction: () => void;
+  onEditWebhook?: () => void;
   lastItem: boolean;
   permissions: {
     canEditWebhook?: boolean;
@@ -192,23 +192,42 @@ export default function WebhookListItem(props: {
               <Switch checked={active} disabled />
             )}
             <div className="flex items-center gap-2">
-              {props.permissions.canEditWebhook && props.editHref ? (
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        aria-label={t("edit")}
-                        data-testid="webhook-edit-button"
-                        render={<Link href={props.editHref} />}
-                        size="icon"
-                        variant="outline"
-                      >
-                        <PencilIcon aria-hidden="true" />
-                      </Button>
-                    }
-                  />
-                  <TooltipPopup>{t("edit")}</TooltipPopup>
-                </Tooltip>
+              {props.permissions.canEditWebhook ? (
+                props.editHref ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          aria-label={t("edit")}
+                          data-testid="webhook-edit-button"
+                          render={<Link href={props.editHref} />}
+                          size="icon"
+                          variant="outline"
+                        >
+                          <PencilIcon aria-hidden="true" />
+                        </Button>
+                      }
+                    />
+                    <TooltipPopup>{t("edit")}</TooltipPopup>
+                  </Tooltip>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          aria-label={t("edit")}
+                          data-testid="webhook-edit-button"
+                          size="icon"
+                          variant="outline"
+                          onClick={props.onEditWebhook}
+                        >
+                          <PencilIcon aria-hidden="true" />
+                        </Button>
+                      }
+                    />
+                    <TooltipPopup>{t("edit")}</TooltipPopup>
+                  </Tooltip>
+                )
               ) : (
                 <Button aria-label={t("edit")} disabled size="icon" variant="outline">
                   <PencilIcon aria-hidden="true" />
@@ -272,11 +291,18 @@ export default function WebhookListItem(props: {
               )}
               <MenuSeparator />
               <MenuGroup>
-                {props.permissions.canEditWebhook && props.editHref ? (
-                  <MenuItem render={<Link href={props.editHref} />}>
-                    <PencilIcon />
-                    {t("edit")}
-                  </MenuItem>
+                {props.permissions.canEditWebhook ? (
+                  props.editHref ? (
+                    <MenuItem render={<Link href={props.editHref} />}>
+                      <PencilIcon />
+                      {t("edit")}
+                    </MenuItem>
+                  ) : (
+                    <MenuItem onClick={props.onEditWebhook}>
+                      <PencilIcon />
+                      {t("edit")}
+                    </MenuItem>
+                  )
                 ) : (
                   <MenuItem disabled>
                     <PencilIcon />
