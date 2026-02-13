@@ -76,7 +76,7 @@ export default function CancelButton({ bookingUid }) {
 
 ### useOrganizationUserBookings
 
-Allows organization admins to fetch bookings for any organization member. Requires the access token to belong to a managed user with admin/owner role.
+Allows organization admins to fetch bookings for any organization member. Requires the access token to belong to a user with admin/owner role.
 
 ```js
 import { useOrganizationUserBookings } from "@calcom/atoms";
@@ -247,7 +247,7 @@ deleteCalendarCredentials({ calendar: "google", id: 123 });
 
 ### useMe
 
-Returns the current managed user's information.
+Returns the current user's information.
 
 ```js
 import { useMe } from "@calcom/atoms";

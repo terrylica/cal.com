@@ -78,7 +78,7 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["atoms/introduction", "atoms/quickstart", "atoms/faq"]
+            "pages": ["atoms/introduction"]
           },
           {
             "group": "Reference",
