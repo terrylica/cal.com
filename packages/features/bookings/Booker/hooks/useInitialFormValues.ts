@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import type { z } from "zod";
-
 import { useBookerStore } from "@calcom/features/bookings/Booker/store";
 import type getBookingResponsesSchema from "@calcom/features/bookings/lib/getBookingResponsesSchema";
 import { getBookingResponsesPartialSchema } from "@calcom/features/bookings/lib/getBookingResponsesSchema";
 import type { BookerEvent } from "@calcom/features/bookings/types";
+import { ATTENDEE_PHONE_NUMBER_FIELD, SYSTEM_PHONE_FIELDS } from "@calcom/lib/bookings/SystemField";
+import { useEffect, useState } from "react";
+import type { z } from "zod";
 
 export type useInitialFormValuesReturnType = ReturnType<typeof useInitialFormValues>;
 
@@ -50,6 +50,44 @@ const buildKey = ({
   return `${Object.keys(values).length}_${hasSession ? 1 : 0}_${
     values.bookingId ?? 0
   }_${stableHashExtraOptions}`;
+};
+
+/**
+ * Consolidates system phone field values in responses.
+ * If any system phone field has a value, copies it to all system phone fields.
+ * This ensures prefill works correctly when user provides any phone field via URL.
+ */
+const consolidatePhoneFieldValues = (responses: Record<string, unknown>): Record<string, unknown> => {
+  // Find the first non-empty system phone field value
+  let phoneValue: string | undefined;
+  for (const fieldName of SYSTEM_PHONE_FIELDS) {
+    const value = responses[fieldName];
+    if (typeof value === "string" && value.trim()) {
+      phoneValue = value;
+      break;
+    }
+  }
+
+  // If no phone value found, return responses unchanged
+  if (!phoneValue) {
+    return responses;
+  }
+
+  // Copy the phone value to all system phone fields that exist in responses
+  const consolidatedResponses = { ...responses };
+  for (const fieldName of SYSTEM_PHONE_FIELDS) {
+    // Only set if the field exists in responses (i.e., it's part of the event's booking fields)
+    if (fieldName in responses) {
+      consolidatedResponses[fieldName] = phoneValue;
+    }
+  }
+
+  // Also ensure the canonical field has the value
+  if (ATTENDEE_PHONE_NUMBER_FIELD in responses) {
+    consolidatedResponses[ATTENDEE_PHONE_NUMBER_FIELD] = phoneValue;
+  }
+
+  return consolidatedResponses;
 };
 
 export function useInitialFormValues({
@@ -154,8 +192,11 @@ export function useInitialFormValues({
           };
         }, {});
 
+        // Consolidate phone field values so prefill works for any system phone field
+        const consolidatedResponses = consolidatePhoneFieldValues(responses);
+
         defaults.responses = {
-          ...responses,
+          ...consolidatedResponses,
           name: defaultUserValues.name,
           email: defaultUserValues.email ?? "",
         };
@@ -183,8 +224,12 @@ export function useInitialFormValues({
           [field.name]: bookingData?.responses[field.name],
         };
       }, {});
+
+      // Consolidate phone field values for rescheduling as well
+      const consolidatedResponses = consolidatePhoneFieldValues(responses);
+
       defaults.responses = {
-        ...responses,
+        ...consolidatedResponses,
         name: defaultUserValues.name,
         email: defaultUserValues.email ?? "",
       };

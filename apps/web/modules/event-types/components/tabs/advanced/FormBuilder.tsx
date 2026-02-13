@@ -9,7 +9,13 @@ import { getConfig as getVariantsConfig } from "@calcom/features/form-builder/ut
 import {
   CANONICAL_PHONE_FIELD,
   getPhoneFieldBadgeInfo,
+  isSystemPhoneField,
 } from "@calcom/lib/bookings/phoneFieldUtils";
+import {
+  ATTENDEE_PHONE_NUMBER_FIELD,
+  CAL_AI_AGENT_PHONE_NUMBER_FIELD,
+  SMS_REMINDER_NUMBER_FIELD,
+} from "@calcom/lib/bookings/SystemField";
 import {
   type ConsolidatedFormField,
   useConsolidatedPhoneFields,
@@ -23,12 +29,7 @@ import { excludeOrRequireEmailSchema } from "@calcom/prisma/zod-utils";
 import classNames from "@calcom/ui/classNames";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
-import {
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-} from "@calcom/ui/components/dialog";
+import { DialogClose, DialogContent, DialogFooter, DialogHeader } from "@calcom/ui/components/dialog";
 import { Editor } from "@calcom/ui/components/editor";
 import {
   CheckboxField,
@@ -40,17 +41,12 @@ import {
   Switch,
   ToggleGroup,
 } from "@calcom/ui/components/form";
-import { ArrowDownIcon, ArrowUpIcon, MailIcon, PhoneIcon } from "@coss/ui/icons";
 import { showToast } from "@calcom/ui/components/toast";
+import { ArrowDownIcon, ArrowUpIcon, MailIcon, PhoneIcon } from "@coss/ui/icons";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect, useState } from "react";
 import type { SubmitHandler, UseFormReturn } from "react-hook-form";
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
+import { Controller, useFieldArray, useForm, useFormContext } from "react-hook-form";
 import type { z } from "zod";
 import { ZodError } from "zod";
 import { PhoneFieldSourcesInfo } from "./PhoneFieldSourcesInfo";
@@ -159,7 +155,7 @@ export const FormBuilder = function FormBuilder({
   const editField = (index: number, data: ConsolidatedFormField) => {
     // For consolidated phone fields, we need to find the actual index in the original fields array
     const actualIndex = data._consolidatedFrom
-      ? phoneFieldIndices?.get(CANONICAL_PHONE_FIELD) ?? index
+      ? (phoneFieldIndices?.get(CANONICAL_PHONE_FIELD) ?? index)
       : index;
     setFieldDialog({
       isOpen: true,
@@ -186,19 +182,10 @@ export const FormBuilder = function FormBuilder({
           {showPhoneAndEmailToggle && (
             <ToggleGroup
               value={(() => {
-                const phoneField = fields.find(
-                  (field) => field.name === "attendeePhoneNumber"
-                );
-                const emailField = fields.find(
-                  (field) => field.name === "email"
-                );
+                const phoneField = fields.find((field) => field.name === "attendeePhoneNumber");
+                const emailField = fields.find((field) => field.name === "email");
 
-                if (
-                  phoneField &&
-                  !phoneField.hidden &&
-                  phoneField.required &&
-                  !emailField?.required
-                ) {
+                if (phoneField && !phoneField.hidden && phoneField.required && !emailField?.required) {
                   return "phone";
                 }
 
@@ -217,12 +204,8 @@ export const FormBuilder = function FormBuilder({
                 },
               ]}
               onValueChange={(value) => {
-                const phoneFieldIndex = fields.findIndex(
-                  (field) => field.name === "attendeePhoneNumber"
-                );
-                const emailFieldIndex = fields.findIndex(
-                  (field) => field.name === "email"
-                );
+                const phoneFieldIndex = fields.findIndex((field) => field.name === "attendeePhoneNumber");
+                const emailFieldIndex = fields.findIndex((field) => field.name === "email");
                 if (value === "email") {
                   update(emailFieldIndex, {
                     ...fields[emailFieldIndex],
@@ -256,27 +239,18 @@ export const FormBuilder = function FormBuilder({
         <p className="text-subtle mt-1 max-w-[280px] wrap-break-word text-sm sm:max-w-[500px]">
           {t("all_info_your_booker_provide")}
         </p>
-        <ul
-          ref={parent}
-          className="border-subtle divide-subtle mt-4 divide-y rounded-md border"
-        >
+        <ul ref={parent} className="border-subtle divide-subtle mt-4 divide-y rounded-md border">
           {displayFields.map((field, displayIndex) => {
-            const isConsolidatedPhoneField =
-              !!field._consolidatedFrom && field._consolidatedFrom.length > 1;
+            const isConsolidatedPhoneField = !!field._consolidatedFrom && field._consolidatedFrom.length > 1;
 
             let options = field.options ?? null;
             const sources = [...(field.sources || [])];
-            const isRequired = shouldConsiderRequired
-              ? shouldConsiderRequired(field)
-              : field.required;
+            const isRequired = shouldConsiderRequired ? shouldConsiderRequired(field) : field.required;
             if (!options && field.getOptionsAt) {
               const {
                 source: { label: sourceLabel },
                 value,
-              } =
-                dataStore.options[
-                  field.getOptionsAt as keyof typeof dataStore
-                ] ?? [];
+              } = dataStore.options[field.getOptionsAt as keyof typeof dataStore] ?? [];
               options = value;
               options.forEach((option) => {
                 sources.push({
@@ -295,56 +269,61 @@ export const FormBuilder = function FormBuilder({
             }
             const numOptions = options?.length ?? 0;
             const firstOptionInput =
-              field.optionsInputs?.[
-                options?.[0]?.value as keyof typeof field.optionsInputs
-              ];
+              field.optionsInputs?.[options?.[0]?.value as keyof typeof field.optionsInputs];
             const doesFirstOptionHaveInput = !!firstOptionInput;
             // If there is only one option and it doesn't have an input required, we don't show the Field for it.
             // Because booker doesn't see this in UI, there is no point showing it in FormBuilder to configure it.
-            if (
-              field.hideWhenJustOneOption &&
-              numOptions <= 1 &&
-              !doesFirstOptionHaveInput
-            ) {
+            if (field.hideWhenJustOneOption && numOptions <= 1 && !doesFirstOptionHaveInput) {
               return null;
             }
 
             const fieldType = getLocationFieldType(field);
-            const isFieldEditableSystemButOptional =
-              field.editable === "system-but-optional";
-            const isFieldEditableSystemButHidden =
-              field.editable === "system-but-hidden";
+            const isFieldEditableSystemButOptional = field.editable === "system-but-optional";
+            const isFieldEditableSystemButHidden = field.editable === "system-but-hidden";
             const isFieldEditableSystem = field.editable === "system";
             const isUserField =
-              !isFieldEditableSystem &&
-              !isFieldEditableSystemButOptional &&
-              !isFieldEditableSystemButHidden;
+              !isFieldEditableSystem && !isFieldEditableSystemButOptional && !isFieldEditableSystemButHidden;
 
             if (!fieldType) {
               throw new Error(`Invalid field type - ${field.type}`);
             }
 
-            const phoneFieldBadges =
-              isConsolidatedPhoneField && consolidatedPhoneFields
-                ? getPhoneFieldBadgeInfo(consolidatedPhoneFields, field.hidden)
-                : null;
-
-            const groupedBySourceLabel = sources.reduce((groupBy, source) => {
-              const item = groupBy[source.label] || [];
-              if (source.type === "user" || source.type === "default") {
-                return groupBy;
+            // Determine phone field badges
+            // For consolidated phone fields: show all applicable badges
+            // For single system phone fields: show badge based on field name
+            const phoneFieldBadges = (() => {
+              if (isConsolidatedPhoneField && consolidatedPhoneFields) {
+                return getPhoneFieldBadgeInfo(consolidatedPhoneFields, field.hidden);
               }
-              item.push(source);
-              groupBy[source.label] = item;
-              return groupBy;
-            }, {} as Record<string, NonNullable<(typeof field)["sources"]>>);
+              // For non-consolidated system phone fields, show individual badge
+              if (isSystemPhoneField(field.name) && !field.hidden) {
+                return {
+                  hasPhoneLocation: field.name === ATTENDEE_PHONE_NUMBER_FIELD,
+                  hasSmsWorkflow: field.name === SMS_REMINDER_NUMBER_FIELD,
+                  hasCalAiWorkflow: field.name === CAL_AI_AGENT_PHONE_NUMBER_FIELD,
+                };
+              }
+              return null;
+            })();
+
+            const groupedBySourceLabel = sources.reduce(
+              (groupBy, source) => {
+                const item = groupBy[source.label] || [];
+                if (source.type === "user" || source.type === "default") {
+                  return groupBy;
+                }
+                item.push(source);
+                groupBy[source.label] = item;
+                return groupBy;
+              },
+              {} as Record<string, NonNullable<(typeof field)["sources"]>>
+            );
 
             return (
               <li
                 key={field.name}
                 data-testid={`field-${field.name}`}
-                className="hover:bg-cal-muted group relative flex items-center justify-between p-4 transition"
-              >
+                className="hover:bg-cal-muted group relative flex items-center justify-between p-4 transition">
                 {/* Hide swap buttons for consolidated phone fields as they span multiple actual fields */}
                 {!disabled && !isConsolidatedPhoneField && (
                   <>
@@ -352,8 +331,7 @@ export const FormBuilder = function FormBuilder({
                       <button
                         type="button"
                         className="bg-default text-muted hover:text-emphasis disabled:hover:text-muted border-subtle hover:border-emphasis invisible absolute -left-[12px] -ml-4 -mt-4 mb-4 hidden h-6 w-6 scale-0 items-center justify-center rounded-md border p-1 transition-all hover:shadow disabled:hover:border-inherit disabled:hover:shadow-none group-hover:visible group-hover:scale-100 sm:ml-0 sm:flex"
-                        onClick={() => swap(displayIndex, displayIndex - 1)}
-                      >
+                        onClick={() => swap(displayIndex, displayIndex - 1)}>
                         <ArrowUpIcon className="h-5 w-5" />
                       </button>
                     )}
@@ -361,8 +339,7 @@ export const FormBuilder = function FormBuilder({
                       <button
                         type="button"
                         className="bg-default text-muted hover:border-emphasis border-subtle hover:text-emphasis disabled:hover:text-muted invisible absolute -left-[12px] -ml-4 mt-8 hidden h-6 w-6 scale-0 items-center justify-center rounded-md border p-1 transition-all hover:shadow disabled:hover:border-inherit disabled:hover:shadow-none group-hover:visible group-hover:scale-100 sm:ml-0 sm:flex"
-                        onClick={() => swap(displayIndex, displayIndex + 1)}
-                      >
+                        onClick={() => swap(displayIndex, displayIndex + 1)}>
                         <ArrowDownIcon className="h-5 w-5" />
                       </button>
                     )}
@@ -378,19 +355,14 @@ export const FormBuilder = function FormBuilder({
                         // Hidden field can't be required, so we don't need to show the Optional badge
                         <Badge variant="grayWithoutHover">{t("hidden")}</Badge>
                       ) : (
-                        <Badge
-                          variant="grayWithoutHover"
-                          data-testid={isRequired ? "required" : "optional"}
-                        >
+                        <Badge variant="grayWithoutHover" data-testid={isRequired ? "required" : "optional"}>
                           {isRequired ? t("required") : t("optional")}
                         </Badge>
                       )}
-                      {isConsolidatedPhoneField && phoneFieldBadges ? (
+                      {phoneFieldBadges ? (
                         <>
                           {phoneFieldBadges.hasPhoneLocation && (
-                            <Badge variant="blue">
-                              {t("attendee_phone_location")}
-                            </Badge>
+                            <Badge variant="blue">{t("attendee_phone_location")}</Badge>
                           )}
                           {phoneFieldBadges.hasSmsWorkflow && (
                             <Badge variant="blue">{t("sms_workflow")}</Badge>
@@ -400,16 +372,11 @@ export const FormBuilder = function FormBuilder({
                           )}
                         </>
                       ) : (
-                        Object.entries(groupedBySourceLabel).map(
-                          ([sourceLabel, sources], key) => (
-                            <Badge key={key} variant="blue">
-                              {sources.length}{" "}
-                              {sources.length === 1
-                                ? sourceLabel
-                                : `${sourceLabel}s`}
-                            </Badge>
-                          )
-                        )
+                        Object.entries(groupedBySourceLabel).map(([sourceLabel, sources], key) => (
+                          <Badge key={key} variant="blue">
+                            {sources.length} {sources.length === 1 ? sourceLabel : `${sourceLabel}s`}
+                          </Badge>
+                        ))
                       )}
                     </div>
                   </div>
@@ -419,35 +386,32 @@ export const FormBuilder = function FormBuilder({
                 </div>
                 {field.editable !== "user-readonly" && !disabled && (
                   <div className="flex items-center space-x-2">
-                    {!isFieldEditableSystem &&
-                      !isFieldEditableSystemButHidden &&
-                      !disabled && (
-                        <Switch
-                          data-testid="toggle-field"
-                          disabled={isFieldEditableSystem}
-                          checked={!field.hidden}
-                          onCheckedChange={(checked) => {
-                            if (isConsolidatedPhoneField && phoneFieldIndices) {
-                              field._consolidatedFrom?.forEach((fieldName) => {
-                                const originalIndex =
-                                  phoneFieldIndices.get(fieldName);
-                                if (originalIndex !== undefined) {
-                                  update(originalIndex, {
-                                    ...fields[originalIndex],
-                                    hidden: !checked,
-                                  });
-                                }
-                              });
-                            } else {
-                              update(displayIndex, {
-                                ...field,
-                                hidden: !checked,
-                              });
-                            }
-                          }}
-                          tooltip={t("show_on_booking_page")}
-                        />
-                      )}
+                    {!isFieldEditableSystem && !isFieldEditableSystemButHidden && !disabled && (
+                      <Switch
+                        data-testid="toggle-field"
+                        disabled={isFieldEditableSystem}
+                        checked={!field.hidden}
+                        onCheckedChange={(checked) => {
+                          if (isConsolidatedPhoneField && phoneFieldIndices) {
+                            field._consolidatedFrom?.forEach((fieldName) => {
+                              const originalIndex = phoneFieldIndices.get(fieldName);
+                              if (originalIndex !== undefined) {
+                                update(originalIndex, {
+                                  ...fields[originalIndex],
+                                  hidden: !checked,
+                                });
+                              }
+                            });
+                          } else {
+                            update(displayIndex, {
+                              ...field,
+                              hidden: !checked,
+                            });
+                          }
+                        }}
+                        tooltip={t("show_on_booking_page")}
+                      />
+                    )}
                     {isUserField && (
                       <Button
                         data-testid="delete-field-action"
@@ -465,8 +429,7 @@ export const FormBuilder = function FormBuilder({
                       color="secondary"
                       onClick={() => {
                         editField(displayIndex, field);
-                      }}
-                    >
+                      }}>
                       {t("edit")}
                     </Button>
                   </div>
@@ -481,8 +444,7 @@ export const FormBuilder = function FormBuilder({
             data-testid="add-field"
             onClick={addField}
             className="mt-4"
-            StartIcon="plus"
-          >
+            StartIcon="plus">
             {addFieldLabel}
           </Button>
         )}
@@ -512,14 +474,8 @@ export const FormBuilder = function FormBuilder({
               return;
             }
             if (fieldDialog.data) {
-              const consolidatedFrom = (
-                fieldDialog.data as ConsolidatedFormField
-              )._consolidatedFrom;
-              if (
-                consolidatedFrom &&
-                consolidatedFrom.length > 1 &&
-                phoneFieldIndices
-              ) {
+              const consolidatedFrom = (fieldDialog.data as ConsolidatedFormField)._consolidatedFrom;
+              if (consolidatedFrom && consolidatedFrom.length > 1 && phoneFieldIndices) {
                 // we need this to make sure we sync changes to all underlying phone fields
                 consolidatedFrom.forEach((fieldName) => {
                   const originalIndex = phoneFieldIndices.get(fieldName);
@@ -529,9 +485,7 @@ export const FormBuilder = function FormBuilder({
                     update(originalIndex, {
                       ...originalField,
                       hidden: data.hidden,
-                      ...(fieldName === CANONICAL_PHONE_FIELD
-                        ? { label: data.label }
-                        : {}),
+                      ...(fieldName === CANONICAL_PHONE_FIELD ? { label: data.label } : {}),
                     });
                   }
                 });
@@ -581,9 +535,7 @@ function Options({
 }: {
   label?: string;
   value: { label: string; value: string; price?: number }[];
-  onChange?: (
-    value: { label: string; value: string; price?: number }[]
-  ) => void;
+  onChange?: (value: { label: string; value: string; price?: number }[]) => void;
   className?: string;
   readOnly?: boolean;
   showPrice?: boolean;
@@ -607,10 +559,7 @@ function Options({
   return (
     <div className={className}>
       <Label>{label}</Label>
-      <div
-        className="bg-cal-muted rounded-md p-4"
-        data-testid="options-container"
-      >
+      <div className="bg-cal-muted rounded-md p-4" data-testid="options-container">
         <ul ref={animationRef} className="flex flex-col gap-3">
           {value?.map((option, index) => (
             <li key={index}>
@@ -686,8 +635,7 @@ function Options({
               newOptions.push({ label: "", value: "", price: 0 });
               onChange(newOptions);
             }}
-            StartIcon="plus"
-          >
+            StartIcon="plus">
             Add an Option
           </Button>
         )}
@@ -696,11 +644,7 @@ function Options({
   );
 }
 
-const CheckboxFieldLabel = ({
-  fieldForm,
-}: {
-  fieldForm: UseFormReturn<RhfFormField>;
-}) => {
+const CheckboxFieldLabel = ({ fieldForm }: { fieldForm: UseFormReturn<RhfFormField> }) => {
   const { t } = useLocale();
   const [firstRender, setFirstRender] = useState(true);
   return (
@@ -767,11 +711,7 @@ function FieldEditDialog({
 
   return (
     <Dialog open={dialog.isOpen} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent
-        className="max-h-none"
-        data-testid="edit-field-dialog"
-        forceOverlayWhenNoModal={true}
-      >
+      <DialogContent className="max-h-none" data-testid="edit-field-dialog" forceOverlayWhenNoModal={true}>
         <Form id="form-builder" form={fieldForm} handleSubmit={handleSubmit}>
           <div className="h-auto max-h-[85vh]">
             <DialogHeader
@@ -812,18 +752,13 @@ function FieldEditDialog({
                       {...fieldForm.register("name")}
                       containerClassName="mt-6"
                       onChange={(e) => {
-                        fieldForm.setValue(
-                          "name",
-                          getFieldIdentifier(e.target.value || ""),
-                          {
-                            shouldDirty: true,
-                          }
-                        );
+                        fieldForm.setValue("name", getFieldIdentifier(e.target.value || ""), {
+                          shouldDirty: true,
+                        });
                       }}
                       disabled={
                         fieldForm.getValues("editable") === "system" ||
-                        fieldForm.getValues("editable") ===
-                          "system-but-optional"
+                        fieldForm.getValues("editable") === "system-but-optional"
                       }
                       label={t("identifier")}
                     />
@@ -841,13 +776,9 @@ function FieldEditDialog({
                           {...fieldForm.register("label")}
                           // System fields have a defaultLabel, so there a label is not required
                           required={
-                            !["system", "system-but-optional"].includes(
-                              fieldForm.getValues("editable") || ""
-                            )
+                            !["system", "system-but-optional"].includes(fieldForm.getValues("editable") || "")
                           }
-                          placeholder={t(
-                            fieldForm.getValues("defaultLabel") || ""
-                          )}
+                          placeholder={t(fieldForm.getValues("defaultLabel") || "")}
                           containerClassName="mt-6"
                           label={t("label")}
                         />
@@ -859,13 +790,10 @@ function FieldEditDialog({
                         {...fieldForm.register("placeholder")}
                         containerClassName="mt-6"
                         label={t("placeholder")}
-                        placeholder={t(
-                          fieldForm.getValues("defaultPlaceholder") || ""
-                        )}
+                        placeholder={t(fieldForm.getValues("defaultPlaceholder") || "")}
                       />
                     ) : null}
-                    {fieldType?.needsOptions &&
-                    !fieldForm.getValues("getOptionsAt") ? (
+                    {fieldType?.needsOptions && !fieldForm.getValues("getOptionsAt") ? (
                       <Controller
                         name="options"
                         render={({ field: { value, onChange } }) => {
@@ -874,10 +802,7 @@ function FieldEditDialog({
                               onChange={onChange}
                               value={value}
                               className="mt-6"
-                              showPrice={
-                                showPriceField &&
-                                fieldType.optionsSupportPricing
-                              }
+                              showPrice={showPriceField && fieldType.optionsSupportPricing}
                               paymentCurrency={paymentCurrency}
                             />
                           );
@@ -886,10 +811,7 @@ function FieldEditDialog({
                     ) : null}
 
                     {fieldType?.supportsLengthCheck ? (
-                      <FieldWithLengthCheckSupport
-                        containerClassName="mt-6"
-                        fieldForm={fieldForm}
-                      />
+                      <FieldWithLengthCheckSupport containerClassName="mt-6" fieldForm={fieldForm} />
                     ) : null}
 
                     {formFieldType === "email" && (
@@ -903,8 +825,7 @@ function FieldEditDialog({
                           } catch (err) {
                             if (err instanceof ZodError) {
                               fieldForm.setError("requireEmails", {
-                                message:
-                                  err.errors[0]?.message || "Invalid input",
+                                message: err.errors[0]?.message || "Invalid input",
                               });
                             }
                           }
@@ -925,8 +846,7 @@ function FieldEditDialog({
                           } catch (err) {
                             if (err instanceof ZodError) {
                               fieldForm.setError("excludeEmails", {
-                                message:
-                                  err.errors[0]?.message || "Invalid input",
+                                message: err.errors[0]?.message || "Invalid input",
                               });
                             }
                           }
@@ -965,9 +885,7 @@ function FieldEditDialog({
                           return (
                             <CheckboxField
                               data-testid="field-required"
-                              disabled={
-                                fieldForm.getValues("editable") === "system"
-                              }
+                              disabled={fieldForm.getValues("editable") === "system"}
                               checked={isRequired}
                               onChange={(e) => {
                                 onChange(e.target.checked);
@@ -983,22 +901,14 @@ function FieldEditDialog({
               }
 
               if (!fieldType.isTextType) {
-                throw new Error(
-                  "Variants are currently supported only with text type"
-                );
+                throw new Error("Variants are currently supported only with text type");
               }
 
-              return (
-                <VariantFields
-                  variantsConfig={variantsConfig}
-                  fieldForm={fieldForm}
-                />
-              );
+              return <VariantFields variantsConfig={variantsConfig} fieldForm={fieldForm} />;
             })()}
             {dialog.data &&
               (dialog.data as ConsolidatedFormField)._consolidatedFrom &&
-              (dialog.data as ConsolidatedFormField)._consolidatedFrom!.length >
-                1 && (
+              (dialog.data as ConsolidatedFormField)._consolidatedFrom!.length > 1 && (
                 <PhoneFieldSourcesInfo sources={dialog.data.sources || []} />
               )}
           </div>
@@ -1062,10 +972,7 @@ function FieldWithLengthCheckSupport({
           if (!supportsLengthCheck) {
             return;
           }
-          fieldForm.setValue(
-            "maxLength",
-            parseInt(e.target.value ?? maxAllowedMaxLength)
-          );
+          fieldForm.setValue("maxLength", parseInt(e.target.value ?? maxAllowedMaxLength));
           // Ensure that minLength field adjusts its restrictions
           fieldForm.trigger("minLength");
         }}
@@ -1094,9 +1001,7 @@ function FieldLabel({ field }: { field: RhfFormField }) {
         <span
           dangerouslySetInnerHTML={{
             // Derive from field.label because label might change in b/w and field.labelAsSafeHtml will not be updated.
-            __html: markdownToSafeHTMLClient(
-              field.label || t(field.defaultLabel || "") || ""
-            ),
+            __html: markdownToSafeHTMLClient(field.label || t(field.defaultLabel || "") || ""),
           }}
         />
       );
@@ -1107,19 +1012,15 @@ function FieldLabel({ field }: { field: RhfFormField }) {
   const variant = field.variant || defaultVariant;
   if (!variant) {
     throw new Error(
-      `Field has \`variantsConfig\` but no \`defaultVariant\`${JSON.stringify(
-        fieldTypeConfigVariantsConfig
-      )}`
+      `Field has \`variantsConfig\` but no \`defaultVariant\`${JSON.stringify(fieldTypeConfigVariantsConfig)}`
     );
   }
-  const variantData =
-    variantsConfigVariants?.[variant as keyof typeof fieldTypeConfigVariants];
+  const variantData = variantsConfigVariants?.[variant as keyof typeof fieldTypeConfigVariants];
   const firstField = variantData?.fields?.[0];
   const label = firstField?.label?.trim() ? firstField.label : "";
   const firstFieldName = firstField?.name;
   const defaultLabelFromTypeConfig =
-    fieldTypeConfigVariants?.[variant as keyof typeof fieldTypeConfigVariants]
-      ?.fieldsMap?.[
+    fieldTypeConfigVariants?.[variant as keyof typeof fieldTypeConfigVariants]?.fieldsMap?.[
       firstFieldName as keyof (typeof fieldTypeConfigVariants)[typeof variant]["fieldsMap"]
     ]?.defaultLabel || "";
   return <span>{t(label || defaultLabelFromTypeConfig)}</span>;
@@ -1141,13 +1042,10 @@ function VariantFields({
   if (!variantsConfig) {
     throw new Error("VariantFields component needs variantsConfig");
   }
-  const fieldTypeConfigVariantsConfig =
-    fieldTypesConfigMap[fieldForm.getValues("type")]?.variantsConfig;
+  const fieldTypeConfigVariantsConfig = fieldTypesConfigMap[fieldForm.getValues("type")]?.variantsConfig;
 
   if (!fieldTypeConfigVariantsConfig) {
-    throw new Error(
-      "Configuration Issue: FieldType doesn't have `variantsConfig`"
-    );
+    throw new Error("Configuration Issue: FieldType doesn't have `variantsConfig`");
   }
 
   const variantToggleLabel = t(fieldTypeConfigVariantsConfig.toggleLabel || "");
@@ -1161,8 +1059,7 @@ function VariantFields({
   }
   const otherVariant = otherVariants[0];
   const variantName = fieldForm.watch("variant") || defaultVariant;
-  const variantFields =
-    variantsConfig.variants[variantName as keyof typeof variantsConfig].fields;
+  const variantFields = variantsConfig.variants[variantName as keyof typeof variantsConfig].fields;
   /**
    * A variant that has just one field can be shown in a simpler way in UI.
    */
@@ -1178,10 +1075,7 @@ function VariantFields({
           label={variantToggleLabel}
           data-testid="variant-toggle"
           onCheckedChange={(checked) => {
-            fieldForm.setValue(
-              "variant",
-              checked ? otherVariant : defaultVariant
-            );
+            fieldForm.setValue("variant", checked ? otherVariant : defaultVariant);
           }}
           tooltip={t("Toggle Variant")}
         />
@@ -1209,34 +1103,23 @@ function VariantFields({
 
       <ul
         className={classNames(
-          !isSimpleVariant
-            ? "border-subtle divide-subtle mt-2 divide-y rounded-md border"
-            : ""
-        )}
-      >
+          !isSimpleVariant ? "border-subtle divide-subtle mt-2 divide-y rounded-md border" : ""
+        )}>
         {variantFields.map((f, index) => {
-          const rhfVariantFieldPrefix =
-            `variantsConfig.variants.${variantName}.fields.${index}` as const;
+          const rhfVariantFieldPrefix = `variantsConfig.variants.${variantName}.fields.${index}` as const;
           const fieldTypeConfigVariants =
             fieldTypeConfigVariantsConfig.variants[
               variantName as keyof typeof fieldTypeConfigVariantsConfig.variants
             ];
           const appUiFieldConfig =
-            fieldTypeConfigVariants.fieldsMap[
-              f.name as keyof typeof fieldTypeConfigVariants.fieldsMap
-            ];
+            fieldTypeConfigVariants.fieldsMap[f.name as keyof typeof fieldTypeConfigVariants.fieldsMap];
 
           return (
-            <li
-              className={classNames(!isSimpleVariant ? "p-4" : "")}
-              key={f.name}
-            >
+            <li className={classNames(!isSimpleVariant ? "p-4" : "")} key={f.name}>
               {!isSimpleVariant && (
                 <Label className="flex justify-between">
                   <span>{`Field ${index + 1}`}</span>
-                  <span className="text-muted">
-                    {t(appUiFieldConfig?.defaultLabel || "")}
-                  </span>
+                  <span className="text-muted">{t(appUiFieldConfig?.defaultLabel || "")}</span>
                 </Label>
               )}
               <InputField
