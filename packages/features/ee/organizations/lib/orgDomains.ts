@@ -155,7 +155,7 @@ export function getOrgDomainConfigFromHostname({
   }
 
   if (customDomain) {
-    console.log("customDomain: ", customDomain);
+    log.debug("customDomain detected", { customDomain });
     return {
       currentOrgDomain: customDomain,
       isValidOrgDomain: true,

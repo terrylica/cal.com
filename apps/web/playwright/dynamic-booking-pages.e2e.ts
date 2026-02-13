@@ -231,8 +231,8 @@ test.describe("Organization:", () => {
           title: "Test meeting",
         });
         await expect(page.getByTestId("success-page")).toBeVisible();
-        await expect(page.getByText(user1.name!, { exact: true })).toBeVisible();
-        await expect(page.getByText(user2.name!, { exact: true })).toBeVisible();
+        await expect(page.getByTestId(`attendee-name-${user1.name}`)).toBeVisible();
+        await expect(page.getByTestId(`attendee-name-${user2.name}`)).toBeVisible();
       }
     );
   });

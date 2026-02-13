@@ -185,7 +185,6 @@ function MemberListContent(props: Props) {
 
   const utils = trpc.useUtils();
   const orgBranding = useOrgBranding();
-  console.log("orgBranding: ", orgBranding);
   const domain = orgBranding?.fullDomain ?? WEBAPP_URL;
 
   const tableContainerRef = useRef<HTMLDivElement>(null);

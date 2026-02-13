@@ -4,7 +4,16 @@ dotenvConfig({ path: "../../.env" });
 
 const isSingleOrgModeEnabled = !!process.env.NEXT_PUBLIC_SINGLE_ORG_SLUG;
 const orgSlugCaptureGroupName = "orgSlug";
-const ALLOWED_HOSTNAMES = JSON.parse(`[${process.env.ALLOWED_HOSTNAMES || ""}]`) as string[];
+const ALLOWED_HOSTNAMES: string[] = (() => {
+  const raw = process.env.ALLOWED_HOSTNAMES;
+  if (!raw) return [];
+  try {
+    return JSON.parse(`[${raw}]`) as string[];
+  } catch (e) {
+    console.error(`[Org Rewrite Config] Failed to parse ALLOWED_HOSTNAMES: ${raw}`, e);
+    return [];
+  }
+})();
 
 /**
  * Returns the leftmost subdomain from a given URL.
@@ -99,5 +108,3 @@ export const customDomainRewriteConfig: CustomDomainRewriteConfig | null = (() =
     hostPath,
   };
 })();
-
-console.log(`[Org Rewrite Config] orgHostPath: ${nextJsOrgRewriteConfig.orgHostPath}`);
