@@ -1,4 +1,12 @@
-import { BOOKING_READ, BOOKING_WRITE, EVENT_TYPE_READ, SCHEDULE_WRITE } from "@calcom/platform-constants";
+import {
+  APPS_READ,
+  APPS_WRITE,
+  BOOKING_READ,
+  BOOKING_WRITE,
+  EVENT_TYPE_READ,
+  PROFILE_WRITE,
+  SCHEDULE_WRITE,
+} from "@calcom/platform-constants";
 import { createMock } from "@golevelup/ts-jest";
 import { ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
@@ -135,6 +143,39 @@ describe("ThirdPartyPermissionsGuard", () => {
       jest.spyOn(reflector, "get").mockReturnValue([EVENT_TYPE_READ, SCHEDULE_WRITE]);
 
       expect(() => guard.canActivate(mockContext)).toThrow("insufficient_scope");
+    });
+
+    it("should allow third-party token with APPS_READ scope", () => {
+      const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(tokensService, "getDecodedThirdPartyAccessToken").mockReturnValue({
+        scope: ["APPS_READ"],
+        token_type: "Access Token",
+      });
+      jest.spyOn(reflector, "get").mockReturnValue([APPS_READ]);
+
+      expect(guard.canActivate(mockContext)).toBe(true);
+    });
+
+    it("should allow third-party token with APPS_WRITE scope", () => {
+      const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(tokensService, "getDecodedThirdPartyAccessToken").mockReturnValue({
+        scope: ["APPS_WRITE"],
+        token_type: "Access Token",
+      });
+      jest.spyOn(reflector, "get").mockReturnValue([APPS_WRITE]);
+
+      expect(guard.canActivate(mockContext)).toBe(true);
+    });
+
+    it("should allow third-party token with PROFILE_WRITE scope", () => {
+      const mockContext = createMockExecutionContext({ Authorization: "Bearer token" });
+      jest.spyOn(tokensService, "getDecodedThirdPartyAccessToken").mockReturnValue({
+        scope: ["PROFILE_WRITE"],
+        token_type: "Access Token",
+      });
+      jest.spyOn(reflector, "get").mockReturnValue([PROFILE_WRITE]);
+
+      expect(guard.canActivate(mockContext)).toBe(true);
     });
   });
 });
