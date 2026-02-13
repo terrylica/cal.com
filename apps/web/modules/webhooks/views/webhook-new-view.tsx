@@ -31,7 +31,7 @@ import { useMemo } from "react";
 import type { ComponentType } from "react";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
 import WebhookForm from "../components/WebhookForm";
-import { WebhookNewHeader } from "./webhook-new-header";
+import { WebhookFormHeader } from "./webhook-form-header";
 
 const webhookVersionItems = WEBHOOK_VERSION_OPTIONS.map((option) => ({
   value: option.value,
@@ -113,7 +113,7 @@ export const NewWebhookView = ({ webhooks, installedApps }: Props) => {
 
         return (
           <CardFrame>
-            <WebhookNewHeader
+            <WebhookFormHeader
               CTA={
                 <div className="flex items-center gap-1 self-center">
                   <TooltipProvider delay={0}>

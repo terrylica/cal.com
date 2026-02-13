@@ -17,7 +17,7 @@ type WebhookFormHeaderProps = {
   titleKey?: "add_webhook" | "edit_webhook";
 };
 
-export function WebhookNewHeader({ CTA, titleKey = "add_webhook" }: WebhookFormHeaderProps) {
+export function WebhookFormHeader({ CTA, titleKey = "add_webhook" }: WebhookFormHeaderProps) {
   const { t } = useLocale();
 
   return (

@@ -30,8 +30,8 @@ import { useMemo } from "react";
 import type { ComponentType } from "react";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
 import WebhookForm from "../components/WebhookForm";
-import { WebhookNewHeader } from "./webhook-new-header";
-import { SkeletonLoader } from "./webhook-new-skeleton";
+import { WebhookFormHeader } from "./webhook-form-header";
+import { WebhookFormSkeleton } from "./webhook-form-skeleton";
 
 const webhookVersionItems = WEBHOOK_VERSION_OPTIONS.map((option) => ({
   value: option.value,
@@ -78,7 +78,7 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
     },
   });
 
-  if (isPending || !webhook) return <SkeletonLoader titleKey="edit_webhook" />;
+  if (isPending || !webhook) return <WebhookFormSkeleton titleKey="edit_webhook" />;
 
   return (
     <WebhookForm
@@ -91,7 +91,7 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
 
         return (
           <CardFrame>
-            <WebhookNewHeader
+            <WebhookFormHeader
               titleKey="edit_webhook"
               CTA={
                 <div className="flex items-center gap-1 self-center">
