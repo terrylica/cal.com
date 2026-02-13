@@ -13,7 +13,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { md } from "@calcom/lib/markdownIt";
 import { markdownToSafeHTMLClient } from "@calcom/lib/markdownToSafeHTMLClient";
 import turndown from "@calcom/lib/turndownService";
-import { excludeOrRequireEmailSchema, fieldSchema } from "@calcom/prisma/zod-utils";
+import { excludeOrRequireEmailSchema } from "@calcom/prisma/zod-utils";
 import classNames from "@calcom/ui/classNames";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
@@ -69,6 +69,23 @@ const getLocationFieldType = (field: RhfFormField) => {
 
   return baseFieldType;
 };
+
+function isWhitespaceOnly(val: unknown): boolean {
+  return typeof val === "string" && val.length > 0 && val.trim().length === 0;
+}
+
+function hasWhitespaceOnlyLabel(data: RhfFormField): boolean {
+  if (isWhitespaceOnly(data.label)) return true;
+  const variants = data.variantsConfig?.variants;
+  if (!variants) return false;
+  for (const variant of Object.values(variants)) {
+    const fields = variant?.fields ?? [];
+    for (const f of fields) {
+      if (isWhitespaceOnly(f?.label)) return true;
+    }
+  }
+  return false;
+}
 
 /**
  * It works with a react-hook-form only.
@@ -387,14 +404,8 @@ export const FormBuilder = function FormBuilder({
             const type = data.type || "text";
             const isNewField = !fieldDialog.data;
 
-            const parseResult = fieldSchema.safeParse(data);
-            if (!parseResult.success) {
-              const firstError = parseResult.error.errors[0];
-              const message =
-                firstError?.message && typeof firstError.message === "string"
-                  ? t(firstError.message)
-                  : t("label_cannot_be_whitespace");
-              showToast(message, "error");
+            if (hasWhitespaceOnlyLabel(data)) {
+              showToast(t("label_cannot_be_whitespace"), "error");
               return;
             }
 
