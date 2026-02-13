@@ -7,6 +7,7 @@ import type { PrismaClient } from "@calcom/prisma";
 import { UserPermissionRole } from "@calcom/prisma/enums";
 import type { AccessScope, OAuthClientStatus } from "@calcom/prisma/enums";
 
+import { hasScopeExpansion } from "./hasScopeExpansion";
 import type { TUpdateClientInputSchema } from "./updateClient.schema";
 
 type UpdateClientOptions = {
@@ -84,12 +85,14 @@ const updateClientHandler = async ({
       logo: clientWithUser.logo,
       websiteUrl: clientWithUser.websiteUrl,
       redirectUri: clientWithUser.redirectUri,
+      scopes: clientWithUser.scopes,
     },
     proposedUpdates: {
       name,
       logo,
       websiteUrl,
       redirectUri,
+      scopes,
     },
   });
 
@@ -163,6 +166,7 @@ type ClientFieldsForReapprovalCheck = {
   logo: string | null;
   websiteUrl: string | null;
   redirectUri: string;
+  scopes: AccessScope[];
 };
 
 function triggersReapprovalForOwnerEdit(params: {
@@ -174,6 +178,7 @@ function triggersReapprovalForOwnerEdit(params: {
     logo: string | null;
     websiteUrl: string | null;
     redirectUri: string;
+    scopes: AccessScope[];
   }>;
 }) {
   const { isAdmin, isOwner, currentClient, proposedUpdates } = params;
@@ -190,7 +195,7 @@ function triggersReapprovalForOwnerEdit(params: {
   ) {
     return true;
   }
-  
+
   if (
     proposedUpdates.websiteUrl !== undefined &&
     toNullableString(proposedUpdates.websiteUrl) !== toNullableString(currentClient.websiteUrl)
@@ -199,6 +204,10 @@ function triggersReapprovalForOwnerEdit(params: {
   }
 
   if (proposedUpdates.redirectUri !== undefined && proposedUpdates.redirectUri !== currentClient.redirectUri) {
+    return true;
+  }
+
+  if (proposedUpdates.scopes !== undefined && hasScopeExpansion(currentClient.scopes, proposedUpdates.scopes)) {
     return true;
   }
 
