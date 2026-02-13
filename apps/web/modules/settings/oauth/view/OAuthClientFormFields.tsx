@@ -7,6 +7,7 @@ import { Avatar } from "@calcom/ui/components/avatar";
 import { CheckboxField, Label, Switch, TextArea, TextField } from "@calcom/ui/components/form";
 import { Icon } from "@calcom/ui/components/icon";
 import { ImageUploader } from "@calcom/ui/components/image-uploader";
+import { InfoIcon, KeyIcon } from "@coss/ui/icons";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import { useMemo } from "react";
 import type { RegisterOptions, UseFormReturn } from "react-hook-form";
@@ -74,7 +75,7 @@ export const OAuthClientFormFields = ({
           {t("purpose")}
           <Tooltip content={t("purpose_tooltip")}>
             <span>
-              <Icon name="info" className="text-subtle h-4 w-4" />
+              <InfoIcon className="text-subtle h-4 w-4" />
             </span>
           </Tooltip>
         </Label>
@@ -103,7 +104,7 @@ export const OAuthClientFormFields = ({
             {t("website_url")}
             <Tooltip content={t("website_url_tooltip")}>
               <span>
-                <Icon name="info" className="text-subtle h-4 w-4" />
+                <InfoIcon className="text-subtle h-4 w-4" />
               </span>
             </Tooltip>
           </span>
@@ -135,7 +136,7 @@ export const OAuthClientFormFields = ({
           <div className="flex items-center gap-4">
             <Avatar
               alt={t("logo")}
-              fallback={<Icon name="key" className="text-subtle h-6 w-6" />}
+              fallback={<KeyIcon className="text-subtle h-6 w-6" />}
               imageSrc={form.watch("logo")}
               size="lg"
             />

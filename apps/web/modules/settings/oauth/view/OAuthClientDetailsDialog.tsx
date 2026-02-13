@@ -12,7 +12,13 @@ import type { AccessScope } from "@calcom/prisma/enums";
 import { Alert } from "@calcom/ui/components/alert";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
-import { ConfirmationDialogContent, DialogClose, DialogContent, DialogFooter } from "@calcom/ui/components/dialog";
+import {
+  ConfirmationDialogContent,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+} from "@calcom/ui/components/dialog";
+
 import { showToast } from "@calcom/ui/components/toast";
 import { Tooltip } from "@calcom/ui/components/tooltip";
 import { Label, TextArea } from "@calcom/ui/components/form";
@@ -33,6 +39,9 @@ type OAuthClientDetails = {
   isPkceEnabled?: boolean;
   clientType?: string;
   scopes?: AccessScope[];
+  user?: {
+    email: string;
+  } | null;
 };
 
 const OAuthClientDetailsDialog = ({
@@ -208,7 +217,9 @@ const OAuthClientDetailsDialog = ({
             })}>
             {status ? (
               <div className="flex justify-start items-center">
-                <Badge data-testid="oauth-client-details-status-badge" variant={getStatusBadgeVariant(status).variant}>
+                <Badge
+                  data-testid="oauth-client-details-status-badge"
+                  variant={getStatusBadgeVariant(status).variant}>
                   {t(getStatusBadgeVariant(status).labelKey)}
                 </Badge>
               </div>
@@ -223,9 +234,16 @@ const OAuthClientDetailsDialog = ({
             ) : null}
 
             {status === "REJECTED" && client.rejectionReason ? (
-              <div className="text-sm text-subtle" data-testid="oauth-client-details-rejection-reason-display">
-                <span className="font-medium">{t("oauth_client_rejection_reason")}:</span> {client.rejectionReason}
-              </div>
+              <Alert
+                severity="error"
+                title={t("oauth_client_rejection_reason")}
+                message={
+                  <div data-testid="oauth-client-details-rejection-reason-display">
+                    <p className="mb-2">"{client.rejectionReason}".</p>
+                    <p>{t("oauth_client_rejected_resubmit_info")}</p>
+                  </div>
+                }
+              />
             ) : null}
 
             <div>
@@ -253,6 +271,15 @@ const OAuthClientDetailsDialog = ({
                 </Tooltip>
               </div>
             </div>
+
+            {client.user?.email ? (
+              <div>
+                <div className="mb-1 text-sm text-subtle">{t("owner")}</div>
+                <div className="text-sm text-default" data-testid="oauth-client-details-user-email">
+                  {client.user.email}
+                </div>
+              </div>
+            ) : null}
 
             <OAuthClientFormFields form={form} isClientReadOnly={isFormDisabled} isPkceLocked />
 
@@ -292,9 +319,7 @@ const OAuthClientDetailsDialog = ({
               </div>
             ) : null}
 
-            <DialogFooter className="mt-6">
-              {footerActions}
-            </DialogFooter>
+            <DialogFooter className="mt-6">{footerActions}</DialogFooter>
 
             <Dialog open={isRejectConfirmOpen} onOpenChange={setIsRejectConfirmOpen}>
               <ConfirmationDialogContent
@@ -327,9 +352,7 @@ const OAuthClientDetailsDialog = ({
                     }}
                     className={showRejectionReasonError ? "border-error" : undefined}
                   />
-                  {showRejectionReasonError ? (
-                    <p className="text-sm text-error">{t("is_required")}</p>
-                  ) : null}
+                  {showRejectionReasonError ? <p className="text-sm text-error">{t("is_required")}</p> : null}
                 </div>
               </ConfirmationDialogContent>
             </Dialog>
@@ -350,7 +373,7 @@ function getStatusBadgeVariant(status: string) {
     default:
       return { variant: "orange" as const, labelKey: "pending" as const };
   }
-};
+}
 
 export type { OAuthClientDetails };
 export { OAuthClientDetailsDialog };

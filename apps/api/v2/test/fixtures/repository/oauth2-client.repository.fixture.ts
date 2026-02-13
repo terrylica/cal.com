@@ -38,6 +38,13 @@ export class OAuth2ClientRepositoryFixture {
     });
   }
 
+  async updateStatus(clientId: string, status: OAuthClientStatus) {
+    return this.prismaWriteClient.oAuthClient.update({
+      where: { clientId },
+      data: { status },
+    });
+  }
+
   async delete(clientId: string) {
     return this.prismaWriteClient.oAuthClient.delete({
       where: { clientId },

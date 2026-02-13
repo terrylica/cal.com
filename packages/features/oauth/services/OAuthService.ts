@@ -106,9 +106,7 @@ export class OAuthService {
 
     this.validateRedirectUri(client.redirectUri, redirectUri);
 
-    if (!loggedInUserId || loggedInUserId !== client.userId) {
-      this.ensureClientIsApproved(client);
-    }
+    this.ensureClientAccessAllowed(client, loggedInUserId);
 
     const requestedScopes = parseScopeParam(scopeParam);
     if (requestedScopes.length > 0) {
@@ -142,9 +140,7 @@ export class OAuthService {
       throw new ErrorWithCode(ErrorCode.Unauthorized, "unauthorized_client", { reason: "client_not_found" });
     }
 
-    if (loggedInUserId !== client.userId) {
-      this.ensureClientIsApproved(client);
-    }
+    this.ensureClientAccessAllowed(client, loggedInUserId);
 
     this.validateRedirectUri(client.redirectUri, redirectUri);
 
@@ -213,6 +209,22 @@ export class OAuthService {
         scopes: client.scopes,
       },
     };
+  }
+
+  private ensureClientAccessAllowed(
+    client: { status: OAuthClientStatus; userId: number | null },
+    loggedInUserId?: number | null
+  ): void {
+    if (client.status === OAuthClientStatus.REJECTED) {
+      throw new ErrorWithCode(ErrorCode.Unauthorized, "unauthorized_client", {
+        reason: "client_rejected",
+      });
+    }
+
+    const isOwner = loggedInUserId != null && loggedInUserId === client.userId;
+    if (!isOwner) {
+      this.ensureClientIsApproved(client);
+    }
   }
 
   private ensureClientIsApproved(client: { status: OAuthClientStatus }): void {
@@ -336,6 +348,8 @@ export class OAuthService {
       throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_grant", { reason: "code_invalid_or_expired" });
     }
 
+    this.ensureClientAccessAllowed(client, accessCode.userId);
+
     const pkceError = this.verifyPKCE(client, accessCode, codeVerifier);
     if (pkceError) {
       throw new ErrorWithCode(ErrorCode.BadRequest, pkceError.error, { reason: pkceError.reason });
@@ -388,9 +402,7 @@ export class OAuthService {
       throw new ErrorWithCode(ErrorCode.BadRequest, "invalid_grant", { reason: "client_id_mismatch" });
     }
 
-    if (!decodedToken.userId || decodedToken.userId !== client.userId) {
-      this.ensureClientIsApproved(client);
-    }
+    this.ensureClientAccessAllowed(client, decodedToken.userId);
 
     // note(Lauris): legacy tokens (issued before invalidating old refresh tokens was implemented) won't have a secret,
     // so we accept them once and issue new tokens with a secret.
@@ -553,6 +565,7 @@ export class OAuthService {
 export type OAuthErrorReason =
   | "client_not_found"
   | "client_not_approved"
+  | "client_rejected"
   | "redirect_uri_mismatch"
   | "pkce_required"
   | "invalid_code_challenge_method"
@@ -572,6 +585,7 @@ export type OAuthErrorReason =
 export const OAUTH_ERROR_REASONS: Record<OAuthErrorReason, string> = {
   client_not_found: "OAuth client with ID not found",
   client_not_approved: "OAuth client is not approved",
+  client_rejected: "OAuth client has been rejected",
   redirect_uri_mismatch: "redirect_uri does not match OAuth client's redirect URI",
   pkce_required: "code_challenge required for public clients",
   invalid_code_challenge_method: "code_challenge_method must be S256",
