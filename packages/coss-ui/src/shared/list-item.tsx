@@ -2,14 +2,15 @@ import { cn } from "@coss/ui/lib/utils";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-interface ListItemProps {
+interface ListItemProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
 }
 
-function ListItem({ children, className }: ListItemProps) {
+function ListItem({ children, className, ...props }: ListItemProps) {
   return (
     <div
+      {...props}
       className={cn(
         "not-last:border-b bg-clip-padding transition-[background-color] first:rounded-t-[calc(var(--radius-xl)+1px)] last:rounded-b-[calc(var(--radius-xl)+1px)] has-[[data-slot=list-item-title]_a:hover]:z-1 has-[[data-slot=list-item-title]_a:hover]:bg-[color-mix(in_srgb,var(--card),var(--color-black)_2%)] dark:has-[[data-slot=list-item-title]_a:hover]:bg-[color-mix(in_srgb,var(--card),var(--color-white)_2%)]",
         className

@@ -476,7 +476,7 @@ const WebhookForm = (props: {
                     {(selectedValues: { value: WebhookTriggerEvents; label: string }[]) => (
                       <>
                         {selectedValues?.map((item) => (
-                          <ComboboxChip aria-label={item.label} key={item.value}>
+                          <ComboboxChip key={item.value}>
                             {item.label}
                           </ComboboxChip>
                         ))}
