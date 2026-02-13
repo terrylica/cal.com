@@ -5,6 +5,7 @@ import {
   CardFrame,
   CardPanel,
 } from "@coss/ui/components/card";
+import { Skeleton } from "@coss/ui/components/skeleton";
 import {
   ListItem,
   ListItemActions,
@@ -12,7 +13,6 @@ import {
   ListItemContent,
   ListItemHeader,
 } from "@coss/ui/shared/list-item";
-import { Skeleton } from "@coss/ui/components/skeleton";
 import { WebhooksHeader } from "./webhooks-header";
 
 export const SkeletonLoader = () => {
@@ -20,10 +20,24 @@ export const SkeletonLoader = () => {
     <CardFrame>
       <WebhooksHeader />
       <Card>
-        <CardPanel className="p-0">
-          <WebhookListItemSkeleton />
-          <WebhookListItemSkeleton />
-          <WebhookListItemSkeleton />
+        <CardPanel>
+          <div className="flex flex-col gap-6">
+            <section>
+              <div className="mb-3 flex items-center gap-2">
+                <Skeleton className="size-5 shrink-0 rounded-full" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <CardFrame>
+                <Card className="[--card:var(--popover)]">
+                  <CardPanel className="p-0">
+                    <WebhookListItemSkeleton />
+                    <WebhookListItemSkeleton />
+                    <WebhookListItemSkeleton />
+                  </CardPanel>
+                </Card>
+              </CardFrame>
+            </section>
+          </div>
         </CardPanel>
       </Card>
     </CardFrame>
@@ -32,28 +46,37 @@ export const SkeletonLoader = () => {
 
 function WebhookListItemSkeleton() {
   return (
-    <ListItem>
+    <ListItem className="*:px-4">
       <ListItemContent>
         <ListItemHeader>
-          <Skeleton className="h-5 sm:h-4 my-0.5 w-full max-w-[18rem] truncate" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 sm:h-4 my-0.5 w-full max-w-[70%] shrink-0 truncate" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-16 shrink-0 sm:h-4.5" />
+            </div>
+          </div>
         </ListItemHeader>
         <ListItemBadges>
-          <Skeleton className="h-5.5 sm:h-4.5 w-36" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-36" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-36" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-36" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-36" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-36" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-36" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />
+          <Skeleton className="h-5.5 w-22 shrink-0 sm:h-4.5 sm:w-20" />          
         </ListItemBadges>
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-5.5 sm:h-4.5 w-24" />
-        </div>        
       </ListItemContent>
       <ListItemActions>
-        <Skeleton className="h-4.5 w-7.5 rounded-full max-md:hidden" />
-        <Skeleton className="size-9 sm:size-8" />
+        <div className="flex items-center gap-4 max-md:hidden">
+          <Skeleton className="h-4.5 w-7.5 rounded-full max-md:hidden" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-9 shrink-0 sm:size-8" />
+            <Skeleton className="size-9 shrink-0 sm:size-8" />
+          </div>
+        </div>
+        <Skeleton className="size-9 shrink-0 md:hidden sm:size-8" />
       </ListItemActions>
     </ListItem>
   );
