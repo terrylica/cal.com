@@ -9,7 +9,7 @@ import type { z } from "zod";
 export type useInitialFormValuesReturnType = ReturnType<typeof useInitialFormValues>;
 
 type UseInitialFormValuesProps = {
-  eventType?: Pick<BookerEvent, "bookingFields" | "team" | "owner"> | null;
+  eventType?: Pick<BookerEvent, "bookingFields" | "team" | "owner" | "metadata"> | null;
   rescheduleUid: string | null;
   isRescheduling: boolean;
   email?: string | null;
@@ -193,7 +193,9 @@ export function useInitialFormValues({
         }, {});
 
         // Consolidate phone field values so prefill works for any system phone field
-        const consolidatedResponses = consolidatePhoneFieldValues(responses);
+        // Only consolidate if unifySystemPhoneFields is enabled (default is true)
+        const shouldConsolidate = eventType.metadata?.unifySystemPhoneFields ?? true;
+        const consolidatedResponses = shouldConsolidate ? consolidatePhoneFieldValues(responses) : responses;
 
         defaults.responses = {
           ...consolidatedResponses,
@@ -226,7 +228,11 @@ export function useInitialFormValues({
       }, {});
 
       // Consolidate phone field values for rescheduling as well
-      const consolidatedResponses = consolidatePhoneFieldValues(responses);
+      // Only consolidate if unifySystemPhoneFields is enabled (default is true)
+      const shouldConsolidateReschedule = eventType.metadata?.unifySystemPhoneFields ?? true;
+      const consolidatedResponses = shouldConsolidateReschedule
+        ? consolidatePhoneFieldValues(responses)
+        : responses;
 
       defaults.responses = {
         ...consolidatedResponses,
@@ -242,6 +248,7 @@ export function useInitialFormValues({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     eventType?.bookingFields,
+    eventType?.metadata?.unifySystemPhoneFields,
     formValues,
     isRescheduling,
     bookingData,

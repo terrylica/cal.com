@@ -1,18 +1,12 @@
 import type { LocationObject } from "@calcom/app-store/locations";
-import {
-  DefaultEventLocationTypeEnum,
-  getOrganizerInputLocationTypes,
-} from "@calcom/app-store/locations";
+import { DefaultEventLocationTypeEnum, getOrganizerInputLocationTypes } from "@calcom/app-store/locations";
 import { useBookerStore } from "@calcom/features/bookings/Booker/store";
 import type { GetBookingType } from "@calcom/features/bookings/lib/get-booking";
 import getLocationOptionsForSelect from "@calcom/features/bookings/lib/getLocationOptionsForSelect";
 import { fieldsThatSupportLabelAsSafeHtml } from "@calcom/features/form-builder/fieldsThatSupportLabelAsSafeHtml";
 import { fieldTypesConfigMap } from "@calcom/features/form-builder/fieldTypes";
 import { SystemField } from "@calcom/lib/bookings/SystemField";
-import {
-  createPhoneSyncHandler,
-  useBookerPhoneFields,
-} from "@calcom/lib/bookings/useBookerPhoneFields";
+import { createPhoneSyncHandler, useBookerPhoneFields } from "@calcom/lib/bookings/useBookerPhoneFields";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import type { RouterOutputs } from "@calcom/trpc/react";
@@ -25,9 +19,7 @@ type TouchedFields = {
   responses?: Record<string, boolean>;
 };
 
-type Fields = NonNullable<
-  RouterOutputs["viewer"]["public"]["event"]
->["bookingFields"];
+type Fields = NonNullable<RouterOutputs["viewer"]["public"]["event"]>["bookingFields"];
 const PhoneLocationSchema = z.object({
   value: z.literal(DefaultEventLocationTypeEnum.Phone),
   optionValue: z.string().optional(),
@@ -40,6 +32,7 @@ export const BookingFields = ({
   bookingData,
   isPaidEvent,
   paymentCurrency = "USD",
+  unifySystemPhoneFields = true,
 }: {
   fields: Fields;
   locations: LocationObject[];
@@ -48,6 +41,7 @@ export const BookingFields = ({
   isDynamicGroupBooking: boolean;
   isPaidEvent?: boolean;
   paymentCurrency?: string;
+  unifySystemPhoneFields?: boolean;
 }) => {
   const { t, i18n } = useLocale();
   const { watch, setValue, formState } = useFormContext<{
@@ -57,8 +51,9 @@ export const BookingFields = ({
   const currentView = rescheduleUid ? "reschedule" : "";
   const isInstantMeeting = useBookerStore((state) => state.isInstantMeeting);
 
-  const { displayFields, consolidatedPhoneInfo, isConsolidatedPhoneField } =
-    useBookerPhoneFields(fields);
+  const { displayFields, consolidatedPhoneInfo, isConsolidatedPhoneField } = useBookerPhoneFields(fields, {
+    enabled: unifySystemPhoneFields,
+  });
 
   // Create sync handler for consolidated phone field
   const syncConsolidatedPhone = useMemo(() => {
@@ -68,12 +63,7 @@ export const BookingFields = ({
 
   // Identify all phone fields (except location field) - used for location sync
   const otherPhoneFieldNames = useMemo(
-    () =>
-      fields
-        .filter(
-          (f) => f.type === "phone" && f.name !== SystemField.Enum.location
-        )
-        .map((f) => f.name),
+    () => fields.filter((f) => f.type === "phone" && f.name !== SystemField.Enum.location).map((f) => f.name),
     [fields]
   );
 
@@ -92,8 +82,7 @@ export const BookingFields = ({
 
     // Copy phone to other phone fields (only if user hasn't manually touched them)
     otherPhoneFieldNames.forEach((name) => {
-      const targetTouched = !!(formState.touchedFields as TouchedFields)
-        ?.responses?.[name];
+      const targetTouched = !!(formState.touchedFields as TouchedFields)?.responses?.[name];
 
       if (!targetTouched) {
         setValue(`responses.${name}`, phone, {
@@ -113,34 +102,24 @@ export const BookingFields = ({
     }).format(price)})`;
 
   const getFieldWithDirectPricing = (field: Fields[number]) => {
-    if (
-      !fieldTypesConfigMap[field.type]?.supportsPricing ||
-      !field.label ||
-      !field.price
-    ) {
+    if (!fieldTypesConfigMap[field.type]?.supportsPricing || !field.label || !field.price) {
       return field;
     }
 
-    const price =
-      typeof field.price === "string" ? parseFloat(field.price) : field.price;
+    const price = typeof field.price === "string" ? parseFloat(field.price) : field.price;
     const label = getPriceFormattedLabel(field.label, price);
 
     return {
       ...field,
       label,
-      ...(fieldsThatSupportLabelAsSafeHtml.includes(field.type) &&
-      field.labelAsSafeHtml
+      ...(fieldsThatSupportLabelAsSafeHtml.includes(field.type) && field.labelAsSafeHtml
         ? { labelAsSafeHtml: markdownToSafeHTML(label) }
         : { labelAsSafeHtml: undefined }),
     };
   };
 
   const getFieldWithOptionLevelPrices = (field: Fields[number]) => {
-    if (
-      !fieldTypesConfigMap[field.type]?.optionsSupportPricing ||
-      !field.options
-    )
-      return field;
+    if (!fieldTypesConfigMap[field.type]?.optionsSupportPricing || !field.options) return field;
 
     return {
       ...field,
@@ -170,8 +149,7 @@ export const BookingFields = ({
         // During reschedule by default all system fields are readOnly. Make them editable on case by case basis.
         // Allowing a system field to be edited might require sending emails to attendees, so we need to be careful
         const rescheduleReadOnly =
-          (field.editable === "system" ||
-            field.editable === "system-but-optional") &&
+          (field.editable === "system" || field.editable === "system-but-optional") &&
           !!rescheduleUid &&
           bookingData !== null;
 
@@ -194,18 +172,12 @@ export const BookingFields = ({
           readOnly = false;
         }
 
-        if (
-          field.name === SystemField.Enum.smsReminderNumber &&
-          !consolidatedPhoneInfo
-        ) {
+        if (field.name === SystemField.Enum.smsReminderNumber && !consolidatedPhoneInfo) {
           // Only apply this logic when smsReminderNumber is NOT consolidated
           // `smsReminderNumber` and location.optionValue when location.value===phone are the same data point. We should solve it in a better way in the Form Builder itself.
           // I think we should have a way to connect 2 fields together and have them share the same value in Form Builder
           if (locationResponse?.value === "phone") {
-            setValue(
-              `responses.${SystemField.Enum.smsReminderNumber}`,
-              locationResponse?.optionValue
-            );
+            setValue(`responses.${SystemField.Enum.smsReminderNumber}`, locationResponse?.optionValue);
             // Just don't render the field now, as the value is already connected to attendee phone location
             return null;
           }
@@ -229,10 +201,7 @@ export const BookingFields = ({
         }
 
         // Dynamically populate location field options
-        if (
-          field.name === SystemField.Enum.location &&
-          field.type === "radioInput"
-        ) {
+        if (field.name === SystemField.Enum.location && field.type === "radioInput") {
           if (!field.optionsInputs) {
             throw new Error("radioInput must have optionsInputs");
           }
@@ -241,15 +210,13 @@ export const BookingFields = ({
           // TODO: Instead of `getLocationOptionsForSelect` options should be retrieved from dataStore[field.getOptionsAt]. It would make it agnostic of the `name` of the field.
           const options = getLocationOptionsForSelect(locations, t);
           options.forEach((option) => {
-            const optionInput =
-              optionsInputs[option.value as keyof typeof optionsInputs];
+            const optionInput = optionsInputs[option.value as keyof typeof optionsInputs];
             if (optionInput) {
               optionInput.placeholder = option.inputPlaceholder;
             }
           });
           field.options = options.filter(
-            (location): location is NonNullable<(typeof options)[number]> =>
-              !!location
+            (location): location is NonNullable<(typeof options)[number]> => !!location
           );
         }
 
@@ -269,8 +236,7 @@ export const BookingFields = ({
             return {
               ...field,
               value:
-                organizerInputTypes.includes(field.value) &&
-                organizerInputObj[field.value] > 1
+                organizerInputTypes.includes(field.value) && organizerInputObj[field.value] > 1
                   ? field.label
                   : field.value,
             };
@@ -293,9 +259,7 @@ export const BookingFields = ({
         }
 
         // Check if this is the consolidated phone field
-        const isThisConsolidatedPhoneField = isConsolidatedPhoneField(
-          field.name
-        );
+        const isThisConsolidatedPhoneField = isConsolidatedPhoneField(field.name);
 
         return (
           <FormBuilderField
@@ -312,11 +276,7 @@ export const BookingFields = ({
               })}
             onValueChange={({ value }) => {
               // Sync phone value to all consolidated phone fields
-              if (
-                isThisConsolidatedPhoneField &&
-                syncConsolidatedPhone &&
-                typeof value === "string"
-              ) {
+              if (isThisConsolidatedPhoneField && syncConsolidatedPhone && typeof value === "string") {
                 syncConsolidatedPhone(value);
               }
               // Sync phone from location field to other phone fields

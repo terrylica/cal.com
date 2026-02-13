@@ -14,8 +14,20 @@ export type ConsolidatedFormField = FormField & {
   _consolidatedFrom?: string[];
 };
 
-export function useConsolidatedPhoneFields(fields: FormField[]) {
+export function useConsolidatedPhoneFields(fields: FormField[], options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true;
+
   return useMemo(() => {
+    // If consolidation is disabled, return original fields
+    if (!enabled) {
+      return {
+        displayFields: fields as ConsolidatedFormField[],
+        phoneFieldIndices: null,
+        isConsolidated: false,
+        phoneFields: null,
+      };
+    }
+
     const phoneFieldsWithIndex = fields
       .map((f, index) => ({ field: f, index }))
       .filter(({ field }) => isSystemPhoneField(field.name));
@@ -65,5 +77,5 @@ export function useConsolidatedPhoneFields(fields: FormField[]) {
       // keep reference to original phone fields for badge info
       phoneFields,
     };
-  }, [fields]);
+  }, [fields, enabled]);
 }

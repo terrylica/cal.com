@@ -24,8 +24,19 @@ export type ConsolidatedPhoneInfo = {
   hasCalAiWorkflow: boolean;
 };
 
-export function useBookerPhoneFields<T extends BookerField>(fields: T[]) {
+export function useBookerPhoneFields<T extends BookerField>(fields: T[], options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true;
+
   return useMemo(() => {
+    // If consolidation is disabled, return original fields
+    if (!enabled) {
+      return {
+        displayFields: fields,
+        consolidatedPhoneInfo: null,
+        isConsolidatedPhoneField: () => false,
+      };
+    }
+
     const systemPhoneFields = fields.filter((f) => SYSTEM_PHONE_FIELDS.has(f.name));
 
     if (systemPhoneFields.length <= 1) {
@@ -73,7 +84,7 @@ export function useBookerPhoneFields<T extends BookerField>(fields: T[]) {
       consolidatedPhoneInfo,
       isConsolidatedPhoneField: (fieldName: string) => fieldName === canonicalField.name,
     };
-  }, [fields]);
+  }, [fields, enabled]);
 }
 
 export function createPhoneSyncHandler(

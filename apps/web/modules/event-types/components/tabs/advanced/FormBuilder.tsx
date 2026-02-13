@@ -99,6 +99,8 @@ export const FormBuilder = function FormBuilder({
   showPriceField,
   paymentCurrency = "USD",
   showPhoneAndEmailToggle = false,
+  unifySystemPhoneFields = true,
+  onUnifySystemPhoneFieldsChange,
 }: {
   formProp: string;
   title: string;
@@ -118,6 +120,15 @@ export const FormBuilder = function FormBuilder({
   shouldConsiderRequired?: (field: RhfFormField) => boolean | undefined;
   showPriceField?: boolean;
   paymentCurrency?: string;
+  /**
+   * Whether to unify system phone fields (attendeePhoneNumber, smsReminderNumber, aiAgentCallPhoneNumber)
+   * into a single "Phone number" field. Defaults to true.
+   */
+  unifySystemPhoneFields?: boolean;
+  /**
+   * Callback when the unify system phone fields setting changes.
+   */
+  onUnifySystemPhoneFieldsChange?: (value: boolean) => void;
 }) {
   // I would have liked to give Form Builder it's own Form but nested Forms aren't something that browsers support.
   // So, this would reuse the same Form as the parent form.
@@ -136,7 +147,7 @@ export const FormBuilder = function FormBuilder({
     phoneFieldIndices,
     isConsolidated,
     phoneFields: consolidatedPhoneFields,
-  } = useConsolidatedPhoneFields(fields);
+  } = useConsolidatedPhoneFields(fields, { enabled: unifySystemPhoneFields });
 
   const [fieldDialog, setFieldDialog] = useState({
     isOpen: false,
@@ -517,6 +528,8 @@ export const FormBuilder = function FormBuilder({
           shouldConsiderRequired={shouldConsiderRequired}
           showPriceField={showPriceField}
           paymentCurrency={paymentCurrency}
+          unifySystemPhoneFields={unifySystemPhoneFields}
+          onUnifySystemPhoneFieldsChange={onUnifySystemPhoneFieldsChange}
         />
       )}
     </div>
@@ -672,6 +685,8 @@ function FieldEditDialog({
   shouldConsiderRequired,
   showPriceField,
   paymentCurrency,
+  unifySystemPhoneFields = true,
+  onUnifySystemPhoneFieldsChange,
 }: {
   dialog: { isOpen: boolean; fieldIndex: number; data: RhfFormField | null };
   onOpenChange: (isOpen: boolean) => void;
@@ -679,6 +694,8 @@ function FieldEditDialog({
   shouldConsiderRequired?: (field: RhfFormField) => boolean | undefined;
   showPriceField?: boolean;
   paymentCurrency: string;
+  unifySystemPhoneFields?: boolean;
+  onUnifySystemPhoneFieldsChange?: (value: boolean) => void;
 }) {
   const { t } = useLocale();
   const isPlatform = useIsPlatform();
@@ -743,6 +760,14 @@ function FieldEditDialog({
               options={fieldTypes.filter((f) => !f.systemOnly)}
               label={t("input_type")}
             />
+            {formFieldType === "phone" && onUnifySystemPhoneFieldsChange && (
+              <CheckboxField
+                name="unifySystemPhoneFields"
+                description={t("unify_phone_fields_description")}
+                checked={unifySystemPhoneFields}
+                onChange={(e) => onUnifySystemPhoneFieldsChange(e.target.checked)}
+              />
+            )}
             {(() => {
               if (!variantsConfig) {
                 return (

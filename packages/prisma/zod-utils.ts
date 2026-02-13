@@ -1,6 +1,5 @@
 import type { UnitTypeLongPlural } from "dayjs";
 import type { TFunction } from "i18next";
-import z, { ZodNullable, ZodObject, ZodOptional } from "zod";
 import type {
   AnyZodObject,
   objectInputType,
@@ -10,14 +9,14 @@ import type {
   ZodRawShape,
   ZodTypeAny,
 } from "zod";
-
+import z, { ZodNullable, ZodObject, ZodOptional } from "zod";
 import type { Prisma } from "./client";
 import { EventTypeCustomInputType } from "./enums";
 
 /** @see https://github.com/colinhacks/zod/issues/3155#issuecomment-2060045794 */
 export const emailRegex =
   /* eslint-disable-next-line no-useless-escape */
-  /^(?!\.)(?!.*\.\.)([A-Z0-9_+-\.']*)[A-Z0-9_+'-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
+  /^(?!\.)(?!.*\.\.)([A-Z0-9_+-.']*)[A-Z0-9_+'-]@([A-Z0-9][A-Z0-9-]*\.)+[A-Z]{2,}$/i;
 
 /**
  * RFC 5321 Section 4.5.3.1.3 specifies:
@@ -255,6 +254,9 @@ const _eventTypeMetaDataSchemaWithoutApps = z.object({
     })
     .optional(),
   bookerLayouts: bookerLayouts.optional(),
+  // When true (default), system phone fields (attendeePhoneNumber, smsReminderNumber, aiAgentCallPhoneNumber)
+  // are displayed as a single unified "Phone number" field in the booker
+  unifySystemPhoneFields: z.boolean().optional(),
 });
 
 export const eventTypeMetaDataSchemaWithUntypedApps = _eventTypeMetaDataSchemaWithoutApps.merge(
@@ -299,7 +301,7 @@ export const bookingResponses = z
 export type BookingResponses = z.infer<typeof bookingResponses>;
 
 // Re-exported from @calcom/lib/zod/eventType for backwards compatibility
-export { eventTypeLocations, type EventTypeLocation } from "@calcom/lib/zod/eventType";
+export { type EventTypeLocation, eventTypeLocations } from "@calcom/lib/zod/eventType";
 
 // Matching RRule.Options: rrule/dist/esm/src/types.d.ts
 export const recurringEventType = z
@@ -357,9 +359,14 @@ export const stringOrNumber = z.union([
 
 export const requiredCustomInputSchema = z.union([
   // string must be given & nonempty
-  z.string().trim().min(1),
+  z
+    .string()
+    .trim()
+    .min(1),
   // boolean must be true if set.
-  z.boolean().refine((v) => v === true),
+  z
+    .boolean()
+    .refine((v) => v === true),
 ]);
 
 const PlatformClientParamsSchema = z.object({
@@ -643,7 +650,7 @@ export function denullishShape<
   UnknownKeys extends UnknownKeysParam = "strip",
   Catchall extends ZodTypeAny = ZodTypeAny,
   Output = objectOutputType<T, Catchall>,
-  Input = objectInputType<T, Catchall>
+  Input = objectInputType<T, Catchall>,
 >(
   obj: ZodObject<T, UnknownKeys, Catchall, Output, Input>
 ): ZodObject<ZodDenullishShape<T>, UnknownKeys, Catchall> {
@@ -675,13 +682,14 @@ export const entries = <O extends Record<string, unknown>>(
 /**
  * Returns a type with all readonly notations removed (traverses recursively on an object)
  */
-type DeepWriteable<T> = T extends Readonly<{
-  -readonly [K in keyof T]: T[K];
-}>
-  ? {
-      -readonly [K in keyof T]: DeepWriteable<T[K]>;
-    }
-  : T; /* Make it work with readonly types (this is not strictly necessary) */
+type DeepWriteable<T> =
+  T extends Readonly<{
+    -readonly [K in keyof T]: T[K];
+  }>
+    ? {
+        -readonly [K in keyof T]: DeepWriteable<T[K]>;
+      }
+    : T; /* Make it work with readonly types (this is not strictly necessary) */
 
 type FromEntries<T> = T extends [infer Keys, unknown][]
   ? { [K in Keys & PropertyKey]: Extract<T[number], [K, unknown]>[1] }
@@ -694,7 +702,7 @@ type FromEntries<T> = T extends [infer Keys, unknown][]
  * @see https://github.com/3x071c/lsg-remix/blob/e2a9592ba3ec5103556f2cf307c32f08aeaee32d/app/lib/util/fromEntries.ts
  */
 export const fromEntries = <
-  E extends [PropertyKey, unknown][] | ReadonlyArray<readonly [PropertyKey, unknown]>
+  E extends [PropertyKey, unknown][] | ReadonlyArray<readonly [PropertyKey, unknown]>,
 >(
   entries: E
 ): FromEntries<DeepWriteable<E>> => {
