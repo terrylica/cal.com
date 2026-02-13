@@ -22,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@coss/ui/components/tooltip";
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon } from "@coss/ui/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
