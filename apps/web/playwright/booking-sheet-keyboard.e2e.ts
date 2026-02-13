@@ -118,10 +118,10 @@ test.describe("Booking sheet keyboard shortcuts", () => {
     });
 
     try {
-      await expect(sheet.locator("text=Booking 1")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 1");
 
       await page.keyboard.press("ArrowDown");
-      await expect(sheet.locator("text=Booking 2")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 2");
     } finally {
       await restoreBookingsV3(prisma, existingFlag);
     }
@@ -137,10 +137,10 @@ test.describe("Booking sheet keyboard shortcuts", () => {
 
     try {
       await page.keyboard.press("ArrowDown");
-      await expect(sheet.locator("text=Booking 2")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 2");
 
       await page.keyboard.press("ArrowUp");
-      await expect(sheet.locator("text=Booking 1")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 1");
     } finally {
       await restoreBookingsV3(prisma, existingFlag);
     }
@@ -162,7 +162,7 @@ test.describe("Booking sheet keyboard shortcuts", () => {
 
     try {
       await page.keyboard.press("ArrowDown");
-      await expect(sheet.locator("text=Booking 2")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 2");
 
       await page.keyboard.press("ArrowDown");
 
@@ -170,7 +170,7 @@ test.describe("Booking sheet keyboard shortcuts", () => {
       const dropdownContent = page.locator('[data-radix-popper-content-wrapper]');
       await expect(dropdownContent).toBeHidden();
 
-      await expect(sheet.locator("text=Booking 2")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 2");
     } finally {
       await restoreBookingsV3(prisma, existingFlag);
     }
@@ -190,7 +190,7 @@ test.describe("Booking sheet keyboard shortcuts", () => {
     });
 
     try {
-      await expect(sheet.locator("text=Booking 1")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 1");
 
       await page.keyboard.press("ArrowUp");
 
@@ -198,7 +198,7 @@ test.describe("Booking sheet keyboard shortcuts", () => {
       const dropdownContent = page.locator('[data-radix-popper-content-wrapper]');
       await expect(dropdownContent).toBeHidden();
 
-      await expect(sheet.locator("text=Booking 1")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 1");
     } finally {
       await restoreBookingsV3(prisma, existingFlag);
     }
@@ -237,12 +237,12 @@ test.describe("Booking sheet keyboard shortcuts", () => {
     });
 
     try {
-      await expect(sheet.locator("text=Booking 1")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 1");
 
       await page.keyboard.press("ArrowDown");
       await page.keyboard.press("ArrowDown");
 
-      await expect(sheet.locator("text=Booking 3")).toBeVisible();
+      await expect(sheet.getByTestId("booking-sheet-title")).toHaveText("Booking 3");
 
       const dropdownContent = page.locator('[data-radix-popper-content-wrapper]');
       await expect(dropdownContent).toBeHidden();

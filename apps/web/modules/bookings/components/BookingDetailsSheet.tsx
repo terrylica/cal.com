@@ -370,7 +370,7 @@ function BookingDetailsSheetInner({
             <div className="flex flex-col gap-1">
               <SheetTitle className="flex items-center gap-3 font-semibold text-emphasis text-xl">
                 <div className="w-0.5 shrink-0 self-stretch rounded-lg bg-emphasis"></div>
-                <span>{booking.title}</span>
+                <span data-testid="booking-sheet-title">{booking.title}</span>
               </SheetTitle>
             </div>
 
