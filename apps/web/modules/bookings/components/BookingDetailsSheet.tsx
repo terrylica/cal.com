@@ -213,16 +213,16 @@ function BookingDetailsSheetInner({
 
       switch (e.key) {
         case "ArrowUp":
+          e.preventDefault();
+          e.stopPropagation();
           if (navigation.canGoPrev && !navigation.isTransitioning) {
-            e.preventDefault();
-            e.stopPropagation();
             handlePrevious();
           }
           break;
         case "ArrowDown":
+          e.preventDefault();
+          e.stopPropagation();
           if (navigation.canGoNext && !navigation.isTransitioning) {
-            e.preventDefault();
-            e.stopPropagation();
             handleNext();
           }
           break;
