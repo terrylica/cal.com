@@ -1,5 +1,6 @@
 "use client";
 
+import process from "node:process";
 import getStripe from "@calcom/app-store/stripepayment/lib/client";
 import { getPremiumPlanPriceValue } from "@calcom/app-store/stripepayment/lib/utils";
 import {
@@ -191,7 +192,6 @@ export default function Signup({
   orgAutoAcceptEmail,
   redirectUrl,
   emailVerificationEnabled,
-  onboardingV3Enabled,
 }: SignupProps) {
   const isOrgInviteByLink = orgSlug && !prepopulateFormValues?.username;
   const [isSamlSignup, setIsSamlSignup] = useState(false);
@@ -286,7 +286,7 @@ export default function Signup({
         pushGTMEvent("create_account", { email: data.email, user: data.username, lang: data.language });
       }
 
-      const gettingStartedPath = onboardingV3Enabled ? "onboarding/getting-started" : "getting-started";
+      const gettingStartedPath = "onboarding/getting-started";
       const verifyOrGettingStarted = emailVerificationEnabled ? "auth/verify-email" : gettingStartedPath;
       const gettingStartedWithPlatform = "settings/platform/new";
 
