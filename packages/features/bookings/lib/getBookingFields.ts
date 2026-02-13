@@ -1,20 +1,20 @@
-import process from "node:process";
+import type { z } from "zod";
+
 import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import { fieldsThatSupportLabelAsSafeHtml } from "@calcom/features/form-builder/fieldsThatSupportLabelAsSafeHtml";
 import { getFieldIdentifier } from "@calcom/features/form-builder/utils/getFieldIdentifier";
-import { CAL_AI_AGENT_PHONE_NUMBER_FIELD, SMS_REMINDER_NUMBER_FIELD } from "@calcom/lib/bookings/SystemField";
+import { SMS_REMINDER_NUMBER_FIELD, CAL_AI_AGENT_PHONE_NUMBER_FIELD } from "@calcom/lib/bookings/SystemField";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import slugify from "@calcom/lib/slugify";
-import type { EventType, EventTypeCustomInput } from "@calcom/prisma/client";
+import type { EventTypeCustomInput, EventType } from "@calcom/prisma/client";
 import { EventTypeCustomInputType } from "@calcom/prisma/enums";
 import {
   BookingFieldTypeEnum,
   customInputSchema,
-  EventTypeMetaDataSchema,
   eventTypeBookingFields,
+  EventTypeMetaDataSchema,
 } from "@calcom/prisma/zod-utils";
-import type { z } from "zod";
 
 export type Fields = z.infer<typeof eventTypeBookingFields>;
 

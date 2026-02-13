@@ -1,9 +1,14 @@
-import { fieldsThatSupportLabelAsSafeHtml } from "@calcom/features/form-builder/fieldsThatSupportLabelAsSafeHtml";
+import { ErrorMessage } from "@hookform/error-message";
+import type { TFunction } from "i18next";
+import { Controller, useFormContext } from "react-hook-form";
+import type { z } from "zod";
+
 import { fieldTypesConfigMap } from "@calcom/features/form-builder/fieldTypes";
+import { fieldsThatSupportLabelAsSafeHtml } from "@calcom/features/form-builder/fieldsThatSupportLabelAsSafeHtml";
 import type { fieldsSchema } from "@calcom/features/form-builder/schema";
 import {
-  getFieldNameFromErrorMessage,
   useShouldBeDisabledDueToPrefill,
+  getFieldNameFromErrorMessage,
 } from "@calcom/features/form-builder/useShouldBeDisabledDueToPrefill";
 import { getTranslatedConfig as getTranslatedVariantsConfig } from "@calcom/features/form-builder/utils/variantsConfig";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -12,10 +17,7 @@ import classNames from "@calcom/ui/classNames";
 import { InfoBadge } from "@calcom/ui/components/badge";
 import { Label } from "@calcom/ui/components/form";
 import { InfoIcon } from "@coss/ui/icons";
-import { ErrorMessage } from "@hookform/error-message";
-import type { TFunction } from "i18next";
-import { Controller, useFormContext } from "react-hook-form";
-import type { z } from "zod";
+
 import { Components, isValidValueProp } from "./Components";
 
 // helper to render markdown label safely
@@ -23,11 +25,7 @@ const renderLabel = (field: Partial<RhfFormField>) => {
   if (field.labelAsSafeHtml) {
     return (
       // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is sanitized via markdownToSafeHTML
-      <span
-        dangerouslySetInnerHTML={{
-          __html: markdownToSafeHTML(field.labelAsSafeHtml),
-        }}
-      />
+      <span dangerouslySetInnerHTML={{ __html: markdownToSafeHTML(field.labelAsSafeHtml) }} />
     );
   }
   return <span>{field.label}</span>;
@@ -74,11 +72,7 @@ export const FormBuilderField = ({
   field: RhfFormFields[number];
   readOnly: boolean;
   className: string;
-  onValueChange?: (args: {
-    name: string;
-    value: unknown;
-    prevValue: unknown;
-  }) => void;
+  onValueChange?: (args: { name: string; value: unknown; prevValue: unknown }) => void;
   isConsolidatedPhoneField?: boolean;
   hasSmsWorkflow?: boolean;
   hasCalAiWorkflow?: boolean;
@@ -86,15 +80,14 @@ export const FormBuilderField = ({
   const { t } = useLocale();
   const { control, formState } = useFormContext();
 
-  const { hidden, placeholder, label, noLabel, translatedDefaultLabel } =
-    getAndUpdateNormalizedValues(field, t);
+  const { hidden, placeholder, label, noLabel, translatedDefaultLabel } = getAndUpdateNormalizedValues(
+    field,
+    t
+  );
 
   const shouldBeDisabled = useShouldBeDisabledDueToPrefill(field);
   return (
-    <div
-      data-fob-field-name={field.name}
-      className={classNames(className, hidden ? "hidden" : "")}
-    >
+    <div data-fob-field-name={field.name} className={classNames(className, hidden ? "hidden" : "")}>
       <Controller
         control={control}
         // Make it a variable
@@ -134,16 +127,13 @@ export const FormBuilderField = ({
                   message = message.replace(/\{[^}]+\}(.*)/, "$1").trim();
 
                   if (hidden) {
-                    console.error(
-                      `Error message for hidden field:${field.name} => ${message}`
-                    );
+                    console.error(`Error message for hidden field:${field.name} => ${message}`);
                   }
 
                   return (
                     <div
                       data-testid={`error-message-${field.name}`}
-                      className="mt-2 flex items-center text-sm text-red-700 "
-                    >
+                      className="mt-2 flex items-center text-sm text-red-700 ">
                       <InfoIcon className="h-3 w-3 ltr:mr-2 rtl:ml-2" />
                       <p>{t(message || "invalid_input")}</p>
                     </div>
@@ -210,9 +200,7 @@ const WithLabel = ({
                 <span className="text-emphasis -mb-1 ml-1 text-sm font-medium leading-none">
                   {!readOnly && field.required ? "*" : ""}
                 </span>
-                {field.type === "phone" && (
-                  <InfoBadge content={t("number_in_international_format")} />
-                )}
+                {field.type === "phone" && <InfoBadge content={t("number_in_international_format")} />}
               </Label>
             </div>
           )}
@@ -239,10 +227,7 @@ const WithLabel = ({
 /**
  * Ensures that `labels` and `placeholders`, wherever they are, are set properly. If direct values are not set, default values from fieldTypeConfig are used.
  */
-function getAndUpdateNormalizedValues(
-  field: RhfFormFields[number],
-  t: TFunction
-) {
+function getAndUpdateNormalizedValues(field: RhfFormFields[number], t: TFunction) {
   let noLabel = false;
   let hidden = !!field.hidden;
   if (field.type === "radioInput") {
@@ -267,13 +252,8 @@ function getAndUpdateNormalizedValues(
   /**
    * Instead of passing labelAsSafeHtml props to all the components, FormBuilder components can assume that the label is safe html and use it on a case by case basis after adding checks here
    */
-  if (
-    fieldsThatSupportLabelAsSafeHtml.includes(field.type) &&
-    field.labelAsSafeHtml === undefined
-  ) {
-    throw new Error(
-      `${field.name}:${field.type} type must have labelAsSafeHtml set`
-    );
+  if (fieldsThatSupportLabelAsSafeHtml.includes(field.type) && field.labelAsSafeHtml === undefined) {
+    throw new Error(`${field.name}:${field.type} type must have labelAsSafeHtml set`);
   }
 
   const translatedDefaultLabel = t(field.defaultLabel || "");
@@ -281,21 +261,15 @@ function getAndUpdateNormalizedValues(
   const placeholder = field.placeholder || t(field.defaultPlaceholder || "");
 
   if (field.variantsConfig?.variants) {
-    Object.entries(field.variantsConfig.variants).forEach(
-      ([variantName, variant]) => {
-        variant.fields.forEach((variantField) => {
-          const fieldTypeVariantsConfig =
-            fieldTypesConfigMap[field.type]?.variantsConfig;
-          const defaultVariantFieldLabel =
-            fieldTypeVariantsConfig?.variants?.[variantName]?.fieldsMap[
-              variantField.name
-            ]?.defaultLabel;
+    Object.entries(field.variantsConfig.variants).forEach(([variantName, variant]) => {
+      variant.fields.forEach((variantField) => {
+        const fieldTypeVariantsConfig = fieldTypesConfigMap[field.type]?.variantsConfig;
+        const defaultVariantFieldLabel =
+          fieldTypeVariantsConfig?.variants?.[variantName]?.fieldsMap[variantField.name]?.defaultLabel;
 
-          variantField.label =
-            variantField.label || t(defaultVariantFieldLabel || "");
-        });
-      }
-    );
+        variantField.label = variantField.label || t(defaultVariantFieldLabel || "");
+      });
+    });
   }
 
   return { hidden, placeholder, label, noLabel, translatedDefaultLabel };
@@ -327,20 +301,14 @@ export const ComponentForField = ({
   const componentConfig = Components[fieldType];
   const { t } = useLocale();
 
-  const isValueOfPropsType = (
-    val: unknown,
-    propsType: typeof componentConfig.propsType
-  ) => {
+  const isValueOfPropsType = (val: unknown, propsType: typeof componentConfig.propsType) => {
     const isValid = isValidValueProp[propsType](val);
     return isValid;
   };
 
   // If possible would have wanted `isValueOfPropsType` to narrow the type of `value` and `setValue` accordingly, but can't seem to do it.
   // So, code following this uses type assertion to tell TypeScript that everything has been validated
-  if (
-    value !== undefined &&
-    !isValueOfPropsType(value, componentConfig.propsType)
-  ) {
+  if (value !== undefined && !isValueOfPropsType(value, componentConfig.propsType)) {
     throw new Error(
       `Value ${value} is not valid for type ${componentConfig.propsType} for field ${field.name}`
     );
@@ -348,15 +316,7 @@ export const ComponentForField = ({
 
   if (componentConfig.propsType === "text") {
     return (
-      <WithLabel
-        field={field}
-        htmlFor={field.name}
-        readOnly={readOnly}
-        noLabel={noLabel}
-        isConsolidatedPhoneField={isConsolidatedPhoneField}
-        hasSmsWorkflow={hasSmsWorkflow}
-        hasCalAiWorkflow={hasCalAiWorkflow}
-      >
+      <WithLabel field={field} htmlFor={field.name} readOnly={readOnly} noLabel={noLabel} isConsolidatedPhoneField={isConsolidatedPhoneField} hasSmsWorkflow={hasSmsWorkflow} hasCalAiWorkflow={hasCalAiWorkflow}>
         <componentConfig.factory
           placeholder={field.placeholder}
           minLength={field.minLength}
@@ -373,12 +333,7 @@ export const ComponentForField = ({
 
   if (componentConfig.propsType === "boolean") {
     return (
-      <WithLabel
-        field={field}
-        htmlFor={field.name}
-        readOnly={readOnly}
-        noLabel={noLabel}
-      >
+      <WithLabel field={field} htmlFor={field.name} readOnly={readOnly} noLabel={noLabel}>
         <componentConfig.factory
           name={field.name}
           label={field.label}
@@ -393,12 +348,7 @@ export const ComponentForField = ({
 
   if (componentConfig.propsType === "textList") {
     return (
-      <WithLabel
-        field={field}
-        htmlFor={field.name}
-        readOnly={readOnly}
-        noLabel={noLabel}
-      >
+      <WithLabel field={field} htmlFor={field.name} readOnly={readOnly} noLabel={noLabel}>
         <componentConfig.factory
           placeholder={field.placeholder}
           name={field.name}
@@ -417,12 +367,7 @@ export const ComponentForField = ({
     }
 
     return (
-      <WithLabel
-        field={field}
-        htmlFor={field.name}
-        readOnly={readOnly}
-        noLabel={noLabel}
-      >
+      <WithLabel field={field} htmlFor={field.name} readOnly={readOnly} noLabel={noLabel}>
         <componentConfig.factory
           readOnly={readOnly}
           value={value as string}
@@ -440,12 +385,7 @@ export const ComponentForField = ({
       throw new Error("Field options is not defined");
     }
     return (
-      <WithLabel
-        field={field}
-        htmlFor={field.name}
-        readOnly={readOnly}
-        noLabel={noLabel}
-      >
+      <WithLabel field={field} htmlFor={field.name} readOnly={readOnly} noLabel={noLabel}>
         <componentConfig.factory
           placeholder={field.placeholder}
           name={field.name}
@@ -469,12 +409,7 @@ export const ComponentForField = ({
     const options = field.options;
 
     return field.options.length ? (
-      <WithLabel
-        field={field}
-        htmlFor={field.name}
-        readOnly={readOnly}
-        noLabel={noLabel}
-      >
+      <WithLabel field={field} htmlFor={field.name} readOnly={readOnly} noLabel={noLabel}>
         <componentConfig.factory
           placeholder={field.placeholder}
           readOnly={readOnly}

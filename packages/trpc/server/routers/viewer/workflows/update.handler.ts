@@ -16,21 +16,24 @@ import { addPermissionsToWorkflow } from "@calcom/features/workflows/repositorie
 import { IS_SELF_HOSTED, SCANNING_WORKFLOW_STEPS } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import logger from "@calcom/lib/logger";
-import { type PrismaClient, prisma } from "@calcom/prisma";
-import { PhoneNumberSubscriptionStatus, WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
+import { prisma, type PrismaClient } from "@calcom/prisma";
+import { WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
+import { PhoneNumberSubscriptionStatus } from "@calcom/prisma/enums";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
 import { TRPCError } from "@trpc/server";
+
 import hasActiveTeamPlanHandler from "../teams/hasActiveTeamPlan.handler";
+
 import type { TUpdateInputSchema } from "./update.schema";
 import {
-  getEmailTemplateText,
   getSender,
   isAuthorizedToAddActiveOnIds,
   isStepEdited,
+  upsertSmsReminderFieldForEventTypes,
   removeAIAgentCallPhoneNumberFieldForEventTypes,
   removeSmsReminderFieldForEventTypes,
+  getEmailTemplateText,
   upsertAIAgentCallPhoneNumberFieldForEventTypes,
-  upsertSmsReminderFieldForEventTypes,
 } from "./util";
 
 type UpdateOptions = {
@@ -156,9 +159,9 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
       userWorkflow.teamId
     );
 
-    activeOnWithChildren = activeOnEventTypes.flatMap((eventType) =>
-      [eventType.id].concat(eventType.children.map((child) => child.id))
-    );
+    activeOnWithChildren = activeOnEventTypes
+      .map((eventType) => [eventType.id].concat(eventType.children.map((child) => child.id)))
+      .flat();
 
     let oldActiveOnEventTypes: { id: number; children: { id: number }[] }[];
     if (userWorkflow.isActiveOnAll) {
