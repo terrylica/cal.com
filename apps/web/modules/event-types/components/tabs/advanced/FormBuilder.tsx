@@ -13,7 +13,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { md } from "@calcom/lib/markdownIt";
 import { markdownToSafeHTMLClient } from "@calcom/lib/markdownToSafeHTMLClient";
 import turndown from "@calcom/lib/turndownService";
-import { excludeOrRequireEmailSchema } from "@calcom/prisma/zod-utils";
+import { excludeOrRequireEmailSchema, fieldSchema } from "@calcom/prisma/zod-utils";
 import classNames from "@calcom/ui/classNames";
 import { Badge } from "@calcom/ui/components/badge";
 import { Button } from "@calcom/ui/components/button";
@@ -386,6 +386,17 @@ export const FormBuilder = function FormBuilder({
           handleSubmit={(data: Parameters<SubmitHandler<RhfFormField>>[0]) => {
             const type = data.type || "text";
             const isNewField = !fieldDialog.data;
+
+            const parseResult = fieldSchema.safeParse(data);
+            if (!parseResult.success) {
+              const firstError = parseResult.error.errors[0];
+              const message =
+                firstError?.message && typeof firstError.message === "string"
+                  ? t(firstError.message)
+                  : t("label_cannot_be_whitespace");
+              showToast(message, "error");
+              return;
+            }
 
             if (data.name === "guests" && type !== "multiemail") {
               showToast(t("guests_field_must_be_multiemail"), "error");

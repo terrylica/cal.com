@@ -1030,9 +1030,16 @@ export const baseFieldSchema = z.object({
   label: z
     .string()
     .optional()
-    .refine((val) => val === undefined || val === null || val.trim().length > 0, {
-      message: "label_cannot_be_empty_or_whitespace",
-    }),
+    .refine(
+      (val) =>
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        (typeof val === "string" && val.trim().length > 0),
+      {
+        message: "label_cannot_be_whitespace",
+      }
+    ),
   labelAsSafeHtml: z.string().optional(),
 
   /**
