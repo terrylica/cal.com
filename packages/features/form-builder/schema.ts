@@ -6,15 +6,15 @@ import { getConfig as getVariantsConfig } from "./utils/variantsConfig";
 
 const nonEmptyString = () => z.string().refine((value: string) => value.trim().length > 0);
 
-type FieldTypeSchemaConfig<TInput = unknown, TOutput = unknown> = {
+type FieldTypeSchemaConfig<TInput = unknown, TPreprocessedOutput = unknown> = {
   preprocess: (data: {
     field: z.infer<typeof fieldSchema>;
     response: TInput;
     isPartialSchema: boolean;
-  }) => TOutput;
+  }) => TPreprocessedOutput;
   superRefine: (data: {
     field: z.infer<typeof fieldSchema>;
-    response: TOutput;
+    response: TPreprocessedOutput;
     isPartialSchema: boolean;
     ctx: FieldZodCtx;
     m: (key: string, options?: Record<string, unknown>) => string;
@@ -120,21 +120,8 @@ function stringifyResponse(response: unknown): string {
 }
 
 export const fieldTypesSchemaMap = {
-  name: defineFieldSchema<unknown, string | Record<"firstName" | "lastName", string>>({
+  name: defineFieldSchema<unknown, unknown>({
     preprocess: ({ response, field }) => {
-      const nameResponseSchema = z
-        .union([
-          z.string(),
-          z.object({
-            firstName: z.string(),
-            lastName: z.string().default(""),
-          }),
-        ])
-        .optional();
-      const validResponse = nameResponseSchema.safeParse(response);
-      if (!validResponse.success) {
-        throw new Error("Invalid response for name field");
-      }
       const fieldTypeConfig = fieldTypesConfigMap[field.type];
 
       const variantInResponse = field.variant || fieldTypeConfig?.variantsConfig?.defaultVariant;
@@ -150,7 +137,28 @@ export const fieldTypesSchemaMap = {
         correctedVariant = variantInResponse;
       }
 
-      return preprocessNameFieldDataWithVariant(correctedVariant, validResponse.data);
+      // We return this default value so that it meets the requirement of 'name' field being required in  zod-utils#bookingResponses
+      const defaultValue = "";
+      if (response === null || response === undefined) {
+        return defaultValue;
+      }
+
+      if (typeof response === "string") {
+        return preprocessNameFieldDataWithVariant(correctedVariant, response);
+      }
+
+      if (typeof response === "object" && "firstName" in response && typeof response.firstName === "string") {
+        const firstAndLastNameResponse = {
+          firstName: response.firstName,
+          lastName: "",
+        };
+        if ("lastName" in response && typeof response.lastName === "string") {
+          firstAndLastNameResponse.lastName = response.lastName;
+        }
+        return preprocessNameFieldDataWithVariant(correctedVariant, firstAndLastNameResponse);
+      }
+
+      return defaultValue;
     },
     superRefine: ({ field, response, isPartialSchema, ctx, m }) => {
       const stringSchema = z.string();

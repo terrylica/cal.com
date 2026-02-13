@@ -1848,7 +1848,7 @@ describe("getBookingResponsesPartialSchema - Prefill validation", () => {
       );
     });
 
-    test(`should skip name field with invalid array response during partial prefill`, async ({}) => {
+    test(`should return empty string for name field with invalid array response during partial prefill`, async ({}) => {
       const schema = getBookingResponsesPartialSchema({
         bookingFields: [
           {
@@ -1874,16 +1874,16 @@ describe("getBookingResponsesPartialSchema - Prefill validation", () => {
         name: ["John", "Doe"],
         testField: "test value",
       });
-      // Name field should be skipped (not included), but testField should still be prefilled
+      // Name field should be present with empty string, and testField should still be prefilled
       expect(parsedResponses).toEqual(
         expect.objectContaining({
+          name: "",
           testField: "test value",
         })
       );
-      expect(parsedResponses).not.toHaveProperty("name");
     });
 
-    test(`should skip name field with invalid number response during partial prefill`, async ({}) => {
+    test(`should return empty string for name field with invalid number response during partial prefill`, async ({}) => {
       const schema = getBookingResponsesPartialSchema({
         bookingFields: [
           {
@@ -1909,13 +1909,13 @@ describe("getBookingResponsesPartialSchema - Prefill validation", () => {
         name: 12345,
         testField: "test value",
       });
-      // Name field should be skipped (not included), but testField should still be prefilled
+      // Name field should be present with empty string, and testField should still be prefilled
       expect(parsedResponses).toEqual(
         expect.objectContaining({
+          name: "",
           testField: "test value",
         })
       );
-      expect(parsedResponses).not.toHaveProperty("name");
     });
 
     test(`should skip name field with object missing firstName during partial prefill`, async ({}) => {
