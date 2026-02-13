@@ -123,10 +123,12 @@ function Calendar({
       classNames={mergedClassNames}
       components={mergedComponents}
       data-slot="calendar"
-      formatters={{
-        formatMonthDropdown: (date) =>
-          date.toLocaleString("default", { month: "short" }),
-      }}
+      formatters={
+        {
+          formatMonthDropdown: (date: Date) =>
+            date.toLocaleString("default", { month: "short" }),
+        } as React.ComponentProps<typeof DayPicker>["formatters"]
+      }
       mode="single"
       showOutsideDays={showOutsideDays}
       {...props}
