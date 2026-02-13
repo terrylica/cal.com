@@ -224,8 +224,8 @@ Now that we have all the backend setup for teams, it's time to set up the fronte
       isTeamEvent={true}
       teamId={35243}
       eventSlug="daily-standup-for-platform"
-      onCreateBookingSuccess={(booking) => {
-        console.log("booking created successfully", booking);
+      onCreateBookingSuccess={() => {
+        // handle successful booking
       }}
     />
 ```

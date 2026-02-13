@@ -17,7 +17,7 @@ import { Booker, UseCreateBookingInput } from "@calcom/atoms";
 export function BookingPage(props: { calUsername: string; calEmail: string }) {
     ...
     const interceptBooking = useCallback((data: UseCreateBookingInput) => {
-        console.log(data);
+        // handle intercepted booking data
     }, []);
   
   return (
