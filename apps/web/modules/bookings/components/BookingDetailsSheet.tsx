@@ -215,12 +215,14 @@ function BookingDetailsSheetInner({
         case "ArrowUp":
           if (navigation.canGoPrev && !navigation.isTransitioning) {
             e.preventDefault();
+            e.stopPropagation();
             handlePrevious();
           }
           break;
         case "ArrowDown":
           if (navigation.canGoNext && !navigation.isTransitioning) {
             e.preventDefault();
+            e.stopPropagation();
             handleNext();
           }
           break;
