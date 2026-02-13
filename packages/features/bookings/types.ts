@@ -70,12 +70,12 @@ export type BookerEvent = Pick<
   | "interfaceLanguage"
   | "team"
   | "owner"
+  | "restrictionScheduleId"
+  | "useBookerTimezone"
 > & {
   subsetOfUsers: BookerEventUser[];
   showInstantEventConnectNowModal: boolean;
   enablePerHostLocations?: boolean;
-  useBookerTimezone?: boolean;
-  restrictionScheduleId?: number | null;
 } & { profile: BookerEventProfile };
 
 export type ValidationErrors<T extends object> = { key: FieldPath<T>; error: ErrorOption }[];

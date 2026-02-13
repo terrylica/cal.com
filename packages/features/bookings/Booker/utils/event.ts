@@ -72,8 +72,7 @@ export const useScheduleForEvent = ({
   isTeamEvent,
   useApiV2 = true,
   bookerLayout,
-  useBookerTimezone,
-  restrictionScheduleId,
+  restrictionSchedule,
 }: {
   username?: string | null;
   eventSlug?: string | null;
@@ -95,11 +94,7 @@ export const useScheduleForEvent = ({
     extraDays: number;
     columnViewExtraDays: { current: number };
   };
-  /**
-   * When false and there's a restriction schedule, timezone changes won't trigger refetch
-   */
-  useBookerTimezone?: boolean;
-  restrictionScheduleId?: number | null;
+  restrictionSchedule?: { id: number | null; useBookerTimezone: boolean };
 }) => {
   const { timezone } = useBookerTime();
   const [usernameFromStore, eventSlugFromStore, monthFromStore, durationFromStore] = useBookerStoreContext(
@@ -107,15 +102,12 @@ export const useScheduleForEvent = ({
     shallow
   );
 
-  // Store the initial timezone to use when useBookerTimezone is disabled
-  // This prevents unnecessary refetches when timezone changes but the server
-  // doesn't need the booker's timezone for restriction schedule calculations
   const initialTimezoneRef = useRef(timezone);
-
-  // Use stable timezone when useBookerTimezone is explicitly false and there's a restriction schedule
-  // Otherwise use the dynamic timezone (default behavior)
   const shouldUseStableTimezone =
-    useBookerTimezone === false && restrictionScheduleId != null && restrictionScheduleId > 0;
+    restrictionSchedule != null &&
+    restrictionSchedule.id != null &&
+    restrictionSchedule.id > 0 &&
+    restrictionSchedule.useBookerTimezone === false;
   const effectiveTimezone = shouldUseStableTimezone ? initialTimezoneRef.current : timezone;
 
   const searchParams = useCompatSearchParams();

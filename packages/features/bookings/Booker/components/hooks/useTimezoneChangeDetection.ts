@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 import { useBookerTime } from "../../hooks/useBookerTime";
 
@@ -25,20 +25,13 @@ export const useTimezoneChangeDetection = (eventData: TimezoneChangeDetectionEve
     prevTimezoneRef.current = timezone;
   }, [timezone]);
 
-  return useMemo(() => {
-    const hasRestrictionSchedule = Boolean(eventData?.restrictionScheduleId);
-    const isUsingBookerTimezone = Boolean(eventData?.useBookerTimezone);
+  const hasRestrictionSchedule = Boolean(eventData?.restrictionScheduleId);
+  const isUsingBookerTimezone = Boolean(eventData?.useBookerTimezone);
+  const shouldRefreshSlots = hasTimezoneChanged && hasRestrictionSchedule && isUsingBookerTimezone;
 
-    // this matches the original logic: It is only true during the render
-    // where the timezone has actually flipped.
-    const shouldRefreshSlots = hasTimezoneChanged && hasRestrictionSchedule && isUsingBookerTimezone;
-
-    return {
-      shouldRefreshSlots,
-      currentTimezone: timezone,
-      previousTimezone: prevTimezone,
-    };
-    // We include hasTimezoneChanged here so the memoized object updates
-    // correctly when the flip occurs.
-  }, [timezone, hasTimezoneChanged, eventData?.restrictionScheduleId, eventData?.useBookerTimezone]);
+  return {
+    shouldRefreshSlots,
+    currentTimezone: timezone,
+    previousTimezone: prevTimezone,
+  };
 };

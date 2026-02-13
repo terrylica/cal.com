@@ -10,7 +10,6 @@ import {
 import { useBookerLayout } from "@calcom/features/bookings/Booker/components/hooks/useBookerLayout";
 import { useBookingForm } from "@calcom/features/bookings/Booker/components/hooks/useBookingForm";
 import { useLocalSet } from "@calcom/features/bookings/Booker/components/hooks/useLocalSet";
-import { useTimezoneBasedSlotRefresh } from "@calcom/features/bookings/Booker/components/hooks/useTimezoneBasedSlotRefresh";
 import { useInitializeBookerStore } from "@calcom/features/bookings/Booker/store";
 import { useTimePreferences } from "@calcom/features/bookings/lib";
 import type { ConnectedDestinationCalendars } from "@calcom/features/calendars/lib/getConnectedDestinationCalendars";
@@ -244,7 +243,12 @@ const BookerPlatformWrapperComponent = (
     return restFormValues;
   }, [restFormValues]);
 
-  const { timezone } = useTimePreferences();
+  const { timezone: rawTimezone } = useTimePreferences();
+  const initialTimezoneRef = useRef(rawTimezone);
+  const hasRestrictionSchedule =
+    event?.data?.restrictionScheduleId != null && event?.data?.restrictionScheduleId > 0;
+  const shouldUseStableTimezone = hasRestrictionSchedule && event?.data?.useBookerTimezone === false;
+  const timezone = shouldUseStableTimezone ? initialTimezoneRef.current : rawTimezone;
 
   const [calculatedStartTime, calculatedEndTime] = useTimesForSchedule({
     month,
@@ -316,10 +320,7 @@ const BookerPlatformWrapperComponent = (
     }
   }, [schedule.data, schedule.isPending, schedule.error, onTimeslotsLoaded]);
 
-  // Detect timezone changes and refresh slots when conditions are met
-  useTimezoneBasedSlotRefresh(event?.data, () => schedule.refetch());
-
-  const bookerForm = useBookingForm({
+  const bookerForm= useBookingForm({
     event: event?.data,
     sessionEmail:
       session?.data?.email && clientId
