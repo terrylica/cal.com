@@ -6,10 +6,9 @@ import { Icon } from "@calcom/ui/components/icon";
 import { Alert, AlertDescription, AlertTitle } from "@coss/ui/components/alert";
 import { Badge } from "@coss/ui/components/badge";
 import { Button } from "@coss/ui/components/button";
-import { Card, CardHeader, CardPanel } from "@coss/ui/components/card";
+import { Card, CardPanel } from "@coss/ui/components/card";
 import {
   Dialog,
-  DialogFooter,
   DialogHeader,
   DialogPanel,
   DialogPopup,
@@ -36,6 +35,7 @@ interface PlanColumnProps {
   features: PlanFeature[];
   buttonText: string;
   buttonHref: string;
+  buttonTarget?: string;
   primaryButton?: boolean;
   onCtaClick?: () => void;
 }
@@ -49,6 +49,7 @@ function PlanColumn({
   features,
   buttonText,
   buttonHref,
+  buttonTarget,
   primaryButton,
   onCtaClick,
 }: PlanColumnProps): JSX.Element {
@@ -66,7 +67,7 @@ function PlanColumn({
           className="mt-4 w-full"
           variant={primaryButton ? "default" : "outline"}
           onClick={onCtaClick}
-          render={<Link href={buttonHref} />}>
+          render={<Link href={buttonHref} target={buttonTarget} />}>
           <Icon name="circle-arrow-up" />
           <span>{buttonText}</span>
         </Button>
@@ -229,6 +230,7 @@ export function UpgradePlanDialog({ tracking, target, info, children }: UpgradeP
               features={enterpriseFeatures}
               buttonText={t("upgrade_cta_enterprise")}
               buttonHref="https://cal.com/sales"
+              buttonTarget="_blank"
               onCtaClick={() =>
                 posthog.capture("upgrade_plan_dialog_cta_clicked", {
                   source: tracking,
