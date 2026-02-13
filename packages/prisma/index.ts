@@ -169,14 +169,6 @@ export const prisma: DatabaseProxy = createDatabaseProxy({
 
 export type { DatabaseProxy };
 
-/**
- * Resolves the replica name from the x-cal-replica header.
- * Returns null if the header is not present.
- */
-export function resolveReplica(headers: Headers): string | null {
-  return headers.get("x-cal-replica");
-}
-
 export default prisma;
 export * from "./selects";
 

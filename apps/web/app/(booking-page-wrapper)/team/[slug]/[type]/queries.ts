@@ -16,7 +16,8 @@ import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { NEXTJS_CACHE_TTL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
-import { resolveReplica, prisma } from "@calcom/prisma";
+import { resolveReplica } from "@calcom/lib/server/resolveReplica";
+import { prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import type { SchedulingType } from "@calcom/prisma/enums";
 

@@ -7,7 +7,8 @@ import { cookies, headers } from "next/headers";
 import { getOrgFullOrigin } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { FeaturesRepository } from "@calcom/features/flags/features.repository";
 import { loadTranslations } from "@calcom/lib/server/i18n";
-import { resolveReplica, prisma } from "@calcom/prisma";
+import { resolveReplica } from "@calcom/lib/server/resolveReplica";
+import { prisma } from "@calcom/prisma";
 
 import { buildLegacyCtx, decodeParams } from "@lib/buildLegacyCtx";
 import { getServerSideProps } from "@lib/team/[slug]/[type]/getServerSideProps";

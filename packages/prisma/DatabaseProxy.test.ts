@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resolveReplica } from "@calcom/lib/server/resolveReplica";
+
 import { createDatabaseProxy, type DatabaseProxy, type ProxyConfig } from "./DatabaseProxy";
-import { resolveReplica } from "./index";
 
 describe("DatabaseProxy", () => {
   let mockPrimary: any;
