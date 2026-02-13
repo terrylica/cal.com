@@ -19,8 +19,8 @@ test.describe("Onboarding", () => {
       await page.waitForURL("/onboarding/getting-started");
 
       await test.step("step 1 - Plan Selection", async () => {
-        await expect(page.locator('button:has-text("Continue")')).toBeVisible();
-        await page.locator('button:has-text("Continue")').click();
+        await expect(page.getByTestId("onboarding-continue-btn")).toBeVisible();
+        await page.getByTestId("onboarding-continue-btn").click();
         await page.waitForURL(/.*\/onboarding\/personal\/settings/);
       });
 
@@ -35,8 +35,8 @@ test.describe("Onboarding", () => {
       });
 
       await test.step("step 3 - Calendar Connection", async () => {
-        await expect(page.locator('button:has-text("Continue")')).toBeVisible();
-        await page.locator('button:has-text("Continue")').click();
+        await expect(page.getByTestId("onboarding-continue-btn")).toBeVisible();
+        await page.getByTestId("onboarding-continue-btn").click();
         await page.waitForURL("/event-types**");
 
         const userComplete = await user.self();
