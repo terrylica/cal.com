@@ -468,7 +468,7 @@ describe("Slots 2024-04-15 Endpoints", () => {
     it("should do a booking and slot should not be available at that time", async () => {
       const startTime = "2050-09-05T11:00:00.000Z";
       const booking = await bookingsRepositoryFixture.create({
-        uid: `booking-uid-${eventTypeId}`,
+        uid: `booking-uid-${randomString()}`,
         title: "booking title",
         startTime,
         endTime: "2050-09-05T12:00:00.000Z",
