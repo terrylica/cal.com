@@ -45,6 +45,10 @@ import type { BookingListingStatus } from "../../../components/booking/types";
 import { usePaymentStatus } from "../hooks/usePaymentStatus";
 import { useBookingDetailsSheetStore } from "../store/bookingDetailsSheetStore";
 import type { BookingOutput } from "../types";
+import {
+  checkSheetActive,
+  createBookingSheetKeydownHandler,
+} from "../lib/bookingSheetKeyboardHandler";
 import { JoinMeetingButton } from "./JoinMeetingButton";
 
 type BookingMetaData = z.infer<typeof bookingMetadataSchema>;
@@ -186,58 +190,21 @@ function BookingDetailsSheetInner({
   const joinButtonWrapperRef = useRef<HTMLDivElement>(null);
   const sheetContentRef = useRef<HTMLDivElement>(null);
 
-  const isSheetActive = useCallback((): boolean => {
-    const activeElement = document.activeElement;
-    if (!activeElement || activeElement === document.body) {
-      return true;
-    }
-    if (!sheetContentRef.current) return false;
-    if (sheetContentRef.current.contains(activeElement)) {
-      return true;
-    }
-    return !activeElement.closest("[data-radix-portal]");
-  }, []);
+  const isSheetActive = useCallback(
+    () => checkSheetActive(sheetContentRef.current, document.activeElement),
+    []
+  );
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        (e.target instanceof HTMLElement && e.target.isContentEditable)
-      ) {
-        return;
-      }
-
-      if (!isSheetActive()) {
-        return;
-      }
-
-      switch (e.key) {
-        case "ArrowUp":
-          e.preventDefault();
-          e.stopPropagation();
-          if (navigation.canGoPrev && !navigation.isTransitioning) {
-            handlePrevious();
-          }
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          e.stopPropagation();
-          if (navigation.canGoNext && !navigation.isTransitioning) {
-            handleNext();
-          }
-          break;
-        case "Enter": {
-          const joinLink = joinButtonWrapperRef.current?.querySelector("a");
-          if (joinLink) {
-            e.preventDefault();
-            e.stopPropagation();
-            joinLink.click();
-          }
-          break;
-        }
-      }
-    };
+    const handleKeyDown = createBookingSheetKeydownHandler({
+      isSheetActive,
+      canGoPrev: navigation.canGoPrev,
+      canGoNext: navigation.canGoNext,
+      isTransitioning: navigation.isTransitioning,
+      handlePrevious,
+      handleNext,
+      getJoinLink: () => joinButtonWrapperRef.current?.querySelector("a"),
+    });
 
     document.addEventListener("keydown", handleKeyDown, true);
     return () => document.removeEventListener("keydown", handleKeyDown, true);
