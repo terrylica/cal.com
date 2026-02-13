@@ -498,8 +498,7 @@ function preprocess<T extends z.ZodType>({
         if (isPartialSchema && (superRefineError || issues.length > 0)) {
           delete responses[bookingField.name];
           console.warn(
-            `Partial prefill: skipped field '${bookingField.name}' due to validation errors`,
-            issues
+            `Partial prefill: skipped field '${bookingField.name}' due to ${issues.length} validation error(s)`
           );
         }
       }
