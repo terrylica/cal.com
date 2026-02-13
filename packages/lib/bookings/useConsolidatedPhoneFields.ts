@@ -36,6 +36,7 @@ export function useConsolidatedPhoneFields(fields: FormField[], options?: { enab
     if (phoneFieldsWithIndex.length <= 1) {
       return {
         displayFields: fields as ConsolidatedFormField[],
+        displayToOriginalIndex: fields.map((_, i) => i),
         phoneFieldIndices: null,
         isConsolidated: false,
         phoneFields: null,
