@@ -9,7 +9,7 @@ import { PrismaPendingRoutingTraceRepository } from "@calcom/features/routing-tr
 import { getSubmitterEmail } from "@calcom/features/tasker/tasks/triggerFormSubmittedNoEvent/formSubmissionValidation";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
-import { RoutingFormResponseRepository } from "@calcom/lib/server/repository/formResponse";
+import { RoutingFormResponseRepository } from "@calcom/features/routing-forms/repositories/RoutingFormResponseRepository";
 import prisma from "@calcom/prisma";
 
 import { defaultResponderForAppDir } from "../../defaultResponderForAppDir";
