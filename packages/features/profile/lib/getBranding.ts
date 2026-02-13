@@ -96,3 +96,22 @@ export function getBrandingForTeam(params: { team: TeamWithBranding }): Branding
     darkBrandColor: brandColorData.darkBrandColor ?? null,
   };
 }
+
+type ProfileWithBranding = {
+  brandColor?: string | null;
+  darkBrandColor?: string | null;
+  theme?: string | null;
+};
+
+export function getResolvedBranding(params: {
+  team: TeamWithBranding | null;
+  profileWithBranding: ProfileWithBranding;
+}): BrandingResult {
+  const { team, profileWithBranding } = params;
+  const fromHelper = team ? getBrandingForTeam({ team }) : null;
+  return {
+    brandColor: fromHelper?.brandColor ?? profileWithBranding.brandColor ?? null,
+    darkBrandColor: fromHelper?.darkBrandColor ?? profileWithBranding.darkBrandColor ?? null,
+    theme: fromHelper?.theme ?? profileWithBranding.theme ?? null,
+  };
+}

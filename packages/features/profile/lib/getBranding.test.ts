@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { getBrandingForEventType, getBrandingForUser, getBrandingForTeam } from "./getBranding";
+import {
+  getBrandingForEventType,
+  getBrandingForUser,
+  getBrandingForTeam,
+  getResolvedBranding,
+} from "./getBranding";
 
 describe("getBranding", () => {
   describe("getBrandingForEventType", () => {
@@ -187,6 +192,43 @@ describe("getBranding", () => {
         theme: "light",
         brandColor: "#AAAAAA",
         darkBrandColor: "#BBBBBB",
+      });
+    });
+  });
+
+  describe("getResolvedBranding", () => {
+    it("should use team/parent branding and fallback to profile when helper returns null", () => {
+      const team = {
+        brandColor: "#AAAAAA",
+        darkBrandColor: "#BBBBBB",
+        theme: "light",
+        parent: null,
+      };
+      const result = getResolvedBranding({
+        team,
+        profileWithBranding: team,
+      });
+      expect(result).toEqual({
+        theme: "light",
+        brandColor: "#AAAAAA",
+        darkBrandColor: "#BBBBBB",
+      });
+    });
+
+    it("should use profile branding when no team (user event)", () => {
+      const user = {
+        brandColor: "#USERAA",
+        darkBrandColor: "#USERBB",
+        theme: "dark" as const,
+      };
+      const result = getResolvedBranding({
+        team: null,
+        profileWithBranding: user,
+      });
+      expect(result).toEqual({
+        theme: "dark",
+        brandColor: "#USERAA",
+        darkBrandColor: "#USERBB",
       });
     });
   });

@@ -7,7 +7,7 @@ import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/
 import { getBookerBaseUrlSync } from "@calcom/features/ee/organizations/lib/getBookerBaseUrlSync";
 import { getSlugOrRequestedSlug } from "@calcom/features/ee/organizations/lib/orgDomains";
 import { getDefaultEvent, getUsernameList } from "@calcom/features/eventtypes/lib/defaultEvents";
-import { getBrandingForTeam } from "@calcom/features/profile/lib/getBranding";
+import { getResolvedBranding } from "@calcom/features/profile/lib/getBranding";
 import { PermissionCheckService } from "@calcom/features/pbac/services/permission-check.service";
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
 import { MembershipRole } from "@calcom/prisma/enums";
@@ -613,13 +613,13 @@ export function getProfileFromEvent(event: GetProfileFromEventInput) {
   const profile = team || nonTeamProfile;
   if (!profile) throw new Error("Event has no owner");
 
-  const styleProfile = team || event.parent?.team || nonTeamProfile;
+  const profileWithBranding = team || event.parent?.team || nonTeamProfile;
   const username = "username" in profile ? profile.username : team?.slug;
   const weekStart = hosts?.[0]?.user?.weekStart || owner?.weekStart || "Monday";
   const eventMetaData = eventTypeMetaDataSchemaWithTypedApps.parse(event.metadata || {});
   const userMetaData = userMetadataSchema.parse(profile.metadata || {});
 
-  const branding = team ? getBrandingForTeam({ team }) : null;
+  const branding = getResolvedBranding({ team, profileWithBranding });
 
   return {
     username,
@@ -630,9 +630,9 @@ export function getProfileFromEvent(event: GetProfileFromEventInput) {
       : getUserAvatarUrl({
           avatarUrl: nonTeamProfile?.avatarUrl,
         }),
-    brandColor: branding?.brandColor ?? styleProfile.brandColor,
-    darkBrandColor: branding?.darkBrandColor ?? styleProfile.darkBrandColor,
-    theme: branding?.theme ?? styleProfile.theme,
+    brandColor: branding.brandColor,
+    darkBrandColor: branding.darkBrandColor,
+    theme: branding.theme,
     bookerLayouts: bookerLayoutsSchema.parse(
       eventMetaData?.bookerLayouts ||
         (userMetaData && "defaultBookerLayouts" in userMetaData ? userMetaData.defaultBookerLayouts : null)
