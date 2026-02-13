@@ -1026,7 +1026,12 @@ export const baseFieldSchema = z.object({
   name: z.string().transform(getValidRhfFieldName),
   type: fieldTypeEnum,
   // TODO: We should make at least one of `defaultPlaceholder` and `placeholder` required. Do the same for label.
-  label: z.string().optional(),
+  label: z
+    .string()
+    .optional()
+    .refine((val) => val === undefined || val === null || val.trim().length > 0, {
+      message: "label_cannot_be_empty_or_whitespace",
+    }),
   labelAsSafeHtml: z.string().optional(),
 
   /**
