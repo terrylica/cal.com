@@ -59,8 +59,9 @@ const buildKey = ({
  */
 const consolidatePhoneFieldValues = (responses: Record<string, unknown>): Record<string, unknown> => {
   // Find the first non-empty system phone field value
+  const systemPhoneFieldsArray = Array.from(SYSTEM_PHONE_FIELDS);
   let phoneValue: string | undefined;
-  for (const fieldName of SYSTEM_PHONE_FIELDS) {
+  for (const fieldName of systemPhoneFieldsArray) {
     const value = responses[fieldName];
     if (typeof value === "string" && value.trim()) {
       phoneValue = value;
@@ -75,7 +76,7 @@ const consolidatePhoneFieldValues = (responses: Record<string, unknown>): Record
 
   // Copy the phone value to all system phone fields that exist in responses
   const consolidatedResponses = { ...responses };
-  for (const fieldName of SYSTEM_PHONE_FIELDS) {
+  for (const fieldName of systemPhoneFieldsArray) {
     // Only set if the field exists in responses (i.e., it's part of the event's booking fields)
     if (fieldName in responses) {
       consolidatedResponses[fieldName] = phoneValue;

@@ -20,6 +20,12 @@ type TouchedFields = {
 };
 
 type Fields = NonNullable<RouterOutputs["viewer"]["public"]["event"]>["bookingFields"];
+
+type LocationResponse = {
+  value?: string;
+  optionValue?: string;
+};
+
 const PhoneLocationSchema = z.object({
   value: z.literal(DefaultEventLocationTypeEnum.Phone),
   optionValue: z.string().optional(),
@@ -47,7 +53,7 @@ export const BookingFields = ({
   const { watch, setValue, formState } = useFormContext<{
     responses: Record<string, unknown>;
   }>();
-  const locationResponse = watch("responses.location");
+  const locationResponse = watch("responses.location") as LocationResponse | undefined;
   const currentView = rescheduleUid ? "reschedule" : "";
   const isInstantMeeting = useBookerStore((state) => state.isInstantMeeting);
 
