@@ -1,9 +1,9 @@
 import type { z } from "zod";
 
-import { getHumanReadableFieldResponseValue } from "@calcom/app-store/routing-forms/lib/responseData/getHumanReadableFieldResponseValue";
-import { getFieldWithOptions } from "@calcom/app-store/routing-forms/lib/selectOptions";
-import type { FormResponse } from "@calcom/app-store/routing-forms/types/types";
-import { zodFields } from "@calcom/app-store/routing-forms/zod";
+import { getHumanReadableFieldResponseValue } from "@calcom/routing-forms/lib/responseData/getHumanReadableFieldResponseValue";
+import { getFieldWithOptions } from "@calcom/routing-forms/lib/selectOptions";
+import type { FormResponse } from "@calcom/routing-forms/types/types";
+import { zodFields } from "@calcom/routing-forms/zod";
 import { canAccessEntity } from "@calcom/features/pbac/lib/entityPermissionUtils.server";
 import { PrismaRoutingFormResponseRepository } from "@calcom/features/routing-forms/repositories/PrismaRoutingFormResponseRepository";
 import { getTranslation } from "@calcom/lib/server/i18n";

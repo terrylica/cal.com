@@ -16,7 +16,6 @@
     "./components/_components/RoutingSkeleton": "./src/components/_components/RoutingSkeleton.tsx",
     "./components/_components/TeamMemberSelect": "./src/components/_components/TeamMemberSelect.tsx",
     "./components/_components/TeamMembersMatchResult": "./src/components/_components/TeamMembersMatchResult.tsx",
-    "./components/react-awesome-query-builder/widgets.test": "./src/components/react-awesome-query-builder/widgets.test.tsx",
     "./components/react-awesome-query-builder/widgets": "./src/components/react-awesome-query-builder/widgets.tsx",
     "./emails/components/ResponseEmail": "./src/emails/components/ResponseEmail.tsx",
     "./emails/components/index": "./src/emails/components/index.tsx",
