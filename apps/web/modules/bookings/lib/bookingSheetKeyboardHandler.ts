@@ -1,7 +1,7 @@
 export interface BookingSheetKeyboardConfig {
   isSheetActive: () => boolean;
-  canGoPrev: boolean;
-  canGoNext: boolean;
+  canGoPrev: boolean | undefined;
+  canGoNext: boolean | undefined;
   isTransitioning: boolean;
   handlePrevious: () => void;
   handleNext: () => void;

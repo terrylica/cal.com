@@ -97,8 +97,8 @@ describe("checkSheetActive", () => {
 });
 
 describe("createBookingSheetKeydownHandler", () => {
-  let handlePrevious: ReturnType<typeof vi.fn>;
-  let handleNext: ReturnType<typeof vi.fn>;
+  let handlePrevious: () => void;
+  let handleNext: () => void;
   let mockJoinLink: HTMLAnchorElement;
   let config: BookingSheetKeyboardConfig;
 
