@@ -34,7 +34,7 @@ import { ExternalLinkIcon, RepeatIcon } from "@coss/ui/icons";
 import { BookingHistory } from "@calcom/web/modules/booking-audit/components/BookingHistory";
 import assignmentReasonBadgeTitleMap from "@lib/booking/assignmentReasonBadgeTitleMap";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { z } from "zod";
 import { AcceptBookingButton } from "../../../components/booking/AcceptBookingButton";
 import { BookingActionsDropdown } from "../../../components/booking/actions/BookingActionsDropdown";
@@ -64,14 +64,25 @@ export function BookingDetailsSheet({
   bookingAuditEnabled = false,
 }: BookingDetailsSheetProps) {
   const booking = useBookingDetailsSheetStore((state) => state.getSelectedBooking());
+  const selectedBookingUid = useBookingDetailsSheetStore((state) => state.selectedBookingUid);
+  const lastBookingRef = useRef<BookingOutput | null>(null);
 
-  // Return null if no booking is selected (sheet is closed)
-  if (!booking) return null;
+  if (booking) {
+    lastBookingRef.current = booking;
+  }
+
+  if (!selectedBookingUid) {
+    lastBookingRef.current = null;
+  }
+
+  const displayBooking = booking ?? lastBookingRef.current;
+
+  if (!displayBooking) return null;
 
   return (
     <BookingActionsStoreProvider>
       <BookingDetailsSheetInner
-        booking={booking}
+        booking={displayBooking}
         userTimeZone={userTimeZone}
         userTimeFormat={userTimeFormat}
         userId={userId}
@@ -224,16 +235,13 @@ function BookingDetailsSheetInner({
         className="overflow-y-auto pb-0 sm:pb-0"
         hideOverlay
         onInteractOutside={(e) => {
-          // Check if the click is on a booking list item
           const target = e.target as HTMLElement;
-          const isBookingListItem = target.closest("[data-booking-list-item]");
+          const isBookingItem =
+            target.closest("[data-booking-list-item]") || target.closest("[data-booking-calendar-event]");
 
-          if (isBookingListItem) {
-            // Prevent closing when clicking a booking list item
-            // The item's onClick will handle opening the sheet with the new booking
+          if (isBookingItem) {
             e.preventDefault();
           }
-          // If clicking elsewhere, allow the default behavior (close the sheet)
         }}>
         <SheetHeader showCloseButton={false} className="mt-0 w-full">
           <div className="flex items-center justify-between gap-x-4">
