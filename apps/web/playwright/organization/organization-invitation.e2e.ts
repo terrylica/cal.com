@@ -502,7 +502,10 @@ async function signupFromInviteLink({
   await inviteLinkPage.locator("input[name=email]").fill(email);
   await inviteLinkPage.locator("input[name=password]").fill(`P4ssw0rd!`);
   await inviteLinkPage.locator("button[type=submit]").click();
-  await inviteLinkPage.waitForURL(/\/(getting-started|onboarding\/(getting-started|personal\/settings))/);
+  await inviteLinkPage.waitForURL((url) => {
+    const path = url.pathname;
+    return /\/(getting-started|onboarding\/(getting-started|personal\/settings))/.test(path);
+  });
   return { email };
 }
 
@@ -537,7 +540,10 @@ export async function signupFromEmailInviteLink({
   // Check required fields
   await signupPage.locator("input[name=password]").fill(`P4ssw0rd!`);
   await signupPage.locator("button[type=submit]").click();
-  await signupPage.waitForURL(/\/(getting-started|onboarding\/(getting-started|personal\/settings))/);
+  await signupPage.waitForURL((url) => {
+    const path = url.pathname;
+    return /\/(getting-started|onboarding\/(getting-started|personal\/settings))/.test(path);
+  });
   await context.close();
   await signupPage.close();
 }

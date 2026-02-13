@@ -395,7 +395,10 @@ test.describe("Email Signup Flow Test", async () => {
       // Check required fields
       await newPage.locator("input[name=password]").fill(`P4ssw0rd!`);
       await newPage.locator("button[type=submit]").click();
-      await newPage.waitForURL(/\/(getting-started|onboarding\/(getting-started|personal\/settings))/);
+      await newPage.waitForURL((url) => {
+        const path = url.pathname;
+        return /\/(getting-started|onboarding\/(getting-started|personal\/settings))/.test(path);
+      });
       await newPage.close();
       await context.close();
     });
@@ -637,6 +640,9 @@ async function signupFromInviteLink({
   await inviteLinkPage.locator("input[name=email]").fill(email);
   await inviteLinkPage.locator("input[name=password]").fill(`P4ssw0rd!`);
   await inviteLinkPage.locator("button[type=submit]").click();
-  await inviteLinkPage.waitForURL(/\/(getting-started|onboarding\/(getting-started|personal\/settings))/);
+  await inviteLinkPage.waitForURL((url) => {
+    const path = url.pathname;
+    return /\/(getting-started|onboarding\/(getting-started|personal\/settings))/.test(path);
+  });
   await context.close();
 }

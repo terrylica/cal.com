@@ -63,7 +63,10 @@ test.describe("Team", () => {
       // Check required fields
       await newPage.locator("input[name=password]").fill(`P4ssw0rd!`);
       await newPage.locator("button[type=submit]").click();
-      await newPage.waitForURL(/\/(getting-started|onboarding\/(getting-started|personal\/settings))/);
+      await newPage.waitForURL((url) => {
+        const path = url.pathname;
+        return /\/(getting-started|onboarding\/(getting-started|personal\/settings))/.test(path);
+      });
       await newPage.close();
       await context.close();
 
