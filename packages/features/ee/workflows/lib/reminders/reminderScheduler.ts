@@ -222,20 +222,31 @@ const _scheduleWorkflowReminders = async (args: ScheduleWorkflowRemindersArgs) =
 
     for (const step of workflow.steps) {
       if (
-        // These tasks currently write the entire payload in the task
         (workflow.trigger === WorkflowTriggerEvents.BEFORE_EVENT ||
           workflow.trigger === WorkflowTriggerEvents.AFTER_EVENT) &&
-        isEmailAction(step.action) &&
         evt
       ) {
-        await WorkflowService.scheduleLazyEmailWorkflow({
-          evt,
-          workflowStepId: step.id,
-          workflowTriggerEvent: workflow.trigger,
-          workflow,
-          seatReferenceId: args.seatReferenceUid,
-        });
-        continue;
+        if (isEmailAction(step.action)) {
+          await WorkflowService.scheduleLazyEmailWorkflow({
+            evt,
+            workflowStepId: step.id,
+            workflowTriggerEvent: workflow.trigger,
+            workflow,
+            seatReferenceId: args.seatReferenceUid,
+          });
+          continue;
+        }
+
+        if (isSMSAction(step.action)) {
+          await WorkflowService.scheduleLazySMSWorkflow({
+            evt,
+            workflowStepId: step.id,
+            workflowTriggerEvent: workflow.trigger,
+            workflow,
+            seatReferenceId: args.seatReferenceUid,
+          });
+          continue;
+        }
       }
 
       await processWorkflowStep(

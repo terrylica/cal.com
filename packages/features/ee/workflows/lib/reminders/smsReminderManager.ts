@@ -5,6 +5,7 @@ import {
   shouldUseTwilio,
 } from "@calcom/ee/workflows/lib/reminders/utils";
 import type { CreditCheckFn } from "@calcom/features/ee/billing/credit-service";
+import tasker from "@calcom/features/tasker";
 import { getSubmitterEmail } from "@calcom/features/tasker/tasks/triggerFormSubmittedNoEvent/formSubmissionValidation";
 import { SENDER_ID } from "@calcom/lib/constants";
 import logger from "@calcom/lib/logger";
@@ -349,6 +350,14 @@ export const deleteScheduledSMSReminder = async (reminderId: number, referenceId
   try {
     if (referenceId) {
       await twilio.cancelSMS(referenceId);
+    } else {
+      const reminder = await prisma.workflowReminder.findUnique({
+        where: { id: reminderId },
+        select: { uuid: true },
+      });
+      if (reminder?.uuid) {
+        await tasker.cancelWithReference(reminder.uuid, "sendWorkflowSMS");
+      }
     }
 
     await prisma.workflowReminder.delete({
