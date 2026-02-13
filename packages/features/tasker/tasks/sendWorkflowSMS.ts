@@ -6,8 +6,7 @@ import { BookingSeatRepository } from "@calcom/features/bookings/repositories/Bo
 import { CreditService } from "@calcom/features/ee/billing/credit-service";
 import { getBookerBaseUrl } from "@calcom/features/ee/organizations/lib/getBookerUrlServer";
 import { getSenderId } from "@calcom/features/ee/workflows/lib/alphanumericSenderIdSupport";
-import { select, getWorkflowRecipientEmail } from "@calcom/features/ee/workflows/lib/getWorkflowReminders";
-import type { PartialWorkflowReminder } from "@calcom/features/ee/workflows/lib/getWorkflowReminders";
+import { getWorkflowRecipientEmail } from "@calcom/features/ee/workflows/lib/getWorkflowReminders";
 import { isAttendeeAction } from "@calcom/features/ee/workflows/lib/actionHelperFunctions";
 import type { VariablesType } from "@calcom/features/ee/workflows/lib/reminders/templates/customTemplate";
 import customTemplate from "@calcom/features/ee/workflows/lib/reminders/templates/customTemplate";
@@ -15,10 +14,12 @@ import smsReminderTemplate from "@calcom/features/ee/workflows/lib/reminders/tem
 import { sendSmsOrFallbackEmail } from "@calcom/features/ee/workflows/lib/reminders/messageDispatcher";
 import { bulkShortenLinks } from "@calcom/features/ee/workflows/lib/reminders/utils";
 import { WorkflowOptOutService } from "@calcom/features/ee/workflows/lib/service/workflowOptOutService";
+import { WorkflowOptOutContactRepository } from "@calcom/features/ee/workflows/lib/repository/workflowOptOutContact";
+import { WorkflowReminderRepository } from "@calcom/features/ee/workflows/repositories/WorkflowReminderRepository";
 import { getTranslation } from "@calcom/lib/server/i18n";
 import { getTimeFormatStringFromUserTimeFormat } from "@calcom/lib/timeFormat";
 import prisma from "@calcom/prisma";
-import { WorkflowActions, WorkflowMethods, WorkflowTemplates } from "@calcom/prisma/enums";
+import { WorkflowActions, WorkflowTemplates } from "@calcom/prisma/enums";
 import { bookingMetadataSchema } from "@calcom/prisma/zod-utils";
 
 export const ZSendWorkflowSMSSchema = z.object({
@@ -29,12 +30,14 @@ export const ZSendWorkflowSMSSchema = z.object({
 export async function sendWorkflowSMS(payload: string): Promise<void> {
   const data = ZSendWorkflowSMSSchema.parse(JSON.parse(payload));
 
-  const reminder = (await prisma.workflowReminder.findUnique({
-    where: { id: data.workflowReminderId },
-    select: { ...select },
-  })) as (PartialWorkflowReminder & { booking: PartialWorkflowReminder["booking"] }) | null;
+  const workflowReminderRepository = new WorkflowReminderRepository(prisma);
+  const reminder = await workflowReminderRepository.findByIdForSMSTask(data.workflowReminderId);
 
   if (!reminder?.workflowStep || !reminder?.booking) {
+    return;
+  }
+
+  if (!reminder.workflowStep.verifiedAt) {
     return;
   }
 
@@ -56,6 +59,14 @@ export async function sendWorkflowSMS(payload: string): Promise<void> {
     reminder.workflowStep.action === WorkflowActions.SMS_NUMBER
       ? reminder.workflowStep.sendTo
       : targetAttendee?.phoneNumber;
+
+  if (!sendTo) {
+    return;
+  }
+
+  if (await WorkflowOptOutContactRepository.isOptedOut(sendTo)) {
+    return;
+  }
 
   const userName =
     reminder.workflowStep.action === WorkflowActions.SMS_ATTENDEE ? targetAttendee?.name || "" : "";
