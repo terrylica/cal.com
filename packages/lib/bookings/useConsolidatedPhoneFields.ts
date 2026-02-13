@@ -22,6 +22,7 @@ export function useConsolidatedPhoneFields(fields: FormField[], options?: { enab
     if (!enabled) {
       return {
         displayFields: fields as ConsolidatedFormField[],
+        displayToOriginalIndex: fields.map((_, i) => i),
         phoneFieldIndices: null,
         isConsolidated: false,
         phoneFields: null,
@@ -56,6 +57,7 @@ export function useConsolidatedPhoneFields(fields: FormField[], options?: { enab
     };
 
     const displayFields: ConsolidatedFormField[] = [];
+    const displayToOriginalIndex: number[] = [];
     let consolidatedInserted = false;
 
     for (let i = 0; i < fields.length; i++) {
@@ -63,18 +65,20 @@ export function useConsolidatedPhoneFields(fields: FormField[], options?: { enab
       if (phoneFieldNames.has(field.name)) {
         if (!consolidatedInserted) {
           displayFields.push(consolidatedField);
+          displayToOriginalIndex.push(i);
           consolidatedInserted = true;
         }
       } else {
         displayFields.push(field);
+        displayToOriginalIndex.push(i);
       }
     }
 
     return {
       displayFields,
+      displayToOriginalIndex,
       phoneFieldIndices: new Map(phoneFieldsWithIndex.map(({ field, index }) => [field.name, index])),
       isConsolidated: true,
-      // keep reference to original phone fields for badge info
       phoneFields,
     };
   }, [fields, enabled]);

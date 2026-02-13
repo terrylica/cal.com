@@ -144,6 +144,7 @@ export const FormBuilder = function FormBuilder({
 
   const {
     displayFields,
+    displayToOriginalIndex,
     phoneFieldIndices,
     isConsolidated,
     phoneFields: consolidatedPhoneFields,
@@ -167,7 +168,7 @@ export const FormBuilder = function FormBuilder({
     // For consolidated phone fields, we need to find the actual index in the original fields array
     const actualIndex = data._consolidatedFrom
       ? (phoneFieldIndices?.get(CANONICAL_PHONE_FIELD) ?? index)
-      : index;
+      : (displayToOriginalIndex?.[index] ?? index);
     setFieldDialog({
       isOpen: true,
       fieldIndex: actualIndex,
@@ -176,7 +177,8 @@ export const FormBuilder = function FormBuilder({
   };
 
   const removeField = (index: number) => {
-    remove(index);
+    const originalIndex = displayToOriginalIndex?.[index] ?? index;
+    remove(originalIndex);
   };
 
   return (
@@ -342,7 +344,11 @@ export const FormBuilder = function FormBuilder({
                       <button
                         type="button"
                         className="bg-default text-muted hover:text-emphasis disabled:hover:text-muted border-subtle hover:border-emphasis invisible absolute -left-[12px] -ml-4 -mt-4 mb-4 hidden h-6 w-6 scale-0 items-center justify-center rounded-md border p-1 transition-all hover:shadow disabled:hover:border-inherit disabled:hover:shadow-none group-hover:visible group-hover:scale-100 sm:ml-0 sm:flex"
-                        onClick={() => swap(displayIndex, displayIndex - 1)}>
+                        onClick={() => {
+                          const from = displayToOriginalIndex?.[displayIndex];
+                          const to = displayToOriginalIndex?.[displayIndex - 1];
+                          if (from !== undefined && to !== undefined) swap(from, to);
+                        }}>
                         <ArrowUpIcon className="h-5 w-5" />
                       </button>
                     )}
@@ -350,7 +356,11 @@ export const FormBuilder = function FormBuilder({
                       <button
                         type="button"
                         className="bg-default text-muted hover:border-emphasis border-subtle hover:text-emphasis disabled:hover:text-muted invisible absolute -left-[12px] -ml-4 mt-8 hidden h-6 w-6 scale-0 items-center justify-center rounded-md border p-1 transition-all hover:shadow disabled:hover:border-inherit disabled:hover:shadow-none group-hover:visible group-hover:scale-100 sm:ml-0 sm:flex"
-                        onClick={() => swap(displayIndex, displayIndex + 1)}>
+                        onClick={() => {
+                          const from = displayToOriginalIndex?.[displayIndex];
+                          const to = displayToOriginalIndex?.[displayIndex + 1];
+                          if (from !== undefined && to !== undefined) swap(from, to);
+                        }}>
                         <ArrowDownIcon className="h-5 w-5" />
                       </button>
                     )}
@@ -414,8 +424,9 @@ export const FormBuilder = function FormBuilder({
                               }
                             });
                           } else {
-                            update(displayIndex, {
-                              ...field,
+                            const originalIndex = displayToOriginalIndex?.[displayIndex] ?? displayIndex;
+                            update(originalIndex, {
+                              ...fields[originalIndex],
                               hidden: !checked,
                             });
                           }
