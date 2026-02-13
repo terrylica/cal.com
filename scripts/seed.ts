@@ -764,30 +764,36 @@ async function seedPerHostLocationsInAcmeOrg() {
     },
   });
 
-  const zoomCredential = await prisma.credential.create({
-    data: {
-      type: "zoom_video",
-      key: { access_token: "MOCK_ZOOM_ACCESS_TOKEN", token_type: "bearer" },
-      appId: "zoom",
-      userId: owner.id,
-    },
-  });
+  const zoomApp = await prisma.app.findUnique({ where: { slug: "zoom" } });
+  const zoomCredential = zoomApp
+    ? await prisma.credential.create({
+        data: {
+          type: "zoom_video",
+          key: { access_token: "MOCK_ZOOM_ACCESS_TOKEN", token_type: "bearer" },
+          appId: "zoom",
+          userId: owner.id,
+        },
+      })
+    : null;
 
-  const googleMeetCredential = await prisma.credential.create({
-    data: {
-      type: "google_video",
-      key: { access_token: "MOCK_GOOGLE_ACCESS_TOKEN", token_type: "bearer" },
-      appId: "google-meet",
-      userId: member0.id,
-    },
-  });
+  const googleMeetApp = await prisma.app.findUnique({ where: { slug: "google-meet" } });
+  const googleMeetCredential = googleMeetApp
+    ? await prisma.credential.create({
+        data: {
+          type: "google_video",
+          key: { access_token: "MOCK_GOOGLE_ACCESS_TOKEN", token_type: "bearer" },
+          appId: "google-meet",
+          userId: member0.id,
+        },
+      })
+    : null;
 
   await prisma.hostLocation.create({
     data: {
       userId: owner.id,
       eventTypeId: eventType.id,
       type: "integrations:zoom",
-      credentialId: zoomCredential.id,
+      ...(zoomCredential ? { credentialId: zoomCredential.id } : {}),
     },
   });
 
@@ -796,7 +802,7 @@ async function seedPerHostLocationsInAcmeOrg() {
       userId: member0.id,
       eventTypeId: eventType.id,
       type: "integrations:google:meet",
-      credentialId: googleMeetCredential.id,
+      ...(googleMeetCredential ? { credentialId: googleMeetCredential.id } : {}),
     },
   });
 
