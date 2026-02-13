@@ -315,4 +315,61 @@ describe("FormBuilder", () => {
       });
     });
   });
+
+  describe("Unify Phone Fields Checkbox Tests", () => {
+    it("should show unify checkbox when phone type is selected and callback is provided", async () => {
+      const onUnifyChange = vi.fn();
+      renderComponent({
+        formBuilderProps: {
+          ...mockProps,
+          unifySystemPhoneFields: true,
+          onUnifySystemPhoneFieldsChange: onUnifyChange,
+        },
+        formDefaultValues: {},
+      });
+
+      const dialog = pageObject.openAddFieldDialog();
+      pageObject.dialog.selectFieldType({ dialog, fieldType: "phone" });
+
+      await waitFor(() => {
+        expect(screen.getByText("unify_phone_fields_description")).toBeInTheDocument();
+      });
+    });
+
+    it("should NOT show unify checkbox when non-phone type is selected", async () => {
+      const onUnifyChange = vi.fn();
+      renderComponent({
+        formBuilderProps: {
+          ...mockProps,
+          unifySystemPhoneFields: true,
+          onUnifySystemPhoneFieldsChange: onUnifyChange,
+        },
+        formDefaultValues: {},
+      });
+
+      const dialog = pageObject.openAddFieldDialog();
+      pageObject.dialog.selectFieldType({ dialog, fieldType: "text" });
+
+      await waitFor(() => {
+        expect(screen.queryByText("unify_phone_fields_description")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should NOT show unify checkbox when callback is not provided", async () => {
+      renderComponent({
+        formBuilderProps: {
+          ...mockProps,
+          // No onUnifySystemPhoneFieldsChange provided
+        },
+        formDefaultValues: {},
+      });
+
+      const dialog = pageObject.openAddFieldDialog();
+      pageObject.dialog.selectFieldType({ dialog, fieldType: "phone" });
+
+      await waitFor(() => {
+        expect(screen.queryByText("unify_phone_fields_description")).not.toBeInTheDocument();
+      });
+    });
+  });
 });

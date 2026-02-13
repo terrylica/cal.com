@@ -291,4 +291,104 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
       expect(result.current.values.responses?.phone).toBeUndefined();
     });
   });
+
+  describe("phone field consolidation based on metadata", () => {
+    const mockBookingFieldsWithSystemPhones = [
+      { name: "name", type: "text" as const, required: true },
+      { name: "email", type: "email" as const, required: true },
+      { name: "attendeePhoneNumber", type: "phone" as const, required: false },
+      { name: "smsReminderNumber", type: "phone" as const, required: false },
+    ] as unknown as BookerEvent["bookingFields"];
+
+    it("should consolidate phone values when unifySystemPhoneFields is true (default)", async () => {
+      const eventType: Pick<BookerEvent, "bookingFields" | "team" | "owner" | "metadata"> = {
+        bookingFields: mockBookingFieldsWithSystemPhones,
+        team: null,
+        owner: null,
+        metadata: {
+          unifySystemPhoneFields: true,
+        },
+      };
+
+      const extraOptions = {
+        smsReminderNumber: "+1234567890", // prefill via non-canonical field
+      };
+
+      const { result } = renderHook(() =>
+        useInitialFormValues({
+          ...baseProps,
+          eventType,
+          extraOptions,
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.values.responses).toBeDefined();
+      });
+
+      // Both phone fields should have the same value
+      expect(result.current.values.responses?.attendeePhoneNumber).toBe("+1234567890");
+      expect(result.current.values.responses?.smsReminderNumber).toBe("+1234567890");
+    });
+
+    it("should consolidate phone values when metadata is undefined (default behavior)", async () => {
+      const eventType: Pick<BookerEvent, "bookingFields" | "team" | "owner" | "metadata"> = {
+        bookingFields: mockBookingFieldsWithSystemPhones,
+        team: null,
+        owner: null,
+        metadata: undefined,
+      };
+
+      const extraOptions = {
+        attendeePhoneNumber: "+9876543210",
+      };
+
+      const { result } = renderHook(() =>
+        useInitialFormValues({
+          ...baseProps,
+          eventType,
+          extraOptions,
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.values.responses).toBeDefined();
+      });
+
+      // Both phone fields should have the same value
+      expect(result.current.values.responses?.attendeePhoneNumber).toBe("+9876543210");
+      expect(result.current.values.responses?.smsReminderNumber).toBe("+9876543210");
+    });
+
+    it("should NOT consolidate phone values when unifySystemPhoneFields is false", async () => {
+      const eventType: Pick<BookerEvent, "bookingFields" | "team" | "owner" | "metadata"> = {
+        bookingFields: mockBookingFieldsWithSystemPhones,
+        team: null,
+        owner: null,
+        metadata: {
+          unifySystemPhoneFields: false,
+        },
+      };
+
+      const extraOptions = {
+        smsReminderNumber: "+1234567890", // Only prefill smsReminderNumber
+      };
+
+      const { result } = renderHook(() =>
+        useInitialFormValues({
+          ...baseProps,
+          eventType,
+          extraOptions,
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.values.responses).toBeDefined();
+      });
+
+      // Only smsReminderNumber should have the value, not attendeePhoneNumber
+      expect(result.current.values.responses?.smsReminderNumber).toBe("+1234567890");
+      expect(result.current.values.responses?.attendeePhoneNumber).toBeUndefined();
+    });
+  });
 });
