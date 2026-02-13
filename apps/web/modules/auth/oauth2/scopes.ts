@@ -1,8 +1,11 @@
 import { parseScopeParam } from "@calcom/features/oauth/constants";
 
-const SCOPE_RESOURCE_PREFIXES = ["EVENT_TYPE", "BOOKING", "SCHEDULE"] as const;
+const SCOPE_RESOURCE_PREFIXES = ["PROFILE", "EVENT_TYPE", "BOOKING", "SCHEDULE", "APPS"] as const;
 
-export function resolveScopesForTokens(scopeParam: string | null | undefined, clientScopes: string[]): string[] {
+export function resolveScopesForTokens(
+  scopeParam: string | null | undefined,
+  clientScopes: string[]
+): string[] {
   const parsed = parseScopeParam(scopeParam);
   if (parsed.length > 0) {
     return parsed;
@@ -13,10 +16,6 @@ export function resolveScopesForTokens(scopeParam: string | null | undefined, cl
 export function getScopeDisplayItems(scopes: string[], t: (key: string) => string): string[] {
   const scopeSet = new Set(scopes);
   const items: string[] = [];
-
-  if (scopeSet.has("PROFILE_READ")) {
-    items.push(t(scopeTranslationKey("PROFILE_READ")));
-  }
 
   for (const resource of SCOPE_RESOURCE_PREFIXES) {
     const hasRead = scopeSet.has(`${resource}_READ`);

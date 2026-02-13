@@ -12,7 +12,10 @@ ALTER TYPE "public"."AccessScope" ADD VALUE 'BOOKING_READ';
 ALTER TYPE "public"."AccessScope" ADD VALUE 'BOOKING_WRITE';
 ALTER TYPE "public"."AccessScope" ADD VALUE 'SCHEDULE_READ';
 ALTER TYPE "public"."AccessScope" ADD VALUE 'SCHEDULE_WRITE';
+ALTER TYPE "public"."AccessScope" ADD VALUE 'APPS_READ';
+ALTER TYPE "public"."AccessScope" ADD VALUE 'APPS_WRITE';
 ALTER TYPE "public"."AccessScope" ADD VALUE 'PROFILE_READ';
+ALTER TYPE "public"."AccessScope" ADD VALUE 'PROFILE_WRITE';
 
 -- AlterTable
 ALTER TABLE "public"."OAuthClient" ADD COLUMN     "scopes" "public"."AccessScope"[];
