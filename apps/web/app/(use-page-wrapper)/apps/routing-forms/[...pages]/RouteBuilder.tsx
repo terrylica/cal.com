@@ -776,6 +776,8 @@ const Route = ({
     ? eventTypeRedirectUrlOptions.find((option) => option.eventTypeId === route.fallbackAction?.eventTypeId)
     : eventTypeRedirectUrlOptions.find((option) => option.value === route.fallbackAction?.value);
 
+  // Only show fallback section when main action has a valid event type selected
+  // This prevents showing an empty fallback action selector before user selects an event type
   const hasValidEventTypeSelected =
     route.action?.type === RouteActionType.EventTypeRedirectUrl &&
     (route.action?.eventTypeId || route.action?.value);
@@ -873,6 +875,8 @@ const Route = ({
                 action={route.action}
                 onActionChange={(newAction) => setRoute(route.id, { action: newAction })}
                 onEventTypeChange={(newAction) => {
+                  // Initialize fallbackAction with the same event type if not already set with a valid event type
+                  // Check if fallbackAction has a valid event type (eventTypeId or non-empty value)
                   const hasValidFallbackEventType =
                     route.fallbackAction?.eventTypeId || route.fallbackAction?.value;
                   const fallbackAction = hasValidFallbackEventType
@@ -910,6 +914,8 @@ const Route = ({
                     action={route.action}
                     onActionChange={(newAction) => setRoute(route.id, { action: newAction })}
                     onEventTypeChange={(newAction) => {
+                      // Initialize fallbackAction with the same event type if not already set with a valid event type
+                      // Check if fallbackAction has a valid event type (eventTypeId or non-empty value)
                       const hasValidFallbackEventType =
                         route.fallbackAction?.eventTypeId || route.fallbackAction?.value;
                       const fallbackAction = hasValidFallbackEventType
