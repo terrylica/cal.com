@@ -57,15 +57,28 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Atoms",
+        "tab": "API v2 Reference",
+        "openapi": {
+          "source": "/api-reference/v2/openapi.json",
+          "directory": "api-reference/v2"
+        },
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
-              "atoms/introduction",
-              "atoms/quickstart",
-              "atoms/faq"
+              "api-reference/v2/introduction",
+              "api-reference/v2/oauth",
+              "api-reference/v2/v1-v2-differences"
             ]
+          }
+        ]
+      },
+      {
+        "tab": "Atoms",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["atoms/introduction", "atoms/quickstart", "atoms/faq"]
           },
           {
             "group": "Reference",
@@ -73,10 +86,7 @@
               {
                 "group": "Booking",
                 "icon": "calendar-check",
-                "pages": [
-                  "atoms/reference/booking/booker",
-                  "atoms/reference/booking/booker-embed"
-                ]
+                "pages": ["atoms/reference/booking/booker", "atoms/reference/booking/booker-embed"]
               },
               {
                 "group": "Calendars",
@@ -101,10 +111,7 @@
               {
                 "group": "Auth & Providers",
                 "icon": "key",
-                "pages": [
-                  "atoms/reference/auth/cal-provider",
-                  "atoms/reference/auth/cal-oauth-provider"
-                ]
+                "pages": ["atoms/reference/auth/cal-provider", "atoms/reference/auth/cal-oauth-provider"]
               },
               {
                 "group": "Event Types",
@@ -117,18 +124,12 @@
               {
                 "group": "Payments",
                 "icon": "credit-card",
-                "pages": [
-                  "atoms/reference/payments/payment-form",
-                  "atoms/reference/payments/stripe-connect"
-                ]
+                "pages": ["atoms/reference/payments/payment-form", "atoms/reference/payments/stripe-connect"]
               },
               {
                 "group": "Other",
                 "icon": "ellipsis",
-                "pages": [
-                  "atoms/reference/other/conferencing-apps",
-                  "atoms/reference/other/troubleshooter"
-                ]
+                "pages": ["atoms/reference/other/conferencing-apps", "atoms/reference/other/troubleshooter"]
               }
             ]
           },
@@ -149,30 +150,11 @@
         ]
       },
       {
-        "tab": "API v2 Reference",
-        "openapi": {
-          "source": "/api-reference/v2/openapi.json",
-          "directory": "api-reference/v2"
-        },
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "api-reference/v2/introduction",
-              "api-reference/v2/oauth",
-              "api-reference/v2/v1-v2-differences"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "Developing",
         "groups": [
           {
             "group": "Getting Started",
-            "pages": [
-              "developing/local-development"
-            ]
+            "pages": ["developing/local-development"]
           },
           {
             "group": "Open Source Contribution",
@@ -189,9 +171,7 @@
               {
                 "group": "API Development",
                 "icon": "brackets-curly",
-                "pages": [
-                  "developing/guides/api/how-to-setup-api-in-a-local-instance"
-                ]
+                "pages": ["developing/guides/api/how-to-setup-api-in-a-local-instance"]
               },
               {
                 "group": "App Store and Integration",
@@ -214,37 +194,27 @@
               {
                 "group": "Automation",
                 "icon": "webhook",
-                "pages": [
-                  "developing/guides/automation/webhooks"
-                ]
+                "pages": ["developing/guides/automation/webhooks"]
               },
               {
                 "group": "Atoms",
                 "icon": "atom",
-                "pages": [
-                  "developing/guides/atoms/add-changesets"
-                ]
+                "pages": ["developing/guides/atoms/add-changesets"]
               },
               {
                 "group": "Email",
                 "icon": "inbox",
-                "pages": [
-                  "developing/guides/email/setup-mailtrap-for-email-testing"
-                ]
+                "pages": ["developing/guides/email/setup-mailtrap-for-email-testing"]
               },
               {
                 "group": "Embeds",
                 "icon": "code-simple",
-                "pages": [
-                  "developing/guides/embeds/embed-events"
-                ]
+                "pages": ["developing/guides/embeds/embed-events"]
               },
               {
                 "group": "Insights",
                 "icon": "chart-bar",
-                "pages": [
-                  "developing/guides/insights/add-new-booking-charts"
-                ]
+                "pages": ["developing/guides/insights/add-new-booking-charts"]
               }
             ]
           }
@@ -304,9 +274,7 @@
               {
                 "group": "App Store and Integration",
                 "icon": "grid",
-                "pages": [
-                  "self-hosting/guides/appstore-and-integration/syncing-third-party-apps"
-                ]
+                "pages": ["self-hosting/guides/appstore-and-integration/syncing-third-party-apps"]
               },
               {
                 "group": "White Labeling",
@@ -320,9 +288,7 @@
               {
                 "group": "Sponsorship",
                 "icon": "money-check-dollar",
-                "pages": [
-                  "self-hosting/guides/sponsorship/can-calcom-sponsor-my-open-source-project"
-                ]
+                "pages": ["self-hosting/guides/sponsorship/can-calcom-sponsor-my-open-source-project"]
               },
               {
                 "group": "Organizations",
