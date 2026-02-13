@@ -1,5 +1,5 @@
+import process from "node:process";
 import { withBotId } from "botid/next/config";
-import { config as dotenvConfig } from "dotenv";
 import type { NextConfig } from "next";
 import type { RouteHas } from "next/dist/lib/load-custom-routes";
 import { withAxiom } from "next-axiom";
@@ -12,8 +12,6 @@ import {
   orgUserTypeRoutePath,
 } from "./pagesAndRewritePaths";
 import { TRIGGER_VERSION } from "./trigger.version"; // adjust path as needed
-
-dotenvConfig({ path: "../../.env" });
 
 const { version } = packageJson;
 const {
