@@ -36,7 +36,7 @@ import {
   ListItemTitleLink,
 } from "@coss/ui/shared/list-item";
 import { EllipsisIcon, ExternalLinkIcon, PencilIcon, TrashIcon, WebhookIcon } from "lucide-react";
-import type { ComponentProps, ComponentType } from "react";
+import type { ComponentType } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { DeleteWebhookDialog } from "./dialogs/DeleteWebhookDialog";
 

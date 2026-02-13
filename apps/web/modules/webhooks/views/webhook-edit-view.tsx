@@ -8,23 +8,35 @@ import {
 } from "@calcom/features/webhooks/lib/constants";
 import type { WebhookVersion } from "@calcom/features/webhooks/lib/interface/IWebhookRepository";
 import { subscriberUrlReserved } from "@calcom/features/webhooks/lib/subscriberUrlReserved";
-import { APP_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import type { WebhookTriggerEvents } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
-import { SkeletonContainer } from "@calcom/ui/components/skeleton";
 import { toastManager } from "@coss/ui/components/toast";
 import { revalidateWebhooksList } from "@calcom/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/(with-loader)/actions";
 import { Button } from "@coss/ui/components/button";
-import { CardFrame, CardFrameDescription, CardFrameHeader, CardFrameTitle } from "@coss/ui/components/card";
+import { CardFrame } from "@coss/ui/components/card";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@coss/ui/components/select";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@coss/ui/components/tooltip";
+import {
+  Tooltip,
+  TooltipCreateHandle,
+  TooltipPopup,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@coss/ui/components/tooltip";
 import { ExternalLinkIcon } from "lucide-react";
-import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import type { ComponentType } from "react";
 import type { WebhookFormSubmitData } from "../components/WebhookForm";
 import WebhookForm from "../components/WebhookForm";
+import { WebhookNewHeader } from "./webhook-new-header";
+import { SkeletonLoader } from "./webhook-new-skeleton";
+
+const webhookVersionItems = WEBHOOK_VERSION_OPTIONS.map((option) => ({
+  value: option.value,
+  label: option.label,
+}));
 
 type WebhookProps = {
   id: string;
@@ -42,6 +54,7 @@ type WebhookProps = {
 export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
   const { t } = useLocale();
   const router = useRouter();
+  const versionTooltipHandle = useMemo(() => TooltipCreateHandle<ComponentType>(), []);
   const { data: installedApps, isPending } = trpc.viewer.apps.integrations.useQuery(
     { variant: "other", onlyInstalled: true },
     {
@@ -65,12 +78,7 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
     },
   });
 
-  if (isPending || !webhook) return <SkeletonContainer />;
-
-  const webhookVersionItems = WEBHOOK_VERSION_OPTIONS.map((option) => ({
-    value: option.value,
-    label: option.label,
-  }));
+  if (isPending || !webhook) return <SkeletonLoader titleKey="edit_webhook" />;
 
   return (
     <WebhookForm
@@ -83,26 +91,14 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
 
         return (
           <CardFrame>
-            <CardFrameHeader>
-              <div className="flex min-w-0 flex-col gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <Button
-                    aria-label={t("go_back")}
-                    render={<Link href="/settings/developer/webhooks" />}
-                    size="icon-sm"
-                    variant="ghost">
-                    <ArrowLeftIcon />
-                  </Button>
-                  <div>
-                    <CardFrameTitle>{t("edit_webhook")}</CardFrameTitle>
-                    <CardFrameDescription>
-                      {t("add_webhook_description", { appName: APP_NAME })}
-                    </CardFrameDescription>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Tooltip>
+            <WebhookNewHeader
+              titleKey="edit_webhook"
+              CTA={
+                <div className="flex items-center gap-1 self-center">
+                  <TooltipProvider delay={0}>
                     <TooltipTrigger
+                      handle={versionTooltipHandle}
+                      payload={() => <>{t("webhook_version")}</>}
                       render={
                         <div className="inline-flex">
                           <Select
@@ -114,7 +110,7 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
                               }
                             }}
                             items={webhookVersionItems}>
-                            <SelectTrigger className="min-w-36 w-fit">
+                            <SelectTrigger size="sm" className="min-w-none">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectPopup>
@@ -126,31 +122,38 @@ export function EditWebhookView({ webhook }: { webhook?: WebhookProps }) {
                             </SelectPopup>
                           </Select>
                         </div>
-                      }>
-                    </TooltipTrigger>
-                    <TooltipPopup>{t("webhook_version")}</TooltipPopup>
-                  </Tooltip>
-                  <Tooltip>
+                      }
+                    />
                     <TooltipTrigger
+                      handle={versionTooltipHandle}
+                      payload={() => (
+                        <>{t("webhook_version_docs", { version: getWebhookVersionLabel(version) })}</>
+                      )}
                       render={
-                        <Link
-                          href={getWebhookVersionDocsUrl(version)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground flex">
-                          <ExternalLinkIcon className="size-4" />
-                        </Link>
-                      }>
-                    </TooltipTrigger>
-                    <TooltipPopup>
-                      {t("webhook_version_docs", {
-                        version: getWebhookVersionLabel(version),
-                      })}
-                    </TooltipPopup>
-                  </Tooltip>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          render={
+                            <Link
+                              className="text-muted-foreground hover:text-foreground flex"
+                              href={getWebhookVersionDocsUrl(version)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            />
+                          }>
+                          <ExternalLinkIcon />
+                        </Button>
+                      }
+                    />
+                    <Tooltip handle={versionTooltipHandle}>
+                      {({ payload: Payload }) => (
+                        <TooltipPopup>{Payload !== undefined && <Payload />}</TooltipPopup>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-              </div>
-            </CardFrameHeader>
+              }
+            />
             {children}
           </CardFrame>
         );

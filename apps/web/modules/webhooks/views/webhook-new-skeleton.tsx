@@ -10,11 +10,15 @@ import { Skeleton } from "@coss/ui/components/skeleton";
 import { WebhookNewHeader } from "./webhook-new-header";
 import { WebhookTestHeader } from "./webhook-test-header";
 
-export const SkeletonLoader = () => {
+type SkeletonLoaderProps = {
+  titleKey?: "add_webhook" | "edit_webhook";
+};
+
+export const SkeletonLoader = ({ titleKey = "add_webhook" }: SkeletonLoaderProps = {}) => {
   return (
     <div className="flex flex-col gap-4">
       <CardFrame>
-        <WebhookNewHeader />
+        <WebhookNewHeader titleKey={titleKey} />
         <Card className="rounded-b-none!">
           <CardPanel>
             <div className="flex flex-col gap-6">

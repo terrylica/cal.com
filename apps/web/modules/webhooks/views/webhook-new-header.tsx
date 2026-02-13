@@ -12,7 +12,12 @@ import { ArrowLeftIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-export function WebhookNewHeader({ CTA }: { CTA?: ReactNode }) {
+type WebhookFormHeaderProps = {
+  CTA?: ReactNode;
+  titleKey?: "add_webhook" | "edit_webhook";
+};
+
+export function WebhookNewHeader({ CTA, titleKey = "add_webhook" }: WebhookFormHeaderProps) {
   const { t } = useLocale();
 
   return (
@@ -27,7 +32,7 @@ export function WebhookNewHeader({ CTA }: { CTA?: ReactNode }) {
             <ArrowLeftIcon />
           </Button>
           <div className="flex-1">
-            <CardFrameTitle>{t("add_webhook")}</CardFrameTitle>
+            <CardFrameTitle>{t(titleKey)}</CardFrameTitle>
             <CardFrameDescription>
               {t("add_webhook_description", { appName: APP_NAME })}
             </CardFrameDescription>
