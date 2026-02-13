@@ -59,6 +59,7 @@ type OrganizationOnboardingForPaymentIntent = Pick<
   | "pricePerSeat"
   | "billingPeriod"
   | "seats"
+  | "minSeats"
   | "isComplete"
   | "orgOwnerEmail"
   | "slug"
@@ -326,7 +327,7 @@ export class OrganizationPaymentService {
     const teams = _teams?.filter((team) => team.id === -1 || team.isBeingMigrated) || [];
     const teamIds = teams.filter((team) => team.id > 0).map((team) => team.id);
 
-    const { orgOwnerEmail, pricePerSeat, slug, billingPeriod, seats } = organizationOnboarding;
+    const { orgOwnerEmail, pricePerSeat, slug, billingPeriod, seats, minSeats } = organizationOnboarding;
 
     if (this.user.role === UserPermissionRole.ADMIN) {
       log.debug("Admin flow, skipping checkout", safeStringify({ organizationOnboarding }));
@@ -365,7 +366,7 @@ export class OrganizationPaymentService {
     // Create new config with updated seats if necessary
     const updatedConfig = {
       ...paymentConfigFromOnboarding,
-      seats: Math.max(paymentConfigFromOnboarding.seats, uniqueMembersCount),
+      seats: Math.max(paymentConfigFromOnboarding.seats, uniqueMembersCount, minSeats ?? 0),
     };
 
     log.debug(
