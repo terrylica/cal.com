@@ -1,5 +1,5 @@
 import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { Icon } from "@calcom/ui/components/icon";
+import { InfoIcon } from "@coss/ui/icons";
 import { useState } from "react";
 
 export const DryRunMessage = () => {
@@ -14,7 +14,7 @@ export const DryRunMessage = () => {
       className="bg-default border-subtle cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm shadow-md">
       <div className="flex items-center gap-3">
         <div className="relative">
-          <Icon name="info" className="h-5 w-5 text-orange-500" />
+          <InfoIcon className="h-5 w-5 text-orange-500" />
         </div>
         <div className="text-emphasis font-medium" data-testid="dry-run-msg">
           {t("dry_run_mode_active")}
