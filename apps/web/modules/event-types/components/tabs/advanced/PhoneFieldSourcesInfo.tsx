@@ -45,6 +45,7 @@ export function PhoneFieldSourcesInfo({ sources }: { sources: Source[] }) {
                 href={source.editUrl}
                 className="text-emphasis hover:text-default text-sm hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 {t("edit")}
               </Link>

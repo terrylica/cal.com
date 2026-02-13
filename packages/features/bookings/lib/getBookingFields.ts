@@ -3,6 +3,7 @@ import type { Workflow } from "@calcom/features/ee/workflows/lib/types";
 import { fieldsThatSupportLabelAsSafeHtml } from "@calcom/features/form-builder/fieldsThatSupportLabelAsSafeHtml";
 import { getFieldIdentifier } from "@calcom/features/form-builder/utils/getFieldIdentifier";
 import { CAL_AI_AGENT_PHONE_NUMBER_FIELD, SMS_REMINDER_NUMBER_FIELD } from "@calcom/lib/bookings/SystemField";
+import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { markdownToSafeHTML } from "@calcom/lib/markdownToSafeHTML";
 import slugify from "@calcom/lib/slugify";
 import type { EventType, EventTypeCustomInput } from "@calcom/prisma/client";
@@ -46,13 +47,16 @@ export const getSmsReminderNumberSource = ({
   workflowId: Workflow["id"];
   workflowName?: string;
   isSmsReminderNumberRequired: boolean;
-}) => ({
-  id: `${workflowId}`,
-  type: "workflow",
-  label: workflowName || "SMS Workflow",
-  fieldRequired: isSmsReminderNumberRequired,
-  editUrl: `/workflows/${workflowId}`,
-});
+}) => {
+  const { t } = useLocale();
+  return {
+    id: `${workflowId}`,
+    type: "workflow",
+    label: workflowName || t("sms_workflow"),
+    fieldRequired: isSmsReminderNumberRequired,
+    editUrl: `/workflows/${workflowId}`,
+  };
+};
 
 export const getAIAgentCallPhoneNumberField = () =>
   ({
@@ -71,13 +75,16 @@ export const getAIAgentCallPhoneNumberSource = ({
   workflowId: Workflow["id"];
   workflowName?: string;
   isAIAgentCallPhoneNumberRequired: boolean;
-}) => ({
-  id: `${workflowId}`,
-  type: "workflow",
-  label: workflowName || "Cal.ai Workflow",
-  fieldRequired: isAIAgentCallPhoneNumberRequired,
-  editUrl: `/workflows/${workflowId}`,
-});
+}) => {
+  const { t } = useLocale();
+  return {
+    id: `${workflowId}`,
+    type: "workflow",
+    label: workflowName || t("cal_ai_workflow"),
+    fieldRequired: isAIAgentCallPhoneNumberRequired,
+    editUrl: `/workflows/${workflowId}`,
+  };
+};
 
 /**
  * This fn is the key to ensure on the fly mapping of customInputs to bookingFields and ensuring that all the systems fields are present and correctly ordered in bookingFields
